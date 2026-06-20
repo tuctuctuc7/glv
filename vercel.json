@@ -1,0 +1,37 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": null,
+  "installCommand": null,
+  "outputDirectory": "public",
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/glv/glv_dashboard.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/fb-data",
+      "destination": "https://glv-meta-ads.vercel.app/api/fb-data"
+    },
+    {
+      "source": "/glv-meta-ads/",
+      "destination": "https://glv-meta-ads.vercel.app/"
+    },
+    {
+      "source": "/glv-meta-ads",
+      "destination": "https://glv-meta-ads.vercel.app"
+    },
+    {
+      "source": "/glv-meta-ads/:path*",
+      "destination": "https://glv-meta-ads.vercel.app/:path*"
+    }
+  ]
+}

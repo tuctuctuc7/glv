@@ -1,0 +1,4108 @@
+{
+  "updated_at": "2026-06-20 16:59 UTC",
+  "source": {
+    "sheet_id": "1KjiRfumk3w8tNZFpfI8RO9X5RTcqoq5LcKfyCzcpplQ",
+    "tab": "Daily",
+    "mode": "read-only",
+    "note": "BLENDED rows are intentionally excluded; All is aggregated from CZSK, US, and ROW."
+  },
+  "currency": "USD",
+  "date_range": {
+    "start": "2026-01-01",
+    "end": "2026-06-19"
+  },
+  "absolute_metrics": [
+    "spend",
+    "revenue",
+    "purchases",
+    "unique_visitors"
+  ],
+  "derived_metrics": {
+    "roas": "revenue / spend",
+    "cpa": "spend / purchases",
+    "aov": "revenue / purchases",
+    "cvr": "purchases / unique_visitors"
+  },
+  "rows": [
+    {
+      "date": "2026-01-01",
+      "region": "czsk",
+      "revenue": 631.0,
+      "spend": 386.0,
+      "purchases": 5,
+      "unique_visitors": 492
+    },
+    {
+      "date": "2026-01-01",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 11
+    },
+    {
+      "date": "2026-01-01",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 65.0,
+      "purchases": 1,
+      "unique_visitors": 17
+    },
+    {
+      "date": "2026-01-02",
+      "region": "czsk",
+      "revenue": 2422.0,
+      "spend": 772.0,
+      "purchases": 14,
+      "unique_visitors": 1071
+    },
+    {
+      "date": "2026-01-02",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 60
+    },
+    {
+      "date": "2026-01-02",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 83.0,
+      "purchases": 0,
+      "unique_visitors": 79
+    },
+    {
+      "date": "2026-01-03",
+      "region": "czsk",
+      "revenue": 1574.0,
+      "spend": 628.0,
+      "purchases": 12,
+      "unique_visitors": 625
+    },
+    {
+      "date": "2026-01-03",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 11
+    },
+    {
+      "date": "2026-01-03",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 62.0,
+      "purchases": 0,
+      "unique_visitors": 17
+    },
+    {
+      "date": "2026-01-04",
+      "region": "czsk",
+      "revenue": 2219.0,
+      "spend": 722.0,
+      "purchases": 19,
+      "unique_visitors": 661
+    },
+    {
+      "date": "2026-01-04",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 32
+    },
+    {
+      "date": "2026-01-04",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 103.0,
+      "purchases": 0,
+      "unique_visitors": 45
+    },
+    {
+      "date": "2026-01-05",
+      "region": "czsk",
+      "revenue": 1229.0,
+      "spend": 629.0,
+      "purchases": 11,
+      "unique_visitors": 493
+    },
+    {
+      "date": "2026-01-05",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 24
+    },
+    {
+      "date": "2026-01-05",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 100.0,
+      "purchases": 0,
+      "unique_visitors": 24
+    },
+    {
+      "date": "2026-01-06",
+      "region": "czsk",
+      "revenue": 886.0,
+      "spend": 623.0,
+      "purchases": 8,
+      "unique_visitors": 536
+    },
+    {
+      "date": "2026-01-06",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 43
+    },
+    {
+      "date": "2026-01-06",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 63.0,
+      "purchases": 0,
+      "unique_visitors": 82
+    },
+    {
+      "date": "2026-01-07",
+      "region": "czsk",
+      "revenue": 1965.0,
+      "spend": 667.0,
+      "purchases": 21,
+      "unique_visitors": 563
+    },
+    {
+      "date": "2026-01-07",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 18
+    },
+    {
+      "date": "2026-01-07",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 137.0,
+      "purchases": 1,
+      "unique_visitors": 53
+    },
+    {
+      "date": "2026-01-08",
+      "region": "czsk",
+      "revenue": 2614.0,
+      "spend": 1024.0,
+      "purchases": 18,
+      "unique_visitors": 867
+    },
+    {
+      "date": "2026-01-08",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 44
+    },
+    {
+      "date": "2026-01-08",
+      "region": "us",
+      "revenue": 113.0,
+      "spend": 152.0,
+      "purchases": 1,
+      "unique_visitors": 101
+    },
+    {
+      "date": "2026-01-09",
+      "region": "czsk",
+      "revenue": 1565.0,
+      "spend": 614.0,
+      "purchases": 11,
+      "unique_visitors": 462
+    },
+    {
+      "date": "2026-01-09",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 20
+    },
+    {
+      "date": "2026-01-09",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 172.0,
+      "purchases": 0,
+      "unique_visitors": 51
+    },
+    {
+      "date": "2026-01-10",
+      "region": "czsk",
+      "revenue": 2127.0,
+      "spend": 548.0,
+      "purchases": 15,
+      "unique_visitors": 427
+    },
+    {
+      "date": "2026-01-10",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 14
+    },
+    {
+      "date": "2026-01-10",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 106.0,
+      "purchases": 0,
+      "unique_visitors": 23
+    },
+    {
+      "date": "2026-01-11",
+      "region": "czsk",
+      "revenue": 1549.0,
+      "spend": 821.0,
+      "purchases": 12,
+      "unique_visitors": 628
+    },
+    {
+      "date": "2026-01-11",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 37
+    },
+    {
+      "date": "2026-01-11",
+      "region": "us",
+      "revenue": 284.0,
+      "spend": 334.0,
+      "purchases": 4,
+      "unique_visitors": 103
+    },
+    {
+      "date": "2026-01-12",
+      "region": "czsk",
+      "revenue": 5260.0,
+      "spend": 1923.0,
+      "purchases": 35,
+      "unique_visitors": 1456
+    },
+    {
+      "date": "2026-01-12",
+      "region": "row",
+      "revenue": 156.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 30
+    },
+    {
+      "date": "2026-01-12",
+      "region": "us",
+      "revenue": 273.0,
+      "spend": 596.0,
+      "purchases": 2,
+      "unique_visitors": 100
+    },
+    {
+      "date": "2026-01-13",
+      "region": "czsk",
+      "revenue": 7699.0,
+      "spend": 2796.0,
+      "purchases": 63,
+      "unique_visitors": 2056
+    },
+    {
+      "date": "2026-01-13",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 72
+    },
+    {
+      "date": "2026-01-13",
+      "region": "us",
+      "revenue": 184.0,
+      "spend": 299.0,
+      "purchases": 2,
+      "unique_visitors": 92
+    },
+    {
+      "date": "2026-01-14",
+      "region": "czsk",
+      "revenue": 13633.0,
+      "spend": 3071.0,
+      "purchases": 109,
+      "unique_visitors": 2137
+    },
+    {
+      "date": "2026-01-14",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 39
+    },
+    {
+      "date": "2026-01-14",
+      "region": "us",
+      "revenue": 213.0,
+      "spend": 306.0,
+      "purchases": 3,
+      "unique_visitors": 78
+    },
+    {
+      "date": "2026-01-15",
+      "region": "czsk",
+      "revenue": 4141.0,
+      "spend": 369.0,
+      "purchases": 35,
+      "unique_visitors": 679
+    },
+    {
+      "date": "2026-01-15",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 17
+    },
+    {
+      "date": "2026-01-15",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 481.0,
+      "purchases": 1,
+      "unique_visitors": 126
+    },
+    {
+      "date": "2026-01-16",
+      "region": "czsk",
+      "revenue": 3040.0,
+      "spend": 355.0,
+      "purchases": 25,
+      "unique_visitors": 556
+    },
+    {
+      "date": "2026-01-16",
+      "region": "row",
+      "revenue": 264.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 30
+    },
+    {
+      "date": "2026-01-16",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 267.0,
+      "purchases": 1,
+      "unique_visitors": 66
+    },
+    {
+      "date": "2026-01-17",
+      "region": "czsk",
+      "revenue": 4262.0,
+      "spend": 348.0,
+      "purchases": 34,
+      "unique_visitors": 535
+    },
+    {
+      "date": "2026-01-17",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 52
+    },
+    {
+      "date": "2026-01-17",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 248.0,
+      "purchases": 0,
+      "unique_visitors": 131
+    },
+    {
+      "date": "2026-01-18",
+      "region": "czsk",
+      "revenue": 4798.0,
+      "spend": 352.0,
+      "purchases": 43,
+      "unique_visitors": 541
+    },
+    {
+      "date": "2026-01-18",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 22
+    },
+    {
+      "date": "2026-01-18",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 398.0,
+      "purchases": 0,
+      "unique_visitors": 138
+    },
+    {
+      "date": "2026-01-19",
+      "region": "czsk",
+      "revenue": 5007.0,
+      "spend": 377.0,
+      "purchases": 45,
+      "unique_visitors": 641
+    },
+    {
+      "date": "2026-01-19",
+      "region": "row",
+      "revenue": 71.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 36
+    },
+    {
+      "date": "2026-01-19",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 278.0,
+      "purchases": 0,
+      "unique_visitors": 106
+    },
+    {
+      "date": "2026-01-20",
+      "region": "czsk",
+      "revenue": 965.0,
+      "spend": 424.0,
+      "purchases": 9,
+      "unique_visitors": 493
+    },
+    {
+      "date": "2026-01-20",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 159
+    },
+    {
+      "date": "2026-01-20",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 274.0,
+      "purchases": 0,
+      "unique_visitors": 352
+    },
+    {
+      "date": "2026-01-21",
+      "region": "czsk",
+      "revenue": 598.0,
+      "spend": 433.0,
+      "purchases": 7,
+      "unique_visitors": 488
+    },
+    {
+      "date": "2026-01-21",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 9
+    },
+    {
+      "date": "2026-01-21",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 295.0,
+      "purchases": 1,
+      "unique_visitors": 106
+    },
+    {
+      "date": "2026-01-22",
+      "region": "czsk",
+      "revenue": 867.0,
+      "spend": 381.0,
+      "purchases": 6,
+      "unique_visitors": 351
+    },
+    {
+      "date": "2026-01-22",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 13
+    },
+    {
+      "date": "2026-01-22",
+      "region": "us",
+      "revenue": 184.0,
+      "spend": 320.0,
+      "purchases": 2,
+      "unique_visitors": 116
+    },
+    {
+      "date": "2026-01-23",
+      "region": "czsk",
+      "revenue": 512.0,
+      "spend": 420.0,
+      "purchases": 5,
+      "unique_visitors": 460
+    },
+    {
+      "date": "2026-01-23",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 7
+    },
+    {
+      "date": "2026-01-23",
+      "region": "us",
+      "revenue": 113.0,
+      "spend": 264.0,
+      "purchases": 1,
+      "unique_visitors": 82
+    },
+    {
+      "date": "2026-01-24",
+      "region": "czsk",
+      "revenue": 1216.0,
+      "spend": 434.0,
+      "purchases": 10,
+      "unique_visitors": 460
+    },
+    {
+      "date": "2026-01-24",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 7
+    },
+    {
+      "date": "2026-01-24",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 211.0,
+      "purchases": 1,
+      "unique_visitors": 71
+    },
+    {
+      "date": "2026-01-25",
+      "region": "czsk",
+      "revenue": 1232.0,
+      "spend": 434.0,
+      "purchases": 10,
+      "unique_visitors": 476
+    },
+    {
+      "date": "2026-01-25",
+      "region": "row",
+      "revenue": 75.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 13
+    },
+    {
+      "date": "2026-01-25",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 326.0,
+      "purchases": 0,
+      "unique_visitors": 135
+    },
+    {
+      "date": "2026-01-26",
+      "region": "czsk",
+      "revenue": 1642.0,
+      "spend": 452.0,
+      "purchases": 10,
+      "unique_visitors": 375
+    },
+    {
+      "date": "2026-01-26",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 14
+    },
+    {
+      "date": "2026-01-26",
+      "region": "us",
+      "revenue": 113.0,
+      "spend": 254.0,
+      "purchases": 1,
+      "unique_visitors": 81
+    },
+    {
+      "date": "2026-01-27",
+      "region": "czsk",
+      "revenue": 297.0,
+      "spend": 470.0,
+      "purchases": 3,
+      "unique_visitors": 442
+    },
+    {
+      "date": "2026-01-27",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 45
+    },
+    {
+      "date": "2026-01-27",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 290.0,
+      "purchases": 1,
+      "unique_visitors": 176
+    },
+    {
+      "date": "2026-01-28",
+      "region": "czsk",
+      "revenue": 984.0,
+      "spend": 414.0,
+      "purchases": 9,
+      "unique_visitors": 413
+    },
+    {
+      "date": "2026-01-28",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 20
+    },
+    {
+      "date": "2026-01-28",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 301.0,
+      "purchases": 1,
+      "unique_visitors": 84
+    },
+    {
+      "date": "2026-01-29",
+      "region": "czsk",
+      "revenue": 391.0,
+      "spend": 393.0,
+      "purchases": 3,
+      "unique_visitors": 355
+    },
+    {
+      "date": "2026-01-29",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 35
+    },
+    {
+      "date": "2026-01-29",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 354.0,
+      "purchases": 1,
+      "unique_visitors": 100
+    },
+    {
+      "date": "2026-01-30",
+      "region": "czsk",
+      "revenue": 329.0,
+      "spend": 426.0,
+      "purchases": 4,
+      "unique_visitors": 792
+    },
+    {
+      "date": "2026-01-30",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 9
+    },
+    {
+      "date": "2026-01-30",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 368.0,
+      "purchases": 0,
+      "unique_visitors": 80
+    },
+    {
+      "date": "2026-01-31",
+      "region": "czsk",
+      "revenue": 619.0,
+      "spend": 361.0,
+      "purchases": 5,
+      "unique_visitors": 482
+    },
+    {
+      "date": "2026-01-31",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 14
+    },
+    {
+      "date": "2026-01-31",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 207.0,
+      "purchases": 1,
+      "unique_visitors": 48
+    },
+    {
+      "date": "2026-02-01",
+      "region": "czsk",
+      "revenue": 299.0,
+      "spend": 516.0,
+      "purchases": 3,
+      "unique_visitors": 678
+    },
+    {
+      "date": "2026-02-01",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 12
+    },
+    {
+      "date": "2026-02-01",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 279.0,
+      "purchases": 0,
+      "unique_visitors": 67
+    },
+    {
+      "date": "2026-02-02",
+      "region": "czsk",
+      "revenue": 1255.0,
+      "spend": 496.0,
+      "purchases": 9,
+      "unique_visitors": 620
+    },
+    {
+      "date": "2026-02-02",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 33
+    },
+    {
+      "date": "2026-02-02",
+      "region": "us",
+      "revenue": 113.0,
+      "spend": 228.0,
+      "purchases": 1,
+      "unique_visitors": 101
+    },
+    {
+      "date": "2026-02-03",
+      "region": "czsk",
+      "revenue": 456.0,
+      "spend": 573.0,
+      "purchases": 4,
+      "unique_visitors": 844
+    },
+    {
+      "date": "2026-02-03",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 14
+    },
+    {
+      "date": "2026-02-03",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 231.0,
+      "purchases": 0,
+      "unique_visitors": 71
+    },
+    {
+      "date": "2026-02-04",
+      "region": "czsk",
+      "revenue": 639.0,
+      "spend": 580.0,
+      "purchases": 4,
+      "unique_visitors": 718
+    },
+    {
+      "date": "2026-02-04",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 24
+    },
+    {
+      "date": "2026-02-04",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 233.0,
+      "purchases": 0,
+      "unique_visitors": 59
+    },
+    {
+      "date": "2026-02-05",
+      "region": "czsk",
+      "revenue": 525.0,
+      "spend": 562.0,
+      "purchases": 5,
+      "unique_visitors": 873
+    },
+    {
+      "date": "2026-02-05",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 15
+    },
+    {
+      "date": "2026-02-05",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 214.0,
+      "purchases": 0,
+      "unique_visitors": 83
+    },
+    {
+      "date": "2026-02-06",
+      "region": "czsk",
+      "revenue": 24102.0,
+      "spend": 534.0,
+      "purchases": 149,
+      "unique_visitors": 1408
+    },
+    {
+      "date": "2026-02-06",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 92
+    },
+    {
+      "date": "2026-02-06",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 231.0,
+      "purchases": 0,
+      "unique_visitors": 64
+    },
+    {
+      "date": "2026-02-07",
+      "region": "czsk",
+      "revenue": 3636.0,
+      "spend": 792.0,
+      "purchases": 23,
+      "unique_visitors": 1028
+    },
+    {
+      "date": "2026-02-07",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 142
+    },
+    {
+      "date": "2026-02-07",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 283.0,
+      "purchases": 0,
+      "unique_visitors": 286
+    },
+    {
+      "date": "2026-02-08",
+      "region": "czsk",
+      "revenue": 2393.0,
+      "spend": 1047.0,
+      "purchases": 19,
+      "unique_visitors": 892
+    },
+    {
+      "date": "2026-02-08",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 20
+    },
+    {
+      "date": "2026-02-08",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 407.0,
+      "purchases": 1,
+      "unique_visitors": 95
+    },
+    {
+      "date": "2026-02-09",
+      "region": "czsk",
+      "revenue": 3057.0,
+      "spend": 1162.0,
+      "purchases": 22,
+      "unique_visitors": 974
+    },
+    {
+      "date": "2026-02-09",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 23
+    },
+    {
+      "date": "2026-02-09",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 376.0,
+      "purchases": 1,
+      "unique_visitors": 94
+    },
+    {
+      "date": "2026-02-10",
+      "region": "czsk",
+      "revenue": 2547.0,
+      "spend": 1221.0,
+      "purchases": 12,
+      "unique_visitors": 998
+    },
+    {
+      "date": "2026-02-10",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 15
+    },
+    {
+      "date": "2026-02-10",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 404.0,
+      "purchases": 0,
+      "unique_visitors": 96
+    },
+    {
+      "date": "2026-02-11",
+      "region": "czsk",
+      "revenue": 2914.0,
+      "spend": 1173.0,
+      "purchases": 22,
+      "unique_visitors": 1139
+    },
+    {
+      "date": "2026-02-11",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 34
+    },
+    {
+      "date": "2026-02-11",
+      "region": "us",
+      "revenue": 284.0,
+      "spend": 398.0,
+      "purchases": 4,
+      "unique_visitors": 118
+    },
+    {
+      "date": "2026-02-12",
+      "region": "czsk",
+      "revenue": 3963.0,
+      "spend": 1826.0,
+      "purchases": 24,
+      "unique_visitors": 1256
+    },
+    {
+      "date": "2026-02-12",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 167
+    },
+    {
+      "date": "2026-02-12",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 387.0,
+      "purchases": 1,
+      "unique_visitors": 347
+    },
+    {
+      "date": "2026-02-13",
+      "region": "czsk",
+      "revenue": 5611.0,
+      "spend": 2348.0,
+      "purchases": 46,
+      "unique_visitors": 1647
+    },
+    {
+      "date": "2026-02-13",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 80
+    },
+    {
+      "date": "2026-02-13",
+      "region": "us",
+      "revenue": 254.0,
+      "spend": 393.0,
+      "purchases": 2,
+      "unique_visitors": 210
+    },
+    {
+      "date": "2026-02-14",
+      "region": "czsk",
+      "revenue": 6169.0,
+      "spend": 2308.0,
+      "purchases": 43,
+      "unique_visitors": 1713
+    },
+    {
+      "date": "2026-02-14",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 36
+    },
+    {
+      "date": "2026-02-14",
+      "region": "us",
+      "revenue": 213.0,
+      "spend": 319.0,
+      "purchases": 3,
+      "unique_visitors": 93
+    },
+    {
+      "date": "2026-02-15",
+      "region": "czsk",
+      "revenue": 1233.0,
+      "spend": 821.0,
+      "purchases": 13,
+      "unique_visitors": 709
+    },
+    {
+      "date": "2026-02-15",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 16
+    },
+    {
+      "date": "2026-02-15",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 271.0,
+      "purchases": 0,
+      "unique_visitors": 103
+    },
+    {
+      "date": "2026-02-16",
+      "region": "czsk",
+      "revenue": 822.0,
+      "spend": 878.0,
+      "purchases": 8,
+      "unique_visitors": 702
+    },
+    {
+      "date": "2026-02-16",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 21
+    },
+    {
+      "date": "2026-02-16",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 299.0,
+      "purchases": 1,
+      "unique_visitors": 91
+    },
+    {
+      "date": "2026-02-17",
+      "region": "czsk",
+      "revenue": 1554.0,
+      "spend": 774.0,
+      "purchases": 12,
+      "unique_visitors": 665
+    },
+    {
+      "date": "2026-02-17",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 39
+    },
+    {
+      "date": "2026-02-17",
+      "region": "us",
+      "revenue": 173.0,
+      "spend": 254.0,
+      "purchases": 2,
+      "unique_visitors": 82
+    },
+    {
+      "date": "2026-02-18",
+      "region": "czsk",
+      "revenue": 1672.0,
+      "spend": 793.0,
+      "purchases": 14,
+      "unique_visitors": 711
+    },
+    {
+      "date": "2026-02-18",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 16
+    },
+    {
+      "date": "2026-02-18",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 251.0,
+      "purchases": 1,
+      "unique_visitors": 62
+    },
+    {
+      "date": "2026-02-19",
+      "region": "czsk",
+      "revenue": 1938.0,
+      "spend": 866.0,
+      "purchases": 17,
+      "unique_visitors": 972
+    },
+    {
+      "date": "2026-02-19",
+      "region": "row",
+      "revenue": 71.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 23
+    },
+    {
+      "date": "2026-02-19",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 287.0,
+      "purchases": 1,
+      "unique_visitors": 89
+    },
+    {
+      "date": "2026-02-20",
+      "region": "czsk",
+      "revenue": 2330.0,
+      "spend": 866.0,
+      "purchases": 22,
+      "unique_visitors": 848
+    },
+    {
+      "date": "2026-02-20",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 34
+    },
+    {
+      "date": "2026-02-20",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 232.0,
+      "purchases": 1,
+      "unique_visitors": 92
+    },
+    {
+      "date": "2026-02-21",
+      "region": "czsk",
+      "revenue": 2082.0,
+      "spend": 835.0,
+      "purchases": 18,
+      "unique_visitors": 970
+    },
+    {
+      "date": "2026-02-21",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 24
+    },
+    {
+      "date": "2026-02-21",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 168.0,
+      "purchases": 1,
+      "unique_visitors": 59
+    },
+    {
+      "date": "2026-02-22",
+      "region": "czsk",
+      "revenue": 7412.0,
+      "spend": 1016.0,
+      "purchases": 62,
+      "unique_visitors": 1296
+    },
+    {
+      "date": "2026-02-22",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 61
+    },
+    {
+      "date": "2026-02-22",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 303.0,
+      "purchases": 1,
+      "unique_visitors": 97
+    },
+    {
+      "date": "2026-02-23",
+      "region": "czsk",
+      "revenue": 6643.0,
+      "spend": 1099.0,
+      "purchases": 54,
+      "unique_visitors": 1119
+    },
+    {
+      "date": "2026-02-23",
+      "region": "row",
+      "revenue": 159.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 81
+    },
+    {
+      "date": "2026-02-23",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 254.0,
+      "purchases": 0,
+      "unique_visitors": 156
+    },
+    {
+      "date": "2026-02-24",
+      "region": "czsk",
+      "revenue": 1118.0,
+      "spend": 1254.0,
+      "purchases": 11,
+      "unique_visitors": 1072
+    },
+    {
+      "date": "2026-02-24",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 27
+    },
+    {
+      "date": "2026-02-24",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 270.0,
+      "purchases": 1,
+      "unique_visitors": 120
+    },
+    {
+      "date": "2026-02-25",
+      "region": "czsk",
+      "revenue": 1871.0,
+      "spend": 1256.0,
+      "purchases": 14,
+      "unique_visitors": 1052
+    },
+    {
+      "date": "2026-02-25",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 16
+    },
+    {
+      "date": "2026-02-25",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 267.0,
+      "purchases": 0,
+      "unique_visitors": 96
+    },
+    {
+      "date": "2026-02-26",
+      "region": "czsk",
+      "revenue": 728.0,
+      "spend": 1171.0,
+      "purchases": 7,
+      "unique_visitors": 950
+    },
+    {
+      "date": "2026-02-26",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 20
+    },
+    {
+      "date": "2026-02-26",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 244.0,
+      "purchases": 1,
+      "unique_visitors": 132
+    },
+    {
+      "date": "2026-02-27",
+      "region": "czsk",
+      "revenue": 981.0,
+      "spend": 1038.0,
+      "purchases": 9,
+      "unique_visitors": 833
+    },
+    {
+      "date": "2026-02-27",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 11
+    },
+    {
+      "date": "2026-02-27",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 246.0,
+      "purchases": 1,
+      "unique_visitors": 102
+    },
+    {
+      "date": "2026-02-28",
+      "region": "czsk",
+      "revenue": 1336.0,
+      "spend": 821.0,
+      "purchases": 8,
+      "unique_visitors": 765
+    },
+    {
+      "date": "2026-02-28",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 6
+    },
+    {
+      "date": "2026-02-28",
+      "region": "us",
+      "revenue": 300.0,
+      "spend": 186.0,
+      "purchases": 4,
+      "unique_visitors": 105
+    },
+    {
+      "date": "2026-03-01",
+      "region": "czsk",
+      "revenue": 1620.0,
+      "spend": 992.0,
+      "purchases": 13,
+      "unique_visitors": 763
+    },
+    {
+      "date": "2026-03-01",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 15
+    },
+    {
+      "date": "2026-03-01",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 332.0,
+      "purchases": 0,
+      "unique_visitors": 137
+    },
+    {
+      "date": "2026-03-02",
+      "region": "czsk",
+      "revenue": 802.0,
+      "spend": 814.0,
+      "purchases": 9,
+      "unique_visitors": 607
+    },
+    {
+      "date": "2026-03-02",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 20
+    },
+    {
+      "date": "2026-03-02",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 309.0,
+      "purchases": 1,
+      "unique_visitors": 124
+    },
+    {
+      "date": "2026-03-03",
+      "region": "czsk",
+      "revenue": 2676.0,
+      "spend": 839.0,
+      "purchases": 20,
+      "unique_visitors": 666
+    },
+    {
+      "date": "2026-03-03",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 24
+    },
+    {
+      "date": "2026-03-03",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 230.0,
+      "purchases": 0,
+      "unique_visitors": 106
+    },
+    {
+      "date": "2026-03-04",
+      "region": "czsk",
+      "revenue": 2412.0,
+      "spend": 841.0,
+      "purchases": 11,
+      "unique_visitors": 606
+    },
+    {
+      "date": "2026-03-04",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 22
+    },
+    {
+      "date": "2026-03-04",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 250.0,
+      "purchases": 0,
+      "unique_visitors": 115
+    },
+    {
+      "date": "2026-03-05",
+      "region": "czsk",
+      "revenue": 1027.0,
+      "spend": 809.0,
+      "purchases": 7,
+      "unique_visitors": 629
+    },
+    {
+      "date": "2026-03-05",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 24
+    },
+    {
+      "date": "2026-03-05",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 246.0,
+      "purchases": 0,
+      "unique_visitors": 82
+    },
+    {
+      "date": "2026-03-06",
+      "region": "czsk",
+      "revenue": 707.0,
+      "spend": 750.0,
+      "purchases": 5,
+      "unique_visitors": 567
+    },
+    {
+      "date": "2026-03-06",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 35
+    },
+    {
+      "date": "2026-03-06",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 223.0,
+      "purchases": 0,
+      "unique_visitors": 70
+    },
+    {
+      "date": "2026-03-07",
+      "region": "czsk",
+      "revenue": 439.0,
+      "spend": 784.0,
+      "purchases": 5,
+      "unique_visitors": 559
+    },
+    {
+      "date": "2026-03-07",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 27
+    },
+    {
+      "date": "2026-03-07",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 174.0,
+      "purchases": 1,
+      "unique_visitors": 82
+    },
+    {
+      "date": "2026-03-08",
+      "region": "czsk",
+      "revenue": 1620.0,
+      "spend": 919.0,
+      "purchases": 13,
+      "unique_visitors": 647
+    },
+    {
+      "date": "2026-03-08",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 6
+    },
+    {
+      "date": "2026-03-08",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 337.0,
+      "purchases": 1,
+      "unique_visitors": 86
+    },
+    {
+      "date": "2026-03-09",
+      "region": "czsk",
+      "revenue": 1643.0,
+      "spend": 820.0,
+      "purchases": 12,
+      "unique_visitors": 489
+    },
+    {
+      "date": "2026-03-09",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 15
+    },
+    {
+      "date": "2026-03-09",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 288.0,
+      "purchases": 1,
+      "unique_visitors": 83
+    },
+    {
+      "date": "2026-03-10",
+      "region": "czsk",
+      "revenue": 1917.0,
+      "spend": 850.0,
+      "purchases": 16,
+      "unique_visitors": 536
+    },
+    {
+      "date": "2026-03-10",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 44
+    },
+    {
+      "date": "2026-03-10",
+      "region": "us",
+      "revenue": 85.0,
+      "spend": 268.0,
+      "purchases": 1,
+      "unique_visitors": 174
+    },
+    {
+      "date": "2026-03-11",
+      "region": "czsk",
+      "revenue": 2152.0,
+      "spend": 840.0,
+      "purchases": 17,
+      "unique_visitors": 485
+    },
+    {
+      "date": "2026-03-11",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 17
+    },
+    {
+      "date": "2026-03-11",
+      "region": "us",
+      "revenue": 449.0,
+      "spend": 274.0,
+      "purchases": 6,
+      "unique_visitors": 74
+    },
+    {
+      "date": "2026-03-12",
+      "region": "czsk",
+      "revenue": 6709.0,
+      "spend": 891.0,
+      "purchases": 54,
+      "unique_visitors": 844
+    },
+    {
+      "date": "2026-03-12",
+      "region": "row",
+      "revenue": 156.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 27
+    },
+    {
+      "date": "2026-03-12",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 249.0,
+      "purchases": 0,
+      "unique_visitors": 83
+    },
+    {
+      "date": "2026-03-13",
+      "region": "czsk",
+      "revenue": 4749.0,
+      "spend": 1100.0,
+      "purchases": 44,
+      "unique_visitors": 823
+    },
+    {
+      "date": "2026-03-13",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 33
+    },
+    {
+      "date": "2026-03-13",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 208.0,
+      "purchases": 1,
+      "unique_visitors": 62
+    },
+    {
+      "date": "2026-03-14",
+      "region": "czsk",
+      "revenue": 8298.0,
+      "spend": 899.0,
+      "purchases": 68,
+      "unique_visitors": 1061
+    },
+    {
+      "date": "2026-03-14",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 37
+    },
+    {
+      "date": "2026-03-14",
+      "region": "us",
+      "revenue": 142.0,
+      "spend": 168.0,
+      "purchases": 2,
+      "unique_visitors": 36
+    },
+    {
+      "date": "2026-03-15",
+      "region": "czsk",
+      "revenue": 10188.0,
+      "spend": 1255.0,
+      "purchases": 85,
+      "unique_visitors": 1237
+    },
+    {
+      "date": "2026-03-15",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 24
+    },
+    {
+      "date": "2026-03-15",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 295.0,
+      "purchases": 0,
+      "unique_visitors": 80
+    },
+    {
+      "date": "2026-03-16",
+      "region": "czsk",
+      "revenue": 10644.0,
+      "spend": 1109.0,
+      "purchases": 94,
+      "unique_visitors": 1089
+    },
+    {
+      "date": "2026-03-16",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 27
+    },
+    {
+      "date": "2026-03-16",
+      "region": "us",
+      "revenue": 150.0,
+      "spend": 284.0,
+      "purchases": 2,
+      "unique_visitors": 151
+    },
+    {
+      "date": "2026-03-17",
+      "region": "czsk",
+      "revenue": 1534.0,
+      "spend": 967.0,
+      "purchases": 12,
+      "unique_visitors": 770
+    },
+    {
+      "date": "2026-03-17",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 9
+    },
+    {
+      "date": "2026-03-17",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 207.0,
+      "purchases": 1,
+      "unique_visitors": 87
+    },
+    {
+      "date": "2026-03-18",
+      "region": "czsk",
+      "revenue": 1751.0,
+      "spend": 974.0,
+      "purchases": 15,
+      "unique_visitors": 611
+    },
+    {
+      "date": "2026-03-18",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 13
+    },
+    {
+      "date": "2026-03-18",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 205.0,
+      "purchases": 1,
+      "unique_visitors": 93
+    },
+    {
+      "date": "2026-03-19",
+      "region": "czsk",
+      "revenue": 1359.0,
+      "spend": 938.0,
+      "purchases": 15,
+      "unique_visitors": 666
+    },
+    {
+      "date": "2026-03-19",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 17
+    },
+    {
+      "date": "2026-03-19",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 217.0,
+      "purchases": 0,
+      "unique_visitors": 121
+    },
+    {
+      "date": "2026-03-20",
+      "region": "czsk",
+      "revenue": 2114.0,
+      "spend": 867.0,
+      "purchases": 16,
+      "unique_visitors": 681
+    },
+    {
+      "date": "2026-03-20",
+      "region": "row",
+      "revenue": 156.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 11
+    },
+    {
+      "date": "2026-03-20",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 179.0,
+      "purchases": 1,
+      "unique_visitors": 103
+    },
+    {
+      "date": "2026-03-21",
+      "region": "czsk",
+      "revenue": 2157.0,
+      "spend": 913.0,
+      "purchases": 18,
+      "unique_visitors": 666
+    },
+    {
+      "date": "2026-03-21",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 21
+    },
+    {
+      "date": "2026-03-21",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 179.0,
+      "purchases": 1,
+      "unique_visitors": 100
+    },
+    {
+      "date": "2026-03-22",
+      "region": "czsk",
+      "revenue": 1221.0,
+      "spend": 990.0,
+      "purchases": 10,
+      "unique_visitors": 728
+    },
+    {
+      "date": "2026-03-22",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 4
+    },
+    {
+      "date": "2026-03-22",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 254.0,
+      "purchases": 1,
+      "unique_visitors": 110
+    },
+    {
+      "date": "2026-03-23",
+      "region": "czsk",
+      "revenue": 10004.0,
+      "spend": 1018.0,
+      "purchases": 78,
+      "unique_visitors": 930
+    },
+    {
+      "date": "2026-03-23",
+      "region": "row",
+      "revenue": 79.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 56
+    },
+    {
+      "date": "2026-03-23",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 218.0,
+      "purchases": 0,
+      "unique_visitors": 124
+    },
+    {
+      "date": "2026-03-24",
+      "region": "czsk",
+      "revenue": 8072.0,
+      "spend": 968.0,
+      "purchases": 65,
+      "unique_visitors": 1034
+    },
+    {
+      "date": "2026-03-24",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 158
+    },
+    {
+      "date": "2026-03-24",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 260.0,
+      "purchases": 1,
+      "unique_visitors": 425
+    },
+    {
+      "date": "2026-03-25",
+      "region": "czsk",
+      "revenue": 7873.0,
+      "spend": 1148.0,
+      "purchases": 58,
+      "unique_visitors": 972
+    },
+    {
+      "date": "2026-03-25",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 29
+    },
+    {
+      "date": "2026-03-25",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 284.0,
+      "purchases": 0,
+      "unique_visitors": 134
+    },
+    {
+      "date": "2026-03-26",
+      "region": "czsk",
+      "revenue": 6260.0,
+      "spend": 1368.0,
+      "purchases": 46,
+      "unique_visitors": 1088
+    },
+    {
+      "date": "2026-03-26",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 7
+    },
+    {
+      "date": "2026-03-26",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 269.0,
+      "purchases": 1,
+      "unique_visitors": 125
+    },
+    {
+      "date": "2026-03-27",
+      "region": "czsk",
+      "revenue": 4194.0,
+      "spend": 1427.0,
+      "purchases": 39,
+      "unique_visitors": 1131
+    },
+    {
+      "date": "2026-03-27",
+      "region": "row",
+      "revenue": 213.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 22
+    },
+    {
+      "date": "2026-03-27",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 236.0,
+      "purchases": 1,
+      "unique_visitors": 178
+    },
+    {
+      "date": "2026-03-28",
+      "region": "czsk",
+      "revenue": 4842.0,
+      "spend": 1582.0,
+      "purchases": 38,
+      "unique_visitors": 1354
+    },
+    {
+      "date": "2026-03-28",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 11
+    },
+    {
+      "date": "2026-03-28",
+      "region": "us",
+      "revenue": 150.0,
+      "spend": 178.0,
+      "purchases": 2,
+      "unique_visitors": 197
+    },
+    {
+      "date": "2026-03-29",
+      "region": "czsk",
+      "revenue": 8947.0,
+      "spend": 2097.0,
+      "purchases": 71,
+      "unique_visitors": 1614
+    },
+    {
+      "date": "2026-03-29",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 16
+    },
+    {
+      "date": "2026-03-29",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 302.0,
+      "purchases": 1,
+      "unique_visitors": 241
+    },
+    {
+      "date": "2026-03-30",
+      "region": "czsk",
+      "revenue": 18527.0,
+      "spend": 2885.0,
+      "purchases": 155,
+      "unique_visitors": 2291
+    },
+    {
+      "date": "2026-03-30",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 58
+    },
+    {
+      "date": "2026-03-30",
+      "region": "us",
+      "revenue": 94.0,
+      "spend": 277.0,
+      "purchases": 1,
+      "unique_visitors": 202
+    },
+    {
+      "date": "2026-03-31",
+      "region": "czsk",
+      "revenue": 1890.0,
+      "spend": 1574.0,
+      "purchases": 13,
+      "unique_visitors": 1232
+    },
+    {
+      "date": "2026-03-31",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 39
+    },
+    {
+      "date": "2026-03-31",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 266.0,
+      "purchases": 1,
+      "unique_visitors": 200
+    },
+    {
+      "date": "2026-04-01",
+      "region": "czsk",
+      "revenue": 1403.0,
+      "spend": 1186.0,
+      "purchases": 11,
+      "unique_visitors": 1071
+    },
+    {
+      "date": "2026-04-01",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 33
+    },
+    {
+      "date": "2026-04-01",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 229.0,
+      "purchases": 0,
+      "unique_visitors": 175
+    },
+    {
+      "date": "2026-04-02",
+      "region": "czsk",
+      "revenue": 975.0,
+      "spend": 1068.0,
+      "purchases": 9,
+      "unique_visitors": 881
+    },
+    {
+      "date": "2026-04-02",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 4
+    },
+    {
+      "date": "2026-04-02",
+      "region": "us",
+      "revenue": 267.0,
+      "spend": 139.0,
+      "purchases": 3,
+      "unique_visitors": 101
+    },
+    {
+      "date": "2026-04-03",
+      "region": "czsk",
+      "revenue": 799.0,
+      "spend": 962.0,
+      "purchases": 5,
+      "unique_visitors": 887
+    },
+    {
+      "date": "2026-04-03",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 11
+    },
+    {
+      "date": "2026-04-03",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 128.0,
+      "purchases": 0,
+      "unique_visitors": 91
+    },
+    {
+      "date": "2026-04-04",
+      "region": "czsk",
+      "revenue": 1384.0,
+      "spend": 1039.0,
+      "purchases": 7,
+      "unique_visitors": 878
+    },
+    {
+      "date": "2026-04-04",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 25
+    },
+    {
+      "date": "2026-04-04",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 70.0,
+      "purchases": 0,
+      "unique_visitors": 55
+    },
+    {
+      "date": "2026-04-05",
+      "region": "czsk",
+      "revenue": 548.0,
+      "spend": 916.0,
+      "purchases": 4,
+      "unique_visitors": 746
+    },
+    {
+      "date": "2026-04-05",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 23
+    },
+    {
+      "date": "2026-04-05",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 133.0,
+      "purchases": 0,
+      "unique_visitors": 69
+    },
+    {
+      "date": "2026-04-06",
+      "region": "czsk",
+      "revenue": 1190.0,
+      "spend": 1093.0,
+      "purchases": 8,
+      "unique_visitors": 1038
+    },
+    {
+      "date": "2026-04-06",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 14
+    },
+    {
+      "date": "2026-04-06",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 117.0,
+      "purchases": 0,
+      "unique_visitors": 69
+    },
+    {
+      "date": "2026-04-07",
+      "region": "czsk",
+      "revenue": 1762.0,
+      "spend": 1139.0,
+      "purchases": 14,
+      "unique_visitors": 1014
+    },
+    {
+      "date": "2026-04-07",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 14
+    },
+    {
+      "date": "2026-04-07",
+      "region": "us",
+      "revenue": 165.0,
+      "spend": 137.0,
+      "purchases": 2,
+      "unique_visitors": 76
+    },
+    {
+      "date": "2026-04-08",
+      "region": "czsk",
+      "revenue": 1421.0,
+      "spend": 1121.0,
+      "purchases": 11,
+      "unique_visitors": 939
+    },
+    {
+      "date": "2026-04-08",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 12
+    },
+    {
+      "date": "2026-04-08",
+      "region": "us",
+      "revenue": 158.0,
+      "spend": 158.0,
+      "purchases": 2,
+      "unique_visitors": 92
+    },
+    {
+      "date": "2026-04-09",
+      "region": "czsk",
+      "revenue": 3505.0,
+      "spend": 1499.0,
+      "purchases": 29,
+      "unique_visitors": 990
+    },
+    {
+      "date": "2026-04-09",
+      "region": "row",
+      "revenue": 79.0,
+      "spend": 14.0,
+      "purchases": 1,
+      "unique_visitors": 36
+    },
+    {
+      "date": "2026-04-09",
+      "region": "us",
+      "revenue": 150.0,
+      "spend": 157.0,
+      "purchases": 2,
+      "unique_visitors": 80
+    },
+    {
+      "date": "2026-04-10",
+      "region": "czsk",
+      "revenue": 4400.0,
+      "spend": 1764.0,
+      "purchases": 36,
+      "unique_visitors": 1398
+    },
+    {
+      "date": "2026-04-10",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 24
+    },
+    {
+      "date": "2026-04-10",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 136.0,
+      "purchases": 1,
+      "unique_visitors": 89
+    },
+    {
+      "date": "2026-04-11",
+      "region": "czsk",
+      "revenue": 3247.0,
+      "spend": 1929.0,
+      "purchases": 32,
+      "unique_visitors": 1319
+    },
+    {
+      "date": "2026-04-11",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 23
+    },
+    {
+      "date": "2026-04-11",
+      "region": "us",
+      "revenue": 213.0,
+      "spend": 136.0,
+      "purchases": 3,
+      "unique_visitors": 87
+    },
+    {
+      "date": "2026-04-12",
+      "region": "czsk",
+      "revenue": 4632.0,
+      "spend": 2749.0,
+      "purchases": 37,
+      "unique_visitors": 3010
+    },
+    {
+      "date": "2026-04-12",
+      "region": "row",
+      "revenue": 113.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 26
+    },
+    {
+      "date": "2026-04-12",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 171.0,
+      "purchases": 1,
+      "unique_visitors": 78
+    },
+    {
+      "date": "2026-04-13",
+      "region": "czsk",
+      "revenue": 5681.0,
+      "spend": 3046.0,
+      "purchases": 49,
+      "unique_visitors": 2896
+    },
+    {
+      "date": "2026-04-13",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 12
+    },
+    {
+      "date": "2026-04-13",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 171.0,
+      "purchases": 1,
+      "unique_visitors": 80
+    },
+    {
+      "date": "2026-04-14",
+      "region": "czsk",
+      "revenue": 3649.0,
+      "spend": 2430.0,
+      "purchases": 32,
+      "unique_visitors": 2033
+    },
+    {
+      "date": "2026-04-14",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 145
+    },
+    {
+      "date": "2026-04-14",
+      "region": "us",
+      "revenue": 142.0,
+      "spend": 160.0,
+      "purchases": 2,
+      "unique_visitors": 399
+    },
+    {
+      "date": "2026-04-15",
+      "region": "czsk",
+      "revenue": 4436.0,
+      "spend": 2351.0,
+      "purchases": 43,
+      "unique_visitors": 1943
+    },
+    {
+      "date": "2026-04-15",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 17
+    },
+    {
+      "date": "2026-04-15",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 141.0,
+      "purchases": 0,
+      "unique_visitors": 73
+    },
+    {
+      "date": "2026-04-16",
+      "region": "czsk",
+      "revenue": 1362.0,
+      "spend": 1810.0,
+      "purchases": 10,
+      "unique_visitors": 1994
+    },
+    {
+      "date": "2026-04-16",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 14
+    },
+    {
+      "date": "2026-04-16",
+      "region": "us",
+      "revenue": 252.0,
+      "spend": 168.0,
+      "purchases": 3,
+      "unique_visitors": 52
+    },
+    {
+      "date": "2026-04-17",
+      "region": "czsk",
+      "revenue": 2001.0,
+      "spend": 1602.0,
+      "purchases": 15,
+      "unique_visitors": 1625
+    },
+    {
+      "date": "2026-04-17",
+      "region": "row",
+      "revenue": 83.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 17
+    },
+    {
+      "date": "2026-04-17",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 134.0,
+      "purchases": 0,
+      "unique_visitors": 59
+    },
+    {
+      "date": "2026-04-18",
+      "region": "czsk",
+      "revenue": 705.0,
+      "spend": 1421.0,
+      "purchases": 6,
+      "unique_visitors": 1237
+    },
+    {
+      "date": "2026-04-18",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 13
+    },
+    {
+      "date": "2026-04-18",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 113.0,
+      "purchases": 1,
+      "unique_visitors": 41
+    },
+    {
+      "date": "2026-04-19",
+      "region": "czsk",
+      "revenue": 1740.0,
+      "spend": 1686.0,
+      "purchases": 13,
+      "unique_visitors": 1635
+    },
+    {
+      "date": "2026-04-19",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 10
+    },
+    {
+      "date": "2026-04-19",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 175.0,
+      "purchases": 0,
+      "unique_visitors": 67
+    },
+    {
+      "date": "2026-04-20",
+      "region": "czsk",
+      "revenue": 8607.0,
+      "spend": 1623.0,
+      "purchases": 66,
+      "unique_visitors": 1730
+    },
+    {
+      "date": "2026-04-20",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 27
+    },
+    {
+      "date": "2026-04-20",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 164.0,
+      "purchases": 1,
+      "unique_visitors": 65
+    },
+    {
+      "date": "2026-04-21",
+      "region": "czsk",
+      "revenue": 4781.0,
+      "spend": 1860.0,
+      "purchases": 42,
+      "unique_visitors": 1536
+    },
+    {
+      "date": "2026-04-21",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 31
+    },
+    {
+      "date": "2026-04-21",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 177.0,
+      "purchases": 1,
+      "unique_visitors": 145
+    },
+    {
+      "date": "2026-04-22",
+      "region": "czsk",
+      "revenue": 6684.0,
+      "spend": 1945.0,
+      "purchases": 49,
+      "unique_visitors": 1781
+    },
+    {
+      "date": "2026-04-22",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 27
+    },
+    {
+      "date": "2026-04-22",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 179.0,
+      "purchases": 1,
+      "unique_visitors": 101
+    },
+    {
+      "date": "2026-04-23",
+      "region": "czsk",
+      "revenue": 5386.0,
+      "spend": 1960.0,
+      "purchases": 38,
+      "unique_visitors": 1957
+    },
+    {
+      "date": "2026-04-23",
+      "region": "row",
+      "revenue": 79.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 37
+    },
+    {
+      "date": "2026-04-23",
+      "region": "us",
+      "revenue": 183.0,
+      "spend": 155.0,
+      "purchases": 1,
+      "unique_visitors": 103
+    },
+    {
+      "date": "2026-04-24",
+      "region": "czsk",
+      "revenue": 7473.0,
+      "spend": 2454.0,
+      "purchases": 49,
+      "unique_visitors": 2152
+    },
+    {
+      "date": "2026-04-24",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 79
+    },
+    {
+      "date": "2026-04-24",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 204.0,
+      "purchases": 1,
+      "unique_visitors": 306
+    },
+    {
+      "date": "2026-04-25",
+      "region": "czsk",
+      "revenue": 5255.0,
+      "spend": 2259.0,
+      "purchases": 46,
+      "unique_visitors": 2153
+    },
+    {
+      "date": "2026-04-25",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 29
+    },
+    {
+      "date": "2026-04-25",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 137.0,
+      "purchases": 0,
+      "unique_visitors": 62
+    },
+    {
+      "date": "2026-04-26",
+      "region": "czsk",
+      "revenue": 7278.0,
+      "spend": 3200.0,
+      "purchases": 60,
+      "unique_visitors": 3349
+    },
+    {
+      "date": "2026-04-26",
+      "region": "row",
+      "revenue": 160.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 26
+    },
+    {
+      "date": "2026-04-26",
+      "region": "us",
+      "revenue": 183.0,
+      "spend": 240.0,
+      "purchases": 1,
+      "unique_visitors": 125
+    },
+    {
+      "date": "2026-04-27",
+      "region": "czsk",
+      "revenue": 20900.0,
+      "spend": 5211.0,
+      "purchases": 166,
+      "unique_visitors": 4399
+    },
+    {
+      "date": "2026-04-27",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 13
+    },
+    {
+      "date": "2026-04-27",
+      "region": "us",
+      "revenue": 417.0,
+      "spend": 184.0,
+      "purchases": 5,
+      "unique_visitors": 108
+    },
+    {
+      "date": "2026-04-28",
+      "region": "czsk",
+      "revenue": 15104.0,
+      "spend": 5086.0,
+      "purchases": 119,
+      "unique_visitors": 3474
+    },
+    {
+      "date": "2026-04-28",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 107
+    },
+    {
+      "date": "2026-04-28",
+      "region": "us",
+      "revenue": 150.0,
+      "spend": 165.0,
+      "purchases": 2,
+      "unique_visitors": 116
+    },
+    {
+      "date": "2026-04-29",
+      "region": "czsk",
+      "revenue": 15891.0,
+      "spend": 5062.0,
+      "purchases": 130,
+      "unique_visitors": 3625
+    },
+    {
+      "date": "2026-04-29",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 105
+    },
+    {
+      "date": "2026-04-29",
+      "region": "us",
+      "revenue": 254.0,
+      "spend": 187.0,
+      "purchases": 2,
+      "unique_visitors": 106
+    },
+    {
+      "date": "2026-04-30",
+      "region": "czsk",
+      "revenue": 1827.0,
+      "spend": 2954.0,
+      "purchases": 18,
+      "unique_visitors": 2516
+    },
+    {
+      "date": "2026-04-30",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 3
+    },
+    {
+      "date": "2026-04-30",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 228.0,
+      "purchases": 1,
+      "unique_visitors": 89
+    },
+    {
+      "date": "2026-05-01",
+      "region": "czsk",
+      "revenue": 1462.0,
+      "spend": 1129.0,
+      "purchases": 12,
+      "unique_visitors": 1309
+    },
+    {
+      "date": "2026-05-01",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 25
+    },
+    {
+      "date": "2026-05-01",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 195.0,
+      "purchases": 1,
+      "unique_visitors": 106
+    },
+    {
+      "date": "2026-05-02",
+      "region": "czsk",
+      "revenue": 2666.0,
+      "spend": 1249.0,
+      "purchases": 22,
+      "unique_visitors": 1685
+    },
+    {
+      "date": "2026-05-02",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 20
+    },
+    {
+      "date": "2026-05-02",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 161.0,
+      "purchases": 0,
+      "unique_visitors": 107
+    },
+    {
+      "date": "2026-05-03",
+      "region": "czsk",
+      "revenue": 1479.0,
+      "spend": 1150.0,
+      "purchases": 12,
+      "unique_visitors": 1162
+    },
+    {
+      "date": "2026-05-03",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 26
+    },
+    {
+      "date": "2026-05-03",
+      "region": "us",
+      "revenue": 183.0,
+      "spend": 240.0,
+      "purchases": 1,
+      "unique_visitors": 95
+    },
+    {
+      "date": "2026-05-04",
+      "region": "czsk",
+      "revenue": 3377.0,
+      "spend": 1162.0,
+      "purchases": 21,
+      "unique_visitors": 1273
+    },
+    {
+      "date": "2026-05-04",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 9
+    },
+    {
+      "date": "2026-05-04",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 205.0,
+      "purchases": 1,
+      "unique_visitors": 62
+    },
+    {
+      "date": "2026-05-05",
+      "region": "czsk",
+      "revenue": 2258.0,
+      "spend": 1215.0,
+      "purchases": 19,
+      "unique_visitors": 1004
+    },
+    {
+      "date": "2026-05-05",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 20
+    },
+    {
+      "date": "2026-05-05",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 196.0,
+      "purchases": 1,
+      "unique_visitors": 96
+    },
+    {
+      "date": "2026-05-06",
+      "region": "czsk",
+      "revenue": 2690.0,
+      "spend": 1133.0,
+      "purchases": 20,
+      "unique_visitors": 1035
+    },
+    {
+      "date": "2026-05-06",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 32
+    },
+    {
+      "date": "2026-05-06",
+      "region": "us",
+      "revenue": 158.0,
+      "spend": 217.0,
+      "purchases": 2,
+      "unique_visitors": 138
+    },
+    {
+      "date": "2026-05-07",
+      "region": "czsk",
+      "revenue": 1575.0,
+      "spend": 1157.0,
+      "purchases": 13,
+      "unique_visitors": 1051
+    },
+    {
+      "date": "2026-05-07",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 17
+    },
+    {
+      "date": "2026-05-07",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 216.0,
+      "purchases": 1,
+      "unique_visitors": 74
+    },
+    {
+      "date": "2026-05-08",
+      "region": "czsk",
+      "revenue": 1959.0,
+      "spend": 1231.0,
+      "purchases": 16,
+      "unique_visitors": 1199
+    },
+    {
+      "date": "2026-05-08",
+      "region": "row",
+      "revenue": 84.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 21
+    },
+    {
+      "date": "2026-05-08",
+      "region": "us",
+      "revenue": 158.0,
+      "spend": 169.0,
+      "purchases": 2,
+      "unique_visitors": 71
+    },
+    {
+      "date": "2026-05-09",
+      "region": "czsk",
+      "revenue": 1703.0,
+      "spend": 1317.0,
+      "purchases": 15,
+      "unique_visitors": 1142
+    },
+    {
+      "date": "2026-05-09",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 14
+    },
+    {
+      "date": "2026-05-09",
+      "region": "us",
+      "revenue": 229.0,
+      "spend": 126.0,
+      "purchases": 3,
+      "unique_visitors": 66
+    },
+    {
+      "date": "2026-05-10",
+      "region": "czsk",
+      "revenue": 2885.0,
+      "spend": 1504.0,
+      "purchases": 20,
+      "unique_visitors": 1343
+    },
+    {
+      "date": "2026-05-10",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 40
+    },
+    {
+      "date": "2026-05-10",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 275.0,
+      "purchases": 0,
+      "unique_visitors": 83
+    },
+    {
+      "date": "2026-05-11",
+      "region": "czsk",
+      "revenue": 3733.0,
+      "spend": 1378.0,
+      "purchases": 29,
+      "unique_visitors": 1179
+    },
+    {
+      "date": "2026-05-11",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 16
+    },
+    {
+      "date": "2026-05-11",
+      "region": "us",
+      "revenue": 142.0,
+      "spend": 233.0,
+      "purchases": 2,
+      "unique_visitors": 79
+    },
+    {
+      "date": "2026-05-12",
+      "region": "czsk",
+      "revenue": 3526.0,
+      "spend": 1430.0,
+      "purchases": 23,
+      "unique_visitors": 1303
+    },
+    {
+      "date": "2026-05-12",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 25
+    },
+    {
+      "date": "2026-05-12",
+      "region": "us",
+      "revenue": 173.0,
+      "spend": 256.0,
+      "purchases": 2,
+      "unique_visitors": 89
+    },
+    {
+      "date": "2026-05-13",
+      "region": "czsk",
+      "revenue": 18091.0,
+      "spend": 1624.0,
+      "purchases": 131,
+      "unique_visitors": 1501
+    },
+    {
+      "date": "2026-05-13",
+      "region": "row",
+      "revenue": 160.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 68
+    },
+    {
+      "date": "2026-05-13",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 268.0,
+      "purchases": 1,
+      "unique_visitors": 119
+    },
+    {
+      "date": "2026-05-14",
+      "region": "czsk",
+      "revenue": 11844.0,
+      "spend": 2268.0,
+      "purchases": 84,
+      "unique_visitors": 1770
+    },
+    {
+      "date": "2026-05-14",
+      "region": "row",
+      "revenue": 79.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 4
+    },
+    {
+      "date": "2026-05-14",
+      "region": "us",
+      "revenue": 235.0,
+      "spend": 240.0,
+      "purchases": 3,
+      "unique_visitors": 165
+    },
+    {
+      "date": "2026-05-15",
+      "region": "czsk",
+      "revenue": 10017.0,
+      "spend": 2443.0,
+      "purchases": 70,
+      "unique_visitors": 1929
+    },
+    {
+      "date": "2026-05-15",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 53
+    },
+    {
+      "date": "2026-05-15",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 147.0,
+      "purchases": 0,
+      "unique_visitors": 104
+    },
+    {
+      "date": "2026-05-16",
+      "region": "czsk",
+      "revenue": 6889.0,
+      "spend": 2641.0,
+      "purchases": 45,
+      "unique_visitors": 2268
+    },
+    {
+      "date": "2026-05-16",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 22
+    },
+    {
+      "date": "2026-05-16",
+      "region": "us",
+      "revenue": 237.0,
+      "spend": 113.0,
+      "purchases": 3,
+      "unique_visitors": 88
+    },
+    {
+      "date": "2026-05-17",
+      "region": "czsk",
+      "revenue": 8948.0,
+      "spend": 2299.0,
+      "purchases": 63,
+      "unique_visitors": 1757
+    },
+    {
+      "date": "2026-05-17",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 19
+    },
+    {
+      "date": "2026-05-17",
+      "region": "us",
+      "revenue": 173.0,
+      "spend": 239.0,
+      "purchases": 2,
+      "unique_visitors": 125
+    },
+    {
+      "date": "2026-05-18",
+      "region": "czsk",
+      "revenue": 12245.0,
+      "spend": 2699.0,
+      "purchases": 73,
+      "unique_visitors": 2123
+    },
+    {
+      "date": "2026-05-18",
+      "region": "row",
+      "revenue": 161.0,
+      "spend": 0.0,
+      "purchases": 2,
+      "unique_visitors": 41
+    },
+    {
+      "date": "2026-05-18",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 243.0,
+      "purchases": 1,
+      "unique_visitors": 117
+    },
+    {
+      "date": "2026-05-19",
+      "region": "czsk",
+      "revenue": 11652.0,
+      "spend": 2680.0,
+      "purchases": 78,
+      "unique_visitors": 2336
+    },
+    {
+      "date": "2026-05-19",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 10
+    },
+    {
+      "date": "2026-05-19",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 289.0,
+      "purchases": 0,
+      "unique_visitors": 153
+    },
+    {
+      "date": "2026-05-20",
+      "region": "czsk",
+      "revenue": 25316.0,
+      "spend": 5115.0,
+      "purchases": 174,
+      "unique_visitors": 3427
+    },
+    {
+      "date": "2026-05-20",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 25
+    },
+    {
+      "date": "2026-05-20",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 291.0,
+      "purchases": 1,
+      "unique_visitors": 153
+    },
+    {
+      "date": "2026-05-21",
+      "region": "czsk",
+      "revenue": 9420.0,
+      "spend": 4134.0,
+      "purchases": 79,
+      "unique_visitors": 2621
+    },
+    {
+      "date": "2026-05-21",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 21
+    },
+    {
+      "date": "2026-05-21",
+      "region": "us",
+      "revenue": 188.0,
+      "spend": 311.0,
+      "purchases": 2,
+      "unique_visitors": 181
+    },
+    {
+      "date": "2026-05-22",
+      "region": "czsk",
+      "revenue": 7204.0,
+      "spend": 3409.0,
+      "purchases": 55,
+      "unique_visitors": 2003
+    },
+    {
+      "date": "2026-05-22",
+      "region": "row",
+      "revenue": 82.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 64
+    },
+    {
+      "date": "2026-05-22",
+      "region": "us",
+      "revenue": 71.0,
+      "spend": 266.0,
+      "purchases": 1,
+      "unique_visitors": 155
+    },
+    {
+      "date": "2026-05-23",
+      "region": "czsk",
+      "revenue": 5797.0,
+      "spend": 3473.0,
+      "purchases": 49,
+      "unique_visitors": 2114
+    },
+    {
+      "date": "2026-05-23",
+      "region": "row",
+      "revenue": 79.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 40
+    },
+    {
+      "date": "2026-05-23",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 213.0,
+      "purchases": 0,
+      "unique_visitors": 145
+    },
+    {
+      "date": "2026-05-24",
+      "region": "czsk",
+      "revenue": 5535.0,
+      "spend": 3404.0,
+      "purchases": 45,
+      "unique_visitors": 2236
+    },
+    {
+      "date": "2026-05-24",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 13
+    },
+    {
+      "date": "2026-05-24",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 331.0,
+      "purchases": 0,
+      "unique_visitors": 119
+    },
+    {
+      "date": "2026-05-25",
+      "region": "czsk",
+      "revenue": 5723.0,
+      "spend": 3604.0,
+      "purchases": 52,
+      "unique_visitors": 2352
+    },
+    {
+      "date": "2026-05-25",
+      "region": "row",
+      "revenue": 135.0,
+      "spend": 24.0,
+      "purchases": 1,
+      "unique_visitors": 9
+    },
+    {
+      "date": "2026-05-25",
+      "region": "us",
+      "revenue": 94.0,
+      "spend": 332.0,
+      "purchases": 1,
+      "unique_visitors": 115
+    },
+    {
+      "date": "2026-05-26",
+      "region": "czsk",
+      "revenue": 4113.0,
+      "spend": 2912.0,
+      "purchases": 29,
+      "unique_visitors": 2175
+    },
+    {
+      "date": "2026-05-26",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 77
+    },
+    {
+      "date": "2026-05-26",
+      "region": "us",
+      "revenue": 203.0,
+      "spend": 330.0,
+      "purchases": 1,
+      "unique_visitors": 137
+    },
+    {
+      "date": "2026-05-27",
+      "region": "czsk",
+      "revenue": 8810.0,
+      "spend": 3395.0,
+      "purchases": 64,
+      "unique_visitors": 2529
+    },
+    {
+      "date": "2026-05-27",
+      "region": "row",
+      "revenue": 159.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 64
+    },
+    {
+      "date": "2026-05-27",
+      "region": "us",
+      "revenue": 224.0,
+      "spend": 332.0,
+      "purchases": 3,
+      "unique_visitors": 174
+    },
+    {
+      "date": "2026-05-28",
+      "region": "czsk",
+      "revenue": 4069.0,
+      "spend": 2668.0,
+      "purchases": 27,
+      "unique_visitors": 1744
+    },
+    {
+      "date": "2026-05-28",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 6
+    },
+    {
+      "date": "2026-05-28",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 300.0,
+      "purchases": 1,
+      "unique_visitors": 140
+    },
+    {
+      "date": "2026-05-29",
+      "region": "czsk",
+      "revenue": 2774.0,
+      "spend": 2291.0,
+      "purchases": 21,
+      "unique_visitors": 1740
+    },
+    {
+      "date": "2026-05-29",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 12
+    },
+    {
+      "date": "2026-05-29",
+      "region": "us",
+      "revenue": 175.0,
+      "spend": 316.0,
+      "purchases": 2,
+      "unique_visitors": 142
+    },
+    {
+      "date": "2026-05-30",
+      "region": "czsk",
+      "revenue": 1845.0,
+      "spend": 1576.0,
+      "purchases": 17,
+      "unique_visitors": 1440
+    },
+    {
+      "date": "2026-05-30",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 3
+    },
+    {
+      "date": "2026-05-30",
+      "region": "us",
+      "revenue": 74.0,
+      "spend": 241.0,
+      "purchases": 1,
+      "unique_visitors": 102
+    },
+    {
+      "date": "2026-05-31",
+      "region": "czsk",
+      "revenue": 3322.0,
+      "spend": 1724.0,
+      "purchases": 24,
+      "unique_visitors": 1517
+    },
+    {
+      "date": "2026-05-31",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 10
+    },
+    {
+      "date": "2026-05-31",
+      "region": "us",
+      "revenue": 219.0,
+      "spend": 434.0,
+      "purchases": 3,
+      "unique_visitors": 220
+    },
+    {
+      "date": "2026-06-01",
+      "region": "czsk",
+      "revenue": 3582.0,
+      "spend": 1653.0,
+      "purchases": 27,
+      "unique_visitors": 1385
+    },
+    {
+      "date": "2026-06-01",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 31
+    },
+    {
+      "date": "2026-06-01",
+      "region": "us",
+      "revenue": 227.0,
+      "spend": 378.0,
+      "purchases": 3,
+      "unique_visitors": 154
+    },
+    {
+      "date": "2026-06-02",
+      "region": "czsk",
+      "revenue": 3129.0,
+      "spend": 1455.0,
+      "purchases": 25,
+      "unique_visitors": 1144
+    },
+    {
+      "date": "2026-06-02",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 42
+    },
+    {
+      "date": "2026-06-02",
+      "region": "us",
+      "revenue": 0.0,
+      "spend": 416.0,
+      "purchases": 0,
+      "unique_visitors": 121
+    },
+    {
+      "date": "2026-06-03",
+      "region": "czsk",
+      "revenue": 2453.0,
+      "spend": 1523.0,
+      "purchases": 18,
+      "unique_visitors": 1380
+    },
+    {
+      "date": "2026-06-03",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 25
+    },
+    {
+      "date": "2026-06-03",
+      "region": "us",
+      "revenue": 148.0,
+      "spend": 342.0,
+      "purchases": 2,
+      "unique_visitors": 119
+    },
+    {
+      "date": "2026-06-04",
+      "region": "czsk",
+      "revenue": 1714.0,
+      "spend": 1521.0,
+      "purchases": 13,
+      "unique_visitors": 1193
+    },
+    {
+      "date": "2026-06-04",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 5
+    },
+    {
+      "date": "2026-06-04",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 322.0,
+      "purchases": 1,
+      "unique_visitors": 129
+    },
+    {
+      "date": "2026-06-05",
+      "region": "czsk",
+      "revenue": 3061.0,
+      "spend": 1597.0,
+      "purchases": 24,
+      "unique_visitors": 1178
+    },
+    {
+      "date": "2026-06-05",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 11
+    },
+    {
+      "date": "2026-06-05",
+      "region": "us",
+      "revenue": 79.0,
+      "spend": 291.0,
+      "purchases": 1,
+      "unique_visitors": 153
+    },
+    {
+      "date": "2026-06-06",
+      "region": "czsk",
+      "revenue": 2483.0,
+      "spend": 1385.0,
+      "purchases": 17,
+      "unique_visitors": 1043
+    },
+    {
+      "date": "2026-06-06",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 23
+    },
+    {
+      "date": "2026-06-06",
+      "region": "us",
+      "revenue": 227.0,
+      "spend": 210.0,
+      "purchases": 3,
+      "unique_visitors": 94
+    },
+    {
+      "date": "2026-06-07",
+      "region": "czsk",
+      "revenue": 1736.0,
+      "spend": 1545.0,
+      "purchases": 17,
+      "unique_visitors": 1067
+    },
+    {
+      "date": "2026-06-07",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 17
+    },
+    {
+      "date": "2026-06-07",
+      "region": "us",
+      "revenue": 145.0,
+      "spend": 382.0,
+      "purchases": 2,
+      "unique_visitors": 107
+    },
+    {
+      "date": "2026-06-08",
+      "region": "czsk",
+      "revenue": 2342.0,
+      "spend": 1328.0,
+      "purchases": 17,
+      "unique_visitors": 988
+    },
+    {
+      "date": "2026-06-08",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 30
+    },
+    {
+      "date": "2026-06-08",
+      "region": "us",
+      "revenue": 173.0,
+      "spend": 342.0,
+      "purchases": 2,
+      "unique_visitors": 115
+    },
+    {
+      "date": "2026-06-09",
+      "region": "czsk",
+      "revenue": 2002.0,
+      "spend": 1103.0,
+      "purchases": 18,
+      "unique_visitors": 738
+    },
+    {
+      "date": "2026-06-09",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 42
+    },
+    {
+      "date": "2026-06-09",
+      "region": "us",
+      "revenue": 512.0,
+      "spend": 403.0,
+      "purchases": 1,
+      "unique_visitors": 109
+    },
+    {
+      "date": "2026-06-10",
+      "region": "czsk",
+      "revenue": 2408.0,
+      "spend": 1045.0,
+      "purchases": 20,
+      "unique_visitors": 650
+    },
+    {
+      "date": "2026-06-10",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 63
+    },
+    {
+      "date": "2026-06-10",
+      "region": "us",
+      "revenue": 159.0,
+      "spend": 308.0,
+      "purchases": 1,
+      "unique_visitors": 117
+    },
+    {
+      "date": "2026-06-11",
+      "region": "czsk",
+      "revenue": 2554.0,
+      "spend": 936.0,
+      "purchases": 16,
+      "unique_visitors": 782
+    },
+    {
+      "date": "2026-06-11",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 53
+    },
+    {
+      "date": "2026-06-11",
+      "region": "us",
+      "revenue": 301.0,
+      "spend": 329.0,
+      "purchases": 3,
+      "unique_visitors": 113
+    },
+    {
+      "date": "2026-06-12",
+      "region": "czsk",
+      "revenue": 1994.0,
+      "spend": 1024.0,
+      "purchases": 13,
+      "unique_visitors": 777
+    },
+    {
+      "date": "2026-06-12",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 30
+    },
+    {
+      "date": "2026-06-12",
+      "region": "us",
+      "revenue": 307.0,
+      "spend": 352.0,
+      "purchases": 3,
+      "unique_visitors": 87
+    },
+    {
+      "date": "2026-06-13",
+      "region": "czsk",
+      "revenue": 2880.0,
+      "spend": 1143.0,
+      "purchases": 20,
+      "unique_visitors": 766
+    },
+    {
+      "date": "2026-06-13",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 17
+    },
+    {
+      "date": "2026-06-13",
+      "region": "us",
+      "revenue": 228.0,
+      "spend": 297.0,
+      "purchases": 2,
+      "unique_visitors": 80
+    },
+    {
+      "date": "2026-06-14",
+      "region": "czsk",
+      "revenue": 1974.0,
+      "spend": 228.0,
+      "purchases": 15,
+      "unique_visitors": 704
+    },
+    {
+      "date": "2026-06-14",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 22
+    },
+    {
+      "date": "2026-06-14",
+      "region": "us",
+      "revenue": 376.0,
+      "spend": 0.0,
+      "purchases": 4,
+      "unique_visitors": 67
+    },
+    {
+      "date": "2026-06-15",
+      "region": "czsk",
+      "revenue": 11367.0,
+      "spend": 1436.0,
+      "purchases": 61,
+      "unique_visitors": 1555
+    },
+    {
+      "date": "2026-06-15",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 103
+    },
+    {
+      "date": "2026-06-15",
+      "region": "us",
+      "revenue": 69.0,
+      "spend": 483.0,
+      "purchases": 1,
+      "unique_visitors": 126
+    },
+    {
+      "date": "2026-06-16",
+      "region": "czsk",
+      "revenue": 9037.0,
+      "spend": 1605.0,
+      "purchases": 48,
+      "unique_visitors": 1276
+    },
+    {
+      "date": "2026-06-16",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 45
+    },
+    {
+      "date": "2026-06-16",
+      "region": "us",
+      "revenue": 396.0,
+      "spend": 538.0,
+      "purchases": 4,
+      "unique_visitors": 85
+    },
+    {
+      "date": "2026-06-17",
+      "region": "czsk",
+      "revenue": 6266.0,
+      "spend": 1673.0,
+      "purchases": 36,
+      "unique_visitors": 1143
+    },
+    {
+      "date": "2026-06-17",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 58
+    },
+    {
+      "date": "2026-06-17",
+      "region": "us",
+      "revenue": 307.0,
+      "spend": 494.0,
+      "purchases": 3,
+      "unique_visitors": 106
+    },
+    {
+      "date": "2026-06-18",
+      "region": "czsk",
+      "revenue": 7147.0,
+      "spend": 2044.0,
+      "purchases": 54,
+      "unique_visitors": 1486
+    },
+    {
+      "date": "2026-06-18",
+      "region": "row",
+      "revenue": 79.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 73
+    },
+    {
+      "date": "2026-06-18",
+      "region": "us",
+      "revenue": 242.0,
+      "spend": 573.0,
+      "purchases": 3,
+      "unique_visitors": 183
+    },
+    {
+      "date": "2026-06-19",
+      "region": "czsk",
+      "revenue": 9128.0,
+      "spend": 2839.0,
+      "purchases": 68,
+      "unique_visitors": 2021
+    },
+    {
+      "date": "2026-06-19",
+      "region": "row",
+      "revenue": 123.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 38
+    },
+    {
+      "date": "2026-06-19",
+      "region": "us",
+      "revenue": 297.0,
+      "spend": 503.0,
+      "purchases": 3,
+      "unique_visitors": 117
+    }
+  ]
+}

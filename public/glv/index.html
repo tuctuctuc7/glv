@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GLV Dashboard</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <p>GLV</p>
+      <h1>Dashboard</h1>
+      <span id="updatedAt">Loading data...</span>
+    </div>
+    <button id="filtersToggle" class="filters-toggle" type="button" aria-expanded="false">
+      Filters
+    </button>
+
+    <form class="filters" aria-label="Dashboard filters">
+      <div class="date-filters">
+        <label>
+          From
+          <input id="dateFrom" type="date" />
+        </label>
+        <label>
+          To
+          <input id="dateTo" type="date" />
+        </label>
+      </div>
+      <div class="region-filter" aria-label="Region filter">
+        <span>Region</span>
+        <div class="region-buttons">
+          <button type="button" data-region="all" aria-pressed="true">All</button>
+          <button type="button" data-region="czsk" aria-pressed="false">CZSK</button>
+          <button type="button" data-region="us" aria-pressed="false">US</button>
+          <button type="button" data-region="row" aria-pressed="false">ROW</button>
+        </div>
+      </div>
+    </form>
+  </header>
+
+  <main class="shell">
+    <section class="panel chart-panel" aria-label="Metric chart">
+      <div class="panel-head">
+        <div>
+          <h2>Trend</h2>
+          <p id="chartSubtitle">Revenue and ROAS by day</p>
+        </div>
+        <div class="chart-controls">
+          <label>
+            Bar metric
+            <select id="barMetric"></select>
+          </label>
+          <label>
+            Line metric
+            <select id="lineMetric"></select>
+          </label>
+          <label>
+            X-axis
+            <select id="grain">
+              <option value="day" selected>Day</option>
+              <option value="week">Week</option>
+              <option value="month">Month</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Performance table">
+      <div class="panel-head">
+        <div>
+          <h2>Breakdown</h2>
+          <p id="tableSubtitle">Daily rows</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Spend</th>
+              <th>Revenue</th>
+              <th>ROAS</th>
+              <th>CPA</th>
+              <th>AOV</th>
+              <th>CVR</th>
+            </tr>
+          </thead>
+          <tbody id="metricsTable"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
