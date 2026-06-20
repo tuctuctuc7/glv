@@ -66,6 +66,6 @@ Refresh data and deploy:
 /home/tom/.openclaw/workspace/dashboard/glv/deploy_glv_dashboard.sh
 ```
 
-Expected GitHub repo name: `tuctuctuc7/agenthic-lab`.
+GitHub repo: `tuctuctuc7/glv`.
 
 Once the GitHub repo exists and is connected to the Vercel project, pushes to `main` should deploy production.
