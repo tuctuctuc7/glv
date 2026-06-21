@@ -158,7 +158,7 @@ async function fetchAndCache(token, preset) {
 
 module.exports = async (req, res) => {
   // Vercel cron passes this header; block unauthorised calls
-  const cronSecret = process.env.GLV_META_CRON_SECRET || process.env.CRON_SECRET;
+  const cronSecret = process.env.CRON_SECRET || process.env.GLV_META_CRON_SECRET;
   const token = process.env.GLV_META_FB_ACCESS_TOKEN || process.env.FB_ACCESS_TOKEN;
   const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
   const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
