@@ -2,7 +2,7 @@
   "name": "agenthic-lab",
   "version": "1.0.0",
   "private": true,
-  "description": "Agenthic Lab dashboard hub, including the GLV dashboard at lab.agenthic.com/glv/",
+  "description": "Agenthic Lab dashboard hub for client dashboards at lab.agenthic.com.",
   "scripts": {
     "export:glv": "/home/tom/.config/fb-sync/.venv/bin/python ./export_glv_dashboard.py",
     "deploy": "vercel --prod --yes --scope agenthic"

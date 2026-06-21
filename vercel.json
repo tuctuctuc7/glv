@@ -16,22 +16,10 @@
       ]
     }
   ],
-  "rewrites": [
+  "crons": [
     {
-      "source": "/api/fb-data",
-      "destination": "https://glv-meta-ads.vercel.app/api/fb-data"
-    },
-    {
-      "source": "/glv-meta-ads/",
-      "destination": "https://glv-meta-ads.vercel.app/"
-    },
-    {
-      "source": "/glv-meta-ads",
-      "destination": "https://glv-meta-ads.vercel.app"
-    },
-    {
-      "source": "/glv-meta-ads/:path*",
-      "destination": "https://glv-meta-ads.vercel.app/:path*"
+      "path": "/api/glv-meta-ads/cron",
+      "schedule": "0 0 * * *"
     }
   ]
 }

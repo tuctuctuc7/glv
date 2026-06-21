@@ -1,8 +1,8 @@
 # GLV Dashboard
 
-Static dashboard prototype for the GLV KPI source sheet.
+Static dashboard hub for Agenthic Lab client workspaces.
 
-Deployable static files live in `public/`. The private refresh script stays outside `public/` so local paths and service-account details are not exposed.
+Deployable static files live in `public/`. Serverless APIs live in `api/`. Private refresh scripts stay outside `public/` so local paths and service-account details are not exposed.
 
 The source Google Sheet is read-only. The dashboard layer exports only absolute metrics from the `Daily` tab:
 
@@ -43,13 +43,30 @@ This folder is the source for the existing Vercel project:
 - Vercel project: `agenthic-lab`
 - Production domain: `https://lab.agenthic.com`
 - GLV route: `https://lab.agenthic.com/glv/`
+- GLV Meta Ads route: `https://lab.agenthic.com/glv-meta-ads/`
 
-Vercel serves `public/` as the static site root. The root page at `/` is the Agenthic Lab index, and `/glv/` is the GLV dashboard.
+Vercel serves `public/` as the static site root. The root page at `/` is the Agenthic Lab index, `/glv/` is the GLV KPI dashboard, and `/glv-meta-ads/` is the GLV Meta Ads dashboard.
+
+APIs are namespaced by dashboard:
+
+```text
+/api/glv-meta-ads/fb-data
+/api/glv-meta-ads/cron
+```
+
+The GLV Meta Ads cron runs daily at 00:00 UTC / 07:00 UTC+7.
+
+Until the sensitive Vercel env vars are re-entered on `agenthic-lab`, the
+namespaced GLV Meta Ads data API falls back to the legacy `glv-meta-ads`
+Vercel project. Sensitive env vars cannot be copied back out of Vercel after
+creation, so the final backend cutover requires re-adding them to
+`agenthic-lab`.
 
 Production URLs:
 
 ```text
 https://lab.agenthic.com/glv
+https://lab.agenthic.com/glv-meta-ads
 https://agenthic-lab.vercel.app/glv
 ```
 
