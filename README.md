@@ -54,13 +54,8 @@ APIs are namespaced by dashboard:
 /api/glv-meta-ads/cron
 ```
 
-The GLV Meta Ads cron runs daily at 00:00 UTC / 07:00 UTC+7.
-
-Until the sensitive Vercel env vars are re-entered on `agenthic-lab`, the
-namespaced GLV Meta Ads data API falls back to the legacy `glv-meta-ads`
-Vercel project. Sensitive env vars cannot be copied back out of Vercel after
-creation, so the final backend cutover requires re-adding them to
-`agenthic-lab`.
+The GLV Meta Ads cron runs daily at 00:00 UTC / 07:00 UTC+7. The API and cron
+run inside `agenthic-lab` using the project's Meta token and Upstash env vars.
 
 Production URLs:
 

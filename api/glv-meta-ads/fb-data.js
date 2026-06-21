@@ -3,8 +3,6 @@
 
 const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
-const LEGACY_API = 'https://glv-meta-ads.vercel.app/api/fb-data';
-
 // Presets the cron pre-warms; everything else hits Meta live
 const CACHED_PRESETS = new Set(['last_7d', 'last_14d', 'last_30d', 'last_90d']);
 
@@ -20,20 +18,6 @@ async function redisGet(key) {
   } catch {
     return null;
   }
-}
-
-async function proxyLegacy(req, res) {
-  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-  const upstream = await fetch(`${LEGACY_API}${query}`);
-  const body = await upstream.text();
-  res.status(upstream.status);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('X-Agenthic-Lab-Proxy', 'glv-meta-ads');
-  const cacheHeader = upstream.headers.get('x-cache');
-  if (cacheHeader) res.setHeader('X-Cache', cacheHeader);
-  const contentType = upstream.headers.get('content-type') || 'application/json; charset=utf-8';
-  res.setHeader('Content-Type', contentType);
-  res.send(body);
 }
 
 function getAction(actions, type) {
@@ -110,7 +94,11 @@ module.exports = async (req, res) => {
   const token = process.env.GLV_META_FB_ACCESS_TOKEN || process.env.FB_ACCESS_TOKEN;
   const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
   const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!token || !redisUrl || !redisToken) return proxyLegacy(req, res);
+  if (!token || !redisUrl || !redisToken) {
+    return res.status(500).json({
+      error: 'GLV Meta Ads API is not configured. Add FB_ACCESS_TOKEN plus KV_REST_API_URL and KV_REST_API_TOKEN to agenthic-lab.',
+    });
+  }
 
   const { type, date_preset, time_range } = req.query;
   const preset = date_preset || 'last_30d';
