@@ -4,7 +4,7 @@
 const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
 // Presets the cron pre-warms; everything else hits Meta live
-const CACHED_PRESETS = new Set(['last_7d', 'last_14d', 'last_30d', 'last_90d']);
+const CACHED_PRESETS = new Set(['last_7d', 'last_14d', 'last_30d', 'last_90d', 'this_month', 'last_month']);
 
 async function redisGet(key) {
   try {

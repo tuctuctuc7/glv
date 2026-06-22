@@ -54,7 +54,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* ── KPI Cards ── */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
-.kpi-card{background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.kpi-card{background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.07);transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(15,23,42,.12);}
 .kpi-card.hl{border-top:3px solid var(--blue);}
 .kpi-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray400);margin-bottom:6px;}
 .kpi-val{font-size:22px;font-weight:800;line-height:1.1;}
@@ -97,19 +98,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .filter-actions{display:flex;gap:8px;padding:6px 8px 2px;border-top:1px solid var(--gray100);margin-top:4px;}
 .filter-action-btn{font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;background:none;border:none;padding:2px 4px;}
 
-/* ── Type Toggle (creatives) ── */
-.type-toggle{display:flex;gap:4px;margin-bottom:12px;}
-.type-btn{background:var(--gray100);border:1px solid var(--gray200);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;color:var(--gray600);transition:all .15s;}
-.type-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+/* ── Section Controls ── */
+.section-controls{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+.sort-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.sort-dir-btn{height:32px;width:32px;border:1px solid var(--gray200);border-radius:8px;background:var(--gray50);color:var(--gray800);font-size:15px;font-weight:800;cursor:pointer;}
+.sort-dir-btn:hover{background:var(--gray100);}
 
 /* ── Tables ── */
 .table-outer{overflow-x:auto;}
 .gridjs-wrapper{border:none!important;box-shadow:none!important;}
 .gridjs-container{border:none!important;}
-th.gridjs-th{background:var(--gray50)!important;font-size:11px!important;font-weight:700!important;text-transform:uppercase!important;letter-spacing:.05em!important;color:var(--gray600)!important;border-bottom:1px solid var(--gray200)!important;padding:8px 10px!important;white-space:nowrap;}
+table.gridjs-table{table-layout:fixed!important;}
+th.gridjs-th{position:sticky!important;top:0!important;z-index:4!important;background:var(--gray50)!important;font-size:11px!important;font-weight:700!important;text-transform:uppercase!important;letter-spacing:.05em!important;color:var(--gray600)!important;border-bottom:1px solid var(--gray200)!important;padding:8px 10px!important;white-space:nowrap;}
 td.gridjs-td{font-size:12px!important;padding:8px 10px!important;border-bottom:1px solid var(--gray100)!important;white-space:nowrap;}
 tr.gridjs-tr:last-child td{border-bottom:none!important;}
 .scrollable-grid .gridjs-wrapper{max-height:588px;overflow-y:auto;}
+.creative-table-outer .gridjs-wrapper{overflow:auto!important;}
+.creative-grid th.gridjs-th:nth-child(1),.creative-grid td.gridjs-td:nth-child(1){position:sticky!important;left:0!important;z-index:5!important;background:#fff!important;}
+.creative-grid th.gridjs-th:nth-child(1){z-index:8!important;background:var(--gray50)!important;}
+.creative-grid th.gridjs-th:nth-child(2),.creative-grid td.gridjs-td:nth-child(2){position:sticky!important;left:180px!important;z-index:5!important;background:#fff!important;}
+.creative-grid th.gridjs-th:nth-child(2){z-index:8!important;background:var(--gray50)!important;}
+.creative-grid th.gridjs-th:nth-child(3),.creative-grid td.gridjs-td:nth-child(3){position:sticky!important;left:290px!important;z-index:5!important;background:#fff!important;box-shadow:1px 0 0 var(--gray200);}
+.creative-grid th.gridjs-th:nth-child(3){z-index:8!important;background:var(--gray50)!important;}
+.roas-good{color:var(--green);font-weight:700;}
+.roas-warn{color:var(--amber);font-weight:700;}
+.roas-bad{color:var(--red);font-weight:700;}
 
 /* ── Creative badges ── */
 .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;}
@@ -149,6 +162,8 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
             <div class="date-preset-item" data-p="last_14d" onclick="selectPreset('last_14d')">Last 14 days</div>
             <div class="date-preset-item active" data-p="last_30d" onclick="selectPreset('last_30d')">Last 30 days</div>
             <div class="date-preset-item" data-p="last_90d" onclick="selectPreset('last_90d')">Last 90 days</div>
+            <div class="date-preset-item" data-p="this_month" onclick="selectPreset('this_month')">This month</div>
+            <div class="date-preset-item" data-p="last_month" onclick="selectPreset('last_month')">Last month</div>
           </div>
           <div class="date-custom-section">
             <div class="date-custom-title">Custom range</div>
@@ -179,10 +194,6 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
 <div class="panel active" id="panel-czsk">
   <div class="kpi-grid" id="kpi-czsk"></div>
   <div class="section">
-    <div class="section-title">Purchase Funnel</div>
-    <div class="vfunnel" id="funnel-czsk"></div>
-  </div>
-  <div class="section">
     <div class="section-title">Daily Performance Chart</div>
     <div class="chart-controls">
       <span class="metric-label">Left Y:</span>
@@ -194,17 +205,24 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
   </div>
   <div class="section">
     <div class="section-title">Daily Campaign Table</div>
-    <div class="filter-wrap" id="filter-wrap-czsk">
-      <div class="filter-toggle" id="filter-toggle-czsk" onclick="toggleFilter('czsk')">
-        <span id="filter-label-czsk">All campaigns</span><span style="color:var(--gray400)">▾</span>
-      </div>
-      <div class="filter-dropdown" id="filter-dropdown-czsk">
-        <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk', this.value)">
-        <div class="filter-options-list" id="filter-options-czsk"></div>
-        <div class="filter-actions">
-          <button class="filter-action-btn" onclick="selectAll('czsk')">Select all</button>
-          <button class="filter-action-btn" onclick="clearAll('czsk')">Clear</button>
+    <div class="section-controls">
+      <div class="filter-wrap" id="filter-wrap-czsk">
+        <div class="filter-toggle" id="filter-toggle-czsk" onclick="toggleFilter('czsk')">
+          <span id="filter-label-czsk">All campaigns</span><span style="color:var(--gray400)">▾</span>
         </div>
+        <div class="filter-dropdown" id="filter-dropdown-czsk">
+          <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk', this.value)">
+          <div class="filter-options-list" id="filter-options-czsk"></div>
+          <div class="filter-actions">
+            <button class="filter-action-btn" onclick="selectAll('czsk')">Select all</button>
+            <button class="filter-action-btn" onclick="clearAll('czsk')">Clear</button>
+          </div>
+        </div>
+      </div>
+      <div class="sort-controls">
+        <span class="metric-label">Sort by</span>
+        <select class="metric-select" id="daily-sort-czsk" onchange="setSort('daily','czsk',this.value)"></select>
+        <button class="sort-dir-btn" id="daily-sort-dir-czsk" onclick="toggleSortDir('daily','czsk')" title="Toggle sort direction">↓</button>
       </div>
     </div>
     <div class="table-outer"><div class="scrollable-grid" id="daily-table-czsk"></div></div>
@@ -225,23 +243,25 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
           </div>
         </div>
       </div>
-      <div class="type-toggle" id="type-toggle-czsk">
-        <button class="type-btn active" data-type="all" onclick="setTypeFilter('czsk','all')">All</button>
-        <button class="type-btn" data-type="video" onclick="setTypeFilter('czsk','video')">Video</button>
-        <button class="type-btn" data-type="static" onclick="setTypeFilter('czsk','static')">Static</button>
+      <div class="sort-controls">
+        <span class="metric-label">Type</span>
+        <select class="metric-select" id="creative-type-czsk" onchange="setTypeFilter('czsk',this.value)">
+          <option value="all">All</option>
+          <option value="video">Video</option>
+          <option value="static">Static</option>
+        </select>
+        <span class="metric-label">Sort by</span>
+        <select class="metric-select" id="creative-sort-czsk" onchange="setSort('creative','czsk',this.value)"></select>
+        <button class="sort-dir-btn" id="creative-sort-dir-czsk" onclick="toggleSortDir('creative','czsk')" title="Toggle sort direction">↓</button>
       </div>
     </div>
-    <div class="table-outer"><div class="scrollable-grid" id="creative-czsk"></div></div>
+    <div class="table-outer creative-table-outer"><div class="scrollable-grid creative-grid" id="creative-czsk"></div></div>
   </div>
 </div>
 
 <!-- ═══ US PANEL ═══ -->
 <div class="panel" id="panel-us">
   <div class="kpi-grid" id="kpi-us"></div>
-  <div class="section">
-    <div class="section-title">Purchase Funnel</div>
-    <div class="vfunnel" id="funnel-us"></div>
-  </div>
   <div class="section">
     <div class="section-title">Daily Performance Chart</div>
     <div class="chart-controls">
@@ -254,17 +274,24 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
   </div>
   <div class="section">
     <div class="section-title">Daily Campaign Table</div>
-    <div class="filter-wrap" id="filter-wrap-us">
-      <div class="filter-toggle" id="filter-toggle-us" onclick="toggleFilter('us')">
-        <span id="filter-label-us">All campaigns</span><span style="color:var(--gray400)">▾</span>
-      </div>
-      <div class="filter-dropdown" id="filter-dropdown-us">
-        <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('us', this.value)">
-        <div class="filter-options-list" id="filter-options-us"></div>
-        <div class="filter-actions">
-          <button class="filter-action-btn" onclick="selectAll('us')">Select all</button>
-          <button class="filter-action-btn" onclick="clearAll('us')">Clear</button>
+    <div class="section-controls">
+      <div class="filter-wrap" id="filter-wrap-us">
+        <div class="filter-toggle" id="filter-toggle-us" onclick="toggleFilter('us')">
+          <span id="filter-label-us">All campaigns</span><span style="color:var(--gray400)">▾</span>
         </div>
+        <div class="filter-dropdown" id="filter-dropdown-us">
+          <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('us', this.value)">
+          <div class="filter-options-list" id="filter-options-us"></div>
+          <div class="filter-actions">
+            <button class="filter-action-btn" onclick="selectAll('us')">Select all</button>
+            <button class="filter-action-btn" onclick="clearAll('us')">Clear</button>
+          </div>
+        </div>
+      </div>
+      <div class="sort-controls">
+        <span class="metric-label">Sort by</span>
+        <select class="metric-select" id="daily-sort-us" onchange="setSort('daily','us',this.value)"></select>
+        <button class="sort-dir-btn" id="daily-sort-dir-us" onclick="toggleSortDir('daily','us')" title="Toggle sort direction">↓</button>
       </div>
     </div>
     <div class="table-outer"><div class="scrollable-grid" id="daily-table-us"></div></div>
@@ -285,13 +312,19 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
           </div>
         </div>
       </div>
-      <div class="type-toggle" id="type-toggle-us">
-        <button class="type-btn active" data-type="all" onclick="setTypeFilter('us','all')">All</button>
-        <button class="type-btn" data-type="video" onclick="setTypeFilter('us','video')">Video</button>
-        <button class="type-btn" data-type="static" onclick="setTypeFilter('us','static')">Static</button>
+      <div class="sort-controls">
+        <span class="metric-label">Type</span>
+        <select class="metric-select" id="creative-type-us" onchange="setTypeFilter('us',this.value)">
+          <option value="all">All</option>
+          <option value="video">Video</option>
+          <option value="static">Static</option>
+        </select>
+        <span class="metric-label">Sort by</span>
+        <select class="metric-select" id="creative-sort-us" onchange="setSort('creative','us',this.value)"></select>
+        <button class="sort-dir-btn" id="creative-sort-dir-us" onclick="toggleSortDir('creative','us')" title="Toggle sort direction">↓</button>
       </div>
     </div>
-    <div class="table-outer"><div class="scrollable-grid" id="creative-us"></div></div>
+    <div class="table-outer creative-table-outer"><div class="scrollable-grid creative-grid" id="creative-us"></div></div>
   </div>
 </div>
 
@@ -325,6 +358,22 @@ const CHART_METRIC_OPTIONS = [
   { key:'cpm',      label:'CPM' },
 ];
 const CAMPAIGN_COLORS = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#6366f1','#ec4899','#14b8a6','#f97316','#0ea5e9'];
+const DAILY_COLUMNS = [
+  {key:'date',label:'Date'},{key:'spend',label:'Spend'},{key:'revenue',label:'Revenue'},{key:'roas',label:'ROAS'},
+  {key:'purchases',label:'Purchases'},{key:'cpa',label:'CPA'},{key:'aov',label:'AOV'},
+  {key:'lp2co',label:'LP→Checkout'},{key:'co2pur',label:'Checkout→Purchase'},
+  {key:'checkouts',label:'Checkouts'},{key:'costChk',label:'Cost/Checkout'},{key:'lp',label:'LP Views'},
+  {key:'costLp',label:'Cost/LP'},{key:'lp2pur',label:'LP→Purchase'},{key:'cpm',label:'CPM'},
+];
+const CREATIVE_COLUMNS = [
+  {key:'name',label:'Creative'},{key:'campaignCode',label:'Campaign ID'},{key:'type',label:'Type'},
+  {key:'spend',label:'Spend'},{key:'revenue',label:'Revenue'},{key:'roas',label:'ROAS'},
+  {key:'purchases',label:'Purchases'},{key:'cpa',label:'CPA'},{key:'aov',label:'AOV'},
+  {key:'lp2co',label:'LP→Checkout'},{key:'co2pur',label:'Checkout→Purchase'},
+  {key:'checkouts',label:'Checkouts'},{key:'costChk',label:'Cost/Checkout'},{key:'lp',label:'LP Views'},
+  {key:'costLp',label:'Cost/LP'},{key:'lp2pur',label:'LP→Purchase'},{key:'cpm',label:'CPM'},
+  {key:'hookRate',label:'Hook%'},{key:'holdRate',label:'Hold%'},
+];
 
 let datePreset  = 'last_30d';
 let customRange = null;
@@ -335,6 +384,10 @@ let adCreatives        = [];
 let campaignMeta       = {};
 let filterState        = { czsk: null, us: null, 'czsk-creative': null, 'us-creative': null };
 let creativeTypeFilter = { czsk: 'all', us: 'all' };
+let sortState          = {
+  daily: { czsk: { key: 'date', dir: 'desc' }, us: { key: 'date', dir: 'desc' } },
+  creative: { czsk: { key: 'spend', dir: 'desc' }, us: { key: 'spend', dir: 'desc' } },
+};
 let charts = {};
 let grids  = {};
 
@@ -350,12 +403,12 @@ function getCampaignColor(name) {
   return CAMPAIGN_COLORS[Math.abs(h) % CAMPAIGN_COLORS.length];
 }
 
-function fmt(n,d=0){if(!n||isNaN(n)||n===0)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(d)+'K';return n.toLocaleString('en',{maximumFractionDigits:d});}
-function fmtInt(n){return(!n||isNaN(n))?'—':Math.round(n).toLocaleString('cs');}
+function fmt(n,d=0){if(!n||isNaN(n)||n===0)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(d)+'K';return n.toLocaleString('en-US',{maximumFractionDigits:d});}
+function fmtInt(n){return(!n||isNaN(n))?'—':Math.round(n).toLocaleString('en-US');}
 function fmtRoas(n){return(!n||n<=0)?'—':n.toFixed(2)+'x';}
 function fmtPct(n){return(!n||n<=0)?'—':n.toFixed(2)+'%';}
 function fmtUsd(n){return(!n||n<=0)?'—':'$'+(n*usdRate).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
-function roasClass(v){return v>=2?'g':v>=1?'o':'r';}
+function roasClass(v){return v>=1.7?'roas-good':v>=1?'roas-warn':'roas-bad';}
 
 function aggregate(rows){
   return {
@@ -373,11 +426,12 @@ function calcMetrics(a){
   const cvr=a.checkouts>0?a.purchases/a.checkouts*100:0;
   const lp2co=a.lp>0?a.checkouts/a.lp*100:0;
   const co2pur=a.checkouts>0?a.purchases/a.checkouts*100:0;
+  const lp2pur=a.lp>0?a.purchases/a.lp*100:0;
   const costChk=a.checkouts>0?a.spend/a.checkouts:0;
   const costLp=a.lp>0?a.spend/a.lp:0;
   const outboundCtr=a.impressions>0?a.outboundClicks/a.impressions*100:0;
   const cpm=a.impressions>0?a.spend/a.impressions*1000:0;
-  return{roas,cpa,aov,cvr,lp2co,co2pur,costChk,costLp,outboundCtr,cpm};
+  return{roas,cpa,aov,cvr,lp2co,co2pur,lp2pur,costChk,costLp,outboundCtr,cpm};
 }
 
 function computeChartMetric(key,a,m){
@@ -386,10 +440,63 @@ function computeChartMetric(key,a,m){
   if(key==='cpa')return m.cpa;if(key==='cpm')return m.cpm;return 0;
 }
 
+function metricForSort(row,key){
+  if(key==='date'||key==='name'||key==='campaignCode'||key==='type')return String(row[key]||'');
+  const m=calcMetrics(row);
+  if(Object.prototype.hasOwnProperty.call(m,key))return m[key]||0;
+  return Number(row[key]||0);
+}
+function sortRows(rows,group,seg){
+  const state=sortState[group][seg];
+  return [...rows].sort((a,b)=>{
+    const av=metricForSort(a,state.key),bv=metricForSort(b,state.key);
+    const cmp=typeof av==='string'||typeof bv==='string'
+      ? String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:'base'})
+      : av-bv;
+    return state.dir==='asc'?cmp:-cmp;
+  });
+}
+function populateSortSelect(id,columns,value){
+  const el=document.getElementById(id);if(!el)return;
+  el.innerHTML=columns.map(c=>`<option value="${c.key}">${c.label}</option>`).join('');
+  el.value=value;
+}
+function setSort(group,seg,key){
+  sortState[group][seg].key=key;
+  group==='daily'?renderDailyTable(seg):renderCreatives(seg);
+}
+function toggleSortDir(group,seg){
+  const state=sortState[group][seg];
+  state.dir=state.dir==='asc'?'desc':'asc';
+  const el=document.getElementById(`${group}-sort-dir-${seg}`);
+  if(el)el.textContent=state.dir==='asc'?'↑':'↓';
+  group==='daily'?renderDailyTable(seg):renderCreatives(seg);
+}
+function initSortControls(){
+  ['czsk','us'].forEach(seg=>{
+    populateSortSelect(`daily-sort-${seg}`,DAILY_COLUMNS,sortState.daily[seg].key);
+    populateSortSelect(`creative-sort-${seg}`,CREATIVE_COLUMNS,sortState.creative[seg].key);
+  });
+}
+function campaignCode(name){
+  const parts=String(name||'').split('_').filter(Boolean);
+  return parts[1]||'—';
+}
+
 const MONTH_SHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function isoToShort(iso){if(!iso)return'';const[,m,d]=iso.split('-');return`${MONTH_SHORT[parseInt(m)-1]} ${parseInt(d)}`;}
-function presetLabel(p){return{last_7d:'Last 7 days',last_14d:'Last 14 days',last_30d:'Last 30 days',last_90d:'Last 90 days'}[p]||p;}
+function presetLabel(p){return{last_7d:'Last 7 days',last_14d:'Last 14 days',last_30d:'Last 30 days',last_90d:'Last 90 days',this_month:'This month',last_month:'Last month'}[p]||p;}
 function presetRange(p){
+  const now=new Date();
+  if(p==='this_month'){
+    const start=new Date(now.getFullYear(),now.getMonth(),1);
+    return`${isoToShort(start.toISOString().slice(0,10))} – ${isoToShort(now.toISOString().slice(0,10))}`;
+  }
+  if(p==='last_month'){
+    const start=new Date(now.getFullYear(),now.getMonth()-1,1);
+    const end=new Date(now.getFullYear(),now.getMonth(),0);
+    return`${isoToShort(start.toISOString().slice(0,10))} – ${isoToShort(end.toISOString().slice(0,10))}`;
+  }
   const days={last_7d:7,last_14d:14,last_30d:30,last_90d:90}[p];if(!days)return'';
   const today=new Date();const since=new Date(today.getTime()-days*864e5);
   return`${isoToShort(since.toISOString().slice(0,10))} – ${isoToShort(today.toISOString().slice(0,10))}`;
@@ -464,7 +571,8 @@ function processCreatives(rawRows){
     const v3sec=parseNum(r.video_3_sec_watched_actions);
     const campInfo=campaignMeta[r.campaign_id]||{};
     const isVideo=thruplay>0||v3sec>0;
-    return{id:r.id,name:r.name,status:r.status,campaignId:r.campaign_id,campaignName:campInfo.name||'',
+    const campaignName=campInfo.name||'';
+    return{id:r.id,name:r.name,status:r.status,campaignId:r.campaign_id,campaignName,campaignCode:campaignCode(campaignName),type:isVideo?'Video':'Static',
       segment:campInfo.segment||null,spend,lp,purchases,checkouts,outboundClicks,revenue,impressions,isVideo,
       hookRate:impressions>0?v3sec/impressions*100:0,holdRate:impressions>0?thruplay/impressions*100:0};
   }).filter(c=>campaignMeta[c.campaignId]&&c.spend>0);
@@ -492,34 +600,11 @@ function renderKPIs(seg){
     <div class="kpi-card"><div class="kpi-label">Revenue</div><div class="kpi-val">${a.revenue>0?fmtInt(a.revenue):'—'}</div><div class="kpi-sub">CZK</div><div class="kpi-sub2">${fmtUsd(a.revenue)}</div></div>
     <div class="kpi-card hl"><div class="kpi-label">ROAS</div><div class="kpi-val ${roasClass(m.roas)}">${fmtRoas(m.roas)}</div><div class="kpi-sub">Revenue / Spend</div></div>
     <div class="kpi-card"><div class="kpi-label">Purchases</div><div class="kpi-val">${a.purchases||'—'}</div><div class="kpi-sub">${m.cpa>0?'CPA: '+fmtInt(m.cpa)+' CZK':'CPA: —'}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Outbound CTR</div><div class="kpi-val">${fmtPct(m.outboundCtr)}</div><div class="kpi-sub">${fmtInt(a.outboundClicks)} clicks</div></div>
+    <div class="kpi-card"><div class="kpi-label">LP → Purchase</div><div class="kpi-val">${fmtPct(m.lp2pur)}</div><div class="kpi-sub">${a.lp>0?fmtInt(a.lp)+' LP views':'No LP data'}</div></div>
     <div class="kpi-card"><div class="kpi-label">LP → Checkout</div><div class="kpi-val">${fmtPct(m.lp2co)}</div><div class="kpi-sub">${a.checkouts>0?fmtInt(a.checkouts)+' checkouts':'No checkout data'}</div></div>
-    <div class="kpi-card"><div class="kpi-label">CVR (CHK→PUR)</div><div class="kpi-val">${fmtPct(m.cvr)}</div><div class="kpi-sub">Checkout to purchase</div></div>
+    <div class="kpi-card"><div class="kpi-label">Checkout → Purchase</div><div class="kpi-val">${fmtPct(m.co2pur)}</div><div class="kpi-sub">Checkout to purchase</div></div>
     <div class="kpi-card"><div class="kpi-label">Cost / Checkout</div><div class="kpi-val">${m.costChk>0?fmtInt(m.costChk):'—'}</div><div class="kpi-sub">${m.costChk>0?'CZK':'No checkout data'}</div></div>
   `;
-}
-
-function renderFunnel(seg){
-  const rows=getSegmentRows(seg,'aggregate');const a=aggregate(rows);
-  const steps=[
-    {label:'Impressions',sub:'Ad impressions',val:a.impressions,color:'#3b82f6'},
-    {label:'LP Views',sub:'Link clicks',val:a.lp,color:'#6366f1'},
-    {label:'Checkouts',sub:'Initiate checkout',val:a.checkouts,color:'#8b5cf6',na:a.checkouts===0},
-    {label:'Purchases',sub:'Completed orders',val:a.purchases,color:'#10b981'},
-  ];
-  const top=steps[0].val||1;
-  function barWidth(val){if(!val||!top)return 25;return Math.max(25,Math.min(100,Math.pow(val/top,0.35)*100));}
-  function convLabel(i){
-    const from=steps[i].val,to=steps[i+1].val;if(!from||!to)return null;
-    return`${{0:'CTR',1:'LP→CHK',2:'CHK→PUR'}[i]}: ${(to/from*100).toFixed(1)}%`;
-  }
-  const el=document.getElementById('funnel-'+seg);
-  el.innerHTML=steps.map((s,i)=>{
-    const w=barWidth(s.val);
-    const valStr=s.na?'—':s.val>=1e6?(s.val/1e6).toFixed(1)+'M':s.val>=1000?(s.val/1000).toFixed(0)+'K':(s.val||'—').toLocaleString();
-    const conn=i<steps.length-1?`<div class="vf-connector"><div class="vf-conn-line"></div>${convLabel(i)?`<span class="vf-pct-badge">${convLabel(i)}</span>`:'<span class="vf-pct-badge" style="color:var(--gray400)">No data</span>'}<div class="vf-conn-line"></div></div>`:'';
-    return`<div class="vf-step${s.na?' vf-na':''}"><div class="vf-bar" style="width:${w}%;background:${s.color}"><div class="vf-bar-left"><div class="vf-bar-label">${s.label}</div><div class="vf-bar-val">${valStr}</div><div class="vf-bar-sub">${s.sub}</div></div></div></div>${conn}`;
-  }).join('');
 }
 
 function initSelects(){
@@ -536,8 +621,8 @@ function initSelects(){
 }
 function formatChartVal(key,v){
   if(key==='roas')return v.toFixed(2)+'x';
-  if(key==='cpm'||key==='cpa'||key==='spend'||key==='revenue')return Math.round(v).toLocaleString()+' CZK';
-  return Math.round(v).toLocaleString();
+  if(key==='cpm'||key==='cpa'||key==='spend'||key==='revenue')return Math.round(v).toLocaleString('en-US')+' CZK';
+  return Math.round(v).toLocaleString('en-US');
 }
 function refreshChart(seg){
   const sel=filterState[seg];const rows=getSegmentRows(seg,'daily');const daily=byDate(rows,sel);
@@ -606,7 +691,7 @@ function onFilterChange(key){
   const all=[...document.querySelectorAll(`#filter-options-${key} input`)].map(c=>c.value);
   filterState[key]=checked.length===all.length?null:new Set(checked);
   updateFilterLabel(key);
-  if(key==='czsk'||key==='us'){refreshChart(key);renderDailyTable(key);}
+  if(key==='czsk'||key==='us'){renderDailyTable(key);}
   else if(key==='czsk-creative'||key==='us-creative')renderCreatives(key.replace('-creative',''));
 }
 function updateFilterLabel(key){
@@ -631,26 +716,26 @@ function renderDailyTable(seg){
   container.innerHTML='';
   if(!daily.length){container.innerHTML='<div class="empty">No data.</div>';return;}
   if(grids['daily-'+seg]){try{grids['daily-'+seg].destroy();}catch(e){}}
-  const data=daily.map(d=>{const m=calcMetrics(d);return[d.date,d.spend,d.revenue,m.roas,d.purchases,m.cpa,m.aov,m.cvr,m.lp2co,m.co2pur,d.checkouts,m.costChk,d.lp,m.costLp,m.outboundCtr,m.cpm];});
+  const sorted=sortRows(daily,'daily',seg);
+  const data=sorted.map(d=>{const m=calcMetrics(d);return[d.date,d.spend,d.revenue,m.roas,d.purchases,m.cpa,m.aov,m.lp2co,m.co2pur,d.checkouts,m.costChk,d.lp,m.costLp,m.lp2pur,m.cpm];});
   grids['daily-'+seg]=new gridjs.Grid({
     columns:[
-      {name:'Date',sort:true},
-      {name:'Spend',sort:true,formatter:v=>fmtInt(v)},
-      {name:'Revenue',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'ROAS',sort:true,formatter:v=>gridjs.html(`<span class="${roasClass(v)}" style="font-weight:700">${fmtRoas(v)}</span>`)},
-      {name:'Purchases',sort:true,formatter:v=>v||'—'},
-      {name:'CPA',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'AOV',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'CVR',sort:true,formatter:v=>fmtPct(v)},
-      {name:'LP→CHK%',sort:true,formatter:v=>fmtPct(v)},
-      {name:'CHK→PUR%',sort:true,formatter:v=>fmtPct(v)},
-      {name:'Checkouts',sort:true,formatter:v=>v||'—'},
-      {name:'Cost/CHK',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'LPs',sort:true,formatter:v=>fmtInt(v)},
-      {name:'Cost/LP',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'Out. CTR',sort:true,formatter:v=>fmtPct(v)},
-      {name:'CPM',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-    ],data,sort:true,
+      {name:'Date',width:'112px',sort:true},
+      {name:'Spend',width:'112px',sort:true,formatter:v=>fmtInt(v)},
+      {name:'Revenue',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
+      {name:'ROAS',width:'112px',sort:true,formatter:v=>gridjs.html(`<span class="${roasClass(v)}">${fmtRoas(v)}</span>`)},
+      {name:'Purchases',width:'112px',sort:true,formatter:v=>v||'—'},
+      {name:'CPA',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
+      {name:'AOV',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
+      {name:'LP→Checkout',width:'112px',sort:true,formatter:v=>fmtPct(v)},
+      {name:'Checkout→Purchase',width:'112px',sort:true,formatter:v=>fmtPct(v)},
+      {name:'Checkouts',width:'112px',sort:true,formatter:v=>v||'—'},
+      {name:'Cost/Checkout',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
+      {name:'LP Views',width:'112px',sort:true,formatter:v=>fmtInt(v)},
+      {name:'Cost/LP',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
+      {name:'LP→Purchase',width:'112px',sort:true,formatter:v=>fmtPct(v)},
+      {name:'CPM',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
+    ],data,sort:true,fixedHeader:true,
   }).render(container);
 }
 
@@ -685,7 +770,8 @@ function renderTrendsTable(){
 
 function setTypeFilter(seg,type){
   creativeTypeFilter[seg]=type;
-  document.querySelectorAll(`#type-toggle-${seg} .type-btn`).forEach(btn=>btn.classList.toggle('active',btn.dataset.type===type));
+  const el=document.getElementById('creative-type-'+seg);
+  if(el)el.value=type;
   renderCreatives(seg);
 }
 function renderCreatives(seg){
@@ -697,22 +783,23 @@ function renderCreatives(seg){
   const container=document.getElementById('creative-'+seg);container.innerHTML='';
   if(!creatives.length){container.innerHTML='<div class="empty">No creative data for this filter.</div>';return;}
   if(grids['creative-'+seg]){try{grids['creative-'+seg].destroy();}catch(e){}}
-  const data=creatives.map(c=>{const m=calcMetrics(c);return[c.name,c.isVideo?'Video':'Static',c.status,c.spend,c.revenue,m.roas,c.purchases,m.cpa,m.aov,m.cvr,m.lp2co,m.co2pur,c.checkouts,m.costChk,c.lp,m.costLp,m.outboundCtr,m.cpm,c.isVideo?c.hookRate:null,c.isVideo?c.holdRate:null];});
+  const sorted=sortRows(creatives,'creative',seg);
+  const data=sorted.map(c=>{const m=calcMetrics(c);return[c.name,c.campaignCode,c.type,c.spend,c.revenue,m.roas,c.purchases,m.cpa,m.aov,m.lp2co,m.co2pur,c.checkouts,m.costChk,c.lp,m.costLp,m.lp2pur,m.cpm,c.isVideo?c.hookRate:null,c.isVideo?c.holdRate:null];});
   grids['creative-'+seg]=new gridjs.Grid({
     columns:[
-      {name:'Creative',width:'180px',formatter:v=>gridjs.html(`<span title="${v}" style="display:block;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v}</span>`)},
-      {name:'Type',formatter:v=>gridjs.html(`<span class="badge ${v==='Video'?'badge-v':'badge-s'}">${v}</span>`)},
-      {name:'Status',formatter:v=>gridjs.html(`<span class="badge ${v==='ACTIVE'?'badge-active':v==='PAUSED'?'badge-paused':'badge-unknown'}">${v||'—'}</span>`)},
-      {name:'Spend',sort:true,formatter:v=>fmtInt(v)},{name:'Revenue',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'ROAS',sort:true,formatter:v=>gridjs.html(`<span class="${roasClass(v)}" style="font-weight:700">${fmtRoas(v)}</span>`)},
-      {name:'Purchases',sort:true,formatter:v=>v||'—'},{name:'CPA',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'AOV',sort:true,formatter:v=>v>0?fmtInt(v):'—'},{name:'CVR',sort:true,formatter:v=>fmtPct(v)},
-      {name:'LP→CHK%',sort:true,formatter:v=>fmtPct(v)},{name:'CHK→PUR%',sort:true,formatter:v=>fmtPct(v)},
-      {name:'Checkouts',sort:true,formatter:v=>v||'—'},{name:'Cost/CHK',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'LPs',sort:true,formatter:v=>fmtInt(v)},{name:'Cost/LP',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'Out. CTR',sort:true,formatter:v=>fmtPct(v)},{name:'CPM',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'Hook%',sort:true,formatter:v=>v!==null?fmtPct(v):'—'},{name:'Hold%',sort:true,formatter:v=>v!==null?fmtPct(v):'—'},
-    ],data,sort:true,
+      {name:'Creative',width:'180px',sort:true,formatter:v=>gridjs.html(`<span title="${v}" style="display:block;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v}</span>`)},
+      {name:'Campaign ID',width:'110px',sort:true,formatter:v=>v||'—'},
+      {name:'Type',width:'90px',sort:true,formatter:v=>gridjs.html(`<span class="badge ${v==='Video'?'badge-v':'badge-s'}">${v}</span>`)},
+      {name:'Spend',width:'112px',sort:true,formatter:v=>fmtInt(v)},{name:'Revenue',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
+      {name:'ROAS',width:'112px',sort:true,formatter:v=>gridjs.html(`<span class="${roasClass(v)}">${fmtRoas(v)}</span>`)},
+      {name:'Purchases',width:'112px',sort:true,formatter:v=>v||'—'},{name:'CPA',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
+      {name:'AOV',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
+      {name:'LP→Checkout',width:'112px',sort:true,formatter:v=>fmtPct(v)},{name:'Checkout→Purchase',width:'112px',sort:true,formatter:v=>fmtPct(v)},
+      {name:'Checkouts',width:'112px',sort:true,formatter:v=>v||'—'},{name:'Cost/Checkout',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
+      {name:'LP Views',width:'112px',sort:true,formatter:v=>fmtInt(v)},{name:'Cost/LP',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
+      {name:'LP→Purchase',width:'112px',sort:true,formatter:v=>fmtPct(v)},{name:'CPM',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
+      {name:'Hook%',width:'112px',sort:true,formatter:v=>v!==null?fmtPct(v):'—'},{name:'Hold%',width:'112px',sort:true,formatter:v=>v!==null?fmtPct(v):'—'},
+    ],data,sort:true,fixedHeader:true,
   }).render(container);
 }
 
@@ -747,7 +834,7 @@ async function loadData(){
       const d=await apiFetch('aggregate');
       campaignMeta={};aggregateCampaigns=processAggregateRows(d.rows);
       filterState={czsk:null,us:null,'czsk-creative':null,'us-creative':null};
-      ['czsk','us'].forEach(seg=>{renderKPIs(seg);renderFunnel(seg);});
+      ['czsk','us'].forEach(seg=>{renderKPIs(seg);});
     }catch(err){errors.push('Totals: '+err.message);}
     setStatus('Loading daily breakdown...');
     try{
@@ -785,7 +872,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     else if(seg==='trends'){if(charts['trends'])charts['trends'].resize();}
   });
 });
-initSelects();updateDateLabel();loadData();
+initSelects();initSortControls();updateDateLabel();loadData();
 </script>
 </body>
 </html>

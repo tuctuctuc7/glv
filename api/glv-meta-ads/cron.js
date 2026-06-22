@@ -4,7 +4,7 @@
 const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
 
-const PRESETS = ['last_7d', 'last_14d', 'last_30d', 'last_90d'];
+const PRESETS = ['last_7d', 'last_14d', 'last_30d', 'last_90d', 'this_month', 'last_month'];
 const PRESET_DAYS = { last_7d: 6, last_14d: 13, last_30d: 29, last_90d: 89 };
 const TTL = 90000; // 25 hours
 
@@ -18,6 +18,20 @@ function sinceDate(preset) {
   const d = new Date();
   d.setDate(d.getDate() - 1 - PRESET_DAYS[preset]);
   return d.toISOString().slice(0, 10);
+}
+
+function monthRange(preset) {
+  const now = new Date();
+  if (preset === 'this_month') {
+    const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    return { since: since.toISOString().slice(0, 10), until: yesterday() };
+  }
+  if (preset === 'last_month') {
+    const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+    const until = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0));
+    return { since: since.toISOString().slice(0, 10), until: until.toISOString().slice(0, 10) };
+  }
+  return { since: sinceDate(preset), until: yesterday() };
 }
 
 async function redisCmd(...args) {
@@ -101,8 +115,7 @@ async function paginate(url) {
 }
 
 async function fetchAndCache(token, preset) {
-  const until = yesterday();
-  const since = sinceDate(preset);
+  const { since, until } = monthRange(preset);
   const dateParam = `time_range=${encodeURIComponent(JSON.stringify({ since, until }))}`;
   const auth = `access_token=${token}`;
   const errors = [];
