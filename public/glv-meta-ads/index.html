@@ -120,6 +120,19 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
 .creative-grid th.gridjs-th:nth-child(2){z-index:8!important;background:var(--gray50)!important;}
 .creative-grid th.gridjs-th:nth-child(3),.creative-grid td.gridjs-td:nth-child(3){position:sticky!important;left:290px!important;z-index:5!important;background:#fff!important;box-shadow:1px 0 0 var(--gray200);}
 .creative-grid th.gridjs-th:nth-child(3){z-index:8!important;background:var(--gray50)!important;}
+.data-table-wrap{max-height:588px;overflow:auto;border:1px solid var(--gray100);border-radius:10px;}
+.data-table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;}
+.data-table th,.data-table td{width:112px;min-width:112px;max-width:112px;padding:8px 10px;border-bottom:1px solid var(--gray100);background:#fff;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;}
+.data-table th{position:sticky;top:0;z-index:4;background:var(--gray50);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray600);border-bottom:1px solid var(--gray200);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table .wide{width:180px;min-width:180px;max-width:180px;}
+.data-table .mid{width:110px;min-width:110px;max-width:110px;}
+.creative-data-table th:nth-child(1),.creative-data-table td:nth-child(1){position:sticky;left:0;z-index:5;}
+.creative-data-table th:nth-child(1){z-index:8;}
+.creative-data-table th:nth-child(2),.creative-data-table td:nth-child(2){position:sticky;left:180px;z-index:5;}
+.creative-data-table th:nth-child(2){z-index:8;}
+.creative-data-table th:nth-child(3),.creative-data-table td:nth-child(3){position:sticky;left:290px;z-index:5;box-shadow:1px 0 0 var(--gray200);}
+.creative-data-table th:nth-child(3){z-index:8;}
 .roas-good{color:var(--green);font-weight:700;}
 .roas-warn{color:var(--amber);font-weight:700;}
 .roas-bad{color:var(--red);font-weight:700;}
@@ -710,6 +723,19 @@ function buildAllFilters(){
   });
 }
 
+function escapeHtml(value){
+  return String(value ?? '').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function renderControlledTable(container,columns,rows,tableClass=''){
+  container.innerHTML=`<div class="data-table-wrap"><table class="data-table ${tableClass}"><thead><tr>${
+    columns.map(c=>`<th class="${c.className||''}" title="${escapeHtml(c.label)}">${escapeHtml(c.label)}</th>`).join('')
+  }</tr></thead><tbody>${
+    rows.map(row=>`<tr>${columns.map(c=>`<td class="${c.className||''}" title="${escapeHtml(c.title?c.title(row):c.text(row))}">${c.html?c.html(row):escapeHtml(c.text(row))}</td>`).join('')}</tr>`).join('')
+  }</tbody></table></div>`;
+}
+function roasHtml(v){return`<span class="${roasClass(v)}">${escapeHtml(fmtRoas(v))}</span>`;}
+function badgeHtml(type){return`<span class="badge ${type==='Video'?'badge-v':'badge-s'}">${escapeHtml(type)}</span>`;}
+
 function renderDailyTable(seg){
   const sel=filterState[seg];const rows=getSegmentRows(seg,'daily');const daily=byDate(rows,sel);
   const container=document.getElementById('daily-table-'+seg);
@@ -717,26 +743,24 @@ function renderDailyTable(seg){
   if(!daily.length){container.innerHTML='<div class="empty">No data.</div>';return;}
   if(grids['daily-'+seg]){try{grids['daily-'+seg].destroy();}catch(e){}}
   const sorted=sortRows(daily,'daily',seg);
-  const data=sorted.map(d=>{const m=calcMetrics(d);return[d.date,d.spend,d.revenue,m.roas,d.purchases,m.cpa,m.aov,m.lp2co,m.co2pur,d.checkouts,m.costChk,d.lp,m.costLp,m.lp2pur,m.cpm];});
-  grids['daily-'+seg]=new gridjs.Grid({
-    columns:[
-      {name:'Date',width:'112px',sort:true},
-      {name:'Spend',width:'112px',sort:true,formatter:v=>fmtInt(v)},
-      {name:'Revenue',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'ROAS',width:'112px',sort:true,formatter:v=>gridjs.html(`<span class="${roasClass(v)}">${fmtRoas(v)}</span>`)},
-      {name:'Purchases',width:'112px',sort:true,formatter:v=>v||'—'},
-      {name:'CPA',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'AOV',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'LP→Checkout',width:'112px',sort:true,formatter:v=>fmtPct(v)},
-      {name:'Checkout→Purchase',width:'112px',sort:true,formatter:v=>fmtPct(v)},
-      {name:'Checkouts',width:'112px',sort:true,formatter:v=>v||'—'},
-      {name:'Cost/Checkout',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'LP Views',width:'112px',sort:true,formatter:v=>fmtInt(v)},
-      {name:'Cost/LP',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'LP→Purchase',width:'112px',sort:true,formatter:v=>fmtPct(v)},
-      {name:'CPM',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-    ],data,sort:true,fixedHeader:true,
-  }).render(container);
+  const tableRows=sorted.map(d=>({d,m:calcMetrics(d)}));
+  renderControlledTable(container,[
+    {label:'Date',text:r=>r.d.date},
+    {label:'Spend',text:r=>fmtInt(r.d.spend)},
+    {label:'Revenue',text:r=>r.d.revenue>0?fmtInt(r.d.revenue):'—'},
+    {label:'ROAS',text:r=>fmtRoas(r.m.roas),html:r=>roasHtml(r.m.roas)},
+    {label:'Purchases',text:r=>r.d.purchases||'—'},
+    {label:'CPA',text:r=>r.m.cpa>0?fmtInt(r.m.cpa):'—'},
+    {label:'AOV',text:r=>r.m.aov>0?fmtInt(r.m.aov):'—'},
+    {label:'LP→Checkout',text:r=>fmtPct(r.m.lp2co)},
+    {label:'Checkout→Purchase',text:r=>fmtPct(r.m.co2pur)},
+    {label:'Checkouts',text:r=>r.d.checkouts||'—'},
+    {label:'Cost/Checkout',text:r=>r.m.costChk>0?fmtInt(r.m.costChk):'—'},
+    {label:'LP Views',text:r=>fmtInt(r.d.lp)},
+    {label:'Cost/LP',text:r=>r.m.costLp>0?fmtInt(r.m.costLp):'—'},
+    {label:'LP→Purchase',text:r=>fmtPct(r.m.lp2pur)},
+    {label:'CPM',text:r=>r.m.cpm>0?fmtInt(r.m.cpm):'—'},
+  ],tableRows,'daily-data-table');
 }
 
 function renderTrendsTable(){
@@ -784,23 +808,28 @@ function renderCreatives(seg){
   if(!creatives.length){container.innerHTML='<div class="empty">No creative data for this filter.</div>';return;}
   if(grids['creative-'+seg]){try{grids['creative-'+seg].destroy();}catch(e){}}
   const sorted=sortRows(creatives,'creative',seg);
-  const data=sorted.map(c=>{const m=calcMetrics(c);return[c.name,c.campaignCode,c.type,c.spend,c.revenue,m.roas,c.purchases,m.cpa,m.aov,m.lp2co,m.co2pur,c.checkouts,m.costChk,c.lp,m.costLp,m.lp2pur,m.cpm,c.isVideo?c.hookRate:null,c.isVideo?c.holdRate:null];});
-  grids['creative-'+seg]=new gridjs.Grid({
-    columns:[
-      {name:'Creative',width:'180px',sort:true,formatter:v=>gridjs.html(`<span title="${v}" style="display:block;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v}</span>`)},
-      {name:'Campaign ID',width:'110px',sort:true,formatter:v=>v||'—'},
-      {name:'Type',width:'90px',sort:true,formatter:v=>gridjs.html(`<span class="badge ${v==='Video'?'badge-v':'badge-s'}">${v}</span>`)},
-      {name:'Spend',width:'112px',sort:true,formatter:v=>fmtInt(v)},{name:'Revenue',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'ROAS',width:'112px',sort:true,formatter:v=>gridjs.html(`<span class="${roasClass(v)}">${fmtRoas(v)}</span>`)},
-      {name:'Purchases',width:'112px',sort:true,formatter:v=>v||'—'},{name:'CPA',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'AOV',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'LP→Checkout',width:'112px',sort:true,formatter:v=>fmtPct(v)},{name:'Checkout→Purchase',width:'112px',sort:true,formatter:v=>fmtPct(v)},
-      {name:'Checkouts',width:'112px',sort:true,formatter:v=>v||'—'},{name:'Cost/Checkout',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'LP Views',width:'112px',sort:true,formatter:v=>fmtInt(v)},{name:'Cost/LP',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'LP→Purchase',width:'112px',sort:true,formatter:v=>fmtPct(v)},{name:'CPM',width:'112px',sort:true,formatter:v=>v>0?fmtInt(v):'—'},
-      {name:'Hook%',width:'112px',sort:true,formatter:v=>v!==null?fmtPct(v):'—'},{name:'Hold%',width:'112px',sort:true,formatter:v=>v!==null?fmtPct(v):'—'},
-    ],data,sort:true,fixedHeader:true,
-  }).render(container);
+  const tableRows=sorted.map(c=>({c,m:calcMetrics(c)}));
+  renderControlledTable(container,[
+    {label:'Creative',className:'wide',text:r=>r.c.name,title:r=>r.c.name},
+    {label:'Campaign ID',className:'mid',text:r=>r.c.campaignCode},
+    {label:'Type',text:r=>r.c.type,html:r=>badgeHtml(r.c.type)},
+    {label:'Spend',text:r=>fmtInt(r.c.spend)},
+    {label:'Revenue',text:r=>r.c.revenue>0?fmtInt(r.c.revenue):'—'},
+    {label:'ROAS',text:r=>fmtRoas(r.m.roas),html:r=>roasHtml(r.m.roas)},
+    {label:'Purchases',text:r=>r.c.purchases||'—'},
+    {label:'CPA',text:r=>r.m.cpa>0?fmtInt(r.m.cpa):'—'},
+    {label:'AOV',text:r=>r.m.aov>0?fmtInt(r.m.aov):'—'},
+    {label:'LP→Checkout',text:r=>fmtPct(r.m.lp2co)},
+    {label:'Checkout→Purchase',text:r=>fmtPct(r.m.co2pur)},
+    {label:'Checkouts',text:r=>r.c.checkouts||'—'},
+    {label:'Cost/Checkout',text:r=>r.m.costChk>0?fmtInt(r.m.costChk):'—'},
+    {label:'LP Views',text:r=>fmtInt(r.c.lp)},
+    {label:'Cost/LP',text:r=>r.m.costLp>0?fmtInt(r.m.costLp):'—'},
+    {label:'LP→Purchase',text:r=>fmtPct(r.m.lp2pur)},
+    {label:'CPM',text:r=>r.m.cpm>0?fmtInt(r.m.cpm):'—'},
+    {label:'Hook%',text:r=>r.c.isVideo?fmtPct(r.c.hookRate):'—'},
+    {label:'Hold%',text:r=>r.c.isVideo?fmtPct(r.c.holdRate):'—'},
+  ],tableRows,'creative-data-table');
 }
 
 async function fetchUsdRate(){
