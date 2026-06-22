@@ -100,6 +100,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* ── Section Controls ── */
 .section-controls{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+.creative-controls{display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;}
+.creative-controls .filter-wrap{margin-bottom:0;}
 .sort-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .sort-dir-btn{height:32px;width:32px;border:1px solid var(--gray200);border-radius:8px;background:var(--gray50);color:var(--gray800);font-size:15px;font-weight:800;cursor:pointer;}
 .sort-dir-btn:hover{background:var(--gray100);}
@@ -242,7 +244,7 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
   </div>
   <div class="section">
     <div class="section-title">Creative Evaluation</div>
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
+    <div class="creative-controls">
       <div class="filter-wrap" id="creative-filter-wrap-czsk">
         <div class="filter-toggle" id="creative-filter-toggle-czsk" onclick="toggleFilter('czsk-creative')" style="max-width:300px;">
           <span id="creative-filter-label-czsk">All campaigns</span><span style="color:var(--gray400)">▾</span>
@@ -311,7 +313,7 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
   </div>
   <div class="section">
     <div class="section-title">Creative Evaluation</div>
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
+    <div class="creative-controls">
       <div class="filter-wrap" id="creative-filter-wrap-us">
         <div class="filter-toggle" id="creative-filter-toggle-us" onclick="toggleFilter('us-creative')" style="max-width:300px;">
           <span id="creative-filter-label-us">All campaigns</span><span style="color:var(--gray400)">▾</span>
