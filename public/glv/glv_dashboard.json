@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-06-23 04:27 UTC",
+  "updated_at": "2026-06-23 16:17 UTC",
   "source": {
     "sheet_id": "1KjiRfumk3w8tNZFpfI8RO9X5RTcqoq5LcKfyCzcpplQ",
     "tab": "Daily",
@@ -9,7 +9,7 @@
   "currency": "USD",
   "date_range": {
     "start": "2026-01-01",
-    "end": "2026-06-21"
+    "end": "2026-06-22"
   },
   "absolute_metrics": [
     "spend",
@@ -4151,6 +4151,30 @@
       "spend": 488.0,
       "purchases": 5,
       "unique_visitors": 90
+    },
+    {
+      "date": "2026-06-22",
+      "region": "czsk",
+      "revenue": 10577.0,
+      "spend": 4400.0,
+      "purchases": 72,
+      "unique_visitors": 2523
+    },
+    {
+      "date": "2026-06-22",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 356
+    },
+    {
+      "date": "2026-06-22",
+      "region": "us",
+      "revenue": 173.0,
+      "spend": 482.0,
+      "purchases": 2,
+      "unique_visitors": 103
     }
   ]
 }
