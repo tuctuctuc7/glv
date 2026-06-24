@@ -49,6 +49,10 @@ function summarize(rows, date) {
     czsk: { spend: 0, revenue: 0, rows: 0 },
     us: { spend: 0, revenue: 0, rows: 0 },
   };
+  const campaigns = {
+    czsk: [],
+    us: [],
+  };
   const dates = [];
 
   for (const row of rows) {
@@ -58,14 +62,28 @@ function summarize(rows, date) {
     if (rowDate !== date || !validCampaign(name)) continue;
     const segment = segmentFor(name);
     if (!segment) continue;
-    totals[segment].spend += num(row.amount_spent || row.spend);
-    totals[segment].revenue += num(row['action_values:omni_purchase']) || actionValue(row.action_values, 'omni_purchase');
+    const spend = num(row.amount_spent || row.spend);
+    const revenue = num(row['action_values:omni_purchase']) || actionValue(row.action_values, 'omni_purchase');
+    totals[segment].spend += spend;
+    totals[segment].revenue += revenue;
     totals[segment].rows += 1;
+    campaigns[segment].push({
+      id: row.id || row.campaign_id || '',
+      name,
+      spend,
+      revenue,
+      roas: spend > 0 ? revenue / spend : 0,
+    });
+  }
+
+  for (const segment of Object.keys(campaigns)) {
+    campaigns[segment].sort((a, b) => b.spend - a.spend);
   }
 
   return {
     maxDate: dates.length ? dates.sort().at(-1) : null,
     totals,
+    campaigns,
   };
 }
 
