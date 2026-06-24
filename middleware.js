@@ -2,7 +2,6 @@ const AUTH_COOKIE = 'glv_meta_beta';
 const LOGIN_PATH = '/glv-meta-ads/login';
 const AUTH_PATH = '/api/glv-meta-ads/auth';
 const DATA_PATH = '/api/glv-meta-ads/fb-data';
-const DECISION_UI_PATH = '/api/glv-meta-ads/decision-report-ui';
 
 function cookieValue(cookieHeader, name) {
   if (!cookieHeader) return '';
@@ -31,7 +30,7 @@ export default function middleware(request) {
     return;
   }
 
-  if ((pathname === DATA_PATH || pathname === DECISION_UI_PATH) && !hasAccess(request)) {
+  if (pathname === DATA_PATH && !hasAccess(request)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -43,5 +42,5 @@ export default function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/glv-meta-ads/:path*', '/api/glv-meta-ads/fb-data', '/api/glv-meta-ads/decision-report-ui'],
+  matcher: ['/glv-meta-ads/:path*', '/api/glv-meta-ads/fb-data'],
 };
