@@ -152,6 +152,40 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
 .badge-v{background:#ede9fe;color:#7c3aed;}.badge-s{background:#f0fdf4;color:#15803d;}
 .badge-active{background:#dcfce7;color:#15803d;}.badge-paused{background:#fef9c3;color:#a16207;}.badge-unknown{background:#f1f5f9;color:#64748b;}
 
+/* ── Decision Report ── */
+.decision-hero{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;margin-bottom:16px;}
+.decision-summary{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.decision-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.decision-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--gray200);background:var(--gray50);color:var(--gray600);border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.decision-pill.good{background:#ecfdf5;color:#047857;border-color:#a7f3d0;}
+.decision-pill.warn{background:#fffbeb;color:#b45309;border-color:#fde68a;}
+.decision-pill.bad{background:#fef2f2;color:#b91c1c;border-color:#fecaca;}
+.decision-title{font-size:24px;font-weight:850;line-height:1.1;color:var(--gray900);letter-spacing:0;margin-bottom:8px;}
+.decision-copy{font-size:14px;line-height:1.5;color:var(--gray600);}
+.decision-kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.decision-kpi{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.decision-kpi-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--gray400);margin-bottom:6px;}
+.decision-kpi-value{font-size:20px;font-weight:850;color:var(--gray900);line-height:1.1;}
+.decision-kpi-sub{font-size:12px;color:var(--gray600);margin-top:5px;line-height:1.35;}
+.decision-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.move-card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.07);border-top:3px solid var(--blue);}
+.move-rank{font-size:11px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.move-title{font-size:15px;font-weight:800;color:var(--gray900);line-height:1.25;margin-bottom:8px;}
+.move-line{font-size:12px;color:var(--gray600);line-height:1.45;margin-top:7px;}
+.move-line strong{color:var(--gray800);}
+.process-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.process-item{border:1px solid var(--gray200);border-radius:10px;padding:12px;background:var(--gray50);}
+.process-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--gray400);margin-bottom:5px;}
+.process-text{font-size:12px;line-height:1.4;color:var(--gray700);}
+.decision-lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.decision-lane{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.lane-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--gray600);margin-bottom:12px;}
+.lane-item{border-top:1px solid var(--gray100);padding:10px 0;}
+.lane-item:first-of-type{border-top:none;padding-top:0;}
+.lane-item-title{font-size:13px;font-weight:750;color:var(--gray900);line-height:1.3;margin-bottom:5px;}
+.lane-item-meta{font-size:12px;color:var(--gray600);line-height:1.35;}
+.memo-box{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px;font-size:12px;line-height:1.55;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+
 /* ── Trends table colors ── */
 .czsk-col{color:#3b82f6;font-weight:600;}.us-col{color:#ef4444;font-weight:600;}
 
@@ -163,7 +197,9 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
 .empty{padding:30px;text-align:center;color:var(--gray400);font-size:13px;}
 
 /* ── Responsive ── */
-@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:1100px){.decision-hero,.decision-lanes{grid-template-columns:1fr;}.decision-grid{grid-template-columns:1fr;}.process-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:900px){.kpi-grid,.decision-kpis,.process-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:640px){.decision-kpis,.process-grid{grid-template-columns:1fr;}.decision-title{font-size:20px;}}
 </style>
 </head>
 <body>
@@ -203,7 +239,8 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
     </div>
   </div>
   <div class="header-tabs">
-    <button class="tab-btn active" data-tab="czsk">🇨🇿 CZSK</button>
+    <button class="tab-btn active" data-tab="decision">Decision</button>
+    <button class="tab-btn" data-tab="czsk">🇨🇿 CZSK</button>
     <button class="tab-btn" data-tab="us">🇺🇸 US</button>
   </div>
 </header>
@@ -212,8 +249,13 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
 <div id="loading" class="loading"><div class="spinner"></div><span id="loading-msg">Loading campaigns…</span></div>
 <div id="error" class="err" style="display:none;"></div>
 
+<!-- ═══ DECISION REPORT PANEL ═══ -->
+<div class="panel active" id="panel-decision">
+  <div id="decision-report" class="empty">Loading decision report…</div>
+</div>
+
 <!-- ═══ CZSK PANEL ═══ -->
-<div class="panel active" id="panel-czsk">
+<div class="panel" id="panel-czsk">
   <div class="kpi-grid" id="kpi-czsk"></div>
   <div class="section">
     <div class="section-title">Daily Performance Chart</div>
@@ -399,6 +441,7 @@ let usdRate     = 0.044;
 let aggregateCampaigns = [];
 let dailyCampaigns     = [];
 let adCreatives        = [];
+let decisionReport     = null;
 let campaignMeta       = {};
 let filterState        = { czsk: null, us: null, 'czsk-creative': null, 'us-creative': null };
 let creativeTypeFilter = { czsk: 'all', us: 'all' };
@@ -429,6 +472,9 @@ function fmtPct(n){return(!n||n<=0)?'—':n.toFixed(2)+'%';}
 function fmtOne(n){return(!n||n<=0)?'—':n.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});}
 function fmtUsd(n){return(!n||n<=0)?'—':'$'+(n*usdRate).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
 function roasClass(v){return v>=1.7?'roas-good':v>=1?'roas-warn':'roas-bad';}
+function fmtCzk(n){return(!n||n<=0)?'CZK 0':'CZK '+Math.round(n).toLocaleString('en-US');}
+function fmtMetricRoas(n){return(!n||n<=0)?'0.00x':Number(n).toFixed(2)+'x';}
+function shortName(name,max=68){const s=String(name||'Unnamed');return s.length>max?s.slice(0,max-1)+'…':s;}
 
 function aggregate(rows){
   return {
@@ -672,6 +718,145 @@ function renderKPIs(seg){
   `;
 }
 
+function reportEntityLine(entity){
+  if(!entity)return'';
+  return `${fmtCzk(entity.spend)} spend · ${fmtCzk(entity.revenue)} revenue · ${fmtMetricRoas(entity.roas)} ROAS`;
+}
+function firstAction(type){
+  return (decisionReport?.action_queue||[]).find(a=>a.type===type);
+}
+function reportTopMoves(){
+  const moves=[];
+  const scale=firstAction('budget_increase_review');
+  if(scale?.entity){
+    moves.push({
+      title:'Scale the highest-confidence CZSK winner',
+      capacity:'15-20 min',
+      change:`Review ${shortName(scale.entity.name)} for standard +20% budget increase.`,
+      why:`${reportEntityLine(scale.entity)} in the lookback.`,
+      impact:'Adds budget to proven demand instead of leaving CZSK scale capped.',
+    });
+  }
+  const zeroAds=decisionReport?.zero_revenue_spend_pockets?.czsk?.ads?.slice(0,3)||[];
+  if(zeroAds.length){
+    const wasted=zeroAds.reduce((s,x)=>s+Number(x.spend||0),0);
+    moves.push({
+      title:'Cut or justify the biggest zero-revenue pockets',
+      capacity:'20-30 min',
+      change:zeroAds.map(x=>shortName(x.name,42)).join(' · '),
+      why:`Combined ${fmtCzk(wasted)} spend with CZK 0 attributed revenue.`,
+      impact:'Stops budget leakage before adding more scale elsewhere.',
+    });
+  }
+  const hurt=(decisionReport?.outlier_radar||[]).find(x=>x.classification==='hurt');
+  if(hurt){
+    moves.push({
+      title:'Fix the harmful shift before broader scaling',
+      capacity:'20-30 min',
+      change:`Inspect ${shortName(hurt.name)}.`,
+      why:(hurt.reasons||[]).join(' ')||'Entity moved against the account trend.',
+      impact:'Prevents a weak pocket from absorbing budget while winners are scaled.',
+    });
+  }
+  while(moves.length<3){
+    moves.push({
+      title:'Hold remaining structure',
+      capacity:'10 min',
+      change:'Skip non-priority changes.',
+      why:'The OS should protect capacity and avoid touching everything.',
+      impact:'Keeps tomorrow’s read clean.',
+    });
+  }
+  return moves.slice(0,3);
+}
+function decisionPillClass(verdict){
+  if(verdict==='status_quo')return'good';
+  if(verdict==='revamp')return'bad';
+  return'warn';
+}
+function laneItem(item){
+  const reasons=(item.reasons||[]).join(' ');
+  return `<div class="lane-item">
+    <div class="lane-item-title">${escapeHtml(shortName(item.name,82))}</div>
+    <div class="lane-item-meta">${escapeHtml(reportEntityLine(item))}</div>
+    ${reasons?`<div class="lane-item-meta">${escapeHtml(reasons)}</div>`:''}
+  </div>`;
+}
+function actionItem(action){
+  const entity=action.entity||{};
+  return `<div class="lane-item">
+    <div class="lane-item-title">${escapeHtml((action.priority||'medium').toUpperCase())} · ${escapeHtml(action.market||'')} · ${escapeHtml(action.type||'review')}</div>
+    <div class="lane-item-meta">${entity.name?escapeHtml(shortName(entity.name,82))+'<br>':''}${escapeHtml(action.recommendation||'Review')}</div>
+  </div>`;
+}
+function renderDecisionReport(){
+  const el=document.getElementById('decision-report');
+  if(!el)return;
+  if(!decisionReport){
+    el.innerHTML='<div class="empty">Decision report unavailable.</div>';
+    return;
+  }
+  const cap=decisionReport.capacity||{};
+  const czsk=decisionReport.market_reads?.czsk||{};
+  const us=decisionReport.market_reads?.us||{};
+  const czY=czsk.yesterday||{};
+  const us7=us.last_7d||{};
+  const actions=decisionReport.action_queue||[];
+  const highCount=actions.filter(a=>a.priority==='high').length;
+  const hurt=(decisionReport.outlier_radar||[]).filter(x=>x.classification==='hurt');
+  const fatigue=decisionReport.fatigue_radar||[];
+  const topMoves=reportTopMoves();
+  const winners=decisionReport.winners?.czsk?.adsets||[];
+  const zero=decisionReport.zero_revenue_spend_pockets?.czsk?.ads||[];
+  el.className='';
+  el.innerHTML=`
+    <div class="decision-hero">
+      <div class="decision-summary">
+        <div class="decision-meta">
+          <span class="decision-pill ${decisionPillClass(cap.verdict)}">${escapeHtml(cap.verdict||'unknown')}</span>
+          <span class="decision-pill">Report ${escapeHtml(decisionReport.report_date||'')}</span>
+          <span class="decision-pill">CZK</span>
+        </div>
+        <div class="decision-title">Optimize today. Scale the winner, clean the waste, then inspect the harmful shift.</div>
+        <div class="decision-copy">${escapeHtml(cap.reason||'Decision report is ready.')}</div>
+      </div>
+      <div class="decision-kpis">
+        <div class="decision-kpi"><div class="decision-kpi-label">CZSK yesterday</div><div class="decision-kpi-value">${fmtMetricRoas(czY.roas)}</div><div class="decision-kpi-sub">${fmtCzk(czY.spend)} spend · ${fmtCzk(czY.revenue)} revenue</div></div>
+        <div class="decision-kpi"><div class="decision-kpi-label">US last 7d</div><div class="decision-kpi-value">${fmtMetricRoas(us7.roas)}</div><div class="decision-kpi-sub">${fmtCzk(us7.spend)} spend · ${fmtCzk(us7.revenue)} revenue</div></div>
+        <div class="decision-kpi"><div class="decision-kpi-label">Priority load</div><div class="decision-kpi-value">${highCount}</div><div class="decision-kpi-sub">High-priority actions</div></div>
+        <div class="decision-kpi"><div class="decision-kpi-label">Risk flags</div><div class="decision-kpi-value">${hurt.length + fatigue.length}</div><div class="decision-kpi-sub">${hurt.length} harmful outliers · ${fatigue.length} fatigue warnings</div></div>
+      </div>
+    </div>
+    <div class="decision-grid">
+      ${topMoves.map((move,i)=>`<div class="move-card">
+        <div class="move-rank">Move ${i+1} · ${escapeHtml(move.capacity)}</div>
+        <div class="move-title">${escapeHtml(move.title)}</div>
+        <div class="move-line"><strong>Change:</strong> ${escapeHtml(move.change)}</div>
+        <div class="move-line"><strong>Why:</strong> ${escapeHtml(move.why)}</div>
+        <div class="move-line"><strong>Impact:</strong> ${escapeHtml(move.impact)}</div>
+      </div>`).join('')}
+    </div>
+    <div class="section">
+      <div class="section-title">Process Lens</div>
+      <div class="process-grid">
+        <div class="process-item"><div class="process-label">Triage</div><div class="process-text">OPTIMIZE, not REVAMP. Good bones, bad allocation.</div></div>
+        <div class="process-item"><div class="process-label">Momentum</div><div class="process-text">CZSK is above scale threshold. Add budget where marginal economics hold.</div></div>
+        <div class="process-item"><div class="process-label">Shift / Outlier</div><div class="process-text">Zero-revenue pockets are the immediate risk before broader scale.</div></div>
+        <div class="process-item"><div class="process-label">Fatigue</div><div class="process-text">Keep workhorses on watch. Prepare replacements if leading indicators stack.</div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Morning Memo</div>
+      <div class="memo-box">${escapeHtml(decisionReport.morning_memo||'')}</div>
+    </div>
+    <div class="decision-lanes">
+      <div class="decision-lane"><div class="lane-title">Action Queue</div>${actions.slice(0,6).map(actionItem).join('')||'<div class="empty">No actions.</div>'}</div>
+      <div class="decision-lane"><div class="lane-title">Winners / Scale</div>${winners.slice(0,6).map(laneItem).join('')||'<div class="empty">No winners.</div>'}</div>
+      <div class="decision-lane"><div class="lane-title">Waste / Risk</div>${zero.slice(0,6).map(laneItem).join('')||'<div class="empty">No waste pockets.</div>'}</div>
+    </div>
+  `;
+}
+
 function initSelects(){
   ['czsk','us'].forEach(seg=>{
     ['chart-left-','chart-right-'].forEach((prefix,i)=>{
@@ -903,6 +1088,15 @@ async function apiFetch(type){
   const r=await fetch(`/api/glv-meta-ads/fb-data?${qs}`);const json=await r.json();
   if(!r.ok)throw new Error(json.error||`HTTP ${r.status}`);return json;
 }
+async function apiFetchDecision(){
+  const qs=new URLSearchParams();
+  if(customRange)qs.set('time_range',JSON.stringify(customRange));
+  else qs.set('date_preset',datePreset==='last_90d'?'last_30d':(datePreset||'last_30d'));
+  const r=await fetch(`/api/glv-meta-ads/decision-report-ui?${qs}`);
+  const json=await r.json();
+  if(!r.ok)throw new Error(json.error||`HTTP ${r.status}`);
+  return json;
+}
 function setStatus(msg){const el=document.getElementById('loading-msg');if(el)el.textContent=msg;}
 async function loadData(){
   const loadEl=document.getElementById('loading');const errEl=document.getElementById('error');
@@ -913,6 +1107,16 @@ async function loadData(){
     Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}});charts={};
     const errors=[];
     setStatus('Loading exchange rate...');await fetchUsdRate();
+    setStatus('Loading decision report...');
+    try{
+      decisionReport=await apiFetchDecision();
+      renderDecisionReport();
+    }catch(err){
+      errors.push('Decision report: '+err.message);
+      decisionReport=null;
+      const el=document.getElementById('decision-report');
+      if(el)el.innerHTML=`<div class="empty" style="color:var(--red)">Decision report unavailable: ${err.message}</div>`;
+    }
     setStatus('Loading campaign totals...');
     try{
       const d=await apiFetch('aggregate');
