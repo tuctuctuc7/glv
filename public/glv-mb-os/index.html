@@ -577,6 +577,66 @@ h1{
   font-size:10px;
   font-weight:900;
 }
+.mini-chip.good{background:rgba(102,130,112,.14);color:#496153}
+.mini-chip.warn{background:rgba(240,179,95,.18);color:#835b1f}
+.mini-chip.bad{background:rgba(255,120,109,.16);color:#8f332c}
+.command-grid{
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:12px;
+  margin-top:16px;
+}
+.command-card{
+  border-radius:20px;
+  background:rgba(255,253,248,.08);
+  border:1px solid rgba(255,255,255,.12);
+  padding:14px;
+}
+.command-label{
+  color:#aaa398;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+.command-value{
+  color:#fffaf0;
+  font-size:17px;
+  font-weight:920;
+  line-height:1.16;
+  margin-top:8px;
+}
+.command-meta{
+  color:#bfb7ad;
+  font-size:11px;
+  line-height:1.4;
+  margin-top:8px;
+}
+.readiness{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+.readiness-item{
+  min-height:84px;
+  border-radius:18px;
+  background:rgba(255,253,248,.1);
+  border:1px solid rgba(255,255,255,.11);
+  padding:12px;
+}
+.readiness-item strong{
+  display:block;
+  font-size:21px;
+  line-height:1;
+  margin-top:7px;
+}
+.readiness-item span{
+  color:#c8c1b8;
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
 .side-card{
   padding:18px;
 }
@@ -666,6 +726,101 @@ h1{
   font-size:11px;
   font-weight:900;
 }
+.decision-stack{
+  padding:14px 18px 18px;
+  display:grid;
+  gap:10px;
+}
+.decision-row{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:11px;
+  align-items:center;
+  border-top:1px solid rgba(23,23,23,.07);
+  padding-top:11px;
+}
+.decision-row:first-child{
+  border-top:0;
+  padding-top:0;
+}
+.decision-num{
+  width:30px;
+  height:30px;
+  border-radius:11px;
+  display:grid;
+  place-items:center;
+  background:#141519;
+  color:#fffaf0;
+  font-weight:950;
+}
+.decision-main{
+  min-width:0;
+}
+.decision-title{
+  font-size:12px;
+  font-weight:920;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.decision-sub{
+  margin-top:3px;
+  color:#7d756c;
+  font-size:10px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.delta-chip{
+  display:inline-flex;
+  align-items:center;
+  border-radius:99px;
+  padding:5px 8px;
+  font-size:10px;
+  font-weight:950;
+  background:#f0ece3;
+  color:#5d574f;
+}
+.delta-chip.good{background:rgba(102,130,112,.14);color:#496153}
+.delta-chip.warn{background:rgba(240,179,95,.18);color:#835b1f}
+.delta-chip.bad{background:rgba(255,120,109,.16);color:#8f332c}
+.matrix{
+  padding:16px 18px 18px;
+  display:grid;
+  gap:10px;
+}
+.matrix-row{
+  display:grid;
+  grid-template-columns:92px 1fr auto;
+  gap:10px;
+  align-items:center;
+}
+.track{
+  height:9px;
+  border-radius:999px;
+  background:rgba(23,23,23,.08);
+  overflow:hidden;
+}
+.track span{
+  display:block;
+  height:100%;
+  width:var(--w,0%);
+  border-radius:inherit;
+  background:linear-gradient(90deg,var(--green-2),var(--cyan));
+}
+.track.warn span{background:linear-gradient(90deg,var(--amber),var(--coral))}
+.matrix-label{
+  color:#70695f;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.matrix-value{
+  color:#292520;
+  font-size:11px;
+  font-weight:950;
+}
 .memo-card{
   min-height:170px;
   padding:18px;
@@ -749,6 +904,64 @@ h1{
   font-weight:900;
   text-align:center;
 }
+.market-console{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  padding:16px;
+}
+.console-tile{
+  border-radius:18px;
+  border:1px solid rgba(23,23,23,.07);
+  background:#fffdf8;
+  padding:14px;
+}
+.console-label{
+  color:#807970;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.console-value{
+  font-size:22px;
+  font-weight:930;
+  margin-top:8px;
+}
+.console-sub{
+  color:#756e65;
+  font-size:10px;
+  line-height:1.35;
+  margin-top:6px;
+}
+.mode-band{
+  margin:0 16px 16px;
+  border-radius:20px;
+  background:linear-gradient(135deg,#111216,#28251f);
+  color:#fffaf0;
+  padding:16px;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+.mode-item{
+  border-left:1px solid rgba(255,255,255,.14);
+  padding-left:12px;
+}
+.mode-item:first-child{border-left:0;padding-left:0}
+.mode-label{
+  color:#b7aea2;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.mode-value{
+  margin-top:7px;
+  font-size:15px;
+  font-weight:920;
+  line-height:1.2;
+}
 .empty{
   padding:16px;
   color:#7e766d;
@@ -809,6 +1022,10 @@ h1{
   .search{width:100%}
   .content{padding:0 14px 14px}
   .kpi-row,.move-grid,.action-board,.page-grid{grid-template-columns:1fr}
+  .command-grid,.readiness,.market-console,.mode-band{grid-template-columns:1fr}
+  .matrix-row{grid-template-columns:1fr}
+  .mode-item{border-left:0;border-top:1px solid rgba(255,255,255,.14);padding:12px 0 0}
+  .mode-item:first-child{border-top:0;padding-top:0}
   .hero-card h2{font-size:31px}
   .orb{width:168px;height:168px}
   .data-row{grid-template-columns:1fr 1fr}
@@ -869,6 +1086,70 @@ const pct=value=>Math.max(0,Math.min(100,Math.round(num(value)*100)));
 const normalized=value=>String(value||'').toLowerCase();
 const matches=item=>!query||normalized(JSON.stringify(item)).includes(query);
 const pillClass=verdict=>verdict==='status_quo'?'good':verdict==='revamp'?'bad':'warn';
+const averageDaily=totals=>num(totals?.spend)/Math.max(1,num(totals?.rows)||1);
+
+function signedPct(value,invert=false){
+  if(value===null||value===undefined||Number.isNaN(Number(value)))return 'n/a';
+  const n=num(value);
+  const sign=n>0?'+':'';
+  return `${sign}${Math.round(n*100)}%`;
+}
+
+function deltaClass(value,{goodUp=true,neutral=.06}={}){
+  if(value===null||value===undefined||Number.isNaN(Number(value)))return 'warn';
+  const n=num(value);
+  if(Math.abs(n)<neutral)return 'warn';
+  const good=goodUp?n>0:n<0;
+  return good?'good':'bad';
+}
+
+function deltaChip(label,value,opts){
+  return `<span class="delta-chip ${deltaClass(value,opts)}">${esc(label)} ${esc(signedPct(value))}</span>`;
+}
+
+function marketMode(read){
+  const status=String(read?.status||'unknown').replace(/_/g,' ');
+  if(status==='scale carefully')return 'Scale carefully';
+  if(status==='pmf signal')return 'PMF signal';
+  if(status==='performance review')return 'Performance review';
+  if(status==='hold monitor')return 'Hold and monitor';
+  if(status==='protect')return 'Protect';
+  return status.replace(/\b\w/g,ch=>ch.toUpperCase());
+}
+
+function scoreFromRead(read,market){
+  const roas=num(read?.last_7d?.roas||read?.yesterday?.roas);
+  const purchases=num(read?.last_7d?.purchases||read?.yesterday?.purchases);
+  const base=market==='us'?roas*48+purchases*.7:roas*30+purchases*.05;
+  return Math.max(8,Math.min(99,Math.round(base)));
+}
+
+function topAction(){
+  const action=(report?.action_queue||[])[0];
+  if(!action)return {title:'No urgent action',meta:'Monitor one more day before touching structure.',priority:'watch'};
+  const entity=action.entity||{};
+  return {
+    title:action.recommendation||action.type||'Review account',
+    meta:[action.market?.toUpperCase(),entity.name?short(entity.name,58):'',action.reason||''].filter(Boolean).join(' / '),
+    priority:action.priority||'medium'
+  };
+}
+
+function readinessMetrics(){
+  const cz=report.market_reads?.czsk||{};
+  const us=report.market_reads?.us||{};
+  const high=(report.action_queue||[]).filter(action=>action.priority==='high').length;
+  const waste=(report.zero_revenue_spend_pockets?.czsk?.ads||[]).slice(0,3).reduce((sum,item)=>sum+num(item.spend),0);
+  const concentration=num(report.spend_concentration?.czsk?.top_3_spend_share);
+  return [
+    {label:'CZSK mode',value:marketMode(cz),tone:cz.status==='scale_carefully'?'good':'warn'},
+    {label:'US mode',value:marketMode(us),tone:us.status==='pmf_signal'?'warn':'good'},
+    {label:'Priority load',value:String(high),tone:high>2?'bad':high?'warn':'good'},
+    {label:'Waste top 3',value:czk(waste),tone:waste>5000?'bad':waste>0?'warn':'good'},
+    {label:'Spend concentration',value:concentration?`${Math.round(concentration*100)}%`:'n/a',tone:concentration>.75?'warn':'good'},
+    {label:'Radar items',value:String((report.outlier_radar||[]).length+(report.fatigue_radar||[]).length),tone:'warn'}
+  ];
+}
 
 function sparkline(points,color='var(--green)'){
   const vals=points.map(num);
@@ -1004,8 +1285,107 @@ function actionBoard(){
   </section>`;
 }
 
+function decisionStack(){
+  const actions=(report?.action_queue||[]).filter(matches).slice(0,5);
+  return `<section class="bento">
+    <div class="panel-head">
+      <div><div class="section-title">Today Command Stack</div><div class="section-note">Ranked by capacity and likely business impact.</div></div>
+      <span class="chip light">${actions.length} active</span>
+    </div>
+    <div class="decision-stack">
+      ${actions.map((action,index)=>{
+        const entity=action.entity||{};
+        return `<div class="decision-row">
+          <div class="decision-num">${index+1}</div>
+          <div class="decision-main">
+            <div class="decision-title">${esc(action.recommendation||action.type||'Review')}</div>
+            <div class="decision-sub">${esc([action.market?.toUpperCase(),entity.name?short(entity.name,76):'',action.reason].filter(Boolean).join(' / '))}</div>
+          </div>
+          <span class="mini-chip ${action.priority==='high'?'bad':action.priority==='medium'?'warn':'good'}">${esc(action.priority||'watch')}</span>
+        </div>`;
+      }).join('')||'<div class="empty">No active commands.</div>'}
+    </div>
+  </section>`;
+}
+
+function readinessPanel(){
+  return `<section class="bento">
+    <div class="panel-head">
+      <div><div class="section-title">Operating State</div><div class="section-note">One-screen account posture.</div></div>
+    </div>
+    <div class="matrix">
+      ${readinessMetrics().map(item=>`<div class="matrix-row">
+        <div class="matrix-label">${esc(item.label)}</div>
+        <div class="track ${item.tone==='bad'||item.tone==='warn'?'warn':''}"><span style="--w:${item.tone==='good'?88:item.tone==='warn'?58:34}%"></span></div>
+        <div class="matrix-value">${esc(item.value)}</div>
+      </div>`).join('')}
+    </div>
+  </section>`;
+}
+
+function concentrationPanel(market='czsk'){
+  const data=report.spend_concentration?.[market]||{};
+  const share=num(data.top_3_spend_share);
+  const top=data.top||[];
+  return `<section class="bento">
+    <div class="panel-head">
+      <div><div class="section-title">${esc(market.toUpperCase())} Spend Concentration</div><div class="section-note">Where budget dependency lives.</div></div>
+      <span class="delta-chip ${share>.75?'warn':'good'}">${share?Math.round(share*100):0}% top 3</span>
+    </div>
+    <div class="radar-list">
+      ${top.slice(0,3).map(item=>`<div class="radar-item">
+        <span class="pulse ${num(item.roas)<1?'bad':num(item.roas)<1.7?'warn':''}"></span>
+        <div><div class="radar-name">${esc(short(item.name,64))}</div><div class="radar-meta">${esc(czk(item.spend))} spend share ${Math.round(num(item.spend_share)*100)}%</div></div>
+        <div class="mono-stat">${roas(item.roas)}</div>
+      </div>`).join('')||'<div class="empty">No concentration data.</div>'}
+    </div>
+  </section>`;
+}
+
+function exceptionPanel(){
+  const exceptions=[...(report.strong_signal_exceptions?.czsk||[]),...(report.strong_signal_exceptions?.us||[])].filter(matches);
+  return `<section class="bento">
+    <div class="panel-head">
+      <div><div class="section-title">Judgement Lane</div><div class="section-note">Weak ROAS, but signal says do not blindly kill.</div></div>
+      <span class="chip light">${exceptions.length}</span>
+    </div>
+    <div class="radar-list">
+      ${exceptions.slice(0,5).map(item=>`<div class="radar-item">
+        <span class="pulse warn"></span>
+        <div><div class="radar-name">${esc(short(item.name,64))}</div><div class="radar-meta">${esc(item.reason||'strong signal exception')}</div></div>
+        <div class="mono-stat">${roas(item.roas)}</div>
+      </div>`).join('')||'<div class="empty">No judgement exceptions.</div>'}
+    </div>
+  </section>`;
+}
+
+function marketConsole(){
+  const cz=report.market_reads?.czsk||{};
+  const us=report.market_reads?.us||{};
+  const czY=cz.yesterday||{};
+  const us7=us.last_7d||{};
+  return `<section class="bento full">
+    <div class="panel-head">
+      <div><div class="section-title">Market Console</div><div class="section-note">CZSK is the performance lane; US remains PMF unless breakeven repeats.</div></div>
+    </div>
+    <div class="market-console">
+      <div class="console-tile"><div class="console-label">CZSK ROAS</div><div class="console-value">${roas(czY.roas)}</div><div class="console-sub">${deltaChip('ROAS vs 2d',cz.roas_delta_vs_prior_2_day_avg,{goodUp:true})}</div></div>
+      <div class="console-tile"><div class="console-label">CZSK spend</div><div class="console-value">${czk(czY.spend)}</div><div class="console-sub">${deltaChip('Spend vs 2d',cz.spend_delta_vs_prior_2_day_avg,{goodUp:true})}</div></div>
+      <div class="console-tile"><div class="console-label">US ROAS 7d</div><div class="console-value">${roas(us7.roas)}</div><div class="console-sub">${esc(marketMode(us))}</div></div>
+      <div class="console-tile"><div class="console-label">US signal</div><div class="console-value">${Number(num(us7.purchases)).toLocaleString('en-US')} / ${Number(num(us7.checkouts)).toLocaleString('en-US')}</div><div class="console-sub">purchases / checkouts</div></div>
+    </div>
+    <div class="mode-band">
+      <div class="mode-item"><div class="mode-label">Triage</div><div class="mode-value">${esc((report.capacity?.verdict||'unknown').replace(/_/g,' '))}</div></div>
+      <div class="mode-item"><div class="mode-label">Momentum</div><div class="mode-value">${esc((cz.reasons||[])[0]||'Waiting for stronger signal')}</div></div>
+      <div class="mode-item"><div class="mode-label">Shift</div><div class="mode-value">${esc((report.outlier_radar||[]).find(item=>item.classification==='hurt')?.name||'No critical harmful shift')}</div></div>
+      <div class="mode-item"><div class="mode-label">Fatigue</div><div class="mode-value">${esc((report.fatigue_radar||[])[0]?.name||'No active fatigue cluster')}</div></div>
+    </div>
+  </section>`;
+}
+
 function renderCockpit(){
   const cap=report.capacity||{};
+  const command=topAction();
   const czY=report.market_reads?.czsk?.yesterday||{};
   const us7=report.market_reads?.us?.last_7d||{};
   const actions=report.action_queue||[];
@@ -1026,14 +1406,24 @@ function renderCockpit(){
               <span class="chip">${esc(report.report_date||'today')}</span>
             </div>
             <div>
-              <h2>Optimize the account without touching everything.</h2>
-              <p>${esc(cap.reason||'The decision engine is ready. Prioritize scale, waste, and harmful shifts.')}</p>
+              <h2>${esc(command.title)}</h2>
+              <p>${esc(command.meta||cap.reason||'The decision engine is ready. Prioritize scale, waste, and harmful shifts.')}</p>
+              <div class="command-grid">
+                <div class="command-card">
+                  <div class="command-label">Why this matters</div>
+                  <div class="command-value">${esc(cap.reason||'Clear optimization work exists without needing a full rebuild.')}</div>
+                  <div class="command-meta">${esc((report.market_reads?.czsk?.reasons||[]).join(' ')||'CZSK is the performance lane.')}</div>
+                </div>
+                <div class="readiness">
+                  ${readinessMetrics().slice(0,3).map(item=>`<div class="readiness-item"><span>${esc(item.label)}</span><strong>${esc(item.value)}</strong></div>`).join('')}
+                </div>
+              </div>
             </div>
           </div>
-          <div class="orb-wrap"><div class="orb"><div class="orb-score"><strong>${score}</strong><span>operator score</span></div></div></div>
+          <div class="orb-wrap"><div class="orb"><div class="orb-score"><strong>${score}</strong><span>readiness</span></div></div></div>
         </section>
         <section class="kpi-row">
-          <div class="bento kpi"><div class="kpi-top"><div><div class="kpi-label">CZSK yesterday</div><div class="kpi-value">${roas(czY.roas)}</div></div>${sparkline(revSeries,'var(--green)')}</div><div class="kpi-sub">${czk(czY.spend)} spend / ${czk(czY.revenue)} revenue</div></div>
+          <div class="bento kpi"><div class="kpi-top"><div><div class="kpi-label">CZSK yesterday</div><div class="kpi-value">${roas(czY.roas)}</div></div>${sparkline(revSeries,'var(--green)')}</div><div class="kpi-sub">${czk(czY.spend)} spend / ${czk(czY.revenue)} revenue<br>${deltaChip('ROAS',report.market_reads?.czsk?.roas_delta_vs_prior_2_day_avg,{goodUp:true})}</div></div>
           <div class="bento kpi"><div class="kpi-top"><div><div class="kpi-label">US last 7d</div><div class="kpi-value">${roas(us7.roas)}</div></div>${sparkline(spendSeries,'var(--amber)')}</div><div class="kpi-sub">${czk(us7.spend)} spend / ${czk(us7.revenue)} revenue</div></div>
           <div class="bento kpi"><div class="kpi-top"><div><div class="kpi-label">High priority</div><div class="kpi-value">${high}</div></div>${sparkline([1,2,1,3,2,high||1],'var(--coral)')}</div><div class="kpi-sub">capacity-driving actions</div></div>
           <div class="bento kpi"><div class="kpi-top"><div><div class="kpi-label">Risk flags</div><div class="kpi-value">${risk}</div></div>${sparkline([1,1,2,1,3,risk||1],'var(--violet)')}</div><div class="kpi-sub">outlier and fatigue signals</div></div>
@@ -1045,24 +1435,33 @@ function renderCockpit(){
       <aside class="right-stack">
         ${marketCard('CZSK performance lane',czY,Math.min(99,Math.round(num(czY.roas)*32)))}
         ${marketCard('US discovery lane',us7,Math.min(99,Math.round(num(us7.roas)*52)))}
-        <section class="bento"><div class="panel-head"><div><div class="section-title">Signal Radar</div><div class="section-note">Highest attention pockets.</div></div></div><div class="radar-list">${[...(report.outlier_radar||[]),...(report.fatigue_radar||[])].filter(matches).slice(0,6).map(radarItem).join('')||'<div class="empty">No active radar items.</div>'}</div></section>
-        <section class="bento memo-card"><div class="section-title">Morning Memo</div><div class="section-note">Compressed operator read.</div><div class="memo-text">${esc(report.morning_memo||'No memo available.')}</div></section>
+        ${readinessPanel()}
+        ${decisionStack()}
+        ${concentrationPanel('czsk')}
       </aside>
     </div>
   </div>`;
 }
 
 function renderActions(){
-  return `<div class="view active" data-panel="actions"><div class="page-grid">${actionBoard()}</div></div>`;
+  return `<div class="view active" data-panel="actions"><div class="page-grid">
+    ${marketConsole()}
+    ${actionBoard()}
+    ${decisionStack()}
+    ${readinessPanel()}
+  </div></div>`;
 }
 
 function renderSignals(){
   const winners=(report.winners?.czsk?.adsets||[]).filter(matches);
   const zero=(report.zero_revenue_spend_pockets?.czsk?.ads||[]).filter(matches);
+  const losers=[...(report.losers?.czsk?.ads||[]),...(report.losers?.us?.ads||[])].filter(matches);
   const outliers=(report.outlier_radar||[]).filter(matches);
   return `<div class="view active" data-panel="signals"><div class="page-grid">
     <section class="bento table-card wide"><div class="panel-head"><div><div class="section-title">Winners / Scale Lane</div><div class="section-note">Ad sets worth attention before budget moves.</div></div></div><div class="data-row data-head"><div>Name</div><div>Spend</div><div>Revenue</div><div>ROAS</div><div>Purchases</div></div>${winners.slice(0,10).map(entityRow).join('')||'<div class="empty">No winners found.</div>'}</section>
     <section class="bento"><div class="panel-head"><div><div class="section-title">Outlier Radar</div><div class="section-note">Helpful and harmful shifts.</div></div></div><div class="radar-list">${outliers.slice(0,10).map(radarItem).join('')||'<div class="empty">No outliers.</div>'}</div></section>
+    ${exceptionPanel()}
+    <section class="bento table-card wide"><div class="panel-head"><div><div class="section-title">Losers / Protect Lane</div><div class="section-note">Weak ROAS pockets ranked by spend.</div></div></div><div class="data-row data-head"><div>Name</div><div>Spend</div><div>Revenue</div><div>ROAS</div><div>Purchases</div></div>${losers.slice(0,10).map(entityRow).join('')||'<div class="empty">No loser lane items.</div>'}</section>
     <section class="bento table-card full"><div class="panel-head"><div><div class="section-title">Zero-Revenue Spend Pockets</div><div class="section-note">Cut, justify, or isolate before scaling.</div></div></div><div class="data-row data-head"><div>Name</div><div>Spend</div><div>Revenue</div><div>ROAS</div><div>Purchases</div></div>${zero.slice(0,12).map(entityRow).join('')||'<div class="empty">No zero-revenue spend pockets.</div>'}</section>
   </div></div>`;
 }
@@ -1070,22 +1469,24 @@ function renderSignals(){
 function renderMarkets(){
   const czY=report.market_reads?.czsk?.yesterday||{};
   const cz7=report.market_reads?.czsk?.last_7d||czY;
+  const cz30=report.market_reads?.czsk?.last_30d||cz7;
+  const czPrior=report.market_reads?.czsk?.prior_2_day_avg||czY;
   const us7=report.market_reads?.us?.last_7d||{};
   const bars=[
-    {label:'D-6',value:num(cz7.spend)*.72},
-    {label:'D-5',value:num(cz7.spend)*.81},
-    {label:'D-4',value:num(cz7.spend)*.68},
-    {label:'D-3',value:num(cz7.spend)*.93},
-    {label:'D-2',value:num(cz7.spend)*.86},
-    {label:'D-1',value:num(czY.spend)*.95},
-    {label:'Now',value:num(czY.spend)}
+    {label:'30d avg',value:num(cz30.spend)/30},
+    {label:'7d avg',value:num(cz7.spend)/7},
+    {label:'2d avg',value:num(czPrior.spend)},
+    {label:'Yesterday',value:num(czY.spend)}
   ];
   const max=Math.max(...bars.map(bar=>bar.value),1);
   return `<div class="view active" data-panel="markets"><div class="page-grid">
+    ${marketConsole()}
     ${marketCard('CZSK yesterday',czY,Math.min(99,Math.round(num(czY.roas)*32)))}
     ${marketCard('CZSK last 7 days',cz7,Math.min(99,Math.round(num(cz7.roas)*32)))}
     ${marketCard('US last 7 days',us7,Math.min(99,Math.round(num(us7.roas)*52)))}
-    <section class="bento chart-card full"><div class="panel-head"><div><div class="section-title">Spend Rhythm</div><div class="section-note">Compact directional read, not a finance chart.</div></div></div><div class="bar-chart">${bars.map(bar=>`<div class="bar-wrap"><div class="bar" style="height:${Math.max(10,Math.round((bar.value/max)*100))}%"></div><div class="bar-label">${esc(bar.label)}</div></div>`).join('')}</div></section>
+    ${concentrationPanel('czsk')}
+    ${concentrationPanel('us')}
+    <section class="bento chart-card full"><div class="panel-head"><div><div class="section-title">CZSK Spend Rhythm</div><div class="section-note">Average daily spend windows vs yesterday.</div></div></div><div class="bar-chart">${bars.map(bar=>`<div class="bar-wrap"><div class="bar" style="height:${Math.max(10,Math.round((bar.value/max)*100))}%"></div><div class="bar-label">${esc(bar.label)}<br>${esc(czk(bar.value))}</div></div>`).join('')}</div></section>
   </div></div>`;
 }
 
