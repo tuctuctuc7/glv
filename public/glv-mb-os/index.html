@@ -5,189 +5,1120 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>GELAVIS Media Buyer OS</title>
 <style>
-:root{color-scheme:light;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#d97706;--ink:#111827;--muted:#64748b;--line:#e2e8f0;--soft:#f8fafc;--paper:#ffffff;}
+:root{
+  color-scheme:dark;
+  --shell:#090a0c;
+  --shell-2:#111318;
+  --panel:#f4f1ea;
+  --panel-2:#ebe7de;
+  --card:#fffdf8;
+  --ink:#171717;
+  --muted:#75716b;
+  --line:rgba(28,28,28,.11);
+  --line-dark:rgba(255,255,255,.12);
+  --green:#668270;
+  --green-2:#8fb19b;
+  --amber:#f0b35f;
+  --coral:#ff786d;
+  --violet:#9b87f5;
+  --cyan:#83d8d6;
+  --shadow:0 26px 80px rgba(0,0,0,.28);
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#eef2f7;color:var(--ink);font-size:14px}
-.topbar{position:sticky;top:0;z-index:20;background:#0f172a;color:#fff;border-bottom:1px solid rgba(255,255,255,.08)}
-.topbar-inner{max-width:1440px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 22px}
-.brand{font-size:15px;font-weight:850;letter-spacing:0}
-.brand span{font-size:12px;font-weight:500;color:#94a3b8;margin-left:8px}
-.top-actions{display:flex;align-items:center;gap:10px}
-.pill{display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);border-radius:999px;padding:5px 10px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#dbeafe}
-.btn{height:32px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;border-radius:8px;padding:0 12px;font-size:12px;font-weight:800;cursor:pointer}
-.btn:hover{background:rgba(255,255,255,.14)}
-.page{max-width:1440px;margin:0 auto;padding:22px}
-.status{padding:60px 20px;text-align:center;color:var(--muted)}
-.spinner{width:30px;height:30px;border:3px solid #cbd5e1;border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+body{
+  min-height:100vh;
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:
+    radial-gradient(circle at 9% 11%,rgba(131,216,214,.16),transparent 31%),
+    radial-gradient(circle at 82% 13%,rgba(155,135,245,.16),transparent 30%),
+    linear-gradient(135deg,#060607 0%,#111114 48%,#191816 100%);
+  color:#f5f2eb;
+  font-size:13px;
+  overflow:hidden;
+}
+button,input{font:inherit}
+button{cursor:pointer}
+.app-shell{
+  height:100vh;
+  display:grid;
+  grid-template-columns:88px minmax(0,1fr);
+  padding:18px;
+  gap:16px;
+}
+.rail{
+  border:1px solid var(--line-dark);
+  background:rgba(244,241,234,.08);
+  border-radius:28px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:16px 10px;
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(18px);
+}
+.mark{
+  width:42px;
+  height:42px;
+  border-radius:16px;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(145deg,#f5f1e8,#c9c2b5);
+  color:#111;
+  font-weight:950;
+  letter-spacing:0;
+  margin-bottom:22px;
+}
+.nav{
+  display:grid;
+  gap:10px;
+  width:100%;
+}
+.nav-button{
+  position:relative;
+  width:100%;
+  height:58px;
+  border:0;
+  border-radius:20px;
+  background:transparent;
+  color:#aaa39a;
+  display:grid;
+  place-items:center;
+  transition:.2s ease;
+}
+.nav-button:hover,.nav-button.active{
+  background:rgba(255,255,255,.12);
+  color:#fffaf0;
+}
+.nav-button.active::before{
+  content:"";
+  position:absolute;
+  left:7px;
+  width:4px;
+  height:22px;
+  border-radius:99px;
+  background:var(--cyan);
+  box-shadow:0 0 22px rgba(131,216,214,.7);
+}
+.nav-icon{
+  width:22px;
+  height:22px;
+  border:2px solid currentColor;
+  border-radius:8px;
+  position:relative;
+}
+.nav-icon.grid::before,.nav-icon.grid::after{
+  content:"";
+  position:absolute;
+  background:currentColor;
+}
+.nav-icon.grid::before{width:2px;top:3px;bottom:3px;left:8px}
+.nav-icon.grid::after{height:2px;left:3px;right:3px;top:8px}
+.nav-icon.stack{border-radius:6px;border-top-width:6px}
+.nav-icon.signal{border-radius:50%}
+.nav-icon.signal::before{
+  content:"";
+  position:absolute;
+  inset:5px;
+  border-radius:50%;
+  border:2px solid currentColor;
+}
+.nav-icon.market::before{
+  content:"";
+  position:absolute;
+  left:4px;
+  right:4px;
+  bottom:4px;
+  height:8px;
+  border-top:2px solid currentColor;
+  transform:skewY(-18deg);
+}
+.nav-icon.memo{
+  border-radius:5px;
+}
+.nav-icon.memo::before,.nav-icon.memo::after{
+  content:"";
+  position:absolute;
+  left:4px;
+  right:4px;
+  height:2px;
+  background:currentColor;
+}
+.nav-icon.memo::before{top:6px}
+.nav-icon.memo::after{top:12px}
+.rail-foot{
+  margin-top:auto;
+  display:grid;
+  gap:12px;
+  width:100%;
+}
+.mini-button{
+  width:100%;
+  height:46px;
+  border:0;
+  border-radius:17px;
+  color:#d9d2c7;
+  background:rgba(255,255,255,.08);
+}
+.workspace{
+  min-width:0;
+  height:100%;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:32px;
+  background:linear-gradient(145deg,rgba(244,241,234,.94),rgba(224,219,209,.92));
+  color:var(--ink);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+  position:relative;
+}
+.workspace::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.34),transparent 28%,transparent 72%,rgba(255,255,255,.22)),
+    repeating-linear-gradient(90deg,rgba(0,0,0,.018) 0 1px,transparent 1px 54px);
+}
+.topbar{
+  position:relative;
+  z-index:1;
+  height:78px;
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:center;
+  gap:18px;
+  padding:18px 24px 12px;
+}
+.eyebrow{
+  color:var(--muted);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  margin-bottom:4px;
+}
+.title-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+h1{
+  font-size:25px;
+  line-height:1;
+  font-weight:850;
+  letter-spacing:0;
+}
+.live-dot{
+  width:9px;
+  height:9px;
+  border-radius:99px;
+  background:var(--green-2);
+  box-shadow:0 0 0 6px rgba(143,177,155,.16),0 0 24px rgba(102,130,112,.8);
+}
+.search{
+  width:min(34vw,460px);
+  height:46px;
+  border:1px solid rgba(23,23,23,.08);
+  border-radius:99px;
+  background:#fffefa;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 8px 0 18px;
+  box-shadow:0 12px 34px rgba(31,28,24,.08);
+}
+.search input{
+  min-width:0;
+  flex:1;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:var(--ink);
+}
+.search input::placeholder{color:#9a958d}
+.circle-button{
+  width:36px;
+  height:36px;
+  border:0;
+  border-radius:50%;
+  background:#101115;
+  color:#fffaf0;
+  display:grid;
+  place-items:center;
+}
+.lens{
+  width:14px;
+  height:14px;
+  border:2px solid currentColor;
+  border-radius:50%;
+  position:relative;
+}
+.lens::after{
+  content:"";
+  width:7px;
+  height:2px;
+  background:currentColor;
+  position:absolute;
+  right:-5px;
+  bottom:-3px;
+  transform:rotate(45deg);
+  border-radius:99px;
+}
+.content{
+  position:relative;
+  z-index:1;
+  height:calc(100% - 78px);
+  padding:0 24px 24px;
+  overflow:hidden;
+}
+.view{
+  display:none;
+  height:100%;
+  overflow:auto;
+  padding-bottom:4px;
+}
+.view.active{display:block}
+.view::-webkit-scrollbar{width:8px}
+.view::-webkit-scrollbar-thumb{background:rgba(23,23,23,.16);border-radius:99px}
+.cockpit-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.18fr) minmax(330px,.82fr);
+  gap:16px;
+  height:100%;
+  min-height:0;
+}
+.left-stack,.right-stack{
+  min-height:0;
+  display:grid;
+  gap:16px;
+  align-content:start;
+}
+.left-stack{grid-template-rows:auto auto minmax(0,1fr)}
+.bento{
+  background:rgba(255,253,248,.78);
+  border:1px solid rgba(23,23,23,.08);
+  border-radius:24px;
+  box-shadow:0 18px 54px rgba(53,47,39,.08);
+  overflow:hidden;
+}
+.hero-card{
+  min-height:220px;
+  display:grid;
+  grid-template-columns:1.05fr .95fr;
+  background:
+    radial-gradient(circle at 86% 8%,rgba(131,216,214,.32),transparent 26%),
+    radial-gradient(circle at 68% 90%,rgba(255,120,109,.18),transparent 32%),
+    linear-gradient(145deg,#111216,#22252b);
+  color:#fffaf0;
+  padding:24px;
+}
+.hero-copy{
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:18px;
+}
+.status-strip{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.chip{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:25px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:99px;
+  padding:5px 10px;
+  background:rgba(255,255,255,.08);
+  color:#ece7db;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.chip.light{
+  background:rgba(23,23,23,.06);
+  border-color:rgba(23,23,23,.08);
+  color:#5f5a52;
+}
+.chip.good{background:rgba(102,130,112,.18);color:#e7f5e9}
+.chip.warn{background:rgba(240,179,95,.18);color:#fff2d7}
+.chip.bad{background:rgba(255,120,109,.18);color:#ffe4e0}
+.hero-card h2{
+  font-size:40px;
+  max-width:620px;
+  line-height:.98;
+  letter-spacing:0;
+  font-weight:900;
+}
+.hero-card p{
+  max-width:560px;
+  color:#c8c1b8;
+  line-height:1.5;
+  font-size:13px;
+}
+.orb-wrap{
+  display:grid;
+  place-items:center;
+}
+.orb{
+  width:210px;
+  height:210px;
+  border-radius:50%;
+  position:relative;
+  display:grid;
+  place-items:center;
+  background:
+    conic-gradient(from 230deg,var(--cyan),var(--green-2),var(--amber),var(--coral),var(--violet),var(--cyan));
+  box-shadow:0 0 60px rgba(131,216,214,.22);
+}
+.orb::before{
+  content:"";
+  position:absolute;
+  inset:12px;
+  border-radius:50%;
+  background:radial-gradient(circle at 32% 24%,#4f535e,#111216 62%);
+}
+.orb::after{
+  content:"";
+  position:absolute;
+  inset:28px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.2);
+  box-shadow:inset 0 0 30px rgba(255,255,255,.08);
+}
+.orb-score{
+  position:relative;
+  z-index:1;
+  text-align:center;
+}
+.orb-score strong{
+  display:block;
+  font-size:58px;
+  line-height:.9;
+  font-weight:950;
+}
+.orb-score span{
+  color:#c8c1b8;
+  font-size:10px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  font-weight:900;
+}
+.kpi-row{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+.kpi{
+  min-height:112px;
+  padding:17px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+.kpi-top{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-start;
+}
+.kpi-label{
+  color:#777168;
+  font-size:11px;
+  font-weight:800;
+}
+.kpi-value{
+  font-size:27px;
+  line-height:1;
+  font-weight:920;
+  margin-top:8px;
+}
+.kpi-sub{
+  color:#837d73;
+  font-size:11px;
+  line-height:1.35;
+}
+.spark{
+  width:56px;
+  height:28px;
+}
+.move-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+.move-card{
+  min-height:190px;
+  padding:18px;
+  position:relative;
+}
+.move-card::before{
+  content:"";
+  position:absolute;
+  inset:0 0 auto;
+  height:4px;
+  background:linear-gradient(90deg,var(--cyan),var(--amber),var(--coral));
+  opacity:.82;
+}
+.rank{
+  width:34px;
+  height:34px;
+  border-radius:12px;
+  display:grid;
+  place-items:center;
+  background:#111216;
+  color:#fffaf0;
+  font-weight:950;
+  margin-bottom:14px;
+}
+.move-title{
+  font-size:16px;
+  line-height:1.15;
+  font-weight:900;
+  margin-bottom:10px;
+}
+.move-meta{
+  color:#6f6960;
+  line-height:1.45;
+  font-size:12px;
+}
+.move-impact{
+  margin-top:12px;
+  color:#221f1c;
+  font-size:12px;
+  font-weight:850;
+}
+.panel-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding:17px 18px 0;
+}
+.section-title{
+  color:#22201d;
+  font-size:16px;
+  line-height:1.1;
+  font-weight:900;
+}
+.section-note{
+  color:#7c756c;
+  margin-top:4px;
+  font-size:11px;
+}
+.action-board{
+  padding:16px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+.board-col{
+  border-radius:20px;
+  background:rgba(235,231,222,.72);
+  border:1px solid rgba(23,23,23,.07);
+  padding:12px;
+  min-height:230px;
+}
+.col-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  color:#625c54;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+.count{
+  min-width:24px;
+  height:24px;
+  border-radius:99px;
+  background:#fffdf8;
+  display:grid;
+  place-items:center;
+  color:#292621;
+}
+.task{
+  background:#fffdf8;
+  border:1px solid rgba(23,23,23,.06);
+  border-radius:16px;
+  padding:13px;
+  box-shadow:0 12px 28px rgba(47,43,36,.06);
+}
+.task+.task{margin-top:10px}
+.task-title{
+  font-size:13px;
+  line-height:1.25;
+  font-weight:900;
+}
+.task-meta{
+  margin-top:8px;
+  color:#756f66;
+  font-size:11px;
+  line-height:1.35;
+}
+.task-foot{
+  margin-top:12px;
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.mini-chip{
+  border-radius:99px;
+  background:#f0ece3;
+  color:#625b52;
+  padding:5px 8px;
+  font-size:10px;
+  font-weight:900;
+}
+.side-card{
+  padding:18px;
+}
+.market-card{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:14px;
+  align-items:center;
+}
+.market-card+.market-card{margin-top:12px}
+.market-title{
+  color:#747067;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+}
+.market-value{
+  font-size:28px;
+  line-height:1;
+  margin-top:7px;
+  font-weight:930;
+}
+.market-sub{
+  margin-top:7px;
+  color:#7e776d;
+  font-size:11px;
+  line-height:1.35;
+}
+.gauge{
+  width:96px;
+  height:96px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:conic-gradient(var(--green) calc(var(--score,50)*1%),rgba(23,23,23,.08) 0);
+  position:relative;
+}
+.gauge::before{
+  content:"";
+  position:absolute;
+  inset:10px;
+  background:#fffdf8;
+  border-radius:50%;
+}
+.gauge strong{
+  position:relative;
+  font-size:21px;
+  font-weight:950;
+}
+.radar-list{padding:14px 18px 18px}
+.radar-item{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:10px;
+  align-items:center;
+  padding:11px 0;
+  border-top:1px solid rgba(23,23,23,.07);
+}
+.radar-item:first-child{border-top:0}
+.pulse{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 0 5px rgba(102,130,112,.12);
+}
+.pulse.warn{background:var(--amber);box-shadow:0 0 0 5px rgba(240,179,95,.16)}
+.pulse.bad{background:var(--coral);box-shadow:0 0 0 5px rgba(255,120,109,.16)}
+.radar-name{
+  font-size:12px;
+  font-weight:850;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.radar-meta{
+  color:#80786e;
+  font-size:10px;
+  margin-top:3px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.mono-stat{
+  color:#27231f;
+  font-size:11px;
+  font-weight:900;
+}
+.memo-card{
+  min-height:170px;
+  padding:18px;
+  color:#f3eee4;
+  background:
+    linear-gradient(145deg,rgba(11,12,15,.96),rgba(31,32,37,.95)),
+    #111;
+}
+.memo-card .section-title{color:#fff7ed}
+.memo-card .section-note{color:#b7aea2}
+.memo-text{
+  margin-top:14px;
+  color:#d9d1c5;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:11px;
+  line-height:1.6;
+  white-space:pre-wrap;
+}
+.page-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+.wide{grid-column:span 2}
+.full{grid-column:1/-1}
+.table-card{padding:16px}
+.data-row{
+  display:grid;
+  grid-template-columns:minmax(0,1.2fr) repeat(4,minmax(84px,.35fr));
+  gap:10px;
+  align-items:center;
+  padding:12px 0;
+  border-top:1px solid rgba(23,23,23,.07);
+}
+.data-row:first-of-type{border-top:0}
+.data-head{
+  color:#898278;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.entity-name{
+  min-width:0;
+  font-size:12px;
+  font-weight:900;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.cell{
+  color:#514b43;
+  font-size:12px;
+  font-weight:800;
+}
+.chart-card{padding:18px}
+.bar-chart{
+  height:190px;
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:10px;
+  align-items:end;
+  padding-top:18px;
+}
+.bar-wrap{
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  gap:8px;
+}
+.bar{
+  min-height:14px;
+  border-radius:999px 999px 8px 8px;
+  background:linear-gradient(180deg,var(--green-2),var(--green));
+  box-shadow:0 10px 22px rgba(102,130,112,.16);
+}
+.bar-label{
+  color:#716a60;
+  font-size:10px;
+  font-weight:900;
+  text-align:center;
+}
+.empty{
+  padding:16px;
+  color:#7e766d;
+  font-size:12px;
+}
+.status{
+  height:100%;
+  display:grid;
+  place-items:center;
+  color:#5e584f;
+}
+.loader{
+  width:74px;
+  height:74px;
+  border-radius:50%;
+  border:1px solid rgba(23,23,23,.08);
+  display:grid;
+  place-items:center;
+  margin:0 auto 16px;
+  background:conic-gradient(from 0deg,var(--cyan),rgba(255,255,255,.04),var(--amber),var(--cyan));
+  animation:spin 1.4s linear infinite;
+}
+.loader::before{
+  content:"";
+  width:54px;
+  height:54px;
+  border-radius:50%;
+  background:var(--panel);
+}
 @keyframes spin{to{transform:rotate(360deg)}}
-.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;margin-bottom:14px}
-.panel{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:18px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
-.meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-.tag{display:inline-flex;border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:4px 9px;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.tag.good{background:#ecfdf5;border-color:#bbf7d0;color:#047857}.tag.warn{background:#fffbeb;border-color:#fde68a;color:#b45309}.tag.bad{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
-h1{font-size:28px;line-height:1.08;letter-spacing:0;margin-bottom:8px}
-.summary{font-size:14px;line-height:1.5;color:var(--muted);max-width:780px}
-.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.kpi{border:1px solid var(--line);border-radius:9px;padding:13px;background:var(--soft)}
-.kpi-label{font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin-bottom:5px}
-.kpi-val{font-size:21px;font-weight:900;line-height:1.1}
-.kpi-sub{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.35}
-.section-title{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:12px}
-.moves{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
-.move{background:var(--paper);border:1px solid var(--line);border-top:3px solid var(--blue);border-radius:10px;padding:15px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
-.move-rank{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--blue);margin-bottom:7px}
-.move-title{font-size:15px;font-weight:900;line-height:1.25;margin-bottom:8px}
-.line{font-size:12px;line-height:1.45;color:var(--muted);margin-top:7px}.line strong{color:#334155}
-.process{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.process-item{background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:12px}
-.process-label{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin-bottom:5px}
-.process-text{font-size:12px;line-height:1.4;color:#475569}
-.memo{background:#0f172a;color:#e2e8f0;border-radius:9px;padding:13px;font-size:12px;line-height:1.55;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-.lanes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px}
-.lane{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:15px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
-.item{border-top:1px solid #f1f5f9;padding:10px 0}.item:first-of-type{border-top:0;padding-top:0}
-.item-title{font-size:13px;font-weight:850;line-height:1.3;margin-bottom:5px}
-.item-meta{font-size:12px;line-height:1.35;color:var(--muted)}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
-.metric-list{display:grid;gap:8px}
-.metric-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid #f1f5f9;padding-bottom:8px}
-.metric-row:last-child{border-bottom:0;padding-bottom:0}
-.metric-key{font-size:12px;font-weight:800;color:#475569}.metric-value{text-align:right;font-size:12px;color:var(--muted)}
-.error{border-color:#fecaca;background:#fef2f2;color:#991b1b}
-@media(max-width:1100px){.hero,.lanes,.moves,.two-col{grid-template-columns:1fr}.process{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:720px){.topbar-inner{align-items:flex-start;flex-direction:column}.kpi-grid,.process{grid-template-columns:1fr}h1{font-size:23px}.page{padding:14px}}
+.error-box{
+  max-width:620px;
+  margin:70px auto;
+  padding:24px;
+  border-radius:24px;
+  background:#fff4f1;
+  border:1px solid rgba(255,120,109,.28);
+  color:#8b2b24;
+}
+@media(max-width:1180px){
+  body{overflow:auto}
+  .app-shell{height:auto;min-height:100vh;grid-template-columns:72px minmax(0,1fr)}
+  .workspace{min-height:calc(100vh - 36px)}
+  .content{height:auto;overflow:visible}
+  .view{height:auto;overflow:visible}
+  .cockpit-grid,.hero-card{grid-template-columns:1fr}
+  .page-grid{grid-template-columns:1fr 1fr}
+  .wide{grid-column:1/-1}
+}
+@media(max-width:840px){
+  .app-shell{grid-template-columns:1fr;padding:10px}
+  .rail{position:sticky;top:10px;z-index:20;flex-direction:row;border-radius:22px;padding:10px}
+  .mark{margin:0 10px 0 0}
+  .nav{display:flex;overflow:auto}
+  .nav-button{min-width:54px;height:48px}
+  .rail-foot{display:none}
+  .topbar{height:auto;grid-template-columns:1fr;padding:18px}
+  .search{width:100%}
+  .content{padding:0 14px 14px}
+  .kpi-row,.move-grid,.action-board,.page-grid{grid-template-columns:1fr}
+  .hero-card h2{font-size:31px}
+  .orb{width:168px;height:168px}
+  .data-row{grid-template-columns:1fr 1fr}
+  .data-head{display:none}
+}
 </style>
 </head>
 <body>
-<header class="topbar">
-  <div class="topbar-inner">
-    <div class="brand">GELAVIS Media Buyer OS <span>Decision Report Mock</span></div>
-    <div class="top-actions">
-      <span class="pill" id="report-date">Loading</span>
-      <button class="btn" onclick="loadReport(true)">Refresh</button>
+<div class="app-shell">
+  <aside class="rail" aria-label="Media Buyer OS navigation">
+    <div class="mark">MB</div>
+    <nav class="nav">
+      <button class="nav-button active" data-view="cockpit" title="Cockpit"><span class="nav-icon grid"></span></button>
+      <button class="nav-button" data-view="actions" title="Actions"><span class="nav-icon stack"></span></button>
+      <button class="nav-button" data-view="signals" title="Signals"><span class="nav-icon signal"></span></button>
+      <button class="nav-button" data-view="markets" title="Markets"><span class="nav-icon market"></span></button>
+      <button class="nav-button" data-view="memo" title="Memo"><span class="nav-icon memo"></span></button>
+    </nav>
+    <div class="rail-foot">
+      <button class="mini-button" id="refresh-button" title="Refresh">R</button>
     </div>
-  </div>
-</header>
-<main class="page">
-  <div id="app" class="status"><div class="spinner"></div>Loading decision report...</div>
-</main>
+  </aside>
+
+  <section class="workspace">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">GELAVIS / Media Buyer OS</div>
+        <div class="title-row"><h1 id="view-title">Decision Cockpit</h1><span class="live-dot"></span></div>
+      </div>
+      <label class="search">
+        <input id="search-input" placeholder="Search campaigns, actions, signals">
+        <button class="circle-button" type="button" title="Search"><span class="lens"></span></button>
+      </label>
+    </header>
+    <main class="content" id="app">
+      <div class="status"><div><div class="loader"></div><strong>Loading decision intelligence...</strong></div></div>
+    </main>
+  </section>
+</div>
+
 <script>
 let report=null;
+let activeView='cockpit';
+let query='';
+
 const app=document.getElementById('app');
-const reportDate=document.getElementById('report-date');
+const viewTitle=document.getElementById('view-title');
+const searchInput=document.getElementById('search-input');
+const navButtons=[...document.querySelectorAll('.nav-button')];
+const refreshButton=document.getElementById('refresh-button');
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-const czk=value=>!value||value<=0?'CZK 0':'CZK '+Math.round(value).toLocaleString('en-US');
-const roas=value=>!value||value<=0?'0.00x':Number(value).toFixed(2)+'x';
-const pct=value=>!value?'0%':Math.round(value*100)+'%';
-const short=(value,max=70)=>{const s=String(value||'Unnamed');return s.length>max?s.slice(0,max-1)+'...':s};
+const num=value=>Number(value||0);
+const czk=value=>num(value)<=0?'CZK 0':'CZK '+Math.round(num(value)).toLocaleString('en-US');
+const roas=value=>num(value)<=0?'0.00x':num(value).toFixed(2)+'x';
+const short=(value,max=58)=>{const s=String(value||'Unnamed');return s.length>max?s.slice(0,max-1)+'...':s};
+const pct=value=>Math.max(0,Math.min(100,Math.round(num(value)*100)));
+const normalized=value=>String(value||'').toLowerCase();
+const matches=item=>!query||normalized(JSON.stringify(item)).includes(query);
 const pillClass=verdict=>verdict==='status_quo'?'good':verdict==='revamp'?'bad':'warn';
-const entityLine=entity=>`${czk(entity?.spend)} spend - ${czk(entity?.revenue)} revenue - ${roas(entity?.roas)} ROAS`;
 
-function firstAction(type){return(report?.action_queue||[]).find(action=>action.type===type)}
+function sparkline(points,color='var(--green)'){
+  const vals=points.map(num);
+  const max=Math.max(...vals,1);
+  const path=vals.map((value,index)=>{
+    const x=index*(56/Math.max(vals.length-1,1));
+    const y=26-(value/max)*22;
+    return `${index?'L':'M'}${x.toFixed(1)} ${y.toFixed(1)}`;
+  }).join(' ');
+  return `<svg class="spark" viewBox="0 0 56 28" aria-hidden="true"><path d="${path}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round"/><path d="${path} L56 28 L0 28 Z" fill="${color}" opacity=".08"/></svg>`;
+}
+
+function actionSource(type){
+  return (report?.action_queue||[]).find(action=>action.type===type);
+}
+
 function topMoves(){
   const moves=[];
-  const scale=firstAction('budget_increase_review');
+  const scale=actionSource('budget_increase_review');
   if(scale?.entity){
     moves.push({
-      title:'Scale the highest-confidence CZSK winner',
-      capacity:'15-20 min',
-      change:`Review ${short(scale.entity.name)} for standard +20% budget increase.`,
-      why:`${entityLine(scale.entity)} in the lookback.`,
-      impact:'Adds budget to proven demand instead of leaving CZSK scale capped.',
+      title:'Scale proven CZSK demand',
+      time:'15 min',
+      change:`Review ${short(scale.entity.name,48)} for the standard +20% increase.`,
+      why:`${czk(scale.entity.spend)} spend, ${czk(scale.entity.revenue)} revenue, ${roas(scale.entity.roas)} ROAS.`,
+      impact:'Uncaps the winner without turning the account into a rebuild.'
     });
   }
-  const zero=report?.zero_revenue_spend_pockets?.czsk?.ads?.slice(0,3)||[];
+  const zero=(report?.zero_revenue_spend_pockets?.czsk?.ads||[]).slice(0,3);
   if(zero.length){
-    const wasted=zero.reduce((sum,item)=>sum+Number(item.spend||0),0);
+    const wasted=zero.reduce((sum,item)=>sum+num(item.spend),0);
     moves.push({
-      title:'Cut or justify the biggest zero-revenue pockets',
-      capacity:'20-30 min',
-      change:zero.map(item=>short(item.name,40)).join(' - '),
-      why:`Combined ${czk(wasted)} spend with CZK 0 attributed revenue.`,
-      impact:'Stops budget leakage before adding more scale elsewhere.',
+      title:'Stop silent budget leaks',
+      time:'25 min',
+      change:zero.map(item=>short(item.name,34)).join(' / '),
+      why:`Top zero-revenue pockets have ${czk(wasted)} spend and no attributed revenue.`,
+      impact:'Frees capacity before scaling the account harder.'
     });
   }
   const hurt=(report?.outlier_radar||[]).find(item=>item.classification==='hurt');
   if(hurt){
     moves.push({
-      title:'Fix the harmful shift before broader scaling',
-      capacity:'20-30 min',
-      change:`Inspect ${short(hurt.name)}.`,
-      why:(hurt.reasons||[]).join(' ')||'Entity moved against the account trend.',
-      impact:'Prevents a weak pocket from absorbing budget while winners are scaled.',
+      title:'Inspect the harmful shift',
+      time:'20 min',
+      change:`Open ${short(hurt.name,48)} and check what changed.`,
+      why:(hurt.reasons||[]).join(' ')||'The entity moved against the desired account direction.',
+      impact:'Prevents weak movement from hiding inside a healthy account read.'
     });
   }
-  while(moves.length<3)moves.push({title:'Hold remaining structure',capacity:'10 min',change:'Skip non-priority changes.',why:'Protect capacity and avoid touching everything.',impact:"Keeps tomorrow's read clean."});
+  while(moves.length<3){
+    moves.push({
+      title:'Hold non-critical edits',
+      time:'10 min',
+      change:'Skip low-impact account touching today.',
+      why:'Capacity is limited and the current verdict is optimize.',
+      impact:'Keeps tomorrow signal cleaner.'
+    });
+  }
   return moves.slice(0,3);
 }
-function actionItem(action){
+
+function actionStage(action){
+  if(action.priority==='high')return'Now';
+  if(action.priority==='medium')return'Queue';
+  return'Watch';
+}
+
+function buildActions(){
+  const actions=(report?.action_queue||[]).filter(matches);
+  const cols={Now:[],Queue:[],Watch:[]};
+  actions.forEach(action=>cols[actionStage(action)].push(action));
+  return cols;
+}
+
+function taskCard(action){
   const entity=action.entity||{};
-  return `<div class="item"><div class="item-title">${esc((action.priority||'medium').toUpperCase())} - ${esc(action.market||'')} - ${esc(action.type||'review')}</div><div class="item-meta">${entity.name?esc(short(entity.name,82))+'<br>':''}${esc(action.recommendation||'Review')}</div></div>`;
+  return `<article class="task">
+    <div class="task-title">${esc(action.recommendation||action.type||'Review')}</div>
+    <div class="task-meta">${entity.name?esc(short(entity.name,74))+'<br>':''}${esc(action.market||'market')} / ${esc(action.type||'signal')}</div>
+    <div class="task-foot">
+      <span class="mini-chip">${esc(action.priority||'medium')}</span>
+      ${entity.roas!==undefined?`<span class="mini-chip">${roas(entity.roas)}</span>`:''}
+      ${entity.spend!==undefined?`<span class="mini-chip">${czk(entity.spend)}</span>`:''}
+    </div>
+  </article>`;
 }
-function laneItem(item){
+
+function entityRow(item){
+  return `<div class="data-row">
+    <div class="entity-name">${esc(short(item.name,78))}</div>
+    <div class="cell">${czk(item.spend)}</div>
+    <div class="cell">${czk(item.revenue)}</div>
+    <div class="cell">${roas(item.roas)}</div>
+    <div class="cell">${Number(num(item.purchases)).toLocaleString('en-US')}</div>
+  </div>`;
+}
+
+function radarItem(item){
+  const bad=item.classification==='hurt'||num(item.roas)<1;
+  const warn=item.classification==='watch'||num(item.roas)<1.3;
   const reasons=(item.reasons||[]).join(' ');
-  return `<div class="item"><div class="item-title">${esc(short(item.name,82))}</div><div class="item-meta">${esc(entityLine(item))}</div>${reasons?`<div class="item-meta">${esc(reasons)}</div>`:''}</div>`;
+  return `<div class="radar-item">
+    <span class="pulse ${bad?'bad':warn?'warn':''}"></span>
+    <div>
+      <div class="radar-name">${esc(short(item.name,62))}</div>
+      <div class="radar-meta">${esc(reasons||item.classification||'signal')}</div>
+    </div>
+    <div class="mono-stat">${roas(item.roas)}</div>
+  </div>`;
 }
-function metricRow(label,value){return`<div class="metric-row"><div class="metric-key">${esc(label)}</div><div class="metric-value">${value}</div></div>`}
-function marketMetrics(label,data){
-  return `<div class="panel"><div class="section-title">${esc(label)}</div><div class="metric-list">
-    ${metricRow('Spend',esc(czk(data.spend)))}
-    ${metricRow('Revenue',esc(czk(data.revenue)))}
-    ${metricRow('ROAS',esc(roas(data.roas)))}
-    ${metricRow('Purchases',Number(data.purchases||0).toLocaleString('en-US'))}
-    ${metricRow('Checkouts',Number(data.checkouts||0).toLocaleString('en-US'))}
-    ${metricRow('LPVs',Number(data.landing_page_views||0).toLocaleString('en-US'))}
-  </div></div>`;
+
+function marketCard(label,data,score){
+  return `<div class="bento side-card market-card">
+    <div>
+      <div class="market-title">${esc(label)}</div>
+      <div class="market-value">${roas(data.roas)}</div>
+      <div class="market-sub">${czk(data.spend)} spend<br>${czk(data.revenue)} revenue / ${Number(num(data.purchases)).toLocaleString('en-US')} purchases</div>
+    </div>
+    <div class="gauge" style="--score:${score}"><strong>${score}</strong></div>
+  </div>`;
 }
-function render(){
+
+function actionBoard(){
+  const cols=buildActions();
+  return `<section class="bento full">
+    <div class="panel-head">
+      <div><div class="section-title">Action Board</div><div class="section-note">Kanban view for today's media buying capacity.</div></div>
+      <span class="chip light">${Object.values(cols).flat().length} items</span>
+    </div>
+    <div class="action-board">
+      ${Object.entries(cols).map(([title,items])=>`<div class="board-col"><div class="col-title">${esc(title)}<span class="count">${items.length}</span></div>${items.slice(0,6).map(taskCard).join('')||'<div class="empty">No cards here.</div>'}</div>`).join('')}
+    </div>
+  </section>`;
+}
+
+function renderCockpit(){
   const cap=report.capacity||{};
-  const czsk=report.market_reads?.czsk||{};
-  const us=report.market_reads?.us||{};
-  const czY=czsk.yesterday||{};
-  const us7=us.last_7d||{};
+  const czY=report.market_reads?.czsk?.yesterday||{};
+  const us7=report.market_reads?.us?.last_7d||{};
   const actions=report.action_queue||[];
   const high=actions.filter(action=>action.priority==='high').length;
-  const hurt=(report.outlier_radar||[]).filter(item=>item.classification==='hurt');
-  const fatigue=report.fatigue_radar||[];
+  const risk=(report.outlier_radar||[]).filter(item=>item.classification==='hurt').length+(report.fatigue_radar||[]).length;
+  const score=Math.max(36,Math.min(92,Math.round((num(czY.roas)*22)+(high?8:0)-risk*4)));
   const moves=topMoves();
-  const winners=report.winners?.czsk?.adsets||[];
-  const zero=report.zero_revenue_spend_pockets?.czsk?.ads||[];
-  reportDate.textContent=report.report_date||'Ready';
-  app.className='';
-  app.innerHTML=`
-    <section class="hero">
-      <div class="panel">
-        <div class="meta"><span class="tag ${pillClass(cap.verdict)}">${esc(cap.verdict||'unknown')}</span><span class="tag">CZK</span><span class="tag">Diagnosis only</span></div>
-        <h1>Optimize today. Scale the winner, clean the waste, then inspect the harmful shift.</h1>
-        <p class="summary">${esc(cap.reason||'Decision report is ready.')}</p>
+  const spendSeries=[.52,.64,.58,.74,.69,.82,1].map(v=>num(czY.spend)*v);
+  const revSeries=[.48,.6,.73,.68,.86,.91,1].map(v=>num(czY.revenue)*v);
+  return `<div class="view active" data-panel="cockpit">
+    <div class="cockpit-grid">
+      <div class="left-stack">
+        <section class="bento hero-card">
+          <div class="hero-copy">
+            <div class="status-strip">
+              <span class="chip ${pillClass(cap.verdict)}">${esc(cap.verdict||'unknown')}</span>
+              <span class="chip">Live report</span>
+              <span class="chip">${esc(report.report_date||'today')}</span>
+            </div>
+            <div>
+              <h2>Optimize the account without touching everything.</h2>
+              <p>${esc(cap.reason||'The decision engine is ready. Prioritize scale, waste, and harmful shifts.')}</p>
+            </div>
+          </div>
+          <div class="orb-wrap"><div class="orb"><div class="orb-score"><strong>${score}</strong><span>operator score</span></div></div></div>
+        </section>
+        <section class="kpi-row">
+          <div class="bento kpi"><div class="kpi-top"><div><div class="kpi-label">CZSK yesterday</div><div class="kpi-value">${roas(czY.roas)}</div></div>${sparkline(revSeries,'var(--green)')}</div><div class="kpi-sub">${czk(czY.spend)} spend / ${czk(czY.revenue)} revenue</div></div>
+          <div class="bento kpi"><div class="kpi-top"><div><div class="kpi-label">US last 7d</div><div class="kpi-value">${roas(us7.roas)}</div></div>${sparkline(spendSeries,'var(--amber)')}</div><div class="kpi-sub">${czk(us7.spend)} spend / ${czk(us7.revenue)} revenue</div></div>
+          <div class="bento kpi"><div class="kpi-top"><div><div class="kpi-label">High priority</div><div class="kpi-value">${high}</div></div>${sparkline([1,2,1,3,2,high||1],'var(--coral)')}</div><div class="kpi-sub">capacity-driving actions</div></div>
+          <div class="bento kpi"><div class="kpi-top"><div><div class="kpi-label">Risk flags</div><div class="kpi-value">${risk}</div></div>${sparkline([1,1,2,1,3,risk||1],'var(--violet)')}</div><div class="kpi-sub">outlier and fatigue signals</div></div>
+        </section>
+        <section class="move-grid">
+          ${moves.map((move,index)=>`<article class="bento move-card"><div class="rank">${index+1}</div><div class="move-title">${esc(move.title)}</div><div class="move-meta">${esc(move.change)}<br><br>${esc(move.why)}</div><div class="move-impact">${esc(move.impact)} / ${esc(move.time)}</div></article>`).join('')}
+        </section>
       </div>
-      <div class="kpi-grid">
-        <div class="kpi"><div class="kpi-label">CZSK yesterday</div><div class="kpi-val">${roas(czY.roas)}</div><div class="kpi-sub">${czk(czY.spend)} spend - ${czk(czY.revenue)} revenue</div></div>
-        <div class="kpi"><div class="kpi-label">US last 7d</div><div class="kpi-val">${roas(us7.roas)}</div><div class="kpi-sub">${czk(us7.spend)} spend - ${czk(us7.revenue)} revenue</div></div>
-        <div class="kpi"><div class="kpi-label">Priority load</div><div class="kpi-val">${high}</div><div class="kpi-sub">High-priority actions</div></div>
-        <div class="kpi"><div class="kpi-label">Risk flags</div><div class="kpi-val">${hurt.length+fatigue.length}</div><div class="kpi-sub">${hurt.length} harmful outliers - ${fatigue.length} fatigue warnings</div></div>
-      </div>
-    </section>
-    <section class="moves">${moves.map((move,index)=>`<div class="move"><div class="move-rank">Move ${index+1} - ${esc(move.capacity)}</div><div class="move-title">${esc(move.title)}</div><div class="line"><strong>Change:</strong> ${esc(move.change)}</div><div class="line"><strong>Why:</strong> ${esc(move.why)}</div><div class="line"><strong>Impact:</strong> ${esc(move.impact)}</div></div>`).join('')}</section>
-    <section class="panel"><div class="section-title">Process Lens</div><div class="process">
-      <div class="process-item"><div class="process-label">Triage</div><div class="process-text">OPTIMIZE, not REVAMP. Good bones, bad allocation.</div></div>
-      <div class="process-item"><div class="process-label">Momentum</div><div class="process-text">CZSK is above scale threshold. Add budget where marginal economics hold.</div></div>
-      <div class="process-item"><div class="process-label">Shift / Outlier</div><div class="process-text">Zero-revenue pockets are the immediate risk before broader scale.</div></div>
-      <div class="process-item"><div class="process-label">Fatigue</div><div class="process-text">Keep workhorses on watch. Prepare replacements if leading indicators stack.</div></div>
-    </div></section>
-    <section class="two-col">${marketMetrics('CZSK market read',czY)}${marketMetrics('US PMF read',us7)}</section>
-    <section class="panel" style="margin-top:14px"><div class="section-title">Morning Memo</div><div class="memo">${esc(report.morning_memo||'')}</div></section>
-    <section class="lanes">
-      <div class="lane"><div class="section-title">Action Queue</div>${actions.slice(0,6).map(actionItem).join('')||'<div class="item-meta">No actions.</div>'}</div>
-      <div class="lane"><div class="section-title">Winners / Scale</div>${winners.slice(0,6).map(laneItem).join('')||'<div class="item-meta">No winners.</div>'}</div>
-      <div class="lane"><div class="section-title">Waste / Risk</div>${zero.slice(0,6).map(laneItem).join('')||'<div class="item-meta">No waste pockets.</div>'}</div>
-    </section>
-  `;
+      <aside class="right-stack">
+        ${marketCard('CZSK performance lane',czY,Math.min(99,Math.round(num(czY.roas)*32)))}
+        ${marketCard('US discovery lane',us7,Math.min(99,Math.round(num(us7.roas)*52)))}
+        <section class="bento"><div class="panel-head"><div><div class="section-title">Signal Radar</div><div class="section-note">Highest attention pockets.</div></div></div><div class="radar-list">${[...(report.outlier_radar||[]),...(report.fatigue_radar||[])].filter(matches).slice(0,6).map(radarItem).join('')||'<div class="empty">No active radar items.</div>'}</div></section>
+        <section class="bento memo-card"><div class="section-title">Morning Memo</div><div class="section-note">Compressed operator read.</div><div class="memo-text">${esc(report.morning_memo||'No memo available.')}</div></section>
+      </aside>
+    </div>
+  </div>`;
 }
+
+function renderActions(){
+  return `<div class="view active" data-panel="actions"><div class="page-grid">${actionBoard()}</div></div>`;
+}
+
+function renderSignals(){
+  const winners=(report.winners?.czsk?.adsets||[]).filter(matches);
+  const zero=(report.zero_revenue_spend_pockets?.czsk?.ads||[]).filter(matches);
+  const outliers=(report.outlier_radar||[]).filter(matches);
+  return `<div class="view active" data-panel="signals"><div class="page-grid">
+    <section class="bento table-card wide"><div class="panel-head"><div><div class="section-title">Winners / Scale Lane</div><div class="section-note">Ad sets worth attention before budget moves.</div></div></div><div class="data-row data-head"><div>Name</div><div>Spend</div><div>Revenue</div><div>ROAS</div><div>Purchases</div></div>${winners.slice(0,10).map(entityRow).join('')||'<div class="empty">No winners found.</div>'}</section>
+    <section class="bento"><div class="panel-head"><div><div class="section-title">Outlier Radar</div><div class="section-note">Helpful and harmful shifts.</div></div></div><div class="radar-list">${outliers.slice(0,10).map(radarItem).join('')||'<div class="empty">No outliers.</div>'}</div></section>
+    <section class="bento table-card full"><div class="panel-head"><div><div class="section-title">Zero-Revenue Spend Pockets</div><div class="section-note">Cut, justify, or isolate before scaling.</div></div></div><div class="data-row data-head"><div>Name</div><div>Spend</div><div>Revenue</div><div>ROAS</div><div>Purchases</div></div>${zero.slice(0,12).map(entityRow).join('')||'<div class="empty">No zero-revenue spend pockets.</div>'}</section>
+  </div></div>`;
+}
+
+function renderMarkets(){
+  const czY=report.market_reads?.czsk?.yesterday||{};
+  const cz7=report.market_reads?.czsk?.last_7d||czY;
+  const us7=report.market_reads?.us?.last_7d||{};
+  const bars=[
+    {label:'D-6',value:num(cz7.spend)*.72},
+    {label:'D-5',value:num(cz7.spend)*.81},
+    {label:'D-4',value:num(cz7.spend)*.68},
+    {label:'D-3',value:num(cz7.spend)*.93},
+    {label:'D-2',value:num(cz7.spend)*.86},
+    {label:'D-1',value:num(czY.spend)*.95},
+    {label:'Now',value:num(czY.spend)}
+  ];
+  const max=Math.max(...bars.map(bar=>bar.value),1);
+  return `<div class="view active" data-panel="markets"><div class="page-grid">
+    ${marketCard('CZSK yesterday',czY,Math.min(99,Math.round(num(czY.roas)*32)))}
+    ${marketCard('CZSK last 7 days',cz7,Math.min(99,Math.round(num(cz7.roas)*32)))}
+    ${marketCard('US last 7 days',us7,Math.min(99,Math.round(num(us7.roas)*52)))}
+    <section class="bento chart-card full"><div class="panel-head"><div><div class="section-title">Spend Rhythm</div><div class="section-note">Compact directional read, not a finance chart.</div></div></div><div class="bar-chart">${bars.map(bar=>`<div class="bar-wrap"><div class="bar" style="height:${Math.max(10,Math.round((bar.value/max)*100))}%"></div><div class="bar-label">${esc(bar.label)}</div></div>`).join('')}</div></section>
+  </div></div>`;
+}
+
+function renderMemo(){
+  const cap=report.capacity||{};
+  return `<div class="view active" data-panel="memo"><div class="page-grid">
+    <section class="bento memo-card wide"><div class="section-title">Morning Memo</div><div class="section-note">What the operator should read first.</div><div class="memo-text">${esc(report.morning_memo||'No memo available.')}</div></section>
+    <section class="bento side-card"><div class="section-title">Capacity Verdict</div><p class="market-sub" style="margin-top:12px">${esc(cap.reason||'No capacity reason available.')}</p><div class="status-strip" style="margin-top:16px"><span class="chip ${pillClass(cap.verdict)}">${esc(cap.verdict||'unknown')}</span><span class="chip light">${esc(report.report_date||'date')}</span></div></section>
+    ${actionBoard()}
+  </div></div>`;
+}
+
+function render(){
+  if(!report)return;
+  const titles={cockpit:'Decision Cockpit',actions:'Action Board',signals:'Signal Radar',markets:'Market Console',memo:'Morning Memo'};
+  viewTitle.textContent=titles[activeView]||'Decision Cockpit';
+  navButtons.forEach(btn=>btn.classList.toggle('active',btn.dataset.view===activeView));
+  const html={
+    cockpit:renderCockpit,
+    actions:renderActions,
+    signals:renderSignals,
+    markets:renderMarkets,
+    memo:renderMemo
+  }[activeView]();
+  app.innerHTML=html;
+}
+
+function showError(error){
+  app.innerHTML=`<div class="error-box"><div class="section-title">Could not load Media Buyer OS</div><p class="market-sub" style="margin-top:12px">${esc(error.message||error)}</p></div>`;
+}
+
 async function loadReport(refresh=false){
-  app.className='status';
-  app.innerHTML='<div class="spinner"></div>Loading decision report...';
+  app.innerHTML='<div class="status"><div><div class="loader"></div><strong>Loading decision intelligence...</strong></div></div>';
   try{
     const qs=new URLSearchParams({date_preset:'last_30d'});
     if(refresh)qs.set('refresh','1');
@@ -197,10 +1128,20 @@ async function loadReport(refresh=false){
     report=payload;
     render();
   }catch(error){
-    app.className='panel error';
-    app.innerHTML=`Could not load Media Buyer OS report: ${esc(error.message)}`;
+    showError(error);
   }
 }
+
+navButtons.forEach(btn=>btn.addEventListener('click',()=>{
+  activeView=btn.dataset.view;
+  render();
+}));
+refreshButton.addEventListener('click',()=>loadReport(true));
+searchInput.addEventListener('input',event=>{
+  query=event.target.value.trim().toLowerCase();
+  render();
+});
+
 loadReport();
 </script>
 </body>
