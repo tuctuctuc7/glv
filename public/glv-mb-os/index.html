@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GELAVIS Media Buyer OS</title>
+<style>
+:root{color-scheme:light;--blue:#2563eb;--green:#059669;--red:#dc2626;--amber:#d97706;--ink:#111827;--muted:#64748b;--line:#e2e8f0;--soft:#f8fafc;--paper:#ffffff;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#eef2f7;color:var(--ink);font-size:14px}
+.topbar{position:sticky;top:0;z-index:20;background:#0f172a;color:#fff;border-bottom:1px solid rgba(255,255,255,.08)}
+.topbar-inner{max-width:1440px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 22px}
+.brand{font-size:15px;font-weight:850;letter-spacing:0}
+.brand span{font-size:12px;font-weight:500;color:#94a3b8;margin-left:8px}
+.top-actions{display:flex;align-items:center;gap:10px}
+.pill{display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);border-radius:999px;padding:5px 10px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#dbeafe}
+.btn{height:32px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;border-radius:8px;padding:0 12px;font-size:12px;font-weight:800;cursor:pointer}
+.btn:hover{background:rgba(255,255,255,.14)}
+.page{max-width:1440px;margin:0 auto;padding:22px}
+.status{padding:60px 20px;text-align:center;color:var(--muted)}
+.spinner{width:30px;height:30px;border:3px solid #cbd5e1;border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;margin-bottom:14px}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:18px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.tag{display:inline-flex;border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:4px 9px;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.tag.good{background:#ecfdf5;border-color:#bbf7d0;color:#047857}.tag.warn{background:#fffbeb;border-color:#fde68a;color:#b45309}.tag.bad{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
+h1{font-size:28px;line-height:1.08;letter-spacing:0;margin-bottom:8px}
+.summary{font-size:14px;line-height:1.5;color:var(--muted);max-width:780px}
+.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.kpi{border:1px solid var(--line);border-radius:9px;padding:13px;background:var(--soft)}
+.kpi-label{font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin-bottom:5px}
+.kpi-val{font-size:21px;font-weight:900;line-height:1.1}
+.kpi-sub{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.35}
+.section-title{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:12px}
+.moves{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.move{background:var(--paper);border:1px solid var(--line);border-top:3px solid var(--blue);border-radius:10px;padding:15px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.move-rank{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--blue);margin-bottom:7px}
+.move-title{font-size:15px;font-weight:900;line-height:1.25;margin-bottom:8px}
+.line{font-size:12px;line-height:1.45;color:var(--muted);margin-top:7px}.line strong{color:#334155}
+.process{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.process-item{background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:12px}
+.process-label{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin-bottom:5px}
+.process-text{font-size:12px;line-height:1.4;color:#475569}
+.memo{background:#0f172a;color:#e2e8f0;border-radius:9px;padding:13px;font-size:12px;line-height:1.55;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.lanes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px}
+.lane{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:15px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.item{border-top:1px solid #f1f5f9;padding:10px 0}.item:first-of-type{border-top:0;padding-top:0}
+.item-title{font-size:13px;font-weight:850;line-height:1.3;margin-bottom:5px}
+.item-meta{font-size:12px;line-height:1.35;color:var(--muted)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.metric-list{display:grid;gap:8px}
+.metric-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid #f1f5f9;padding-bottom:8px}
+.metric-row:last-child{border-bottom:0;padding-bottom:0}
+.metric-key{font-size:12px;font-weight:800;color:#475569}.metric-value{text-align:right;font-size:12px;color:var(--muted)}
+.error{border-color:#fecaca;background:#fef2f2;color:#991b1b}
+@media(max-width:1100px){.hero,.lanes,.moves,.two-col{grid-template-columns:1fr}.process{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){.topbar-inner{align-items:flex-start;flex-direction:column}.kpi-grid,.process{grid-template-columns:1fr}h1{font-size:23px}.page{padding:14px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">GELAVIS Media Buyer OS <span>Decision Report Mock</span></div>
+    <div class="top-actions">
+      <span class="pill" id="report-date">Loading</span>
+      <button class="btn" onclick="loadReport(true)">Refresh</button>
+    </div>
+  </div>
+</header>
+<main class="page">
+  <div id="app" class="status"><div class="spinner"></div>Loading decision report...</div>
+</main>
+<script>
+let report=null;
+const app=document.getElementById('app');
+const reportDate=document.getElementById('report-date');
+
+const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const czk=value=>!value||value<=0?'CZK 0':'CZK '+Math.round(value).toLocaleString('en-US');
+const roas=value=>!value||value<=0?'0.00x':Number(value).toFixed(2)+'x';
+const pct=value=>!value?'0%':Math.round(value*100)+'%';
+const short=(value,max=70)=>{const s=String(value||'Unnamed');return s.length>max?s.slice(0,max-1)+'...':s};
+const pillClass=verdict=>verdict==='status_quo'?'good':verdict==='revamp'?'bad':'warn';
+const entityLine=entity=>`${czk(entity?.spend)} spend - ${czk(entity?.revenue)} revenue - ${roas(entity?.roas)} ROAS`;
+
+function firstAction(type){return(report?.action_queue||[]).find(action=>action.type===type)}
+function topMoves(){
+  const moves=[];
+  const scale=firstAction('budget_increase_review');
+  if(scale?.entity){
+    moves.push({
+      title:'Scale the highest-confidence CZSK winner',
+      capacity:'15-20 min',
+      change:`Review ${short(scale.entity.name)} for standard +20% budget increase.`,
+      why:`${entityLine(scale.entity)} in the lookback.`,
+      impact:'Adds budget to proven demand instead of leaving CZSK scale capped.',
+    });
+  }
+  const zero=report?.zero_revenue_spend_pockets?.czsk?.ads?.slice(0,3)||[];
+  if(zero.length){
+    const wasted=zero.reduce((sum,item)=>sum+Number(item.spend||0),0);
+    moves.push({
+      title:'Cut or justify the biggest zero-revenue pockets',
+      capacity:'20-30 min',
+      change:zero.map(item=>short(item.name,40)).join(' - '),
+      why:`Combined ${czk(wasted)} spend with CZK 0 attributed revenue.`,
+      impact:'Stops budget leakage before adding more scale elsewhere.',
+    });
+  }
+  const hurt=(report?.outlier_radar||[]).find(item=>item.classification==='hurt');
+  if(hurt){
+    moves.push({
+      title:'Fix the harmful shift before broader scaling',
+      capacity:'20-30 min',
+      change:`Inspect ${short(hurt.name)}.`,
+      why:(hurt.reasons||[]).join(' ')||'Entity moved against the account trend.',
+      impact:'Prevents a weak pocket from absorbing budget while winners are scaled.',
+    });
+  }
+  while(moves.length<3)moves.push({title:'Hold remaining structure',capacity:'10 min',change:'Skip non-priority changes.',why:'Protect capacity and avoid touching everything.',impact:"Keeps tomorrow's read clean."});
+  return moves.slice(0,3);
+}
+function actionItem(action){
+  const entity=action.entity||{};
+  return `<div class="item"><div class="item-title">${esc((action.priority||'medium').toUpperCase())} - ${esc(action.market||'')} - ${esc(action.type||'review')}</div><div class="item-meta">${entity.name?esc(short(entity.name,82))+'<br>':''}${esc(action.recommendation||'Review')}</div></div>`;
+}
+function laneItem(item){
+  const reasons=(item.reasons||[]).join(' ');
+  return `<div class="item"><div class="item-title">${esc(short(item.name,82))}</div><div class="item-meta">${esc(entityLine(item))}</div>${reasons?`<div class="item-meta">${esc(reasons)}</div>`:''}</div>`;
+}
+function metricRow(label,value){return`<div class="metric-row"><div class="metric-key">${esc(label)}</div><div class="metric-value">${value}</div></div>`}
+function marketMetrics(label,data){
+  return `<div class="panel"><div class="section-title">${esc(label)}</div><div class="metric-list">
+    ${metricRow('Spend',esc(czk(data.spend)))}
+    ${metricRow('Revenue',esc(czk(data.revenue)))}
+    ${metricRow('ROAS',esc(roas(data.roas)))}
+    ${metricRow('Purchases',Number(data.purchases||0).toLocaleString('en-US'))}
+    ${metricRow('Checkouts',Number(data.checkouts||0).toLocaleString('en-US'))}
+    ${metricRow('LPVs',Number(data.landing_page_views||0).toLocaleString('en-US'))}
+  </div></div>`;
+}
+function render(){
+  const cap=report.capacity||{};
+  const czsk=report.market_reads?.czsk||{};
+  const us=report.market_reads?.us||{};
+  const czY=czsk.yesterday||{};
+  const us7=us.last_7d||{};
+  const actions=report.action_queue||[];
+  const high=actions.filter(action=>action.priority==='high').length;
+  const hurt=(report.outlier_radar||[]).filter(item=>item.classification==='hurt');
+  const fatigue=report.fatigue_radar||[];
+  const moves=topMoves();
+  const winners=report.winners?.czsk?.adsets||[];
+  const zero=report.zero_revenue_spend_pockets?.czsk?.ads||[];
+  reportDate.textContent=report.report_date||'Ready';
+  app.className='';
+  app.innerHTML=`
+    <section class="hero">
+      <div class="panel">
+        <div class="meta"><span class="tag ${pillClass(cap.verdict)}">${esc(cap.verdict||'unknown')}</span><span class="tag">CZK</span><span class="tag">Diagnosis only</span></div>
+        <h1>Optimize today. Scale the winner, clean the waste, then inspect the harmful shift.</h1>
+        <p class="summary">${esc(cap.reason||'Decision report is ready.')}</p>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-label">CZSK yesterday</div><div class="kpi-val">${roas(czY.roas)}</div><div class="kpi-sub">${czk(czY.spend)} spend - ${czk(czY.revenue)} revenue</div></div>
+        <div class="kpi"><div class="kpi-label">US last 7d</div><div class="kpi-val">${roas(us7.roas)}</div><div class="kpi-sub">${czk(us7.spend)} spend - ${czk(us7.revenue)} revenue</div></div>
+        <div class="kpi"><div class="kpi-label">Priority load</div><div class="kpi-val">${high}</div><div class="kpi-sub">High-priority actions</div></div>
+        <div class="kpi"><div class="kpi-label">Risk flags</div><div class="kpi-val">${hurt.length+fatigue.length}</div><div class="kpi-sub">${hurt.length} harmful outliers - ${fatigue.length} fatigue warnings</div></div>
+      </div>
+    </section>
+    <section class="moves">${moves.map((move,index)=>`<div class="move"><div class="move-rank">Move ${index+1} - ${esc(move.capacity)}</div><div class="move-title">${esc(move.title)}</div><div class="line"><strong>Change:</strong> ${esc(move.change)}</div><div class="line"><strong>Why:</strong> ${esc(move.why)}</div><div class="line"><strong>Impact:</strong> ${esc(move.impact)}</div></div>`).join('')}</section>
+    <section class="panel"><div class="section-title">Process Lens</div><div class="process">
+      <div class="process-item"><div class="process-label">Triage</div><div class="process-text">OPTIMIZE, not REVAMP. Good bones, bad allocation.</div></div>
+      <div class="process-item"><div class="process-label">Momentum</div><div class="process-text">CZSK is above scale threshold. Add budget where marginal economics hold.</div></div>
+      <div class="process-item"><div class="process-label">Shift / Outlier</div><div class="process-text">Zero-revenue pockets are the immediate risk before broader scale.</div></div>
+      <div class="process-item"><div class="process-label">Fatigue</div><div class="process-text">Keep workhorses on watch. Prepare replacements if leading indicators stack.</div></div>
+    </div></section>
+    <section class="two-col">${marketMetrics('CZSK market read',czY)}${marketMetrics('US PMF read',us7)}</section>
+    <section class="panel" style="margin-top:14px"><div class="section-title">Morning Memo</div><div class="memo">${esc(report.morning_memo||'')}</div></section>
+    <section class="lanes">
+      <div class="lane"><div class="section-title">Action Queue</div>${actions.slice(0,6).map(actionItem).join('')||'<div class="item-meta">No actions.</div>'}</div>
+      <div class="lane"><div class="section-title">Winners / Scale</div>${winners.slice(0,6).map(laneItem).join('')||'<div class="item-meta">No winners.</div>'}</div>
+      <div class="lane"><div class="section-title">Waste / Risk</div>${zero.slice(0,6).map(laneItem).join('')||'<div class="item-meta">No waste pockets.</div>'}</div>
+    </section>
+  `;
+}
+async function loadReport(refresh=false){
+  app.className='status';
+  app.innerHTML='<div class="spinner"></div>Loading decision report...';
+  try{
+    const qs=new URLSearchParams({date_preset:'last_30d'});
+    if(refresh)qs.set('refresh','1');
+    const response=await fetch(`/api/glv-mb-os/decision-report?${qs}`);
+    const payload=await response.json();
+    if(!response.ok)throw new Error(payload.error||`HTTP ${response.status}`);
+    report=payload;
+    render();
+  }catch(error){
+    app.className='panel error';
+    app.innerHTML=`Could not load Media Buyer OS report: ${esc(error.message)}`;
+  }
+}
+loadReport();
+</script>
+</body>
+</html>

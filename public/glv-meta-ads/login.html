@@ -40,7 +40,7 @@ const message=document.getElementById('message');
 function nextPath(){
   const params=new URLSearchParams(window.location.search);
   const next=params.get('next')||'/glv-meta-ads/';
-  return next.startsWith('/glv-meta-ads')?next:'/glv-meta-ads/';
+  return (next.startsWith('/glv-meta-ads')||next.startsWith('/glv-mb-os'))?next:'/glv-meta-ads/';
 }
 
 form.addEventListener('submit',async event=>{
