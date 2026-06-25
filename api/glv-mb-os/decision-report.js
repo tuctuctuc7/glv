@@ -20,7 +20,7 @@ module.exports = async (req, res) => {
 
   const secret = process.env.GLV_META_DECISION_SECRET || process.env.GLV_META_SUMMARY_SECRET;
   if (!secret) {
-    res.status(202).json({ ok: false, error: 'Decision report secret is not configured' });
+    res.status(503).json({ ok: false, error: 'Decision report secret is not configured' });
     return;
   }
 

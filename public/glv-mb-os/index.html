@@ -158,6 +158,27 @@ button{cursor:pointer}
   border-radius:17px;
   color:#d9d2c7;
   background:rgba(255,255,255,.08);
+  display:grid;
+  place-items:center;
+}
+.refresh-icon{
+  width:17px;
+  height:17px;
+  border:2px solid currentColor;
+  border-right-color:transparent;
+  border-radius:50%;
+  position:relative;
+}
+.refresh-icon::after{
+  content:"";
+  position:absolute;
+  right:-3px;
+  top:0;
+  width:6px;
+  height:6px;
+  border-top:2px solid currentColor;
+  border-right:2px solid currentColor;
+  transform:rotate(24deg);
 }
 .workspace{
   min-width:0;
@@ -1038,14 +1059,14 @@ h1{
   <aside class="rail" aria-label="Media Buyer OS navigation">
     <div class="mark">MB</div>
     <nav class="nav">
-      <button class="nav-button active" data-view="cockpit" title="Cockpit"><span class="nav-icon grid"></span></button>
-      <button class="nav-button" data-view="actions" title="Actions"><span class="nav-icon stack"></span></button>
-      <button class="nav-button" data-view="signals" title="Signals"><span class="nav-icon signal"></span></button>
-      <button class="nav-button" data-view="markets" title="Markets"><span class="nav-icon market"></span></button>
-      <button class="nav-button" data-view="memo" title="Memo"><span class="nav-icon memo"></span></button>
+      <button class="nav-button active" type="button" data-view="cockpit" title="Cockpit" aria-label="Cockpit"><span class="nav-icon grid"></span></button>
+      <button class="nav-button" type="button" data-view="actions" title="Actions" aria-label="Actions"><span class="nav-icon stack"></span></button>
+      <button class="nav-button" type="button" data-view="signals" title="Signals" aria-label="Signals"><span class="nav-icon signal"></span></button>
+      <button class="nav-button" type="button" data-view="markets" title="Markets" aria-label="Markets"><span class="nav-icon market"></span></button>
+      <button class="nav-button" type="button" data-view="memo" title="Memo" aria-label="Memo"><span class="nav-icon memo"></span></button>
     </nav>
     <div class="rail-foot">
-      <button class="mini-button" id="refresh-button" title="Refresh">R</button>
+      <button class="mini-button" id="refresh-button" type="button" title="Refresh" aria-label="Refresh report"><span class="refresh-icon"></span></button>
     </div>
   </aside>
 
@@ -1057,7 +1078,7 @@ h1{
       </div>
       <label class="search">
         <input id="search-input" placeholder="Search campaigns, actions, signals">
-        <button class="circle-button" type="button" title="Search"><span class="lens"></span></button>
+        <button class="circle-button" type="button" title="Search" aria-label="Search"><span class="lens"></span></button>
       </label>
     </header>
     <main class="content" id="app">
@@ -1526,6 +1547,7 @@ async function loadReport(refresh=false){
     const response=await fetch(`/api/glv-mb-os/decision-report?${qs}`);
     const payload=await response.json();
     if(!response.ok)throw new Error(payload.error||`HTTP ${response.status}`);
+    if(!payload.ok)throw new Error(payload.error||'Decision report is not ready.');
     report=payload;
     render();
   }catch(error){
