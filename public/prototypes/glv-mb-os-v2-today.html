@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AGENTHIC / GLV Media Buyer OS - V2 Prototype</title>
+<title>AGENTHIC / MB OS V3 Prototype</title>
 <style>
 :root {
   color-scheme: dark;
@@ -35,39 +35,41 @@ body {
 }
 button, select { font: inherit; }
 button { cursor: pointer; }
-.app { min-height: 100vh; display: grid; grid-template-columns: 222px minmax(0, 1fr); }
+.app { min-height: 100vh; display: grid; grid-template-columns: 82px minmax(0, 1fr); }
 .rail {
-  padding: 20px 15px;
+  padding: 18px 12px;
   background: var(--rail);
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
-.brand { display: grid; gap: 12px; min-height: 82px; }
-.brand-mark { width: 58px; height: 30px; color: var(--text); }
-.wordmark { width: 150px; height: auto; color: var(--text); }
-.brand span { color: var(--muted); font-size: 11px; font-weight: 750; }
+.brand { min-height: 72px; display: flex; justify-content: center; align-items: flex-start; overflow: hidden; }
+.wordmark { width: 146px; height: auto; color: var(--text); transform: rotate(-90deg) translateX(-46px); transform-origin: center; flex: 0 0 auto; }
 .nav { display: grid; gap: 6px; }
 .nav button {
-  height: 38px;
+  width: 42px;
+  height: 42px;
   border: 1px solid transparent;
   border-radius: 8px;
-  padding: 0 11px;
+  padding: 0;
   color: var(--muted);
   background: transparent;
-  text-align: left;
-  font-weight: 820;
+  display: grid;
+  place-items: center;
 }
 .nav button.active { background: var(--panel); border-color: var(--line); color: var(--text); }
+.nav svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .rail-card {
   margin-top: auto;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 12px;
+  padding: 8px 6px;
   color: var(--muted);
-  line-height: 1.45;
-  font-size: 12px;
+  font-size: 10px;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: .05em;
 }
 .workspace { min-width: 0; padding: 20px; }
 .topbar { display: flex; justify-content: space-between; gap: 18px; align-items: start; margin-bottom: 14px; }
@@ -134,7 +136,7 @@ h1 { margin: 4px 0 0; font-size: 30px; line-height: 1.05; letter-spacing: 0; }
 }
 .section-title { font-size: 12px; font-weight: 930; letter-spacing: .06em; text-transform: uppercase; }
 .section-note { margin-top: 4px; color: var(--muted); font-size: 12px; }
-.market-filter { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 12px; }
+.market-filter { display: grid; grid-template-columns: 1fr; gap: 10px; padding: 12px; }
 .market-card {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -176,7 +178,7 @@ h1 { margin: 4px 0 0; font-size: 30px; line-height: 1.05; letter-spacing: 0; }
   background: linear-gradient(180deg, rgba(130,216,210,.92), rgba(130,216,210,.25));
 }
 .chart-line { position: absolute; inset: 12px 12px 35px; width: calc(100% - 24px); height: calc(100% - 47px); pointer-events: none; overflow: visible; }
-.chart-line polyline { fill: none; stroke: var(--amber); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.chart-line path { fill: none; stroke: var(--amber); stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 4px 10px rgba(233,184,102,.24)); }
 .chart-line circle { fill: var(--amber); stroke: var(--panel); stroke-width: 2; }
 .chart-labels { position: absolute; left: 12px; right: 12px; bottom: 10px; display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 7px; color: var(--soft); font-size: 10px; text-align: center; }
 .tip {
@@ -287,7 +289,8 @@ h1 { margin: 4px 0 0; font-size: 30px; line-height: 1.05; letter-spacing: 0; }
 @media (max-width: 1180px) {
   .app { grid-template-columns: 1fr; }
   .rail { border-right: 0; border-bottom: 1px solid var(--line); flex-direction: row; align-items: center; overflow: auto; }
-  .brand { display: flex; align-items: center; min-width: 250px; }
+  .brand { min-width: 82px; min-height: 42px; align-items: center; }
+  .wordmark { transform: none; width: 120px; }
   .nav { display: flex; min-width: max-content; }
   .rail-card { display: none; }
   .hero, .layout { grid-template-columns: 1fr; }
@@ -296,7 +299,7 @@ h1 { margin: 4px 0 0; font-size: 30px; line-height: 1.05; letter-spacing: 0; }
   .workspace { padding: 14px; }
   .topbar { display: grid; }
   .pills { justify-content: start; }
-  .score-grid, .market-filter, .action-metrics, .triage-grid { grid-template-columns: 1fr; }
+  .score-grid, .action-metrics, .triage-grid { grid-template-columns: 1fr; }
   .action { grid-template-columns: 1fr; }
 }
 </style>
@@ -304,28 +307,21 @@ h1 { margin: 4px 0 0; font-size: 30px; line-height: 1.05; letter-spacing: 0; }
 <body>
 <div class="app">
   <aside class="rail">
-    <div class="brand" aria-label="Agenthic GLV Media Buyer OS">
-      <svg class="brand-mark" viewBox="0 0 310 160" role="img" aria-label="Agenthic mark">
-        <path d="M305.901 89.8876C299.496 126.356 279.77 160 227.251 160C174.219 160 151.931 125.586 160.641 76.0193C168.583 30.5618 198.045 0 244.928 0C290.786 0 308.463 22.3435 310 56.7576L274.133 61.6372C273.365 42.6324 264.911 33.13 242.366 33.13C215.978 33.13 201.888 51.1075 197.02 79.1011C191.896 108.892 201.375 127.64 230.837 127.64C257.737 127.64 266.704 114.543 269.266 98.8764H231.35L236.73 68.5714H309.744L305.901 89.8876Z" fill="currentColor"/>
-        <path d="M39.9656 157.432H0L86.5922 3.33869H129.888L161.912 157.432H123.996C123.996 157.432 105.55 52.1348 103.757 39.8074H102.22C96.0713 52.1348 39.9656 157.432 39.9656 157.432Z" fill="currentColor"/>
-      </svg>
-      <div>
+    <div class="brand" aria-label="Agenthic">
         <svg class="wordmark" viewBox="0 0 1048 155" role="img" aria-label="Agenthic">
           <path d="M295.431 86.6322C289.245 121.68 270.194 154.013 219.473 154.013C168.256 154.013 146.731 120.939 155.143 73.3041C162.813 29.6178 191.266 0.246812 236.545 0.246812C280.833 0.246812 297.905 21.7197 299.39 54.793L264.751 59.4825C264.008 41.2181 255.843 32.086 234.07 32.086C208.586 32.086 194.978 49.3631 190.277 76.2659C185.328 104.896 194.483 122.914 222.936 122.914C248.916 122.914 257.575 110.326 260.05 95.2707H223.431L228.627 66.1465H299.142L295.431 86.6322Z" fill="currentColor"/><path d="M294.609 151.545L320.836 3.45541H432.671L426.732 37.0223H350.527L346.073 61.9506H416.341L411.145 91.5685H340.877L336.176 117.978H412.629L406.691 151.545H294.609Z" fill="currentColor"/><path d="M508.83 151.545L489.779 93.0494C485.572 79.4745 478.397 55.0398 473.944 37.2691H473.201C470.48 56.5207 466.768 79.9681 464.047 94.7771L454.15 151.545H420.253L446.48 3.45541H498.438L514.026 53.0653C519.222 70.5892 525.655 93.2962 529.613 110.08H530.356C533.077 92.0621 535.799 74.2914 538.273 60.4697L548.417 3.45541H582.314L556.087 151.545H508.83Z" fill="currentColor"/><path d="M584.38 37.0223L590.319 3.45541H711.308L705.37 37.0223H662.813L642.525 151.545H606.896L627.184 37.0223H584.38Z" fill="currentColor"/><path d="M826.623 151.545H790.995L801.139 94.0366H739.531L729.387 151.545H693.758L719.737 3.45541H755.366L745.469 60.2229H807.077L816.974 3.45541H852.603L826.623 151.545Z" fill="currentColor"/><path d="M877.26 151.545H841.631L867.61 3.45541H903.239L877.26 151.545Z" fill="currentColor"/><path d="M967.835 155C917.609 155 892.867 118.965 901.279 72.3169C908.949 28.3838 939.629 0 982.681 0C1026.72 0 1047.51 24.9283 1048 65.1592L1013.11 68.121C1013.11 44.6736 1003.46 32.086 980.206 32.086C956.207 32.086 940.619 50.1035 936.66 73.3041C931.217 102.922 941.856 123.161 969.073 123.161C990.598 123.161 1002.23 109.092 1010.39 84.9045L1044.54 92.0621C1034.14 128.838 1009.4 155 967.835 155Z" fill="currentColor"/><path d="M38.5977 151.545H0L83.6284 3.45541H125.443L156.37 151.545H119.752C119.752 151.545 101.938 50.3503 100.206 38.5032H98.7212C92.783 50.3503 38.5977 151.545 38.5977 151.545Z" fill="currentColor"/>
         </svg>
-        <span>GLV Media Buyer OS</span>
-      </div>
     </div>
     <nav class="nav" aria-label="Prototype navigation">
-      <button class="active" type="button">Cockpit</button>
-      <button type="button">Actions</button>
-      <button type="button">Campaigns</button>
-      <button type="button">Creatives</button>
-      <button type="button">Signals</button>
-      <button type="button">Timeline</button>
-      <button type="button">Memo</button>
+      <button class="active" type="button" aria-label="Cockpit" title="Cockpit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4zM14 20h6V4h-6zM4 20h6v-3H4z"/></svg></button>
+      <button type="button" aria-label="Actions" title="Actions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></button>
+      <button type="button" aria-label="Campaigns" title="Campaigns"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11h18"/><path d="M5 11V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4"/><path d="M7 11v8"/><path d="M17 11v8"/><path d="M5 19h14"/></svg></button>
+      <button type="button" aria-label="Creatives" title="Creatives"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 13l2.5-3 3 4 2-2.5L20 17"/><circle cx="8" cy="8" r="1.2"/></svg></button>
+      <button type="button" aria-label="Signals" title="Signals"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14a8 8 0 0 1 16 0"/><path d="M8 14a4 4 0 0 1 8 0"/><path d="M12 14v6"/><path d="M9 20h6"/></svg></button>
+      <button type="button" aria-label="Timeline" title="Timeline"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h16"/><circle cx="17" cy="12" r="2"/></svg></button>
+      <button type="button" aria-label="Memo" title="Memo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M14 3v4h4"/><path d="M9 12h6"/><path d="M9 16h4"/></svg></button>
     </nav>
-    <div class="rail-card">V2 feedback pass: real Agenthic SVGs, explicit triage, big market filter, dynamic scorecards, ROAS line chart, longer action queue.</div>
+    <div class="rail-card">V3</div>
   </aside>
 
   <main class="workspace">
@@ -337,7 +333,7 @@ h1 { margin: 4px 0 0; font-size: 30px; line-height: 1.05; letter-spacing: 0; }
       <div class="pills">
         <span class="pill cyan" id="market-pill">CZSK view</span>
         <span class="pill">Decision report 2026-06-23</span>
-        <span class="pill amber">Prototype v2.0</span>
+        <span class="pill amber">Prototype v3.0</span>
       </div>
     </header>
 
@@ -345,7 +341,7 @@ h1 { margin: 4px 0 0; font-size: 30px; line-height: 1.05; letter-spacing: 0; }
       <section class="card hero">
         <div>
           <div class="eyebrow">Current read</div>
-          <h2 id="read-title">CZSK is in OPTIMIZE. Good bones, bad allocation: winners can scale, but waste has to be cleaned first.</h2>
+          <h2 id="read-title">Good bones, bad allocation: winners can scale, but waste has to be cleaned first.</h2>
           <p id="read-copy">The OS should make the daily mode obvious before it shows details. Today is not a rebuild and not a hold. It is a focused optimization pass.</p>
         </div>
         <div class="triage-grid" aria-label="Triage states">
@@ -360,9 +356,9 @@ h1 { margin: 4px 0 0; font-size: 30px; line-height: 1.05; letter-spacing: 0; }
           <div class="section-head">
             <div>
               <div class="section-title">Main Scorecards</div>
-              <div class="section-note" id="score-note">Dynamic by selected market. Every metric states its calculation window.</div>
+              <div class="section-note" id="score-note">Market lens for the operating mode.</div>
             </div>
-            <span class="pill green" id="score-pill">CZSK selected</span>
+            <span class="pill green" id="score-pill">GROWTH</span>
           </div>
           <div class="score-grid" id="score-grid"></div>
         </section>
@@ -371,7 +367,7 @@ h1 { margin: 4px 0 0; font-size: 30px; line-height: 1.05; letter-spacing: 0; }
           <div class="section-head">
             <div>
               <div class="section-title">Spend + ROAS Trend</div>
-              <div class="section-note">Same sleek chart language, with ROAS as a line and values on hover.</div>
+              <div class="section-note">Spend bars with a smoother ROAS path and values on hover.</div>
             </div>
             <span class="pill" id="chart-pill">CZSK / 14D</span>
           </div>
@@ -464,14 +460,14 @@ const data = {
   czsk: {
     label: 'CZSK',
     state: 'optimize',
-    title: 'CZSK is in OPTIMIZE. Good bones, bad allocation: winners can scale, but waste has to be cleaned first.',
+    title: 'Good bones, bad allocation: winners can scale, but waste has to be cleaned first.',
     copy: 'The OS should make the daily mode obvious before it shows details. Today is not a rebuild and not a hold. It is a focused optimization pass.',
-    scorePill: 'CZSK selected',
+    scorePill: 'GROWTH',
     scores: [
-      ['2D spend', 'CZK 168,401', 'Window: last 2 days'],
-      ['2D revenue', 'CZK 330,836', 'Window: last 2 days'],
-      ['2D ROAS', '1.96x', 'Window: last 2 days'],
-      ['2D CVR', '3.52%', 'Window: last 2 days']
+      ['2D spend (CZK)', '168,401', 'Growth market'],
+      ['2D revenue (CZK)', '330,836', 'Growth market'],
+      ['2D ROAS', '1.96x', 'Growth efficiency'],
+      ['2D CVR', '3.52%', 'Growth conversion']
     ],
     series: [
       ['06-11',15779,1.38],['06-12',15772,.64],['06-13',18972,2.3],['06-14',20874,1.76],
@@ -483,14 +479,14 @@ const data = {
   us: {
     label: 'US',
     state: 'optimize',
-    title: 'US is in OPTIMIZE for discovery. The task is to preserve PMF signal while cutting expensive traffic paths.',
+    title: 'Preserve PMF signal while cutting expensive traffic paths.',
     copy: 'Do not judge US like CZSK yet. The cockpit should show checkout movement, LPV quality, and cost/LPV first, then tie actions to learning velocity.',
-    scorePill: 'US selected',
+    scorePill: 'PMF',
     scores: [
-      ['2D spend', 'CZK 18,410', 'Window: last 2 days'],
-      ['2D revenue', 'CZK 9,880', 'Window: last 2 days'],
-      ['2D ROAS', '0.54x', 'Window: last 2 days'],
-      ['2D CVR', '1.41%', 'Window: last 2 days']
+      ['2D spend (CZK)', '18,410', 'PMF market'],
+      ['2D revenue (CZK)', '9,880', 'PMF signal'],
+      ['2D ROAS', '0.54x', 'Discovery efficiency'],
+      ['2D CVR', '1.41%', 'Signal quality']
     ],
     series: [
       ['06-11',5051,.28],['06-12',6233,.42],['06-13',5880,.31],['06-14',6810,.66],
@@ -541,14 +537,20 @@ function renderChart(market) {
   labels.innerHTML = series.map(day => `<div>${day[0]}</div>`).join('');
   const width = 1000;
   const height = 230;
-  const step = width / (series.length - 1);
+  const step = width / series.length;
   const points = series.map((day, index) => {
-    const x = Math.round(index * step);
+    const x = Math.round((index + 0.5) * step);
     const y = Math.round(height - (day[2] / maxRoas) * height);
     return [x, y];
   });
+  const path = points.reduce((d, point, index) => {
+    if (index === 0) return `M ${point[0]} ${point[1]}`;
+    const prev = points[index - 1];
+    const midX = Math.round((prev[0] + point[0]) / 2);
+    return `${d} C ${midX} ${prev[1]}, ${midX} ${point[1]}, ${point[0]} ${point[1]}`;
+  }, '');
   line.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  line.innerHTML = `<polyline points="${points.map(p => p.join(',')).join(' ')}"></polyline>${points.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="5"></circle>`).join('')}`;
+  line.innerHTML = `<path d="${path}"></path>${points.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="5"></circle>`).join('')}`;
   document.getElementById('chart-pill').textContent = `${data[market].label} / 14D`;
   bars.querySelectorAll('.bar-hit').forEach(hit => {
     hit.addEventListener('mouseenter', () => {
