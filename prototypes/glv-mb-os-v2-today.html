@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AGENTHIC / GLV Media Buyer OS - V2 Prototype</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #070809;
+  --rail: #0d0f10;
+  --panel: #121517;
+  --panel-2: #171b1e;
+  --panel-3: #1f2529;
+  --line: rgba(255,255,255,.1);
+  --line-2: rgba(255,255,255,.18);
+  --text: #f5f1e9;
+  --muted: #a79f94;
+  --soft: #756f67;
+  --green: #77aa84;
+  --red: #f07167;
+  --amber: #e9b866;
+  --cyan: #82d8d2;
+  --ink: #08090b;
+  --shadow: 0 26px 80px rgba(0,0,0,.36);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+}
+button, select { font: inherit; }
+button { cursor: pointer; }
+.app { min-height: 100vh; display: grid; grid-template-columns: 222px minmax(0, 1fr); }
+.rail {
+  padding: 20px 15px;
+  background: var(--rail);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.brand { display: grid; gap: 12px; min-height: 82px; }
+.brand-mark { width: 58px; height: 30px; color: var(--text); }
+.wordmark { width: 150px; height: auto; color: var(--text); }
+.brand span { color: var(--muted); font-size: 11px; font-weight: 750; }
+.nav { display: grid; gap: 6px; }
+.nav button {
+  height: 38px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0 11px;
+  color: var(--muted);
+  background: transparent;
+  text-align: left;
+  font-weight: 820;
+}
+.nav button.active { background: var(--panel); border-color: var(--line); color: var(--text); }
+.rail-card {
+  margin-top: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--muted);
+  line-height: 1.45;
+  font-size: 12px;
+}
+.workspace { min-width: 0; padding: 20px; }
+.topbar { display: flex; justify-content: space-between; gap: 18px; align-items: start; margin-bottom: 14px; }
+.eyebrow { color: var(--muted); font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+h1 { margin: 4px 0 0; font-size: 30px; line-height: 1.05; letter-spacing: 0; }
+.pills { display: flex; flex-wrap: wrap; gap: 7px; justify-content: end; }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255,255,255,.04);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.pill.green { color: #ddf2e2; background: rgba(119,170,132,.14); border-color: rgba(119,170,132,.28); }
+.pill.red { color: #ffe1dd; background: rgba(240,113,103,.14); border-color: rgba(240,113,103,.28); }
+.pill.amber { color: #fff0cf; background: rgba(233,184,102,.14); border-color: rgba(233,184,102,.28); }
+.pill.cyan { color: #dffefa; background: rgba(130,216,210,.12); border-color: rgba(130,216,210,.28); }
+.layout { display: grid; grid-template-columns: minmax(0, 1.52fr) minmax(360px, .78fr); gap: 16px; align-items: start; }
+.main-stack, .side-stack { display: grid; gap: 16px; min-width: 0; }
+.card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.hero {
+  grid-column: 1 / -1;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 480px;
+  gap: 16px;
+  background: linear-gradient(135deg, #111517, #181d20);
+}
+.hero h2 { margin: 0; font-size: 22px; line-height: 1.15; max-width: 960px; }
+.hero p { margin: 8px 0 0; color: var(--muted); line-height: 1.45; max-width: 920px; }
+.triage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.triage {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(0,0,0,.12);
+  opacity: .45;
+}
+.triage.active { opacity: 1; border-color: rgba(233,184,102,.42); background: rgba(233,184,102,.12); }
+.triage strong { display: block; font-size: 14px; }
+.triage span { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.35; }
+.section-head {
+  min-height: 68px;
+  padding: 13px 14px 10px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: end;
+}
+.section-title { font-size: 12px; font-weight: 930; letter-spacing: .06em; text-transform: uppercase; }
+.section-note { margin-top: 4px; color: var(--muted); font-size: 12px; }
+.market-filter { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 12px; }
+.market-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--panel-2);
+  color: var(--muted);
+  text-align: left;
+}
+.market-card.active { border-color: rgba(130,216,210,.45); background: rgba(130,216,210,.11); color: var(--text); }
+.market-card h3 { margin: 0; font-size: 18px; color: var(--text); }
+.market-card .sub { margin-top: 4px; font-size: 11px; color: var(--muted); }
+.mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 11px; }
+.mini {
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(0,0,0,.15);
+  min-width: 0;
+}
+.mini span { display: block; color: var(--muted); font-size: 10px; font-weight: 850; text-transform: uppercase; }
+.mini strong { display: block; margin-top: 4px; font-size: 13px; color: var(--text); overflow-wrap: anywhere; }
+.score-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; padding: 12px; }
+.score {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--panel-2);
+}
+.score span { display: block; color: var(--muted); font-size: 10px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.score strong { display: block; margin-top: 7px; font-size: 22px; line-height: 1; overflow-wrap: anywhere; }
+.score small { display: block; margin-top: 8px; color: var(--soft); line-height: 1.35; }
+.chart-wrap { position: relative; height: 298px; padding: 12px 12px 35px; }
+.chart-bars { position: absolute; inset: 12px 12px 35px; display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); align-items: end; gap: 7px; }
+.bar-hit { position: relative; height: 100%; display: flex; justify-content: center; align-items: end; }
+.spend-bar {
+  width: 58%;
+  min-height: 8px;
+  border-radius: 6px 6px 2px 2px;
+  background: linear-gradient(180deg, rgba(130,216,210,.92), rgba(130,216,210,.25));
+}
+.chart-line { position: absolute; inset: 12px 12px 35px; width: calc(100% - 24px); height: calc(100% - 47px); pointer-events: none; overflow: visible; }
+.chart-line polyline { fill: none; stroke: var(--amber); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.chart-line circle { fill: var(--amber); stroke: var(--panel); stroke-width: 2; }
+.chart-labels { position: absolute; left: 12px; right: 12px; bottom: 10px; display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 7px; color: var(--soft); font-size: 10px; text-align: center; }
+.tip {
+  position: absolute;
+  z-index: 5;
+  display: none;
+  min-width: 158px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  padding: 8px;
+  background: #090b0d;
+  box-shadow: 0 16px 60px rgba(0,0,0,.42);
+  pointer-events: none;
+  color: var(--muted);
+}
+.tip strong { display: block; color: var(--text); margin-bottom: 4px; }
+.legend { display: flex; gap: 13px; padding: 0 13px 13px; color: var(--muted); font-size: 11px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; display: inline-block; border-radius: 3px; background: var(--cyan); }
+.legend i.line { width: 16px; height: 2px; border-radius: 99px; background: var(--amber); }
+.actions-scroll {
+  max-height: 522px;
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  scrollbar-color: rgba(255,255,255,.28) transparent;
+}
+.action {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+  padding: 11px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px;
+  gap: 12px;
+}
+.action-top { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin-bottom: 7px; }
+.tag {
+  min-height: 22px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.tag.scale { color: #e1f7e6; background: rgba(119,170,132,.16); }
+.tag.cut { color: #ffe3df; background: rgba(240,113,103,.16); }
+.tag.inspect { color: #fff0ce; background: rgba(233,184,102,.16); }
+.entity { color: var(--text); font-size: 15px; font-weight: 900; line-height: 1.25; }
+.entity small { color: var(--muted); font-weight: 760; }
+.action p { margin: 6px 0 0; color: var(--muted); line-height: 1.38; }
+.action-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 9px; }
+.decision { display: grid; gap: 7px; align-content: start; }
+.select-like {
+  width: 100%;
+  height: 34px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: var(--panel-3);
+  color: var(--text);
+  padding: 0 9px;
+  font-weight: 820;
+}
+.decision-row { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; }
+.decision-row strong { color: var(--text); }
+.details { color: var(--cyan); background: transparent; border: 0; padding: 0; text-align: left; font-weight: 850; }
+.drawer {
+  display: none;
+  margin-top: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  color: var(--muted);
+  background: rgba(0,0,0,.15);
+  line-height: 1.42;
+}
+.drawer.open { display: block; }
+.risk-list, .change-list { list-style: none; margin: 0; padding: 12px 14px 14px; display: grid; gap: 10px; }
+.risk-list li, .change-list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  padding-bottom: 10px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.risk-list li:last-child, .change-list li:last-child { border-bottom: 0; padding-bottom: 0; }
+.risk-list strong, .change-list strong { color: var(--text); }
+.pulse {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--amber);
+  animation: pulse 1.8s infinite;
+}
+.pulse.green { background: var(--green); }
+.pulse.red { background: var(--red); }
+.pulse.cyan { background: var(--cyan); }
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+  70% { box-shadow: 0 0 0 8px transparent; opacity: .82; }
+  100% { box-shadow: 0 0 0 0 transparent; opacity: 1; }
+}
+@media (max-width: 1180px) {
+  .app { grid-template-columns: 1fr; }
+  .rail { border-right: 0; border-bottom: 1px solid var(--line); flex-direction: row; align-items: center; overflow: auto; }
+  .brand { display: flex; align-items: center; min-width: 250px; }
+  .nav { display: flex; min-width: max-content; }
+  .rail-card { display: none; }
+  .hero, .layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .workspace { padding: 14px; }
+  .topbar { display: grid; }
+  .pills { justify-content: start; }
+  .score-grid, .market-filter, .action-metrics, .triage-grid { grid-template-columns: 1fr; }
+  .action { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail">
+    <div class="brand" aria-label="Agenthic GLV Media Buyer OS">
+      <svg class="brand-mark" viewBox="0 0 310 160" role="img" aria-label="Agenthic mark">
+        <path d="M305.901 89.8876C299.496 126.356 279.77 160 227.251 160C174.219 160 151.931 125.586 160.641 76.0193C168.583 30.5618 198.045 0 244.928 0C290.786 0 308.463 22.3435 310 56.7576L274.133 61.6372C273.365 42.6324 264.911 33.13 242.366 33.13C215.978 33.13 201.888 51.1075 197.02 79.1011C191.896 108.892 201.375 127.64 230.837 127.64C257.737 127.64 266.704 114.543 269.266 98.8764H231.35L236.73 68.5714H309.744L305.901 89.8876Z" fill="currentColor"/>
+        <path d="M39.9656 157.432H0L86.5922 3.33869H129.888L161.912 157.432H123.996C123.996 157.432 105.55 52.1348 103.757 39.8074H102.22C96.0713 52.1348 39.9656 157.432 39.9656 157.432Z" fill="currentColor"/>
+      </svg>
+      <div>
+        <svg class="wordmark" viewBox="0 0 1048 155" role="img" aria-label="Agenthic">
+          <path d="M295.431 86.6322C289.245 121.68 270.194 154.013 219.473 154.013C168.256 154.013 146.731 120.939 155.143 73.3041C162.813 29.6178 191.266 0.246812 236.545 0.246812C280.833 0.246812 297.905 21.7197 299.39 54.793L264.751 59.4825C264.008 41.2181 255.843 32.086 234.07 32.086C208.586 32.086 194.978 49.3631 190.277 76.2659C185.328 104.896 194.483 122.914 222.936 122.914C248.916 122.914 257.575 110.326 260.05 95.2707H223.431L228.627 66.1465H299.142L295.431 86.6322Z" fill="currentColor"/><path d="M294.609 151.545L320.836 3.45541H432.671L426.732 37.0223H350.527L346.073 61.9506H416.341L411.145 91.5685H340.877L336.176 117.978H412.629L406.691 151.545H294.609Z" fill="currentColor"/><path d="M508.83 151.545L489.779 93.0494C485.572 79.4745 478.397 55.0398 473.944 37.2691H473.201C470.48 56.5207 466.768 79.9681 464.047 94.7771L454.15 151.545H420.253L446.48 3.45541H498.438L514.026 53.0653C519.222 70.5892 525.655 93.2962 529.613 110.08H530.356C533.077 92.0621 535.799 74.2914 538.273 60.4697L548.417 3.45541H582.314L556.087 151.545H508.83Z" fill="currentColor"/><path d="M584.38 37.0223L590.319 3.45541H711.308L705.37 37.0223H662.813L642.525 151.545H606.896L627.184 37.0223H584.38Z" fill="currentColor"/><path d="M826.623 151.545H790.995L801.139 94.0366H739.531L729.387 151.545H693.758L719.737 3.45541H755.366L745.469 60.2229H807.077L816.974 3.45541H852.603L826.623 151.545Z" fill="currentColor"/><path d="M877.26 151.545H841.631L867.61 3.45541H903.239L877.26 151.545Z" fill="currentColor"/><path d="M967.835 155C917.609 155 892.867 118.965 901.279 72.3169C908.949 28.3838 939.629 0 982.681 0C1026.72 0 1047.51 24.9283 1048 65.1592L1013.11 68.121C1013.11 44.6736 1003.46 32.086 980.206 32.086C956.207 32.086 940.619 50.1035 936.66 73.3041C931.217 102.922 941.856 123.161 969.073 123.161C990.598 123.161 1002.23 109.092 1010.39 84.9045L1044.54 92.0621C1034.14 128.838 1009.4 155 967.835 155Z" fill="currentColor"/><path d="M38.5977 151.545H0L83.6284 3.45541H125.443L156.37 151.545H119.752C119.752 151.545 101.938 50.3503 100.206 38.5032H98.7212C92.783 50.3503 38.5977 151.545 38.5977 151.545Z" fill="currentColor"/>
+        </svg>
+        <span>GLV Media Buyer OS</span>
+      </div>
+    </div>
+    <nav class="nav" aria-label="Prototype navigation">
+      <button class="active" type="button">Cockpit</button>
+      <button type="button">Actions</button>
+      <button type="button">Campaigns</button>
+      <button type="button">Creatives</button>
+      <button type="button">Signals</button>
+      <button type="button">Timeline</button>
+      <button type="button">Memo</button>
+    </nav>
+    <div class="rail-card">V2 feedback pass: real Agenthic SVGs, explicit triage, big market filter, dynamic scorecards, ROAS line chart, longer action queue.</div>
+  </aside>
+
+  <main class="workspace">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">Home / Cockpit</div>
+        <h1>GLV Media Buying Cockpit</h1>
+      </div>
+      <div class="pills">
+        <span class="pill cyan" id="market-pill">CZSK view</span>
+        <span class="pill">Decision report 2026-06-23</span>
+        <span class="pill amber">Prototype v2.0</span>
+      </div>
+    </header>
+
+    <section class="layout">
+      <section class="card hero">
+        <div>
+          <div class="eyebrow">Current read</div>
+          <h2 id="read-title">CZSK is in OPTIMIZE. Good bones, bad allocation: winners can scale, but waste has to be cleaned first.</h2>
+          <p id="read-copy">The OS should make the daily mode obvious before it shows details. Today is not a rebuild and not a hold. It is a focused optimization pass.</p>
+        </div>
+        <div class="triage-grid" aria-label="Triage states">
+          <div class="triage" data-state="revamp"><strong>REVAMP</strong><span>2-4h rebuild. Structure is wrong, not just the dials.</span></div>
+          <div class="triage active" data-state="optimize"><strong>OPTIMIZE</strong><span>30-60 min. Good account shape, bad allocation.</span></div>
+          <div class="triage" data-state="hold"><strong>HOLD</strong><span>10-min glance. Inside band, no harmful shifts.</span></div>
+        </div>
+      </section>
+
+      <div class="main-stack">
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <div class="section-title">Main Scorecards</div>
+              <div class="section-note" id="score-note">Dynamic by selected market. Every metric states its calculation window.</div>
+            </div>
+            <span class="pill green" id="score-pill">CZSK selected</span>
+          </div>
+          <div class="score-grid" id="score-grid"></div>
+        </section>
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <div class="section-title">Spend + ROAS Trend</div>
+              <div class="section-note">Same sleek chart language, with ROAS as a line and values on hover.</div>
+            </div>
+            <span class="pill" id="chart-pill">CZSK / 14D</span>
+          </div>
+          <div class="chart-wrap" id="chart-wrap">
+            <div class="chart-bars" id="chart-bars"></div>
+            <svg class="chart-line" id="chart-line" preserveAspectRatio="none"></svg>
+            <div class="chart-labels" id="chart-labels"></div>
+            <div class="tip" id="tip"></div>
+          </div>
+          <div class="legend"><span><i></i> Spend</span><span><i class="line"></i> ROAS</span></div>
+        </section>
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <div class="section-title">Highest Leverage Actions</div>
+              <div class="section-note">Longer queue with its own scroll. Click details only when needed.</div>
+            </div>
+            <span class="pill amber">7 open</span>
+          </div>
+          <div class="actions-scroll" id="actions"></div>
+        </section>
+      </div>
+
+      <aside class="side-stack">
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <div class="section-title">Account State Filter</div>
+              <div class="section-note">Click US or CZSK to switch scorecards and chart context.</div>
+            </div>
+          </div>
+          <div class="market-filter">
+            <button class="market-card active" type="button" data-market="czsk">
+              <h3>CZSK</h3>
+              <div class="sub">Performance market</div>
+              <div class="mini-grid">
+                <div class="mini"><span>7D / 14D ROAS</span><strong>2.64x / 2.72x</strong></div>
+                <div class="mini"><span>7D LPV->CO</span><strong>16.8%</strong></div>
+                <div class="mini"><span>7D cost/purchase</span><strong>CZK 494</strong></div>
+              </div>
+            </button>
+            <button class="market-card" type="button" data-market="us">
+              <h3>US</h3>
+              <div class="sub">PMF discovery</div>
+              <div class="mini-grid">
+                <div class="mini"><span>7D / 14D checkouts</span><strong>37 / 72</strong></div>
+                <div class="mini"><span>7D LPV->CO</span><strong>8.4%</strong></div>
+                <div class="mini"><span>7D cost/LPV</span><strong>CZK 148</strong></div>
+              </div>
+            </button>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <div class="section-title">Change Since Baseline</div>
+              <div class="section-note">Explains why the current triage state exists.</div>
+            </div>
+          </div>
+          <ul class="change-list">
+            <li><span class="pulse"></span><span>CZSK spend <strong>-4.9%</strong> vs prior 2d avg.</span><span>Lower</span></li>
+            <li><span class="pulse"></span><span>CZSK ROAS <strong>-8.4%</strong> vs prior 2d avg.</span><span>Softer</span></li>
+            <li><span class="pulse green"></span><span>AS02 remains the strongest scale candidate.</span><span>Scale</span></li>
+            <li><span class="pulse red"></span><span>GLV_016 created yesterday's risk gate.</span><span>Inspect</span></li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <div class="section-title">Risk + Watchlist</div>
+              <div class="section-note">Warnings stay compact so the cockpit does not become prose soup.</div>
+            </div>
+          </div>
+          <ul class="risk-list">
+            <li><span class="pulse red"></span><span><strong>Zero-revenue leakage</strong>: PAC317, PAC230, PAC374.</span><span>CZK 10.7k</span></li>
+            <li><span class="pulse"></span><span><strong>Spend concentration</strong>: top 3 CZSK campaigns hold most budget.</span><span>83.7%</span></li>
+            <li><span class="pulse cyan"></span><span><strong>US learning</strong>: protect checkout signal while killing bad LPV cost.</span><span>Review</span></li>
+          </ul>
+        </section>
+      </aside>
+    </section>
+  </main>
+</div>
+
+<script>
+const data = {
+  czsk: {
+    label: 'CZSK',
+    state: 'optimize',
+    title: 'CZSK is in OPTIMIZE. Good bones, bad allocation: winners can scale, but waste has to be cleaned first.',
+    copy: 'The OS should make the daily mode obvious before it shows details. Today is not a rebuild and not a hold. It is a focused optimization pass.',
+    scorePill: 'CZSK selected',
+    scores: [
+      ['2D spend', 'CZK 168,401', 'Window: last 2 days'],
+      ['2D revenue', 'CZK 330,836', 'Window: last 2 days'],
+      ['2D ROAS', '1.96x', 'Window: last 2 days'],
+      ['2D CVR', '3.52%', 'Window: last 2 days']
+    ],
+    series: [
+      ['06-11',15779,1.38],['06-12',15772,.64],['06-13',18972,2.3],['06-14',20874,1.76],
+      ['06-15',22517,5.16],['06-16',28021,4.14],['06-17',28481,2.4],['06-18',36985,3.21],
+      ['06-19',54274,3.39],['06-20',57336,3.28],['06-21',87161,2.92],['06-22',86065,1.78],
+      ['06-23',82347,2.15],['06-24',37393,.86]
+    ]
+  },
+  us: {
+    label: 'US',
+    state: 'optimize',
+    title: 'US is in OPTIMIZE for discovery. The task is to preserve PMF signal while cutting expensive traffic paths.',
+    copy: 'Do not judge US like CZSK yet. The cockpit should show checkout movement, LPV quality, and cost/LPV first, then tie actions to learning velocity.',
+    scorePill: 'US selected',
+    scores: [
+      ['2D spend', 'CZK 18,410', 'Window: last 2 days'],
+      ['2D revenue', 'CZK 9,880', 'Window: last 2 days'],
+      ['2D ROAS', '0.54x', 'Window: last 2 days'],
+      ['2D CVR', '1.41%', 'Window: last 2 days']
+    ],
+    series: [
+      ['06-11',5051,.28],['06-12',6233,.42],['06-13',5880,.31],['06-14',6810,.66],
+      ['06-15',7320,.58],['06-16',8240,.74],['06-17',7705,.49],['06-18',8840,.52],
+      ['06-19',9420,.61],['06-20',10110,.69],['06-21',9780,.55],['06-22',9130,.48],
+      ['06-23',9280,.62],['06-24',4610,.39]
+    ]
+  }
+};
+const actions = [
+  ['scale','TUC_013 / AS02','Purchase Promo Naty FOMO','Review +20% daily budget increase. Winner is strong enough for a standard bump.',['Spend','CZK 41,756'],['Revenue','CZK 210,963'],['ROAS','5.05x'],['Upside','+CZK 42k'],'Assumes incremental budget keeps at least 50% of current ROAS. Replace with marginal ROAS once available.'],
+  ['cut','GLV_016 / PAC317','video menopauza v1','Pause unless there is a deliberate learning reason to keep it running.',['Spend','CZK 4,832'],['Revenue','CZK 0'],['ROAS','0.00x'],['Savings','CZK 4.8k'],'High LPV count exists, but purchase revenue is zero over the 30d window.'],
+  ['inspect','GLV_016 / campaign','CZ WC CBO2','Inspect before broader CZSK scaling. Yesterday had spend with zero attributed revenue.',['Spend','CZK 5,287'],['Revenue','CZK 0'],['ROAS','0.00x'],['Impact','Risk gate'],'This is the reason not to scale blindly. Inspect ad set split and weak ads.'],
+  ['cut','TUC_014 / PAC230','static bundle angle','Cut the second zero-revenue pocket and reclaim learning budget.',['Spend','CZK 3,205'],['Revenue','CZK 0'],['ROAS','0.00x'],['Savings','CZK 3.2k'],'If creative has strategic value, move it into a controlled test cell instead of BAU spend.'],
+  ['inspect','US_004 / LPV test','menopause education angle','Keep only if checkout quality improves; LPV cost is not enough alone.',['Spend','CZK 6,840'],['LPV cost','CZK 148'],['CO rate','8.4%'],['Impact','Learning'],'US is discovery, so this is judged by signal quality rather than ROAS alone.'],
+  ['scale','TUC_013 / creative','Naty FOMO variants','Brief two derivative hooks from the current winner before fatigue catches up.',['7D ROAS','2.64x'],['Top spend','83.7%'],['Fatigue','Watch'],['Impact','Protect'],'Scaling without creative runway creates tomorrow’s fatigue problem.'],
+  ['cut','TUC_015 / PAC374','low-intent retargeting','Pause or cap if there is no checkout lift in the next read.',['Spend','CZK 2,646'],['Revenue','CZK 0'],['ROAS','0.00x'],['Savings','CZK 2.6k'],'Small individually, meaningful when grouped with the other zero-revenue pockets.']
+];
+let activeMarket = 'czsk';
+const format = value => value.toLocaleString('en-US');
+
+function renderScores(market) {
+  document.getElementById('score-grid').innerHTML = data[market].scores.map(([label, value, note]) => `
+    <div class="score"><span>${label}</span><strong>${value}</strong><small>${note}</small></div>
+  `).join('');
+  document.getElementById('score-pill').textContent = data[market].scorePill;
+  document.getElementById('market-pill').textContent = `${data[market].label} view`;
+}
+
+function renderTriage(market) {
+  document.getElementById('read-title').textContent = data[market].title;
+  document.getElementById('read-copy').textContent = data[market].copy;
+  document.querySelectorAll('.triage').forEach(card => card.classList.toggle('active', card.dataset.state === data[market].state));
+}
+
+function renderChart(market) {
+  const series = data[market].series;
+  const bars = document.getElementById('chart-bars');
+  const labels = document.getElementById('chart-labels');
+  const line = document.getElementById('chart-line');
+  const tip = document.getElementById('tip');
+  const maxSpend = Math.max(...series.map(day => day[1]));
+  const maxRoas = Math.max(...series.map(day => day[2]));
+  bars.innerHTML = series.map((day, index) => {
+    const height = Math.max(8, Math.round((day[1] / maxSpend) * 230));
+    return `<div class="bar-hit" data-index="${index}"><div class="spend-bar" style="height:${height}px"></div></div>`;
+  }).join('');
+  labels.innerHTML = series.map(day => `<div>${day[0]}</div>`).join('');
+  const width = 1000;
+  const height = 230;
+  const step = width / (series.length - 1);
+  const points = series.map((day, index) => {
+    const x = Math.round(index * step);
+    const y = Math.round(height - (day[2] / maxRoas) * height);
+    return [x, y];
+  });
+  line.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  line.innerHTML = `<polyline points="${points.map(p => p.join(',')).join(' ')}"></polyline>${points.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="5"></circle>`).join('')}`;
+  document.getElementById('chart-pill').textContent = `${data[market].label} / 14D`;
+  bars.querySelectorAll('.bar-hit').forEach(hit => {
+    hit.addEventListener('mouseenter', () => {
+      const [date, spend, roas] = series[Number(hit.dataset.index)];
+      const rect = hit.getBoundingClientRect();
+      const wrap = document.getElementById('chart-wrap').getBoundingClientRect();
+      tip.innerHTML = `<strong>${data[market].label} ${date}</strong>Spend: CZK ${format(spend)}<br>ROAS: ${roas.toFixed(2)}x`;
+      tip.style.display = 'block';
+      tip.style.left = `${Math.min(rect.left - wrap.left + 4, wrap.width - 170)}px`;
+      tip.style.top = `${Math.max(rect.top - wrap.top - 6, 10)}px`;
+    });
+    hit.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+  });
+}
+
+function renderActions() {
+  document.getElementById('actions').innerHTML = actions.map((item, index) => {
+    const [type, entity, sub, copy, m1, m2, m3, m4, detail] = item;
+    return `<article class="action">
+      <div>
+        <div class="action-top"><span class="tag ${type}">${type}</span><div class="entity">${entity} <small>${sub}</small></div></div>
+        <p>${copy}</p>
+        <div class="action-metrics">${[m1,m2,m3,m4].map(([label,value]) => `<div class="mini"><span>${label}</span><strong>${value}</strong></div>`).join('')}</div>
+        <div class="drawer">${detail}</div>
+      </div>
+      <div class="decision">
+        <select class="select-like" aria-label="Action decision ${index + 1}">
+          <option>Not decided</option><option>Approve</option><option>Defer</option><option>Reject</option><option>Resolved</option>
+        </select>
+        <div class="decision-row"><span>Confidence</span><strong>${type === 'inspect' ? 'Medium' : 'High'}</strong></div>
+        <div class="decision-row"><span>Owner</span><strong>${type === 'scale' ? 'Tom' : 'Buyer'}</strong></div>
+        <button class="details" type="button">Show details</button>
+      </div>
+    </article>`;
+  }).join('');
+  document.querySelectorAll('.details').forEach(button => {
+    button.addEventListener('click', () => {
+      const drawer = button.closest('.action').querySelector('.drawer');
+      drawer.classList.toggle('open');
+      button.textContent = drawer.classList.contains('open') ? 'Hide details' : 'Show details';
+    });
+  });
+}
+
+function setMarket(market) {
+  activeMarket = market;
+  document.querySelectorAll('.market-card').forEach(card => card.classList.toggle('active', card.dataset.market === market));
+  renderTriage(market);
+  renderScores(market);
+  renderChart(market);
+}
+
+document.querySelectorAll('.market-card').forEach(card => card.addEventListener('click', () => setMarket(card.dataset.market)));
+renderActions();
+setMarket(activeMarket);
+</script>
+</body>
+</html>
