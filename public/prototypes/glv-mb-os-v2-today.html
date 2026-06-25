@@ -44,8 +44,8 @@ button { cursor: pointer; }
   flex-direction: column;
   gap: 18px;
 }
-.brand { min-height: 72px; display: flex; justify-content: center; align-items: flex-start; overflow: hidden; }
-.wordmark { width: 146px; height: auto; color: var(--text); transform: rotate(-90deg) translateX(-46px); transform-origin: center; flex: 0 0 auto; }
+.brand { min-height: 52px; display: flex; justify-content: center; align-items: center; }
+.brand-mark { width: 42px; height: 22px; color: var(--text); flex: 0 0 auto; }
 .nav { display: grid; gap: 6px; }
 .nav button {
   width: 42px;
@@ -289,8 +289,7 @@ h1 { margin: 4px 0 0; font-size: 30px; line-height: 1.05; letter-spacing: 0; }
 @media (max-width: 1180px) {
   .app { grid-template-columns: 1fr; }
   .rail { border-right: 0; border-bottom: 1px solid var(--line); flex-direction: row; align-items: center; overflow: auto; }
-  .brand { min-width: 82px; min-height: 42px; align-items: center; }
-  .wordmark { transform: none; width: 120px; }
+  .brand { min-width: 58px; min-height: 42px; align-items: center; }
   .nav { display: flex; min-width: max-content; }
   .rail-card { display: none; }
   .hero, .layout { grid-template-columns: 1fr; }
@@ -308,9 +307,10 @@ h1 { margin: 4px 0 0; font-size: 30px; line-height: 1.05; letter-spacing: 0; }
 <div class="app">
   <aside class="rail">
     <div class="brand" aria-label="Agenthic">
-        <svg class="wordmark" viewBox="0 0 1048 155" role="img" aria-label="Agenthic">
-          <path d="M295.431 86.6322C289.245 121.68 270.194 154.013 219.473 154.013C168.256 154.013 146.731 120.939 155.143 73.3041C162.813 29.6178 191.266 0.246812 236.545 0.246812C280.833 0.246812 297.905 21.7197 299.39 54.793L264.751 59.4825C264.008 41.2181 255.843 32.086 234.07 32.086C208.586 32.086 194.978 49.3631 190.277 76.2659C185.328 104.896 194.483 122.914 222.936 122.914C248.916 122.914 257.575 110.326 260.05 95.2707H223.431L228.627 66.1465H299.142L295.431 86.6322Z" fill="currentColor"/><path d="M294.609 151.545L320.836 3.45541H432.671L426.732 37.0223H350.527L346.073 61.9506H416.341L411.145 91.5685H340.877L336.176 117.978H412.629L406.691 151.545H294.609Z" fill="currentColor"/><path d="M508.83 151.545L489.779 93.0494C485.572 79.4745 478.397 55.0398 473.944 37.2691H473.201C470.48 56.5207 466.768 79.9681 464.047 94.7771L454.15 151.545H420.253L446.48 3.45541H498.438L514.026 53.0653C519.222 70.5892 525.655 93.2962 529.613 110.08H530.356C533.077 92.0621 535.799 74.2914 538.273 60.4697L548.417 3.45541H582.314L556.087 151.545H508.83Z" fill="currentColor"/><path d="M584.38 37.0223L590.319 3.45541H711.308L705.37 37.0223H662.813L642.525 151.545H606.896L627.184 37.0223H584.38Z" fill="currentColor"/><path d="M826.623 151.545H790.995L801.139 94.0366H739.531L729.387 151.545H693.758L719.737 3.45541H755.366L745.469 60.2229H807.077L816.974 3.45541H852.603L826.623 151.545Z" fill="currentColor"/><path d="M877.26 151.545H841.631L867.61 3.45541H903.239L877.26 151.545Z" fill="currentColor"/><path d="M967.835 155C917.609 155 892.867 118.965 901.279 72.3169C908.949 28.3838 939.629 0 982.681 0C1026.72 0 1047.51 24.9283 1048 65.1592L1013.11 68.121C1013.11 44.6736 1003.46 32.086 980.206 32.086C956.207 32.086 940.619 50.1035 936.66 73.3041C931.217 102.922 941.856 123.161 969.073 123.161C990.598 123.161 1002.23 109.092 1010.39 84.9045L1044.54 92.0621C1034.14 128.838 1009.4 155 967.835 155Z" fill="currentColor"/><path d="M38.5977 151.545H0L83.6284 3.45541H125.443L156.37 151.545H119.752C119.752 151.545 101.938 50.3503 100.206 38.5032H98.7212C92.783 50.3503 38.5977 151.545 38.5977 151.545Z" fill="currentColor"/>
-        </svg>
+      <svg class="brand-mark" viewBox="0 0 310 160" role="img" aria-label="Agenthic mark">
+        <path d="M305.901 89.8876C299.496 126.356 279.77 160 227.251 160C174.219 160 151.931 125.586 160.641 76.0193C168.583 30.5618 198.045 0 244.928 0C290.786 0 308.463 22.3435 310 56.7576L274.133 61.6372C273.365 42.6324 264.911 33.13 242.366 33.13C215.978 33.13 201.888 51.1075 197.02 79.1011C191.896 108.892 201.375 127.64 230.837 127.64C257.737 127.64 266.704 114.543 269.266 98.8764H231.35L236.73 68.5714H309.744L305.901 89.8876Z" fill="currentColor"/>
+        <path d="M39.9656 157.432H0L86.5922 3.33869H129.888L161.912 157.432H123.996C123.996 157.432 105.55 52.1348 103.757 39.8074H102.22C96.0713 52.1348 39.9656 157.432 39.9656 157.432Z" fill="currentColor"/>
+      </svg>
     </div>
     <nav class="nav" aria-label="Prototype navigation">
       <button class="active" type="button" aria-label="Cockpit" title="Cockpit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4zM14 20h6V4h-6zM4 20h6v-3H4z"/></svg></button>
