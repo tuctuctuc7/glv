@@ -66,7 +66,8 @@ Produce concise operating reports that another media buyer can verify from sourc
    - right: ROAS values with `x` suffix;
    - align both sets of ticks to the gridlines and retain date labels on the x-axis.
 5. Keep the copy compact and data-led:
-   - performance summary with exact period and freshness;
+   - performance summary with exact period, freshness, and opening KPI bullets;
+   - immediately below the opening bullets, a short executive summary in two or three sentences. State the direction versus the recent baseline, distance from the current revenue target or run rate, stability or volatility, and any user-provided near-term operating plan or calendar context. Keep observed results distinct from planned actions, and never invent an action or impact;
    - CZSK last-7-day result, tendencies, top creatives, and campaign/ad-set attention;
    - blank `CZ/SK · Campaign changelog` section;
    - US last-7-day result, tendencies, top creatives, and campaign/ad-set attention;
