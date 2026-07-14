@@ -1,6 +1,6 @@
 ---
 name: camp-log
-description: "Create and publish evidence-backed GLV/Gelavis daily or weekly campaign logs from the GLV business KPI dashboard and Meta Ads data. Use for campaign-log entries, CZSK and US performance reviews, creative/campaign/ad-set evaluations, reporting snapshots, or updates to the Notion Campaign Log. Read-only analysis only: never change campaigns as part of this skill."
+description: "Create, resume, verify, publish, and hand off evidence-backed GLV/Gelavis daily or weekly campaign logs from the GLV business KPI dashboard and Meta Ads data. Use for new or in-progress campaign-log entries, agent takeovers, CZSK and US performance reviews, creative/campaign/ad-set evaluations, reporting snapshots, or updates to the Notion Campaign Log. Read-only analysis only: never change campaigns as part of this skill."
 ---
 
 # GLV Campaign Log
@@ -16,6 +16,15 @@ Produce concise operating reports that another media buyer can verify from sourc
 2. Read `README.md` and `AGENTS.md` in `tuctuctuc7/glv` before relying on routes, schemas, aggregation rules, or deployment context.
 3. Consult `tuctuctuc7/glv-meta-ads` only for legacy history when necessary. The standalone app was migrated into `glv`; never treat the legacy repository or `glv-meta-ads.vercel.app` as the production source.
 4. If no checkout is available, use the connected GitHub tool to fetch both repositories. Do not require repository writes to create a report.
+
+## Start or resume safely
+
+1. Determine whether the request starts a new report or resumes another agent's work. Look for a `CAMP-LOG HANDOFF` record in the prompt, task history, or agent message.
+2. For any takeover or transfer, read [references/agent-handoff.md](references/agent-handoff.md) and follow its state contract.
+3. Build the idempotency key from report type, exact reporting window, data cutoff, and included markets. Search the Campaign Log database for that report before creating a page.
+4. If a matching page or handed-off page ID exists, re-fetch it and continue there. Never create a replacement merely because the prior agent stopped.
+5. Treat handoff facts as leads, not current truth. Re-check mutable sources, page content, human edits, data freshness, and verification state before writing.
+6. Preserve the user's original scope and constraints. Do not broaden a resumed task or repeat completed work unless verification shows it is missing or invalid.
 
 ## Collect current evidence
 
@@ -67,7 +76,7 @@ Produce concise operating reports that another media buyer can verify from sourc
    - align both sets of ticks to the gridlines and retain date labels on the x-axis.
 5. Keep the copy compact and data-led:
    - performance summary with exact period, freshness, and opening KPI bullets;
-   - immediately below the opening bullets, a short executive summary in two or three sentences. State the direction versus the recent baseline, distance from the current revenue target or run rate, stability or volatility, and any user-provided near-term operating plan or calendar context. Keep observed results distinct from planned actions, and never invent an action or impact;
+   - immediately below the opening bullets, a short executive summary in a blue Notion callout in two or three sentences. State the direction versus the recent baseline, distance from the current revenue target or run rate, stability or volatility, and any user-provided near-term operating plan or calendar context. Keep observed results distinct from planned actions, and never invent an action or impact;
    - CZSK last-7-day result, tendencies, top creatives, and campaign/ad-set attention;
    - blank `CZ/SK · Campaign changelog` section;
    - US last-7-day result, tendencies, top creatives, and campaign/ad-set attention;
@@ -95,6 +104,8 @@ Produce concise operating reports that another media buyer can verify from sourc
    - two blank changelog sections;
    - no secrets or invented execution claims.
 4. Report what was published and explicitly confirm that no campaign changes were made.
+5. When pausing, transferring, or leaving required work unfinished, emit a complete `CAMP-LOG HANDOFF` record using [references/agent-handoff.md](references/agent-handoff.md). Use the environment's handoff or agent-message mechanism when available; otherwise include the record in the final response.
+6. Mark a run complete only after the intended page is re-fetched and all required checks pass. A draft, queued write, or unverified page is not complete.
 
 ## Safety
 
