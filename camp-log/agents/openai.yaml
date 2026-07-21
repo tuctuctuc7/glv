@@ -1,0 +1,4 @@
+interface:
+  display_name: "GLV Campaign Log"
+  short_description: "Create and safely hand off GLV campaign logs"
+  default_prompt: "Use $camp-log to create, resume, verify, or hand off a concise GLV campaign log."
