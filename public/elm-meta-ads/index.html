@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Interactive Elmich Meta Ads diagnostic dashboard with transparent anomaly sensitivity methodology." />
+  <title>ELM · Meta Ads Diagnostic</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f" crossorigin="anonymous"></script>
+</head>
+<body>
+  <a class="skip-link" href="#dashboard">Skip to dashboard</a>
+  <header class="masthead">
+    <div class="brand-lockup">
+      <a class="lab-link" href="/" aria-label="Back to Agenthic Lab">AGENTHIC / LAB</a>
+      <div>
+        <p class="eyebrow">ELM · Meta Ads diagnostic</p>
+        <h1>What changed, where it moved,<br />and what still needs proof.</h1>
+        <p class="lede">24 months of Meta delivery, purchase-value sensitivity, account and regional diagnostics.</p>
+      </div>
+    </div>
+    <div class="status-stack">
+      <span class="status hold"><span></span> Directional data</span>
+      <p id="dataStamp">Loading audit dataset…</p>
+    </div>
+  </header>
+
+  <section class="filter-dock" aria-label="Dashboard filters">
+    <div class="preset-group" aria-label="Date presets">
+      <button type="button" class="preset active" data-preset="all">24M</button>
+      <button type="button" class="preset" data-preset="2024h2">2024 H2</button>
+      <button type="button" class="preset" data-preset="2025">2025</button>
+      <button type="button" class="preset" data-preset="2026h1">2026 H1</button>
+    </div>
+    <div class="filter-fields">
+      <label>From <input id="dateFrom" type="date" /></label>
+      <label>To <input id="dateTo" type="date" /></label>
+      <label>Account
+        <select id="accountFilter">
+          <option value="all">Both accounts</option>
+          <option value="Gia Dụng">Gia Dụng</option>
+          <option value="Điện gia dụng">Điện gia dụng</option>
+        </select>
+      </label>
+      <label>Grain
+        <select id="grainFilter">
+          <option value="month">Month</option>
+          <option value="week">Week</option>
+          <option value="day">Day</option>
+        </select>
+      </label>
+    </div>
+    <button id="exportButton" class="export-button" type="button">Export filtered CSV</button>
+  </section>
+
+  <main id="dashboard" class="dashboard" tabindex="-1">
+    <section class="section executive" aria-labelledby="executiveTitle">
+      <div class="section-heading">
+        <div><p class="kicker">01 / Executive lens</p><h2 id="executiveTitle">Operating signal first</h2></div>
+        <p id="selectionSummary">Selected period</p>
+      </div>
+      <div id="kpiGrid" class="kpi-grid" aria-live="polite"></div>
+      <div class="decision-strip">
+        <div><span class="signal signal-fact">Observed</span><strong>Spend, purchases, and cost per purchase are usable Meta baselines.</strong></div>
+        <div><span class="signal signal-hold">Hold</span><strong>Revenue, true ROAS, profit, and South scale claims need backend proof.</strong></div>
+        <div><span class="signal signal-test">Investigate</span><strong>South under-indexing is a diagnostic priority, not proof of profitable scale.</strong></div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="cmoTitle">
+      <div class="section-heading chart-heading">
+        <div><p class="kicker">02 / CMO development</p><h2 id="cmoTitle">Monthly operating baseline</h2></div>
+        <div class="metric-tabs" role="group" aria-label="Operating metric">
+          <button type="button" data-operating-metric="spend" aria-pressed="true">Spend</button>
+          <button type="button" data-operating-metric="purchases" aria-pressed="false">Purchases</button>
+          <button type="button" data-operating-metric="cost_per_purchase" aria-pressed="false">Cost / purchase</button>
+        </div>
+      </div>
+      <div class="chart-card tall">
+        <canvas id="operatingChart" role="img" aria-label="Interactive Meta operating trend"></canvas>
+      </div>
+      <p class="chart-note" id="operatingInsight"></p>
+      <details class="data-details">
+        <summary>View operating chart data</summary>
+        <div class="table-wrap"><table><caption>Filtered operating series</caption><thead><tr><th>Period</th><th>Spend</th><th>Purchases</th><th>Cost / purchase</th></tr></thead><tbody id="operatingDataTable"></tbody></table></div>
+      </details>
+    </section>
+
+    <section class="section measurement" aria-labelledby="measurementTitle">
+      <div class="section-heading">
+        <div><p class="kicker">03 / Measurement lens</p><h2 id="measurementTitle">Raw value is not decision-grade</h2></div>
+        <span class="status risk"><span></span><strong id="flagCount">—</strong> flagged account-days</span>
+      </div>
+      <div class="measurement-grid">
+        <div class="chart-card tall"><canvas id="valueChart" role="img" aria-label="Raw and modelled tracked purchase value"></canvas></div>
+        <aside class="method-card">
+          <p class="kicker">Anomaly methodology</p>
+          <h3>Volume-preserving sensitivity</h3>
+          <ol>
+            <li><span>Grain</span><strong>Account × day</strong></li>
+            <li><span>Baseline</span><strong>Median AOV of nearest 7 surrounding days</strong></li>
+            <li><span>Robust gate</span><strong>&gt; 5× median and &gt; median + 6 scaled MAD</strong></li>
+            <li><span>Materiality</span><strong>&gt; 100M VND excess tracked value</strong></li>
+            <li><span>Scenario</span><strong>Baseline AOV × actual purchases</strong></li>
+          </ol>
+          <div class="method-warning"><strong>Not corrected revenue.</strong> Spend, purchases, LPV, and checkouts stay immutable. Validate flagged dates against backend orders and PowerBI.</div>
+        </aside>
+      </div>
+      <div class="bridge" id="valueBridge" aria-live="polite"></div>
+      <details class="data-details">
+        <summary>View measurement chart data</summary>
+        <div class="table-wrap"><table><caption>Filtered raw and modelled value series</caption><thead><tr><th>Period</th><th>Raw tracked value</th><th>Modelled sensitivity</th><th>Flagged days</th></tr></thead><tbody id="valueDataTable"></tbody></table></div>
+      </details>
+    </section>
+
+    <section class="section" aria-labelledby="accountTitle">
+      <div class="section-heading chart-heading">
+        <div><p class="kicker">04 / Account lens</p><h2 id="accountTitle">Scale and efficiency</h2></div>
+        <label class="inline-select">Metric
+          <select id="accountMetric">
+            <option value="spend">Spend</option>
+            <option value="purchases">Purchases</option>
+            <option value="cost_per_purchase">Cost per purchase</option>
+            <option value="modelled_roas">Modelled ROAS</option>
+          </select>
+        </label>
+      </div>
+      <div class="chart-card medium"><canvas id="accountChart" role="img" aria-label="Interactive account comparison"></canvas></div>
+      <div class="table-wrap compact"><table><caption>Selected-period account totals</caption><thead><tr><th>Account</th><th>Spend</th><th>Purchases</th><th>Cost / purchase</th><th>Raw value</th><th>Modelled value</th><th>Modelled ROAS</th></tr></thead><tbody id="accountTable"></tbody></table></div>
+    </section>
+
+    <section class="section regional" aria-labelledby="regionalTitle">
+      <div class="section-heading">
+        <div><p class="kicker">05 / Regional lens</p><h2 id="regionalTitle">South under-indexes inside Meta’s breakdown</h2></div>
+        <span class="status hold"><span></span> Fixed scope · both accounts · 24M</span>
+      </div>
+      <p class="scope-note">Regional source rows are monthly and cannot honor arbitrary daily or account filters. This lens intentionally remains fixed to the complete 2024-07-01 → 2026-06-30 audit scope.</p>
+      <div class="regional-grid">
+        <div class="chart-card medium"><canvas id="regionBaselineChart" role="img" aria-label="Regional spend and reported purchase shares"></canvas></div>
+        <div class="chart-card medium"><canvas id="regionTrendChart" role="img" aria-label="Regional monthly cost per reported purchase"></canvas></div>
+      </div>
+      <div class="reconciliation-grid">
+        <article><span>Vietnam mapping coverage</span><strong id="mappingCoverage">—</strong><p>Unmatched and non-Vietnam labels stay isolated, never defaulted to North.</p></article>
+        <article><span>Regional purchase reconciliation</span><strong id="purchaseCoverage">—</strong><p>Share of account-level purchases represented by the regional breakdown.</p></article>
+        <article><span>Regional value reconciliation</span><strong id="valueCoverage">—</strong><p>Regional value is suppressed from decisions because this coverage is too low.</p></article>
+      </div>
+      <details class="data-details">
+        <summary>View regional chart data</summary>
+        <div class="table-wrap"><table><caption>Fixed-scope regional breakdown</caption><thead><tr><th>Region</th><th>Spend share</th><th>Reported purchase share</th><th>Cost / reported purchase</th></tr></thead><tbody id="regionDataTable"></tbody></table></div>
+        <div class="table-wrap"><table><caption>Fixed-scope monthly cost per reported purchase</caption><thead><tr><th>Month</th><th>South</th><th>North</th><th>Mid</th></tr></thead><tbody id="regionTrendDataTable"></tbody></table></div>
+      </details>
+    </section>
+
+    <section class="section" aria-labelledby="outlierTitle">
+      <div class="section-heading chart-heading">
+        <div><p class="kicker">06 / Detailed outliers</p><h2 id="outlierTitle">Evidence for reconciliation</h2></div>
+        <span class="status risk"><span></span> Backend validation required</span>
+      </div>
+      <div class="table-wrap"><table id="detailTable"><caption id="detailCaption">Flagged account-days, sorted by excess tracked value</caption><thead id="detailHead"></thead><tbody id="detailBody"></tbody></table></div>
+      <p class="chart-note">Campaign-level names and rows remain in the private Notion review rather than this public diagnostic surface.</p>
+    </section>
+
+    <section class="section proof-pack" aria-labelledby="proofTitle">
+      <div><p class="kicker">07 / Decision gate</p><h2 id="proofTitle">Minimum proof pack before a client growth claim</h2></div>
+      <ol>
+        <li><span>01</span>PowerBI daily revenue and orders by account, category, SKU, and region.</li>
+        <li><span>02</span>Backend order-level export for flagged dates, including status, refund, cancellation, and region.</li>
+        <li><span>03</span>Exact Meta vs internal-revenue discrepancy definition: window, timezone, tax, shipping, returns.</li>
+        <li><span>04</span>Margin and break-even cost per purchase by priority Plus/Premium category and region.</li>
+        <li><span>05</span>South stock, delivery SLA/cost, cancellation/return rate, pricing, and checkout constraints.</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer><span>ELM · Meta Ads diagnostic</span><span>Source: cached Meta API v22.0 audit export · VND</span></footer>
+  <div id="errorState" class="error-state" hidden role="alert"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
