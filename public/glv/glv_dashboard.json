@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-21 00:10 UTC",
+  "updated_at": "2026-07-22 00:10 UTC",
   "source": {
     "sheet_id": "1KjiRfumk3w8tNZFpfI8RO9X5RTcqoq5LcKfyCzcpplQ",
     "tab": "Daily",
@@ -9,7 +9,7 @@
   "currency": "USD",
   "date_range": {
     "start": "2026-01-01",
-    "end": "2026-07-20"
+    "end": "2026-07-21"
   },
   "absolute_metrics": [
     "spend",
@@ -4731,7 +4731,7 @@
     {
       "date": "2026-07-16",
       "region": "czsk",
-      "revenue": 5238.0,
+      "revenue": 5240.0,
       "spend": 1842.0,
       "purchases": 40,
       "unique_visitors": 1022
@@ -4755,7 +4755,7 @@
     {
       "date": "2026-07-17",
       "region": "czsk",
-      "revenue": 4436.0,
+      "revenue": 4438.0,
       "spend": 1757.0,
       "purchases": 37,
       "unique_visitors": 988
@@ -4779,7 +4779,7 @@
     {
       "date": "2026-07-18",
       "region": "czsk",
-      "revenue": 3483.0,
+      "revenue": 3485.0,
       "spend": 1876.0,
       "purchases": 31,
       "unique_visitors": 1278
@@ -4803,7 +4803,7 @@
     {
       "date": "2026-07-19",
       "region": "czsk",
-      "revenue": 5103.0,
+      "revenue": 5104.0,
       "spend": 2273.0,
       "purchases": 37,
       "unique_visitors": 1863
@@ -4827,7 +4827,7 @@
     {
       "date": "2026-07-20",
       "region": "czsk",
-      "revenue": 7509.0,
+      "revenue": 7512.0,
       "spend": 2549.0,
       "purchases": 55,
       "unique_visitors": 1855
@@ -4847,6 +4847,30 @@
       "spend": 538.0,
       "purchases": 1,
       "unique_visitors": 143
+    },
+    {
+      "date": "2026-07-21",
+      "region": "czsk",
+      "revenue": 16995.0,
+      "spend": 3581.0,
+      "purchases": 127,
+      "unique_visitors": 2985
+    },
+    {
+      "date": "2026-07-21",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 60
+    },
+    {
+      "date": "2026-07-21",
+      "region": "us",
+      "revenue": 552.0,
+      "spend": 497.0,
+      "purchases": 5,
+      "unique_visitors": 121
     }
   ]
 }
