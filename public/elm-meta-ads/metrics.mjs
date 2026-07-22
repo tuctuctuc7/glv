@@ -22,6 +22,37 @@ export function normalizeFilters(input, range, allowedAccounts = []) {
   return { from, to, account, accounts: account === 'all' ? [] : [account], grain };
 }
 
+function niceCeiling(value) {
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  const magnitude = 10 ** Math.floor(Math.log10(value));
+  const fraction = value / magnitude;
+  const niceFraction = [1, 1.5, 2, 2.5, 5, 10].find((candidate) => candidate >= fraction) || 10;
+  return niceFraction * magnitude;
+}
+
+export function brokenAxisScale(values) {
+  const sorted = values
+    .map(Number)
+    .filter((value) => Number.isFinite(value) && value >= 0)
+    .sort((a, b) => a - b);
+  const max = sorted.at(-1) || 0;
+  const typical = sorted[Math.floor((sorted.length - 1) * 0.85)] || max;
+  const lowerMax = niceCeiling(typical * 1.25);
+  const enabled = sorted.length >= 5 && lowerMax > 0 && max > lowerMax * 5;
+  if (!enabled) {
+    return { enabled: false, lowerMax: max, visualMax: max, max, map: (value) => value, inverse: (value) => value };
+  }
+  const visualMax = lowerMax * 2;
+  const upperSpan = max - lowerMax;
+  const map = (value) => value <= lowerMax
+    ? value
+    : lowerMax + ((value - lowerMax) / upperSpan) * lowerMax;
+  const inverse = (value) => value <= lowerMax
+    ? value
+    : lowerMax + ((value - lowerMax) / lowerMax) * upperSpan;
+  return { enabled: true, lowerMax, visualMax, max, map, inverse };
+}
+
 export function isoWeek(dateString) {
   const date = new Date(`${dateString}T00:00:00Z`);
   const day = date.getUTCDay() || 7;

@@ -1,6 +1,7 @@
 import {
   accountSummary,
   aggregateDaily,
+  brokenAxisScale,
   escapeHtml,
   filterDaily,
   monthlyRegionSeries,
@@ -29,6 +30,26 @@ const fullMoney = (value) => value == null ? 'N/A' : `${integer.format(value)} V
 const count = (value) => value == null ? 'N/A' : integer.format(value);
 const ratio = (value) => value == null ? 'N/A' : `${decimal.format(value)}x`;
 const percent = (value) => value == null ? 'N/A' : `${(value * 100).toFixed(1)}%`;
+
+const brokenAxisMarker = {
+  id: 'brokenAxisMarker',
+  afterDraw(chart, _args, options) {
+    if (!options.enabled) return;
+    const yScale = chart.scales.y;
+    const x = chart.chartArea.left;
+    const y = yScale.getPixelForValue(options.breakValue);
+    const { ctx } = chart;
+    ctx.save();
+    ctx.fillStyle = '#111a26';
+    ctx.fillRect(x - 7, y - 12, 14, 24);
+    ctx.fillStyle = COLORS.muted;
+    ctx.font = '700 18px Inter, ui-sans-serif, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⋮', x, y);
+    ctx.restore();
+  },
+};
 
 function getFilters() {
   const account = document.getElementById('accountFilter').value;
@@ -147,14 +168,41 @@ function renderOperating(rows, grain) {
 
 function renderValue(rows, grain) {
   const grouped = aggregateDaily(rows, grain);
+  const rawValues = grouped.map((row) => row.raw_purchase_value);
+  const modelledValues = grouped.map((row) => row.modelled_purchase_value);
+  const broken = brokenAxisScale([...rawValues, ...modelledValues]);
+  const point = (value, index) => ({ x: grouped[index].label, y: broken.map(value), original: value });
+  const options = chartOptions(
+    (value) => compact.format(broken.inverse(Number(value))),
+    (item) => `${item.dataset.label}: ${money(item.raw.original)}`,
+  );
+  if (broken.enabled) {
+    options.scales.y.max = broken.visualMax;
+    options.scales.y.ticks.stepSize = broken.lowerMax / 2;
+    options.scales.y.title = { display: true, text: 'Tracked purchase value · compressed above ⋮', color: COLORS.muted };
+    options.scales.y.grid.color = (context) => Math.abs(Number(context.tick.value) - broken.lowerMax) < 1
+      ? 'rgba(154, 172, 193, .55)'
+      : COLORS.grid;
+    options.plugins.brokenAxisMarker = { enabled: true, breakValue: broken.lowerMax };
+  } else {
+    options.plugins.brokenAxisMarker = { enabled: false };
+  }
+  const canvas = document.getElementById('valueChart');
+  canvas.setAttribute('aria-label', broken.enabled
+    ? 'Raw and modelled tracked purchase value with a broken y-axis; exact values are available in tooltips and the data table'
+    : 'Raw and modelled tracked purchase value');
   replaceChart('value', document.getElementById('valueChart'), {
     type: 'line',
     data: { labels: grouped.map((row) => row.label), datasets: [
-      { label: 'Raw tracked value', data: grouped.map((row) => row.raw_purchase_value), borderColor: COLORS.red, backgroundColor: `${COLORS.red}1f`, borderWidth: 2, pointRadius: 2, tension: .18 },
-      { label: 'Modelled sensitivity', data: grouped.map((row) => row.modelled_purchase_value), borderColor: COLORS.orange, backgroundColor: `${COLORS.orange}22`, borderWidth: 3, pointRadius: 2, tension: .18 },
+      { label: 'Raw tracked value', data: rawValues.map(point), borderColor: COLORS.red, backgroundColor: `${COLORS.red}1f`, borderWidth: 2, pointRadius: (context) => context.raw.original > broken.lowerMax ? 4 : 2, tension: .18 },
+      { label: 'Modelled sensitivity', data: modelledValues.map(point), borderColor: COLORS.orange, backgroundColor: `${COLORS.orange}22`, borderWidth: 3, pointRadius: 2, tension: .18 },
     ] },
-    options: chartOptions((value) => compact.format(value), (item) => `${item.dataset.label}: ${money(item.raw)}`),
+    options,
+    plugins: [brokenAxisMarker],
   });
+  document.getElementById('valueAxisNote').textContent = broken.enabled
+    ? `Broken y-axis: 0–${compact.format(broken.lowerMax)} VND stays linear; values above ⋮ are compressed so ordinary monthly differences remain visible. Hover a point or open the table for exact values.`
+    : 'Linear y-axis for the selected range. Hover a point or open the table for exact values.';
   const summary = summarize(rows);
   const removed = summary.raw_purchase_value - summary.modelled_purchase_value;
   const removedShare = summary.raw_purchase_value ? removed / summary.raw_purchase_value : null;

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   accountSummary,
   aggregateDaily,
+  brokenAxisScale,
   escapeHtml,
   filterDaily,
   normalizeFilters,
@@ -39,6 +40,25 @@ test('normalizeFilters rejects unsupported values and repairs reversed ranges', 
 
 test('escapeHtml neutralizes source-derived markup', () => {
   assert.equal(escapeHtml('<img src=x onerror="alert(1)"> & test'), '&lt;img src=x onerror=&quot;alert(1)&quot;&gt; &amp; test');
+});
+
+test('brokenAxisScale preserves ordinary values and compresses extreme peaks', () => {
+  const values = [...Array.from({ length: 40 }, (_, index) => (3 + (index % 5)) * 1e9), 10e9, 48e9, 213e9, 498e9, 649e9];
+  const scale = brokenAxisScale(values);
+  assert.equal(scale.enabled, true);
+  assert.ok(scale.lowerMax >= 7e9 && scale.lowerMax <= 15e9);
+  assert.equal(scale.map(5e9), 5e9);
+  assert.equal(scale.map(649e9), scale.visualMax);
+  assert.ok(scale.map(213e9) > scale.lowerMax);
+  assert.ok(scale.map(213e9) < scale.map(498e9));
+  values.forEach((value) => assert.ok(Math.abs(scale.inverse(scale.map(value)) - value) < 1));
+});
+
+test('brokenAxisScale keeps a linear axis when no extreme tail exists', () => {
+  const scale = brokenAxisScale([2e9, 3e9, 4e9, 5e9, 6e9]);
+  assert.equal(scale.enabled, false);
+  assert.equal(scale.map(4e9), 4e9);
+  assert.equal(scale.inverse(4e9), 4e9);
 });
 
 test('aggregateDaily computes ratio inputs as sums and counts flags', () => {
