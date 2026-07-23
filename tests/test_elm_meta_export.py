@@ -96,6 +96,12 @@ class ElmMetaExportTest(unittest.TestCase):
             for key, spend in detail_months.items():
                 self.assertAlmostEqual(spend, account_months[key], places=6, msg=f"{detail_key} {key}")
 
+    def test_monthly_sections_expose_metric_selectors(self):
+        html = (ROOT / "public" / "elm-meta-ads" / "index.html").read_text(encoding="utf-8")
+        for selector_id in ("growthMetric", "efficiencyMetric", "accountMetric", "intramonthMetric"):
+            self.assertIn(f'id="{selector_id}"', html)
+        self.assertGreaterEqual(html.count('<option value="modelled_purchase_value">'), 4)
+
 
 if __name__ == "__main__":
     unittest.main()
