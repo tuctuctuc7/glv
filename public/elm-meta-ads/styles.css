@@ -246,6 +246,7 @@ tbody tr:hover { background: rgba(91, 183, 242, .05); }
 
 .regional-grid { display: grid; gap: 14px; grid-template-columns: 1fr 1.35fr; }
 .small-multiple-grid { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.small-multiple-grid.single { grid-template-columns: 1fr; }
 .account-trend-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
 .lever-card-grid { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .lever-card-grid article {
