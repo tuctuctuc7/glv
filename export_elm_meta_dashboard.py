@@ -110,8 +110,10 @@ def structure_group_from_campaign(name: str) -> str:
         return "Advantage+ / ASC"
     if re.search(r"\bcbo\b|campaign", normalized):
         return "Campaign / CBO"
-    if re.search(r"\bawo\b|adset|ad set", normalized):
-        return "Ad set budget / AWO"
+    if re.search(r"\bawo\b", normalized):
+        return "AWO · internal label"
+    if re.search(r"adset|ad set", normalized):
+        return "Ad set-level label"
     return "Unclassified structure"
 
 
