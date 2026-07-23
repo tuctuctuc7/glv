@@ -29,6 +29,17 @@ const ratio = (value) => value == null ? 'N/A' : `${Number(value).toFixed(2)}x`;
 const percent = (value) => value == null ? 'N/A' : `${(Number(value) * 100).toFixed(1)}%`;
 const signedPercent = (value) => value == null ? 'N/A' : `${value >= 0 ? '+' : ''}${(Number(value) * 100).toFixed(0)}%`;
 
+const METRICS = {
+  spend: { label: 'Spend', axis: 'Spend · VND', formatter: money, tick: (value) => compact.format(value), color: COLORS.blue },
+  modelled_purchase_value: { label: 'Directional revenue', axis: 'Directional revenue · VND', formatter: money, tick: (value) => compact.format(value), color: COLORS.violet },
+  purchases: { label: 'Purchases', axis: 'Reported purchases', formatter: count, tick: (value) => compact.format(value), color: COLORS.green },
+  landing_page_views: { label: 'Landing-page views', axis: 'Landing-page views', formatter: count, tick: (value) => compact.format(value), color: COLORS.cyan },
+  modelled_roas: { label: 'Directional ROAS', axis: 'Directional ROAS', formatter: ratio, tick: (value) => `${value}x`, color: COLORS.orange },
+  cost_per_purchase: { label: 'Cost / purchase', axis: 'Cost / purchase · VND', formatter: money, tick: (value) => compact.format(value), color: COLORS.blue },
+  purchase_cvr: { label: 'Purchase CVR', axis: 'Purchase CVR', formatter: percent, tick: (value) => percent(value), color: COLORS.green },
+  modelled_aov: { label: 'Directional AOV', axis: 'Directional AOV · VND', formatter: money, tick: (value) => compact.format(value), color: COLORS.violet },
+};
+
 function median(values) {
   const clean = values.filter((value) => Number.isFinite(value)).sort((a, b) => a - b);
   if (!clean.length) return null;
@@ -62,12 +73,13 @@ function options(tooltip, scales = baseScales(), mode = 'index') {
   };
 }
 
-function dualAxisOptions() {
+function dualAxisOptions(primaryMetric = 'spend') {
+  const primary = METRICS[primaryMetric] || METRICS.spend;
   return options(
-    (item) => item.dataset.yAxisID === 'roas' ? `${item.dataset.label}: ${ratio(item.raw)}` : `${item.dataset.label}: ${money(item.raw)}`,
+    (item) => item.dataset.yAxisID === 'roas' ? `${item.dataset.label}: ${ratio(item.raw)}` : `${item.dataset.label}: ${primary.formatter(item.raw)}`,
     {
       x: { grid: { display: false }, ticks: { color: COLORS.muted, maxRotation: 0, autoSkipPadding: 20 } },
-      spend: { beginAtZero: true, position: 'left', grid: { color: COLORS.grid }, ticks: { color: COLORS.muted, callback: (value) => compact.format(value) }, title: { display: true, text: 'Spend · VND', color: COLORS.muted } },
+      primary: { beginAtZero: true, position: 'left', grid: { color: COLORS.grid }, ticks: { color: COLORS.muted, callback: primary.tick }, title: { display: true, text: primary.axis, color: COLORS.muted } },
       roas: { beginAtZero: true, position: 'right', grid: { display: false }, ticks: { color: COLORS.orange, callback: (value) => `${value}x` }, title: { display: true, text: 'Directional ROAS', color: COLORS.orange } },
     },
   );
@@ -137,17 +149,23 @@ function renderKpis(rows, filters) {
 
 function renderGrowth(rows) {
   const series = monthly(rows);
+  const metricKey = document.getElementById('growthMetric').value;
+  const metric = METRICS[metricKey];
+  document.getElementById('growthTitle').textContent = `${metric.label} × directional ROAS`;
+  const canvas = document.getElementById('growthChart');
+  canvas.setAttribute('aria-label', `Monthly ${metric.label} on the left axis and directional modelled ROAS on the right axis`);
   replaceChart('growth', document.getElementById('growthChart'), {
     data: { labels: series.map((row) => row.label), datasets: [
-      { type: 'bar', label: 'Spend', data: series.map((row) => row.spend), backgroundColor: `${COLORS.blue}99`, borderColor: COLORS.blue, borderWidth: 1, borderRadius: 6, yAxisID: 'spend' },
+      { type: 'bar', label: metric.label, data: series.map((row) => row[metricKey]), backgroundColor: `${metric.color}99`, borderColor: metric.color, borderWidth: 1, borderRadius: 6, yAxisID: 'primary' },
       { type: 'line', label: 'Directional ROAS', data: series.map((row) => row.modelled_roas), borderColor: COLORS.orange, backgroundColor: COLORS.orange, borderWidth: 3, pointRadius: 4, tension: .22, yAxisID: 'roas' },
     ] },
-    options: dualAxisOptions(),
+    options: dualAxisOptions(metricKey),
   });
   const first = series[0];
   const last = series.at(-1);
+  const change = first?.[metricKey] ? (last[metricKey] - first[metricKey]) / first[metricKey] : null;
   document.getElementById('growthInsight').textContent = first && last
-    ? `${first.label} → ${last.label}: spend moved ${percent((last.spend - first.spend) / first.spend)} while directional ROAS moved from ${ratio(first.modelled_roas)} to ${ratio(last.modelled_roas)}. Read that movement together with CVR and AOV below.`
+    ? `${first.label} → ${last.label}: ${metric.label.toLowerCase()} moved ${signedPercent(change)} from ${metric.formatter(first[metricKey])} to ${metric.formatter(last[metricKey])}, while directional ROAS moved from ${ratio(first.modelled_roas)} to ${ratio(last.modelled_roas)}.`
     : 'No monthly rows match the selected filters.';
   document.getElementById('growthTable').innerHTML = series.map((row) => `<tr><td>${escapeHtml(row.label)}</td><td>${escapeHtml(money(row.spend))}</td><td>${escapeHtml(ratio(row.modelled_roas))}</td><td>${escapeHtml(money(row.cost_per_purchase))}</td><td>${escapeHtml(percent(row.purchase_cvr))}</td><td>${escapeHtml(money(row.modelled_aov))}</td></tr>`).join('');
   return series;
@@ -162,53 +180,83 @@ function renderSmallLine(name, canvasId, series, key, label, color, formatter) {
 }
 
 function renderEfficiency(series) {
-  renderSmallLine('roas', 'roasChart', series, 'modelled_roas', 'Directional ROAS', COLORS.orange, ratio);
-  renderSmallLine('cpp', 'cppChart', series, 'cost_per_purchase', 'Cost / purchase', COLORS.blue, money);
-  renderSmallLine('cvr', 'cvrChart', series, 'purchase_cvr', 'Purchase CVR', COLORS.green, percent);
-  renderSmallLine('aov', 'aovChart', series, 'modelled_aov', 'Directional AOV', COLORS.violet, money);
+  const selection = document.getElementById('efficiencyMetric').value;
+  const grid = document.querySelector('.small-multiple-grid');
+  const cards = {
+    modelled_roas: { article: document.querySelector('[data-efficiency-card="modelled_roas"]'), chart: 'roas', canvas: 'roasChart' },
+    cost_per_purchase: { article: document.querySelector('[data-efficiency-card="cost_per_purchase"]'), chart: 'cpp', canvas: 'cppChart' },
+    purchase_cvr: { article: document.querySelector('[data-efficiency-card="purchase_cvr"]'), chart: 'cvr', canvas: 'cvrChart' },
+    modelled_aov: { article: document.querySelector('[data-efficiency-card="modelled_aov"]'), chart: 'aov', canvas: 'aovChart' },
+  };
+  const renderMetric = (key, target = cards[key]) => {
+    const metric = METRICS[key];
+    target.article.querySelector('h3').textContent = metric.label;
+    target.article.querySelector('canvas').setAttribute('aria-label', `Monthly ${metric.label}`);
+    renderSmallLine(target.chart, target.canvas, series, key, metric.label, metric.color, metric.formatter);
+  };
+  if (selection === 'all') {
+    grid.classList.remove('single');
+    Object.entries(cards).forEach(([key, target]) => { target.article.hidden = false; renderMetric(key, target); });
+    return;
+  }
+  grid.classList.add('single');
+  Object.values(cards).forEach((target) => { target.article.hidden = true; });
+  const target = cards[selection] || cards.modelled_roas;
+  target.article.hidden = false;
+  renderMetric(selection, target);
 }
 
 function accountSeries(rows, account) {
   return monthly(rows.filter((row) => row.account === account));
 }
 
-function renderAccountChart(name, canvasId, rows, account, visible) {
+function renderAccountChart(name, canvasId, rows, account, visible, metricKey) {
   const canvas = document.getElementById(canvasId);
   canvas.closest('article').hidden = !visible;
   if (!visible) { state.charts[name]?.destroy(); delete state.charts[name]; return []; }
   const series = accountSeries(rows, account);
+  const metric = METRICS[metricKey];
+  canvas.setAttribute('aria-label', `${account} monthly ${metric.label} and directional ROAS`);
   replaceChart(name, canvas, {
     data: { labels: series.map((row) => row.label), datasets: [
-      { type: 'bar', label: 'Spend', data: series.map((row) => row.spend), backgroundColor: `${COLORS.blue}88`, borderRadius: 5, yAxisID: 'spend' },
+      { type: 'bar', label: metric.label, data: series.map((row) => row[metricKey]), backgroundColor: `${metric.color}88`, borderRadius: 5, yAxisID: 'primary' },
       { type: 'line', label: 'Directional ROAS', data: series.map((row) => row.modelled_roas), borderColor: COLORS.orange, backgroundColor: COLORS.orange, borderWidth: 2.5, pointRadius: 3, tension: .2, yAxisID: 'roas' },
     ] },
-    options: dualAxisOptions(),
+    options: dualAxisOptions(metricKey),
   });
   return series;
 }
 
 function renderAccounts(rows, filters) {
-  const home = renderAccountChart('homeAccount', 'homeAccountChart', rows, 'Gia Dụng', !filters.accounts.length || filters.accounts.includes('Gia Dụng'));
-  const electric = renderAccountChart('electricAccount', 'electricAccountChart', rows, 'Điện gia dụng', !filters.accounts.length || filters.accounts.includes('Điện gia dụng'));
+  const metricKey = document.getElementById('accountMetric').value;
+  const home = renderAccountChart('homeAccount', 'homeAccountChart', rows, 'Gia Dụng', !filters.accounts.length || filters.accounts.includes('Gia Dụng'), metricKey);
+  const electric = renderAccountChart('electricAccount', 'electricAccountChart', rows, 'Điện gia dụng', !filters.accounts.length || filters.accounts.includes('Điện gia dụng'), metricKey);
   const records = [...home.map((row) => ({ ...row, account: 'Gia Dụng' })), ...electric.map((row) => ({ ...row, account: 'Điện gia dụng' }))].sort((a, b) => a.label.localeCompare(b.label) || a.account.localeCompare(b.account));
   document.getElementById('accountMonthTable').innerHTML = records.map((row) => `<tr><td>${escapeHtml(row.label)}</td><td>${escapeHtml(row.account)}</td><td>${escapeHtml(money(row.spend))}</td><td>${escapeHtml(ratio(row.modelled_roas))}</td><td>${escapeHtml(money(row.cost_per_purchase))}</td><td>${escapeHtml(percent(row.purchase_cvr))}</td><td>${escapeHtml(money(row.modelled_aov))}</td></tr>`).join('');
 }
 
 function renderDayOfMonth(rows) {
   const profile = dayOfMonthProfile(rows);
+  const metricKey = document.getElementById('intramonthMetric').value;
+  const metric = METRICS[metricKey];
+  const additive = new Set(['spend', 'modelled_purchase_value', 'purchases', 'landing_page_views']);
+  const metricValue = (row) => additive.has(metricKey) ? Number(row[metricKey] || 0) / row.months : row[metricKey];
+  const metricLabel = additive.has(metricKey) ? `Average ${metric.label.toLowerCase()} / month` : metric.label;
+  const canvas = document.getElementById('dayOfMonthChart');
+  canvas.setAttribute('aria-label', `${metricLabel} and directional ROAS by day of month`);
   replaceChart('dayOfMonth', document.getElementById('dayOfMonthChart'), {
     data: { labels: profile.map((row) => row.day), datasets: [
-      { type: 'bar', label: 'Average spend / month', data: profile.map((row) => row.average_spend), backgroundColor: `${COLORS.blue}88`, borderRadius: 4, yAxisID: 'spend' },
+      { type: 'bar', label: metricLabel, data: profile.map(metricValue), backgroundColor: `${metric.color}88`, borderRadius: 4, yAxisID: 'primary' },
       { type: 'line', label: 'Directional ROAS', data: profile.map((row) => row.modelled_roas), borderColor: COLORS.orange, backgroundColor: COLORS.orange, borderWidth: 2.5, pointRadius: 3, tension: .18, yAxisID: 'roas' },
     ] },
-    options: dualAxisOptions(),
+    options: dualAxisOptions(metricKey),
   });
   const eligible = profile.filter((row) => row.months >= 3);
-  const spendPeak = eligible.reduce((best, row) => !best || row.average_spend > best.average_spend ? row : best, null);
+  const metricPeak = eligible.reduce((best, row) => !best || metricValue(row) > metricValue(best) ? row : best, null);
   const roasPeak = eligible.reduce((best, row) => !best || row.modelled_roas > best.modelled_roas ? row : best, null);
-  const recurringSpendDays = [...eligible].sort((a, b) => b.average_spend - a.average_spend).slice(0, 3).map((row) => row.day).join(', ');
-  document.getElementById('dayOfMonthInsight').textContent = spendPeak && roasPeak
-    ? `Across the selected months, the strongest recurring spend days are ${recurringSpendDays}; day ${spendPeak.day} is highest at ${money(spendPeak.average_spend)} average spend. Day ${roasPeak.day} has the highest directional ROAS (${ratio(roasPeak.modelled_roas)}). Timing alone does not identify a campaign cause.`
+  const recurringDays = [...eligible].sort((a, b) => metricValue(b) - metricValue(a)).slice(0, 3).map((row) => row.day).join(', ');
+  document.getElementById('dayOfMonthInsight').textContent = metricPeak && roasPeak
+    ? `Across the selected months, the strongest recurring ${metric.label.toLowerCase()} days are ${recurringDays}; day ${metricPeak.day} is highest at ${metric.formatter(metricValue(metricPeak))}. Day ${roasPeak.day} has the highest directional ROAS (${ratio(roasPeak.modelled_roas)}). Timing alone does not identify a campaign cause.`
     : 'Select at least three months for a repeat-pattern view.';
 }
 
@@ -422,7 +470,8 @@ function exportCsv() {
 
 function bindControls() {
   document.querySelectorAll('.preset').forEach((button) => button.addEventListener('click', () => setPreset(button.dataset.preset)));
-  ['dateFrom', 'dateTo', 'accountFilter'].forEach((id) => document.getElementById(id).addEventListener('change', render));
+  ['dateFrom', 'dateTo', 'accountFilter', 'growthMetric', 'efficiencyMetric', 'accountMetric', 'intramonthMetric']
+    .forEach((id) => document.getElementById(id).addEventListener('change', render));
   document.getElementById('exportButton').addEventListener('click', exportCsv);
 }
 
