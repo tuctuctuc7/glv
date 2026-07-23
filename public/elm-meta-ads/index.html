@@ -63,12 +63,13 @@
     <section class="section" aria-labelledby="growthTitle">
       <div class="section-heading">
         <div><p class="kicker">02 / Monthly development</p><h2 id="growthTitle">Spend × directional ROAS</h2></div>
-        <label class="metric-select">Left-axis metric
+        <div class="control-row"><label class="metric-select">Left-axis metric
           <select id="growthMetric">
             <option value="spend">Spend</option>
             <option value="modelled_purchase_value">Directional revenue</option>
             <option value="purchases">Purchases</option>
             <option value="landing_page_views">Landing-page views</option>
+            <option value="modelled_roas">Directional ROAS</option>
             <option value="cost_per_purchase">Cost / purchase</option>
             <option value="purchase_cvr">Purchase CVR</option>
             <option value="modelled_aov">Directional AOV</option>
@@ -82,7 +83,7 @@
             <option value="modelled_aov">Directional AOV</option>
             <option value="purchases">Purchases</option>
           </select>
-        </label>
+        </label></div>
       </div>
       <div class="chart-card tall"><canvas id="growthChart" role="img" aria-label="Monthly spend on the left axis and directional modelled ROAS on the right axis"></canvas></div>
       <p class="chart-note" id="growthInsight"></p>
@@ -102,17 +103,18 @@
     </section>
 
     <section class="section" aria-labelledby="accountTitle">
-      <div class="section-heading"><div><p class="kicker">04 / Account development</p><h2 id="accountTitle">Two accounts, two curves</h2></div><label class="metric-select">Left-axis metric
+      <div class="section-heading"><div><p class="kicker">04 / Account development</p><h2 id="accountTitle">Two accounts, two curves</h2></div><div class="control-row"><label class="metric-select">Metric
         <select id="accountMetric">
           <option value="spend">Spend</option>
           <option value="modelled_purchase_value">Directional revenue</option>
           <option value="purchases">Purchases</option>
           <option value="landing_page_views">Landing-page views</option>
+          <option value="modelled_roas">Directional ROAS</option>
           <option value="cost_per_purchase">Cost / purchase</option>
           <option value="purchase_cvr">Purchase CVR</option>
           <option value="modelled_aov">Directional AOV</option>
         </select>
-      </label></div>
+      </label></div></div>
       <div class="chart-card tall"><canvas id="accountCompareChart" role="img" aria-label="Selected metric broken down by account"></canvas></div>
       <div class="table-wrap"><table><caption id="accountTableCaption">Monthly account development</caption><thead id="accountTableHead"></thead><tbody id="accountMonthTable"></tbody></table></div>
     </section>
@@ -124,7 +126,7 @@
     </section>
 
     <section class="section" aria-labelledby="intramonthTitle">
-      <div class="section-heading"><div><p class="kicker">05 / Intra-month dynamics</p><h2 id="intramonthTitle">Analyze each month in silo</h2></div><label class="metric-select">Month
+      <div class="section-heading"><div><p class="kicker">05 / Intra-month dynamics</p><h2 id="intramonthTitle">Analyze each month in silo</h2></div><div class="control-row"><label class="metric-select">Month
         <select id="intramonthMonth"></select>
       </label><label class="metric-select">Left-axis metric
         <select id="intramonthMetric">
@@ -132,6 +134,7 @@
           <option value="modelled_purchase_value">Directional revenue</option>
           <option value="purchases">Purchases</option>
           <option value="landing_page_views">Landing-page views</option>
+          <option value="modelled_roas">Directional ROAS</option>
           <option value="cost_per_purchase">Cost / purchase</option>
           <option value="purchase_cvr">Purchase CVR</option>
           <option value="modelled_aov">Directional AOV</option>
@@ -143,7 +146,7 @@
           <option value="purchase_cvr">Purchase CVR</option>
           <option value="modelled_aov">Directional AOV</option>
         </select>
-      </label></div>
+      </label></div></div>
       <div class="chart-card tall"><canvas id="dayOfMonthChart" role="img" aria-label="Average spend and directional ROAS by day of month"></canvas></div>
       <p class="chart-note" id="dayOfMonthInsight"></p>
       <p class="scope-note">Daily campaign attribution was not captured in the audit export. The chart can identify recurring account-level timing, but it cannot claim that a specific campaign caused a particular day-level revenue spike.</p>
@@ -175,6 +178,7 @@
 
     <section class="section" aria-labelledby="structureTitle">
       <div class="section-heading"><div><p class="kicker">07B / Campaign setup</p><h2 id="structureTitle">Structure visible in setup</h2></div><span class="status hold"><span></span> Inferred from naming + ad counts</span></div>
+      <p class="chart-note" id="structureInsight"></p>
       <div class="table-wrap"><table><caption>ABO/CBO/Advantage+ and ad-set density breakdown</caption><thead><tr><th>Setup group</th><th>Spend share</th><th>Spend</th><th>Purchases</th><th>Cost / purchase</th><th>Purchase CVR</th></tr></thead><tbody id="structureTable"></tbody></table></div>
     </section>
 
@@ -185,18 +189,19 @@
         <div class="table-wrap compact"><table><caption>Creative-format performance for available ad-level months</caption><thead><tr><th>Format</th><th>Spend share</th><th>Spend</th><th>Purchases</th><th>Cost / purchase</th><th>Purchase CVR</th></tr></thead><tbody id="creativeTable"></tbody></table></div>
       </div>
       <p class="chart-note" id="creativeInsight"></p>
+      <p class="scope-note" id="creativeCoverageNote"></p>
       <p class="scope-note">This is a format-mix analysis, not a visual creative review. The cached export contains ad names and creative IDs but no thumbnails, video files, hooks or frames. Gia Dụng has 24 months of ad-level coverage; Điện gia dụng has 15 months through 2025-09.</p>
     </section>
 
     <section class="section regional" aria-labelledby="regionalTitle">
-      <div class="section-heading"><div><p class="kicker">09 / Regional context</p><h2 id="regionalTitle">South as market expansion</h2></div><label class="metric-select">Regional metric
+      <div class="section-heading"><div><p class="kicker">09 / Regional context</p><h2 id="regionalTitle">South as market expansion</h2></div><div class="control-row"><label class="metric-select">Regional metric
         <select id="regionMetric">
           <option value="spend">Spend</option>
           <option value="spend_share">Spend share</option>
           <option value="clicks">Clicks</option>
           <option value="cost_per_click">Cost / click</option>
         </select>
-      </label></div>
+      </label></div></div>
       <div class="regional-grid"><div class="chart-card medium"><canvas id="regionBaselineChart" role="img" aria-label="Regional spend share, click share and cost per click"></canvas></div><div class="chart-card medium"><canvas id="regionTrendChart" role="img" aria-label="Regional monthly cost per click"></canvas></div></div>
       <div class="table-wrap"><table><caption>South monthly delivery growth</caption><thead><tr><th>Month</th><th>South spend</th><th>South spend share</th><th>South clicks</th><th>South CPC</th></tr></thead><tbody id="regionMonthlyTable"></tbody></table></div>
       <div class="reconciliation-grid"><article><span>Vietnam mapping coverage</span><strong id="mappingCoverage">—</strong><p>Unmatched labels remain separate.</p></article><article><span>Regional event family</span><strong>Meta onsite/platform</strong><p>Not comparable with the account website-purchase family.</p></article><article><span>Conversion interpretation</span><strong>Suppressed</strong><p>Regional ecommerce claims still require backend geography.</p></article></div>

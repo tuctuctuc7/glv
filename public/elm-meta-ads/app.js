@@ -400,10 +400,20 @@ function renderCampaigns(filters) {
 function renderCreatives(filters) {
   const rows = filterMonthlyDetail(state.data.creative_formats, filters);
   const summary = summarizeNamedGroups(rows);
+  const totalSpend = summary.reduce((sum, row) => sum + row.spend, 0);
+  if (!summary.length || !totalSpend) {
+    state.charts.creative?.destroy();
+    delete state.charts.creative;
+    document.getElementById('creativeTable').innerHTML = '<tr><td colspan="6">No ad-level creative-format rows are available for this selected account/date range.</td></tr>';
+    document.getElementById('creativeInsight').textContent = 'This section can be blank when the selected range falls outside cached ad-level coverage.';
+    document.getElementById('creativeCoverageNote').textContent = 'Known gap: Điện gia dụng ad-level monthly coverage is only available through 2025-09 in the cached export. Campaign/ad set rows still exist, but format inference needs ad-level rows.';
+    return;
+  }
+  document.getElementById('creativeCoverageNote').textContent = '';
   replaceChart('creative', document.getElementById('creativeChart'), {
     type: 'doughnut',
     data: { labels: summary.map((row) => row.group), datasets: [{ data: summary.map((row) => row.spend), backgroundColor: summary.map((_row, index) => PALETTE[index % PALETTE.length]), borderColor: '#111a26', borderWidth: 3 }] },
-    options: { ...options((item) => `${item.label}: ${money(item.raw)} · ${percent(item.raw / summary.reduce((sum, row) => sum + row.spend, 0))}`, {}, 'nearest'), cutout: '58%' },
+    options: { ...options((item) => `${item.label}: ${money(item.raw)} · ${percent(item.raw / totalSpend)}`, {}, 'nearest'), cutout: '58%' },
   });
   document.getElementById('creativeTable').innerHTML = summary.map((row) => `<tr><td>${escapeHtml(row.group)}</td><td>${escapeHtml(percent(row.spend_share))}</td><td>${escapeHtml(money(row.spend))}</td><td>${escapeHtml(count(row.purchases))}</td><td>${escapeHtml(money(row.cost_per_purchase))}</td><td>${escapeHtml(percent(row.purchase_cvr))}</td></tr>`).join('');
   const video = summary.find((row) => row.group === 'Video');
@@ -487,7 +497,13 @@ function renderRegional() {
 function renderStructures(filters) {
   const rows = filterMonthlyDetail(state.data.structure_groups || [], filters);
   const summary = summarizeNamedGroups(rows).sort((a, b) => b.spend - a.spend);
-  document.getElementById('structureTable').innerHTML = summary.map((row) => `<tr><td>${escapeHtml(row.group)}</td><td>${escapeHtml(percent(row.spend_share))}</td><td>${escapeHtml(money(row.spend))}</td><td>${escapeHtml(count(row.purchases))}</td><td>${escapeHtml(money(row.cost_per_purchase))}</td><td>${escapeHtml(percent(row.purchase_cvr))}</td></tr>`).join('');
+  const leader = summary[0];
+  document.getElementById('structureInsight').textContent = leader
+    ? `${leader.group} is the largest visible setup bucket in the selection at ${percent(leader.spend_share)} of setup-classified spend. AWO is treated as an internal naming label, not as ABO.`
+    : 'No setup rows match the selected account/date range.';
+  document.getElementById('structureTable').innerHTML = summary.length
+    ? summary.map((row) => `<tr><td>${escapeHtml(row.group)}</td><td>${escapeHtml(percent(row.spend_share))}</td><td>${escapeHtml(money(row.spend))}</td><td>${escapeHtml(count(row.purchases))}</td><td>${escapeHtml(money(row.cost_per_purchase))}</td><td>${escapeHtml(percent(row.purchase_cvr))}</td></tr>`).join('')
+    : '<tr><td colspan="6">No campaign setup rows match this selected account/date range.</td></tr>';
 }
 
 function renderMeasurement(rows, filters) {
