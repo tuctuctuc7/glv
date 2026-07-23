@@ -4,11 +4,15 @@ import {
   accountSummary,
   aggregateDaily,
   brokenAxisScale,
+  dayOfMonthProfile,
   escapeHtml,
   filterDaily,
+  filterMonthlyDetail,
   normalizeFilters,
   regionSummary,
   safeRatio,
+  summarizeNamedGroups,
+  withEfficiency,
 } from '../public/elm-meta-ads/metrics.mjs';
 
 const rows = [
@@ -79,11 +83,40 @@ test('accountSummary returns null cost per purchase for zero-purchase account', 
 
 test('fixed-scope regional utility computes ratios of sums', () => {
   const regional = [
-    { month: '2025-01', region: 'South', spend: 100, purchases: 2 },
-    { month: '2025-02', region: 'South', spend: 300, purchases: 3 },
-    { month: '2025-02', region: 'North', spend: 200, purchases: 4 },
+    { month: '2025-01', region: 'South', spend: 100, clicks: 2 },
+    { month: '2025-02', region: 'South', spend: 300, clicks: 3 },
+    { month: '2025-02', region: 'North', spend: 200, clicks: 4 },
   ];
   const result = regionSummary(regional);
-  assert.equal(result.find((row) => row.region === 'South').cost_per_purchase, 80);
-  assert.equal(result.find((row) => row.region === 'North').purchase_share, 4 / 9);
+  assert.equal(result.find((row) => row.region === 'South').cost_per_click, 80);
+  assert.equal(result.find((row) => row.region === 'North').click_share, 4 / 9);
+});
+
+test('monthly efficiency metrics use ratios of aggregate numerators', () => {
+  const january = withEfficiency(aggregateDaily(rows, 'month')[0]);
+  assert.equal(january.modelled_roas, 500 / 300);
+  assert.equal(january.cost_per_purchase, 60);
+  assert.equal(january.purchase_cvr, 5 / 30);
+  assert.equal(january.modelled_aov, 100);
+});
+
+test('day-of-month profile averages spend by observed month and preserves ratio inputs', () => {
+  const profile = dayOfMonthProfile(rows);
+  const first = profile.find((row) => row.day === 1);
+  assert.equal(first.months, 2);
+  assert.equal(first.average_spend, 200);
+  assert.equal(first.modelled_roas, 200 / 400);
+});
+
+test('monthly detail filtering and group summaries respect account and clean-month scope', () => {
+  const detail = [
+    { month: '2025-01', account: 'A', group: 'Video', spend: 100, purchases: 2, landing_page_views: 10, raw_purchase_value: 500, value_reliable: true },
+    { month: '2025-02', account: 'A', group: 'Banner', spend: 200, purchases: 4, landing_page_views: 40, raw_purchase_value: 300, value_reliable: false },
+    { month: '2025-01', account: 'B', group: 'Banner', spend: 300, purchases: 3, landing_page_views: 20, raw_purchase_value: 600, value_reliable: true },
+  ];
+  const filtered = filterMonthlyDetail(detail, { from: '2025-01-01', to: '2025-01-31', accounts: ['A'] });
+  assert.deepEqual(filtered, [detail[0]]);
+  const summary = summarizeNamedGroups(detail);
+  assert.equal(summary.find((row) => row.group === 'Video').clean_value_months_won, 1);
+  assert.equal(summary.find((row) => row.group === 'Banner').clean_value_months_won, 1);
 });

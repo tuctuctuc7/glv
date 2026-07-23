@@ -121,8 +121,70 @@ export function summarize(rows) {
     modelled_roas: safeRatio(totals.modelled_purchase_value, totals.spend),
     raw_aov: safeRatio(totals.raw_purchase_value, totals.purchases),
     modelled_aov: safeRatio(totals.modelled_purchase_value, totals.purchases),
+    purchase_cvr: safeRatio(totals.purchases, totals.landing_page_views),
     checkout_rate: safeRatio(totals.checkouts, totals.landing_page_views),
   };
+}
+
+export function withEfficiency(row) {
+  return {
+    ...row,
+    modelled_roas: safeRatio(row.modelled_purchase_value, row.spend),
+    cost_per_purchase: safeRatio(row.spend, row.purchases),
+    purchase_cvr: safeRatio(row.purchases, row.landing_page_views),
+    modelled_aov: safeRatio(row.modelled_purchase_value, row.purchases),
+  };
+}
+
+export function dayOfMonthProfile(rows) {
+  const groups = new Map();
+  rows.forEach((row) => {
+    const day = Number(row.date.slice(8, 10));
+    if (!groups.has(day)) groups.set(day, { day, months: new Set(), spend: 0, purchases: 0, landing_page_views: 0, modelled_purchase_value: 0 });
+    const target = groups.get(day);
+    target.months.add(row.date.slice(0, 7));
+    ['spend', 'purchases', 'landing_page_views', 'modelled_purchase_value'].forEach((key) => { target[key] += Number(row[key] || 0); });
+  });
+  return [...groups.values()].sort((a, b) => a.day - b.day).map((row) => withEfficiency({
+    ...row,
+    months: row.months.size,
+    average_spend: row.months.size ? row.spend / row.months.size : null,
+  }));
+}
+
+export function filterMonthlyDetail(rows, filters) {
+  const accounts = filters.accounts || [];
+  const fromMonth = (filters.from || '').slice(0, 7);
+  const toMonth = (filters.to || '').slice(0, 7);
+  return rows.filter((row) => (
+    (!fromMonth || row.month >= fromMonth)
+    && (!toMonth || row.month <= toMonth)
+    && (!accounts.length || accounts.includes(row.account))
+  ));
+}
+
+export function summarizeNamedGroups(rows) {
+  const groups = new Map();
+  rows.forEach((row) => {
+    if (!groups.has(row.group)) groups.set(row.group, { group: row.group, spend: 0, purchases: 0, landing_page_views: 0, checkouts: 0, raw_purchase_value: 0, clean_value_months_won: 0 });
+    const target = groups.get(row.group);
+    ['spend', 'purchases', 'landing_page_views', 'checkouts', 'raw_purchase_value'].forEach((key) => { target[key] += Number(row[key] || 0); });
+  });
+  const totalSpend = [...groups.values()].reduce((sum, row) => sum + row.spend, 0);
+  const cleanMonths = new Map();
+  rows.filter((row) => row.value_reliable).forEach((row) => {
+    const key = `${row.account}|${row.month}`;
+    if (!cleanMonths.has(key) || Number(row.raw_purchase_value || 0) > cleanMonths.get(key).value) {
+      cleanMonths.set(key, { group: row.group, value: Number(row.raw_purchase_value || 0) });
+    }
+  });
+  cleanMonths.forEach(({ group }) => { if (groups.has(group)) groups.get(group).clean_value_months_won += 1; });
+  return [...groups.values()].map((row) => ({
+    ...row,
+    spend_share: safeRatio(row.spend, totalSpend),
+    cost_per_purchase: safeRatio(row.spend, row.purchases),
+    purchase_cvr: safeRatio(row.purchases, row.landing_page_views),
+  })).sort((a, b) => b.spend - a.spend);
 }
 
 export function accountSummary(rows) {
@@ -133,31 +195,31 @@ export function accountSummary(rows) {
 export function regionSummary(rows) {
   const groups = new Map();
   rows.forEach((row) => {
-    if (!groups.has(row.region)) groups.set(row.region, { region: row.region, spend: 0, purchases: 0 });
+    if (!groups.has(row.region)) groups.set(row.region, { region: row.region, spend: 0, clicks: 0 });
     const target = groups.get(row.region);
     target.spend += Number(row.spend || 0);
-    target.purchases += Number(row.purchases || 0);
+    target.clicks += Number(row.clicks || 0);
   });
   const totalSpend = [...groups.values()].reduce((sum, row) => sum + row.spend, 0);
-  const totalPurchases = [...groups.values()].reduce((sum, row) => sum + row.purchases, 0);
+  const totalClicks = [...groups.values()].reduce((sum, row) => sum + row.clicks, 0);
   return [...groups.values()].map((row) => ({
     ...row,
     spend_share: safeRatio(row.spend, totalSpend),
-    purchase_share: safeRatio(row.purchases, totalPurchases),
-    cost_per_purchase: safeRatio(row.spend, row.purchases),
+    click_share: safeRatio(row.clicks, totalClicks),
+    cost_per_click: safeRatio(row.spend, row.clicks),
   }));
 }
 
 export function monthlyRegionSeries(rows, region) {
   const groups = new Map();
   rows.filter((row) => row.region === region).forEach((row) => {
-    if (!groups.has(row.month)) groups.set(row.month, { month: row.month, spend: 0, purchases: 0 });
+    if (!groups.has(row.month)) groups.set(row.month, { month: row.month, spend: 0, clicks: 0 });
     const target = groups.get(row.month);
     target.spend += Number(row.spend || 0);
-    target.purchases += Number(row.purchases || 0);
+    target.clicks += Number(row.clicks || 0);
   });
   return [...groups.values()].sort((a, b) => a.month.localeCompare(b.month)).map((row) => ({
     ...row,
-    cost_per_purchase: safeRatio(row.spend, row.purchases),
+    cost_per_click: safeRatio(row.spend, row.clicks),
   }));
 }
