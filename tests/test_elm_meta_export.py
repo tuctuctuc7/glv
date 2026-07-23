@@ -48,9 +48,14 @@ class ElmMetaExportTest(unittest.TestCase):
         self.assertGreater(len(self.payload["campaign_groups"]), 0)
         self.assertGreater(len(self.payload["campaign_cells"]), 0)
         self.assertGreater(len(self.payload["growth_levers"]), 0)
+        self.assertGreater(len(self.payload["account_category_scope"]), 0)
+        self.assertGreater(len(self.payload["seasonality_cells"]), 0)
         self.assertGreater(len(self.payload["creative_formats"]), 0)
+        self.assertGreater(len(self.payload["structure_groups"]), 0)
         self.assertEqual(self.payload["detail_coverage"]["campaign_months"], 24)
         self.assertIn("campaign_cell_method", self.payload["detail_coverage"])
+        self.assertIn("category_scope_method", self.payload["detail_coverage"])
+        self.assertIn("structure_method", self.payload["detail_coverage"])
         self.assertEqual(self.payload["detail_coverage"]["creative_months_by_account"]["Gia Dụng"], 24)
         self.assertEqual(self.payload["detail_coverage"]["creative_months_by_account"]["Điện gia dụng"], 15)
         serialized = self.output.read_text(encoding="utf-8")
@@ -98,9 +103,14 @@ class ElmMetaExportTest(unittest.TestCase):
 
     def test_monthly_sections_expose_metric_selectors(self):
         html = (ROOT / "public" / "elm-meta-ads" / "index.html").read_text(encoding="utf-8")
-        for selector_id in ("growthMetric", "efficiencyMetric", "accountMetric", "intramonthMetric"):
+        for selector_id in ("growthMetric", "growthMetricRight", "accountMetric", "intramonthMetric", "intramonthMetricRight", "regionMetric"):
+            selector = re.search(rf'<select id="{selector_id}">(.*?)</select>', html, re.DOTALL)
+            if selector is None:
+                self.fail(f"Missing selector {selector_id}")
+        for selector_id in ("modelled_roasLeft", "modelled_roasRight", "cost_per_purchaseLeft", "cost_per_purchaseRight", "purchase_cvrLeft", "purchase_cvrRight", "modelled_aovLeft", "modelled_aovRight"):
             self.assertIn(f'id="{selector_id}"', html)
-        self.assertGreaterEqual(html.count('<option value="modelled_purchase_value">'), 4)
+        for table_id in ("growthTable", "efficiencyTable", "accountMonthTable", "intramonthTable", "categoryScopeTable", "seasonalityTable", "structureTable", "regionMonthlyTable"):
+            self.assertIn(f'id="{table_id}"', html)
 
 
 if __name__ == "__main__":

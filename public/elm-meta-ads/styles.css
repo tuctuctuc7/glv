@@ -211,6 +211,18 @@ h3 { font-size: 24px; letter-spacing: -.03em; }
 .chart-card.medium { height: 360px; }
 .chart-card h3 { font-size: 16px; margin: 0 0 12px; }
 .chart-card:has(> h3) canvas { max-height: calc(100% - 32px); }
+.chart-card:has(.inline-selects) canvas { max-height: calc(100% - 78px); }
+.inline-selects { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; margin: -4px 0 10px; }
+.inline-selects select {
+  background: rgba(7, 12, 19, .72);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 11px;
+  min-width: 0;
+  padding: 8px 10px;
+}
 .small-chart { height: 300px; }
 .chart-note { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 14px 4px 0; }
 .scope-note { color: var(--muted); font-size: 13px; line-height: 1.55; margin: -12px 0 20px; max-width: 820px; }

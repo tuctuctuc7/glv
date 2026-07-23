@@ -104,6 +104,25 @@ def creative_format(name: str) -> str:
     return "Unclassified"
 
 
+def structure_group_from_campaign(name: str) -> str:
+    normalized = name.lower()
+    if re.search(r"\basc\b|advantage\+|advantage shopping", normalized):
+        return "Advantage+ / ASC"
+    if re.search(r"\bcbo\b|campaign", normalized):
+        return "Campaign / CBO"
+    if re.search(r"\bawo\b|adset|ad set", normalized):
+        return "Ad set budget / AWO"
+    return "Unclassified structure"
+
+
+def ad_density_group(ad_count: int) -> str:
+    if ad_count <= 1:
+        return "1 ad / ad set"
+    if ad_count <= 3:
+        return "2-3 ads / ad set"
+    return "4+ ads / ad set"
+
+
 def clean_component(value: str) -> str:
     cleaned = re.sub(r"\s+", " ", str(value or "").strip())
     if not cleaned:
@@ -143,6 +162,12 @@ def campaign_cell(name: str, account: str) -> str:
     # Prefer the category/product words that usually sit after the business line.
     detail = " / ".join(detail_candidates[:2]) if detail_candidates else "All products"
     return f"{account} · {intent} · {level} · {detail}"
+
+
+def product_scope_from_cell(cell: str) -> str:
+    detail = cell.split("·")[-1].strip()
+    category = clean_component(detail.split("/")[0].strip()) or "Unclassified"
+    return category
 
 
 def row_detail_metrics(row: dict) -> dict[str, float]:
@@ -339,6 +364,98 @@ def aggregate_named_months(rows: list[dict], classifier, flag_months: set[tuple[
     ]
 
 
+def aggregate_account_category_scope(cells: list[dict]) -> list[dict]:
+    grouped: dict[tuple[str, str], dict[str, float]] = defaultdict(lambda: defaultdict(float))
+    active_months: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for row in cells:
+        key = (row["account"], product_scope_from_cell(row["cell"]))
+        for metric in ("spend", "purchases", "landing_page_views", "checkouts", "raw_purchase_value"):
+            grouped[key][metric] += float(row.get(metric, 0) or 0)
+        active_months[key].add(row["month"])
+    return [
+        add_efficiency({
+            "account": account,
+            "category_scope": category,
+            "months_active": len(active_months[(account, category)]),
+            **metrics,
+        })
+        for (account, category), metrics in sorted(grouped.items())
+        if metrics.get("spend", 0) > 0
+    ]
+
+
+def seasonality_lift_cells(cells: list[dict]) -> list[dict]:
+    grouped: dict[tuple[str, str], dict[str, dict[str, float]]] = defaultdict(lambda: {
+        "q4": defaultdict(float),
+        "non_q4": defaultdict(float),
+        "q4_months": set(),
+        "non_q4_months": set(),
+    })
+    for row in cells:
+        key = (row["account"], row["cell"])
+        bucket = "q4" if row["month"][5:7] in {"10", "11", "12"} else "non_q4"
+        month_bucket = "q4_months" if bucket == "q4" else "non_q4_months"
+        for metric in ("spend", "purchases", "landing_page_views", "checkouts", "raw_purchase_value"):
+            grouped[key][bucket][metric] += float(row.get(metric, 0) or 0)
+        grouped[key][month_bucket].add(row["month"])
+    output = []
+    for (account, cell), buckets in grouped.items():
+        q4 = add_efficiency({metric: buckets["q4"].get(metric, 0) for metric in ("spend", "purchases", "landing_page_views", "checkouts", "raw_purchase_value")})
+        non = add_efficiency({metric: buckets["non_q4"].get(metric, 0) for metric in ("spend", "purchases", "landing_page_views", "checkouts", "raw_purchase_value")})
+        if q4["spend"] < 50_000_000 or non["spend"] < 50_000_000 or q4["purchases"] < 100 or non["purchases"] < 100:
+            continue
+        cpa_lift = (non["cost_per_purchase"] - q4["cost_per_purchase"]) / non["cost_per_purchase"] if non["cost_per_purchase"] and q4["cost_per_purchase"] else None
+        q4_purchases_per_month = q4["purchases"] / len(buckets["q4_months"]) if buckets["q4_months"] else None
+        non_purchases_per_month = non["purchases"] / len(buckets["non_q4_months"]) if buckets["non_q4_months"] else None
+        purchase_month_lift = (q4_purchases_per_month - non_purchases_per_month) / non_purchases_per_month if q4_purchases_per_month and non_purchases_per_month else None
+        output.append({
+            "account": account,
+            "cell": cell,
+            "q4_spend": q4["spend"],
+            "q4_purchases": q4["purchases"],
+            "q4_cost_per_purchase": q4["cost_per_purchase"],
+            "q4_purchase_cvr": q4["purchase_cvr"],
+            "non_q4_cost_per_purchase": non["cost_per_purchase"],
+            "non_q4_purchase_cvr": non["purchase_cvr"],
+            "cpa_lift_in_q4": cpa_lift,
+            "purchase_month_lift_in_q4": purchase_month_lift,
+        })
+    return sorted(output, key=lambda row: ((row["cpa_lift_in_q4"] or -9), (row["purchase_month_lift_in_q4"] or -9)), reverse=True)[:12]
+
+
+def structure_groups(campaign_rows: list[dict], ad_rows: list[dict], flag_months: set[tuple[str, str]]) -> list[dict]:
+    rows = aggregate_named_months(campaign_rows, lambda row: structure_group_from_campaign(row.get("campaign_name", "")), flag_months)
+    ad_counts: dict[tuple[str, str, str], set[str]] = defaultdict(set)
+    adset_metrics: dict[tuple[str, str, str], dict[str, float]] = defaultdict(lambda: defaultdict(float))
+    for row in ad_rows:
+        account = row.get("account_name", "").replace("Elmich - ", "")
+        month = row["date_start"][:7]
+        adset_key = (account, month, row.get("adset_id", ""))
+        ad_counts[adset_key].add(row.get("ad_id", ""))
+        for key, value in row_detail_metrics(row).items():
+            adset_metrics[adset_key][key] += value
+    grouped_density: dict[tuple[str, str, str], dict[str, float]] = defaultdict(lambda: defaultdict(float))
+    for (account, month, _adset_id), metrics in adset_metrics.items():
+        label = ad_density_group(len(ad_counts[(account, month, _adset_id)]))
+        for key, value in metrics.items():
+            grouped_density[(account, month, label)][key] += value
+    density_rows = [
+        {
+            "account": account,
+            "month": month,
+            "group": label,
+            **metrics,
+            "value_reliable": (account, month) not in flag_months,
+        }
+        for (account, month, label), metrics in sorted(grouped_density.items())
+    ]
+    for row in rows:
+        row["dimension"] = "Campaign setup"
+    for row in density_rows:
+        row["dimension"] = "Ad-set density"
+    return rows + density_rows
+
+
 def export(audit_root: Path, output: Path) -> dict:
     audit = load_audit_module(audit_root)
     daily, regional = audit.load_rows()
@@ -407,6 +524,8 @@ def export(audit_root: Path, output: Path) -> dict:
     ad_rows = load_monthly_level_rows(audit_root, "ad")
     campaign_cells = aggregate_campaign_cells(campaign_rows, flag_months)
     growth_levers = growth_levers_from_cells(campaign_cells)
+    account_category_scope = aggregate_account_category_scope(campaign_cells)
+    seasonality_cells = seasonality_lift_cells(campaign_cells)
     campaign_groups = aggregate_named_months(
         campaign_rows,
         lambda row: campaign_group(row.get("campaign_name", "")),
@@ -417,6 +536,7 @@ def export(audit_root: Path, output: Path) -> dict:
         lambda row: creative_format(row.get("ad_name", "")),
         flag_months,
     )
+    setup_groups = structure_groups(campaign_rows, ad_rows, flag_months)
     creative_months: dict[str, set[str]] = defaultdict(set)
     for row in ad_rows:
         creative_months[row.get("account_name", "").replace("Elmich - ", "")].add(row["date_start"][:7])
@@ -467,13 +587,18 @@ def export(audit_root: Path, output: Path) -> dict:
         "account_daily": account_daily,
         "campaign_cells": campaign_cells,
         "growth_levers": growth_levers,
+        "account_category_scope": account_category_scope,
+        "seasonality_cells": seasonality_cells,
         "campaign_groups": campaign_groups,
         "creative_formats": creative_formats,
+        "structure_groups": setup_groups,
         "detail_coverage": {
             "campaign_months": 24,
             "campaign_cell_method": "Sanitized account × intent × level × product/category cells parsed from campaign names; raw campaign names and IDs are excluded.",
+            "category_scope_method": "Category scope is inferred from account names and campaign taxonomy only. Destination URLs and catalog objects were not available in the cached export.",
             "creative_months_by_account": {account: len(months) for account, months in sorted(creative_months.items())},
             "creative_method": "Format inferred from ad names; assets were not available for visual review.",
+            "structure_method": "Campaign setup is inferred from campaign-name taxonomy; ad-set density is counted from cached ad-level insight rows without publishing IDs.",
             "daily_campaign_attribution_available": False,
         },
         "region_monthly": region_monthly,
