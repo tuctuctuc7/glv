@@ -141,6 +141,10 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
 .data-table .wide{width:180px;min-width:180px;max-width:180px;}
 .data-table .mid{width:110px;min-width:110px;max-width:110px;}
 .data-table .narrow{width:96px;min-width:96px;max-width:96px;}
+.data-table tr.subtotal-row td{background:var(--gray50);font-weight:800;border-top:1px solid var(--gray200);}
+.data-table tr.child-row td:first-child{color:var(--gray400);}
+.nested-child{display:inline-flex;align-items:center;gap:6px;color:var(--gray600);}
+.nested-child::before{content:'';width:14px;height:1px;background:var(--gray300, #cbd5e1);display:inline-block;}
 .daily-data-table th:nth-child(1),.daily-data-table td:nth-child(1){position:sticky;left:0;z-index:5;}
 .daily-data-table th:nth-child(1){z-index:8;}
 .daily-data-table th:nth-child(2),.daily-data-table td:nth-child(2){position:sticky;left:112px;z-index:5;}
@@ -993,30 +997,54 @@ function promoGroupHtml(key){
   const g=promoGroup(key);
   return`<span class="group-badge ${g.className}">${escapeHtml(g.label)}</span>`;
 }
+function sumPromoRows(rows,date=null,group=null){
+  const total=emptyAgg(date,group);
+  for(const r of rows){
+    total.spend+=r.spend;total.lp+=r.lp;total.purchases+=r.purchases;total.checkouts+=r.checkouts;
+    total.outboundClicks+=r.outboundClicks;total.revenue+=r.revenue;total.impressions+=r.impressions;
+  }
+  return total;
+}
+function promoMetricCells(d){
+  const m=calcMetrics(d);
+  return[
+    fmtInt(d.spend),
+    d.revenue>0?fmtInt(d.revenue):'—',
+    roasHtml(m.roas),
+    d.purchases||'—',
+    m.cpa>0?fmtInt(m.cpa):'—',
+    d.checkouts||'—',
+    fmtInt(d.lp),
+  ];
+}
+function promoNestedRow(rowClass,firstHtml,secondHtml,d){
+  const cells=promoMetricCells(d);
+  return`<tr class="${rowClass}"><td class="narrow">${firstHtml}</td><td class="narrow">${secondHtml}</td>${cells.map(v=>`<td>${v}</td>`).join('')}</tr>`;
+}
 function renderPromoTable(){
   const container=document.getElementById('promo-table');if(!container)return;
   const rows=byDateGroup(getSegmentRows('czsk','daily'));
   if(!rows.length){container.innerHTML='<div class="empty">No CZSK promo data for this range.</div>';return;}
-  const sorted=[...rows].sort((a,b)=>{
-    if(promoTableMode==='groups'){
-      const gc=PROMO_GROUPS.findIndex(g=>g.key===a.group)-PROMO_GROUPS.findIndex(g=>g.key===b.group);
-      return gc!==0?gc:b.date.localeCompare(a.date);
+  const columns=promoTableMode==='groups'
+    ? ['Group','Date','Spend','Revenue','ROAS','Purchases','CPA','Checkouts','LP Views']
+    : ['Date','Group','Spend','Revenue','ROAS','Purchases','CPA','Checkouts','LP Views'];
+  let body='';
+  if(promoTableMode==='groups'){
+    for(const g of PROMO_GROUPS){
+      const groupRows=rows.filter(r=>r.group===g.key).sort((a,b)=>b.date.localeCompare(a.date));
+      if(!groupRows.length)continue;
+      body+=promoNestedRow('subtotal-row',promoGroupHtml(g.key),'Subtotal',sumPromoRows(groupRows,null,g.key));
+      body+=groupRows.map(r=>promoNestedRow('child-row','',`<span class="nested-child">${escapeHtml(r.date)}</span>`,r)).join('');
     }
-    const dc=b.date.localeCompare(a.date);
-    return dc!==0?dc:PROMO_GROUPS.findIndex(g=>g.key===a.group)-PROMO_GROUPS.findIndex(g=>g.key===b.group);
-  });
-  const tableRows=sorted.map(d=>({d,m:calcMetrics(d)}));
-  renderControlledTable(container,[
-    {label:promoTableMode==='groups'?'Group':'Date',className:'narrow',text:r=>promoTableMode==='groups'?promoGroup(r.d.group).label:r.d.date,html:r=>promoTableMode==='groups'?promoGroupHtml(r.d.group):escapeHtml(r.d.date)},
-    {label:promoTableMode==='groups'?'Date':'Group',className:'narrow',text:r=>promoTableMode==='groups'?r.d.date:promoGroup(r.d.group).label,html:r=>promoTableMode==='groups'?escapeHtml(r.d.date):promoGroupHtml(r.d.group)},
-    {label:'Spend',text:r=>fmtInt(r.d.spend)},
-    {label:'Revenue',text:r=>r.d.revenue>0?fmtInt(r.d.revenue):'—'},
-    {label:'ROAS',text:r=>fmtRoas(r.m.roas),html:r=>roasHtml(r.m.roas)},
-    {label:'Purchases',text:r=>r.d.purchases||'—'},
-    {label:'CPA',text:r=>r.m.cpa>0?fmtInt(r.m.cpa):'—'},
-    {label:'Checkouts',text:r=>r.d.checkouts||'—'},
-    {label:'LP Views',text:r=>fmtInt(r.d.lp)},
-  ],tableRows,'daily-data-table');
+  }else{
+    const dates=[...new Set(rows.map(r=>r.date))].sort((a,b)=>b.localeCompare(a));
+    for(const date of dates){
+      const dateRows=rows.filter(r=>r.date===date).sort((a,b)=>PROMO_GROUPS.findIndex(g=>g.key===a.group)-PROMO_GROUPS.findIndex(g=>g.key===b.group));
+      body+=promoNestedRow('subtotal-row',escapeHtml(date),'Subtotal',sumPromoRows(dateRows,date,null));
+      body+=dateRows.map(r=>promoNestedRow('child-row','',`<span class="nested-child">${promoGroupHtml(r.group)}</span>`,r)).join('');
+    }
+  }
+  container.innerHTML=`<div class="data-table-wrap"><table class="data-table daily-data-table"><thead><tr>${columns.map(label=>`<th title="${escapeHtml(label)}">${escapeHtml(label)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
 function renderTrendsTable(){
