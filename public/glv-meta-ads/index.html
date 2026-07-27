@@ -81,6 +81,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .metric-select{background:var(--gray50);border:1px solid var(--gray200);border-radius:8px;padding:6px 10px;font-size:13px;font-weight:500;color:var(--gray800);cursor:pointer;}
 .metric-label{font-size:12px;font-weight:600;color:var(--gray600);}
 .chart-wrap{position:relative;height:240px;}
+.chart-grid{display:grid;grid-template-columns:2fr 2fr 1.25fr;gap:16px;}
+.chart-card{min-width:0;}
+.chart-card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray600);margin-bottom:10px;}
+.promo-note{font-size:12px;color:var(--gray600);line-height:1.45;margin-bottom:14px;}
+.group-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;}
+.group-promo{background:#eff6ff;color:#2563eb;}.group-wl{background:#f5f3ff;color:#7c3aed;}.group-bau{background:#f0fdf4;color:#15803d;}
+.toggle-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.segmented{display:inline-flex;border:1px solid var(--gray200);border-radius:8px;overflow:hidden;background:var(--gray50);}
+.segmented button{border:none;border-right:1px solid var(--gray200);background:transparent;color:var(--gray600);font-size:12px;font-weight:700;padding:7px 11px;cursor:pointer;}
+.segmented button:last-child{border-right:none;}
+.segmented button.active{background:#fff;color:var(--blue);box-shadow:0 1px 2px rgba(15,23,42,.08);}
 
 /* ── Campaign Filter ── */
 .filter-wrap{position:relative;margin-bottom:14px;}
@@ -129,6 +140,7 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
 .data-table tr:last-child td{border-bottom:none;}
 .data-table .wide{width:180px;min-width:180px;max-width:180px;}
 .data-table .mid{width:110px;min-width:110px;max-width:110px;}
+.data-table .narrow{width:96px;min-width:96px;max-width:96px;}
 .daily-data-table th:nth-child(1),.daily-data-table td:nth-child(1){position:sticky;left:0;z-index:5;}
 .daily-data-table th:nth-child(1){z-index:8;}
 .daily-data-table th:nth-child(2),.daily-data-table td:nth-child(2){position:sticky;left:112px;z-index:5;}
@@ -163,7 +175,8 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
 .empty{padding:30px;text-align:center;color:var(--gray400);font-size:13px;}
 
 /* ── Responsive ── */
-@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:1100px){.chart-grid{grid-template-columns:1fr;}}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.header-tabs{overflow-x:auto;}.tab-btn{padding-left:14px;padding-right:14px;}}
 </style>
 </head>
 <body>
@@ -204,6 +217,7 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
   </div>
   <div class="header-tabs">
     <button class="tab-btn active" data-tab="czsk">🇨🇿 CZSK</button>
+    <button class="tab-btn" data-tab="czsk-promo">CZSK Promo</button>
     <button class="tab-btn" data-tab="us">🇺🇸 US</button>
   </div>
 </header>
@@ -284,6 +298,45 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
       </div>
     </div>
     <div class="table-outer creative-table-outer"><div class="scrollable-grid creative-grid" id="creative-czsk"></div></div>
+  </div>
+</div>
+
+<!-- ═══ CZSK PROMO PANEL ═══ -->
+<div class="panel" id="panel-czsk-promo">
+  <div class="section">
+    <div class="section-title">Promo Period Split</div>
+    <div class="promo-note">CZSK campaign grouping uses campaign names: <strong>_Promo</strong> = Promo, <strong>_Kristyna</strong> = WL, everything else = BAU.</div>
+    <div class="kpi-grid" id="kpi-czsk-promo"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Promo Group Charts</div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-card-title">Spend By Group</div>
+        <div class="chart-wrap"><canvas id="chart-promo-spend"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">ROAS By Group</div>
+        <div class="chart-wrap"><canvas id="chart-promo-roas"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">Spend Mix</div>
+        <div class="chart-wrap"><canvas id="chart-promo-pie"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Promo Group Table</div>
+    <div class="section-controls">
+      <div class="toggle-row">
+        <span class="metric-label">Grouping</span>
+        <div class="segmented" role="group" aria-label="Promo table grouping">
+          <button id="promo-mode-groups" class="active" onclick="setPromoTableMode('groups')">Groups → days</button>
+          <button id="promo-mode-days" onclick="setPromoTableMode('days')">Days → groups</button>
+        </div>
+      </div>
+    </div>
+    <div class="table-outer"><div id="promo-table"></div></div>
   </div>
 </div>
 
@@ -403,18 +456,26 @@ let campaignMeta       = {};
 let filterState        = { czsk: null, us: null, 'czsk-creative': null, 'us-creative': null };
 let creativeTypeFilter = { czsk: 'all', us: 'all' };
 let chartGranularity   = { czsk: 'day', us: 'day' };
+let promoTableMode     = 'groups';
 let sortState          = {
   daily: { czsk: { key: 'date', dir: 'desc' }, us: { key: 'date', dir: 'desc' } },
   creative: { czsk: { key: 'spend', dir: 'desc' }, us: { key: 'spend', dir: 'desc' } },
 };
 let charts = {};
 let grids  = {};
+const PROMO_GROUPS = [
+  {key:'promo',label:'Promo',color:'#3b82f6',className:'group-promo'},
+  {key:'wl',label:'WL',color:'#8b5cf6',className:'group-wl'},
+  {key:'bau',label:'BAU',color:'#10b981',className:'group-bau'},
+];
 
 const parseAmt = s => (!s || s === 'Not available') ? 0 : (parseFloat(String(s).replace(/[^0-9.-]/g,'')) || 0);
 const parseNum = s => (!s || s === 'Not available') ? 0 : (parseInt(String(s).replace(/,/g,'')) || 0);
 const isValid  = n => /^(TUC|GLV)_\d+_/.test(n);
 const isUS     = n => n.includes('_US_');
 const isAdvert = n => n.toLowerCase().includes('advertorial');
+const promoGroupKey = name => String(name||'').includes('_Promo') ? 'promo' : String(name||'').includes('_Kristyna') ? 'wl' : 'bau';
+const promoGroup = key => PROMO_GROUPS.find(g=>g.key===key)||PROMO_GROUPS[2];
 
 function getCampaignColor(name) {
   let h = 0;
@@ -437,6 +498,9 @@ function aggregate(rows){
     revenue:rows.reduce((s,r)=>s+r.revenue,0),impressions:rows.reduce((s,r)=>s+r.impressions,0),
     outboundClicks:rows.reduce((s,r)=>s+r.outboundClicks,0),
   };
+}
+function emptyAgg(date=null,group=null){
+  return {date,group,spend:0,lp:0,purchases:0,checkouts:0,outboundClicks:0,revenue:0,impressions:0};
 }
 
 function calcMetrics(a){
@@ -586,7 +650,7 @@ function processAggregateRows(rawRows){
     const seg=isUS(r.name)?'us':'czsk';
     if(seg==='us'&&isAdvert(r.name))continue;
     campaignMeta[r.id]={name:r.name,segment:seg,color:getCampaignColor(r.name)};
-    out.push({id:r.id,name:r.name,segment:seg,date:null,...processRow(r)});
+    out.push({id:r.id,name:r.name,segment:seg,group:seg==='czsk'?promoGroupKey(r.name):null,date:null,...processRow(r)});
   }
   return out;
 }
@@ -598,7 +662,7 @@ function processDaily(rawRows){
     if(seg==='us'&&isAdvert(r.name))continue;
     const date=extractDate(r);if(!date)continue;
     campaignMeta[r.id]={name:r.name,segment:seg,color:getCampaignColor(r.name)};
-    out.push({id:r.id,name:r.name,segment:seg,date,...processRow(r)});
+    out.push({id:r.id,name:r.name,segment:seg,group:seg==='czsk'?promoGroupKey(r.name):null,date,...processRow(r)});
   }
   return out;
 }
@@ -619,6 +683,30 @@ function processCreatives(rawRows){
 }
 function getSegmentRows(seg,source='daily'){
   return(source==='daily'?dailyCampaigns:aggregateCampaigns).filter(r=>r.segment===seg);
+}
+function byPromoGroup(rows){
+  const map={};
+  PROMO_GROUPS.forEach(g=>{map[g.key]=emptyAgg(null,g.key);});
+  for(const r of rows.filter(r=>r.segment==='czsk')){
+    const key=r.group||promoGroupKey(r.name);
+    const d=map[key]||(map[key]=emptyAgg(null,key));
+    d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;
+    d.outboundClicks+=r.outboundClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;
+  }
+  return PROMO_GROUPS.map(g=>map[g.key]);
+}
+function byDateGroup(rows){
+  const map={};
+  for(const r of rows.filter(r=>r.segment==='czsk')){
+    if(!r.date)continue;
+    const key=r.group||promoGroupKey(r.name);
+    const mapKey=`${r.date}|${key}`;
+    if(!map[mapKey])map[mapKey]=emptyAgg(r.date,key);
+    const d=map[mapKey];
+    d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;
+    d.outboundClicks+=r.outboundClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;
+  }
+  return Object.values(map).sort((a,b)=>a.date===b.date?PROMO_GROUPS.findIndex(g=>g.key===a.group)-PROMO_GROUPS.findIndex(g=>g.key===b.group):a.date<b.date?-1:1);
 }
 function byDate(rows,selectedIds){
   const filtered=selectedIds?rows.filter(r=>selectedIds.has(r.id)):rows;
@@ -670,6 +758,19 @@ function renderKPIs(seg){
     <div class="kpi-card"><div class="kpi-label">Checkout → Purchase</div><div class="kpi-val">${fmtPct(m.co2pur)}</div><div class="kpi-sub">Checkout to purchase</div></div>
     <div class="kpi-card"><div class="kpi-label">Cost / Checkout</div><div class="kpi-val">${m.costChk>0?fmtInt(m.costChk):'—'}</div><div class="kpi-sub">${m.costChk>0?'CZK':'No checkout data'}</div></div>
   `;
+}
+function renderPromoKPIs(){
+  const rows=byPromoGroup(getSegmentRows('czsk','aggregate'));
+  document.getElementById('kpi-czsk-promo').innerHTML=rows.map(a=>{
+    const m=calcMetrics(a);const g=promoGroup(a.group);
+    return`
+      <div class="kpi-card">
+        <div class="kpi-label"><span class="group-badge ${g.className}">${g.label}</span></div>
+        <div class="kpi-val">${fmtInt(a.spend)}</div>
+        <div class="kpi-sub">Spend CZK</div>
+        <div class="kpi-sub2">${fmtRoas(m.roas)} ROAS · ${a.revenue>0?fmtInt(a.revenue):'—'} revenue</div>
+      </div>`;
+  }).join('');
 }
 
 function initSelects(){
@@ -734,6 +835,44 @@ function refreshTrendsChart(){
       scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
         y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},callback:v=>formatChartVal(key,v)}}}}
   });
+}
+function refreshPromoCharts(){
+  const daily=byDateGroup(getSegmentRows('czsk','daily'));
+  const dates=[...new Set(daily.map(r=>r.date))].sort();
+  const byKey=Object.fromEntries(daily.map(r=>[`${r.date}|${r.group}`,r]));
+  const makeLine=(chartKey,canvasId,metricKey,titleFormatter)=> {
+    if(charts[chartKey]){charts[chartKey].destroy();delete charts[chartKey];}
+    const ctx=document.getElementById(canvasId)?.getContext('2d');if(!ctx)return;
+    charts[chartKey]=new Chart(ctx,{
+      type:'line',
+      data:{labels:dates.map(fmtDate),datasets:PROMO_GROUPS.map(g=>({
+        label:g.label,
+        data:dates.map(date=>{
+          const r=byKey[`${date}|${g.key}`]||emptyAgg(date,g.key);
+          const m=calcMetrics(r);
+          return metricKey==='roas'?m.roas:r[metricKey]||0;
+        }),
+        borderColor:g.color,backgroundColor:g.color+'22',borderWidth:2,tension:.3,pointRadius:3,fill:false,
+      }))},
+      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+        plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+          tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${titleFormatter(ctx.raw)}`}}},
+        scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
+          y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},callback:v=>titleFormatter(v)}}}}
+    });
+  };
+  makeLine('promo-spend','chart-promo-spend','spend',v=>formatChartVal('spend',v));
+  makeLine('promo-roas','chart-promo-roas','roas',v=>formatChartVal('roas',v));
+  const totals=byPromoGroup(getSegmentRows('czsk','aggregate'));
+  if(charts['promo-pie']){charts['promo-pie'].destroy();delete charts['promo-pie'];}
+  const pieCtx=document.getElementById('chart-promo-pie')?.getContext('2d');
+  if(pieCtx){
+    charts['promo-pie']=new Chart(pieCtx,{
+      type:'doughnut',
+      data:{labels:PROMO_GROUPS.map(g=>g.label),datasets:[{data:PROMO_GROUPS.map(g=>totals.find(r=>r.group===g.key)?.spend||0),backgroundColor:PROMO_GROUPS.map(g=>g.color),borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${formatChartVal('spend',ctx.raw)}`}}}}
+    });
+  }
 }
 
 function buildFilterOptions(filterKey,campaignIds){
@@ -814,6 +953,41 @@ function renderDailyTable(seg){
     {label:'CTR',text:r=>fmtPct(r.m.ctr)},
     {label:'LP→Purchase',text:r=>fmtPct(r.m.lp2pur)},
     {label:'CPM',text:r=>r.m.cpm>0?fmtInt(r.m.cpm):'—'},
+  ],tableRows,'daily-data-table');
+}
+function setPromoTableMode(mode){
+  promoTableMode=mode;
+  document.getElementById('promo-mode-groups')?.classList.toggle('active',mode==='groups');
+  document.getElementById('promo-mode-days')?.classList.toggle('active',mode==='days');
+  renderPromoTable();
+}
+function promoGroupHtml(key){
+  const g=promoGroup(key);
+  return`<span class="group-badge ${g.className}">${escapeHtml(g.label)}</span>`;
+}
+function renderPromoTable(){
+  const container=document.getElementById('promo-table');if(!container)return;
+  const rows=byDateGroup(getSegmentRows('czsk','daily'));
+  if(!rows.length){container.innerHTML='<div class="empty">No CZSK promo data for this range.</div>';return;}
+  const sorted=[...rows].sort((a,b)=>{
+    if(promoTableMode==='groups'){
+      const gc=PROMO_GROUPS.findIndex(g=>g.key===a.group)-PROMO_GROUPS.findIndex(g=>g.key===b.group);
+      return gc!==0?gc:b.date.localeCompare(a.date);
+    }
+    const dc=b.date.localeCompare(a.date);
+    return dc!==0?dc:PROMO_GROUPS.findIndex(g=>g.key===a.group)-PROMO_GROUPS.findIndex(g=>g.key===b.group);
+  });
+  const tableRows=sorted.map(d=>({d,m:calcMetrics(d)}));
+  renderControlledTable(container,[
+    {label:promoTableMode==='groups'?'Group':'Date',className:'narrow',text:r=>promoTableMode==='groups'?promoGroup(r.d.group).label:r.d.date,html:r=>promoTableMode==='groups'?promoGroupHtml(r.d.group):escapeHtml(r.d.date)},
+    {label:promoTableMode==='groups'?'Date':'Group',className:'narrow',text:r=>promoTableMode==='groups'?r.d.date:promoGroup(r.d.group).label,html:r=>promoTableMode==='groups'?escapeHtml(r.d.date):promoGroupHtml(r.d.group)},
+    {label:'Spend',text:r=>fmtInt(r.d.spend)},
+    {label:'Revenue',text:r=>r.d.revenue>0?fmtInt(r.d.revenue):'—'},
+    {label:'ROAS',text:r=>fmtRoas(r.m.roas),html:r=>roasHtml(r.m.roas)},
+    {label:'Purchases',text:r=>r.d.purchases||'—'},
+    {label:'CPA',text:r=>r.m.cpa>0?fmtInt(r.m.cpa):'—'},
+    {label:'Checkouts',text:r=>r.d.checkouts||'—'},
+    {label:'LP Views',text:r=>fmtInt(r.d.lp)},
   ],tableRows,'daily-data-table');
 }
 
@@ -919,15 +1093,18 @@ async function loadData(){
       campaignMeta={};aggregateCampaigns=processAggregateRows(d.rows);
       filterState={czsk:null,us:null,'czsk-creative':null,'us-creative':null};
       ['czsk','us'].forEach(seg=>{renderKPIs(seg);});
+      renderPromoKPIs();
     }catch(err){errors.push('Totals: '+err.message);}
     setStatus('Loading daily breakdown...');
     try{
       const d=await apiFetch('daily');
       dailyCampaigns=processDaily(d.rows);
       ['czsk','us'].forEach(seg=>{refreshChart(seg);renderDailyTable(seg);});
+      refreshPromoCharts();renderPromoTable();
     }catch(err){
       errors.push('Daily: '+err.message);
       ['czsk','us'].forEach(seg=>{const el=document.getElementById('daily-table-'+seg);if(el)el.innerHTML=`<div class="empty" style="color:var(--red)">Daily data unavailable: ${err.message}</div>`;});
+      const el=document.getElementById('promo-table');if(el)el.innerHTML=`<div class="empty" style="color:var(--red)">Daily data unavailable: ${err.message}</div>`;
     }
     setStatus('Loading creatives...');
     try{const d=await apiFetch('ads');adCreatives=processCreatives(d.rows);}catch(err){errors.push('Creatives: '+err.message);}
@@ -952,6 +1129,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.getElementById('panel-'+btn.dataset.tab)?.classList.add('active');
     const seg=btn.dataset.tab;
     if(seg==='czsk'||seg==='us'){if(charts[seg])charts[seg].resize();}
+    if(seg==='czsk-promo'){['promo-spend','promo-roas','promo-pie'].forEach(k=>charts[k]?.resize());}
   });
 });
 function formatUtcTimestamp(date){
