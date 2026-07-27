@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-27 00:10 UTC",
+  "updated_at": "2026-07-27 08:56 UTC",
   "source": {
     "sheet_id": "1KjiRfumk3w8tNZFpfI8RO9X5RTcqoq5LcKfyCzcpplQ",
     "tab": "Daily",
@@ -4972,7 +4972,7 @@
       "date": "2026-07-26",
       "region": "czsk",
       "revenue": 11615.0,
-      "spend": 734.0,
+      "spend": 5440.0,
       "purchases": 83,
       "unique_visitors": 4692
     },
@@ -4988,7 +4988,7 @@
       "date": "2026-07-26",
       "region": "us",
       "revenue": 207.0,
-      "spend": 0.0,
+      "spend": 503.0,
       "purchases": 2,
       "unique_visitors": 106
     }
