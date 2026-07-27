@@ -864,13 +864,41 @@ function refreshPromoCharts(){
   makeLine('promo-spend','chart-promo-spend','spend',v=>formatChartVal('spend',v));
   makeLine('promo-roas','chart-promo-roas','roas',v=>formatChartVal('roas',v));
   const totals=byPromoGroup(getSegmentRows('czsk','aggregate'));
+  const totalSpend=totals.reduce((sum,row)=>sum+(row.spend||0),0);
   if(charts['promo-pie']){charts['promo-pie'].destroy();delete charts['promo-pie'];}
   const pieCtx=document.getElementById('chart-promo-pie')?.getContext('2d');
   if(pieCtx){
+    const percentLabelPlugin={
+      id:'promoSpendPercentLabels',
+      afterDatasetsDraw(chart){
+        if(chart.canvas.id!=='chart-promo-pie'||!totalSpend)return;
+        const {ctx}=chart;
+        const meta=chart.getDatasetMeta(0);
+        ctx.save();
+        ctx.font='700 12px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif';
+        ctx.textAlign='center';
+        ctx.textBaseline='middle';
+        meta.data.forEach((arc,i)=>{
+          const value=chart.data.datasets[0].data[i]||0;
+          const pct=value/totalSpend*100;
+          if(pct<4)return;
+          const pos=arc.tooltipPosition();
+          ctx.fillStyle='#fff';
+          ctx.shadowColor='rgba(15,23,42,.35)';
+          ctx.shadowBlur=3;
+          ctx.fillText(`${pct.toFixed(0)}%`,pos.x,pos.y);
+        });
+        ctx.restore();
+      },
+    };
     charts['promo-pie']=new Chart(pieCtx,{
       type:'doughnut',
       data:{labels:PROMO_GROUPS.map(g=>g.label),datasets:[{data:PROMO_GROUPS.map(g=>totals.find(r=>r.group===g.key)?.spend||0),backgroundColor:PROMO_GROUPS.map(g=>g.color),borderWidth:0}]},
-      options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${formatChartVal('spend',ctx.raw)}`}}}}
+      plugins:[percentLabelPlugin],
+      options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>{
+        const pct=totalSpend?ctx.raw/totalSpend*100:0;
+        return`${ctx.label}: ${formatChartVal('spend',ctx.raw)} (${pct.toFixed(1)}%)`;
+      }}}}}
     });
   }
 }
