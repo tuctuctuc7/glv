@@ -90,6 +90,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .toggle-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .tick-filter{display:flex;align-items:center;gap:8px;background:var(--gray50);border:1px solid var(--gray200);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--gray800);cursor:pointer;user-select:none;}
 .tick-filter input{accent-color:var(--blue);cursor:pointer;}
+.header-right .tick-filter{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff;padding:6px 10px;font-size:12px;white-space:nowrap;}
+.header-right .tick-filter:hover{background:rgba(255,255,255,.14);}
 .segmented{display:inline-flex;border:1px solid var(--gray200);border-radius:8px;overflow:hidden;background:var(--gray50);}
 .segmented button{border:none;border-right:1px solid var(--gray200);background:transparent;color:var(--gray600);font-size:12px;font-weight:700;padding:7px 11px;cursor:pointer;}
 .segmented button:last-child{border-right:none;}
@@ -218,6 +220,10 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
           </div>
         </div>
       </div>
+      <label class="tick-filter">
+        <input type="checkbox" id="promo-active-days-only" onchange="setPromoActiveDaysOnly(this.checked)">
+        <span>Promo only</span>
+      </label>
       <span class="updated-at" id="updated-at"></span>
     </div>
   </div>
@@ -359,10 +365,6 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
         <select class="metric-select" id="promo-sort-czsk" onchange="setSort('promo','czsk',this.value)"></select>
         <button class="sort-dir-btn" id="promo-sort-dir-czsk" onclick="toggleSortDir('promo','czsk')" title="Toggle sort direction">↓</button>
       </div>
-      <label class="tick-filter">
-        <input type="checkbox" id="promo-active-days-only" onchange="setPromoActiveDaysOnly(this.checked)">
-        <span>Promo spend days only</span>
-      </label>
     </div>
     <div class="table-outer"><div id="promo-table"></div></div>
   </div>
