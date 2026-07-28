@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-27 08:56 UTC",
+  "updated_at": "2026-07-28 00:10 UTC",
   "source": {
     "sheet_id": "1KjiRfumk3w8tNZFpfI8RO9X5RTcqoq5LcKfyCzcpplQ",
     "tab": "Daily",
@@ -9,7 +9,7 @@
   "currency": "USD",
   "date_range": {
     "start": "2026-01-01",
-    "end": "2026-07-26"
+    "end": "2026-07-27"
   },
   "absolute_metrics": [
     "spend",
@@ -4851,7 +4851,7 @@
     {
       "date": "2026-07-21",
       "region": "czsk",
-      "revenue": 17382.0,
+      "revenue": 17386.0,
       "spend": 3581.0,
       "purchases": 130,
       "unique_visitors": 2985
@@ -4875,7 +4875,7 @@
     {
       "date": "2026-07-22",
       "region": "czsk",
-      "revenue": 20149.0,
+      "revenue": 20154.0,
       "spend": 4149.0,
       "purchases": 141,
       "unique_visitors": 3352
@@ -4899,7 +4899,7 @@
     {
       "date": "2026-07-23",
       "region": "czsk",
-      "revenue": 12700.0,
+      "revenue": 12703.0,
       "spend": 4264.0,
       "purchases": 84,
       "unique_visitors": 2859
@@ -4923,7 +4923,7 @@
     {
       "date": "2026-07-24",
       "region": "czsk",
-      "revenue": 13036.0,
+      "revenue": 13040.0,
       "spend": 4917.0,
       "purchases": 82,
       "unique_visitors": 3039
@@ -4947,9 +4947,9 @@
     {
       "date": "2026-07-25",
       "region": "czsk",
-      "revenue": 10148.0,
+      "revenue": 10275.0,
       "spend": 5533.0,
-      "purchases": 76,
+      "purchases": 78,
       "unique_visitors": 3374
     },
     {
@@ -4971,9 +4971,9 @@
     {
       "date": "2026-07-26",
       "region": "czsk",
-      "revenue": 11615.0,
+      "revenue": 11804.0,
       "spend": 5440.0,
-      "purchases": 83,
+      "purchases": 86,
       "unique_visitors": 4692
     },
     {
@@ -4991,6 +4991,30 @@
       "spend": 503.0,
       "purchases": 2,
       "unique_visitors": 106
+    },
+    {
+      "date": "2026-07-27",
+      "region": "czsk",
+      "revenue": 15794.0,
+      "spend": 5068.0,
+      "purchases": 114,
+      "unique_visitors": 3564
+    },
+    {
+      "date": "2026-07-27",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 103
+    },
+    {
+      "date": "2026-07-27",
+      "region": "us",
+      "revenue": 370.0,
+      "spend": 431.0,
+      "purchases": 4,
+      "unique_visitors": 118
     }
   ]
 }
