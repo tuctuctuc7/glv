@@ -332,12 +332,30 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
   <div class="section">
     <div class="section-title">Promo Group Table</div>
     <div class="section-controls">
+      <div class="filter-wrap" id="filter-wrap-czsk-promo">
+        <div class="filter-toggle" id="filter-toggle-czsk-promo" onclick="toggleFilter('czsk-promo')">
+          <span id="filter-label-czsk-promo">All campaigns</span><span style="color:var(--gray400)">▾</span>
+        </div>
+        <div class="filter-dropdown" id="filter-dropdown-czsk-promo">
+          <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk-promo', this.value)">
+          <div class="filter-options-list" id="filter-options-czsk-promo"></div>
+          <div class="filter-actions">
+            <button class="filter-action-btn" onclick="selectAll('czsk-promo')">Select all</button>
+            <button class="filter-action-btn" onclick="clearAll('czsk-promo')">Clear</button>
+          </div>
+        </div>
+      </div>
       <div class="toggle-row">
         <span class="metric-label">Grouping</span>
         <div class="segmented" role="group" aria-label="Promo table grouping">
           <button id="promo-mode-groups" class="active" onclick="setPromoTableMode('groups')">Groups → days</button>
           <button id="promo-mode-days" onclick="setPromoTableMode('days')">Days → groups</button>
         </div>
+      </div>
+      <div class="sort-controls">
+        <span class="metric-label">Sort by</span>
+        <select class="metric-select" id="promo-sort-czsk" onchange="setSort('promo','czsk',this.value)"></select>
+        <button class="sort-dir-btn" id="promo-sort-dir-czsk" onclick="toggleSortDir('promo','czsk')" title="Toggle sort direction">↓</button>
       </div>
     </div>
     <div class="table-outer"><div id="promo-table"></div></div>
@@ -457,12 +475,13 @@ let aggregateCampaigns = [];
 let dailyCampaigns     = [];
 let adCreatives        = [];
 let campaignMeta       = {};
-let filterState        = { czsk: null, us: null, 'czsk-creative': null, 'us-creative': null };
+let filterState        = { czsk: null, us: null, 'czsk-promo': null, 'czsk-creative': null, 'us-creative': null };
 let creativeTypeFilter = { czsk: 'all', us: 'all' };
 let chartGranularity   = { czsk: 'day', us: 'day' };
 let promoTableMode     = 'groups';
 let sortState          = {
   daily: { czsk: { key: 'date', dir: 'desc' }, us: { key: 'date', dir: 'desc' } },
+  promo: { czsk: { key: 'date', dir: 'desc' } },
   creative: { czsk: { key: 'spend', dir: 'desc' }, us: { key: 'spend', dir: 'desc' } },
 };
 let charts = {};
@@ -551,14 +570,18 @@ function populateSortSelect(id,columns,value){
 }
 function setSort(group,seg,key){
   sortState[group][seg].key=key;
-  group==='daily'?renderDailyTable(seg):renderCreatives(seg);
+  if(group==='daily')renderDailyTable(seg);
+  else if(group==='promo')renderPromoTable();
+  else renderCreatives(seg);
 }
 function toggleSortDir(group,seg){
   const state=sortState[group][seg];
   state.dir=state.dir==='asc'?'desc':'asc';
   const el=document.getElementById(`${group}-sort-dir-${seg}`);
   if(el)el.textContent=state.dir==='asc'?'↑':'↓';
-  group==='daily'?renderDailyTable(seg):renderCreatives(seg);
+  if(group==='daily')renderDailyTable(seg);
+  else if(group==='promo')renderPromoTable();
+  else renderCreatives(seg);
 }
 function setChartGranularity(seg,grain){
   chartGranularity[seg]=grain;
@@ -571,6 +594,7 @@ function initSortControls(){
     populateSortSelect(`daily-sort-${seg}`,DAILY_COLUMNS,sortState.daily[seg].key);
     populateSortSelect(`creative-sort-${seg}`,CREATIVE_COLUMNS,sortState.creative[seg].key);
   });
+  populateSortSelect('promo-sort-czsk',DAILY_COLUMNS,sortState.promo.czsk.key);
 }
 function campaignCode(name){
   const parts=String(name||'').split('_').filter(Boolean);
@@ -624,7 +648,7 @@ function applyCustomDate(){
 document.addEventListener('click',e=>{
   const wrap=document.getElementById('date-wrap');
   if(wrap&&!wrap.contains(e.target))document.getElementById('date-menu').classList.remove('open');
-  ['czsk','us','czsk-creative','us-creative'].forEach(key=>{
+  ['czsk','us','czsk-promo','czsk-creative','us-creative'].forEach(key=>{
     const dd=document.getElementById('filter-dropdown-'+key);
     const tg=document.getElementById('filter-toggle-'+key)||document.getElementById('creative-filter-toggle-'+key.replace('-creative',''));
     if(dd&&!dd.contains(e.target)&&tg&&!tg.contains(e.target))dd.classList.remove('open');
@@ -700,8 +724,12 @@ function byPromoGroup(rows){
   return PROMO_GROUPS.map(g=>map[g.key]);
 }
 function byDateGroup(rows){
+  return byDateGroupFiltered(rows,null);
+}
+function byDateGroupFiltered(rows,selectedIds){
   const map={};
-  for(const r of rows.filter(r=>r.segment==='czsk')){
+  const filtered=selectedIds?rows.filter(r=>selectedIds.has(r.id)):rows;
+  for(const r of filtered.filter(r=>r.segment==='czsk')){
     if(!r.date)continue;
     const key=r.group||promoGroupKey(r.name);
     const mapKey=`${r.date}|${key}`;
@@ -929,6 +957,7 @@ function onFilterChange(key){
   filterState[key]=checked.length===all.length?null:new Set(checked);
   updateFilterLabel(key);
   if(key==='czsk'||key==='us'){renderDailyTable(key);}
+  else if(key==='czsk-promo')renderPromoTable();
   else if(key==='czsk-creative'||key==='us-creative')renderCreatives(key.replace('-creative',''));
 }
 function updateFilterLabel(key){
@@ -945,6 +974,8 @@ function buildAllFilters(){
     buildFilterOptions(seg+'-creative',[...new Set(adCreatives.filter(c=>c.segment===seg).map(c=>c.campaignId))]);
     updateFilterLabel(seg+'-creative');
   });
+  buildFilterOptions('czsk-promo',[...new Set(getSegmentRows('czsk','daily').map(r=>r.id))]);
+  updateFilterLabel('czsk-promo');
 }
 
 function escapeHtml(value){
@@ -1013,34 +1044,67 @@ function promoMetricCells(d){
     roasHtml(m.roas),
     d.purchases||'—',
     m.cpa>0?fmtInt(m.cpa):'—',
+    m.aov>0?fmtInt(m.aov):'—',
+    fmtPct(m.lp2co),
+    fmtPct(m.co2pur),
     d.checkouts||'—',
+    m.costChk>0?fmtInt(m.costChk):'—',
     fmtInt(d.lp),
+    fmtOne(m.costLp),
+    fmtPct(m.ctr),
+    fmtPct(m.lp2pur),
+    m.cpm>0?fmtInt(m.cpm):'—',
   ];
 }
 function promoNestedRow(rowClass,firstHtml,secondHtml,d){
   const cells=promoMetricCells(d);
   return`<tr class="${rowClass}"><td class="narrow">${firstHtml}</td><td class="narrow">${secondHtml}</td>${cells.map(v=>`<td>${v}</td>`).join('')}</tr>`;
 }
+function promoSortComparator(a,b){
+  const state=sortState.promo.czsk;
+  const av=metricForSort(a,state.key),bv=metricForSort(b,state.key);
+  const cmp=typeof av==='string'||typeof bv==='string'
+    ? String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:'base'})
+    : av-bv;
+  return state.dir==='asc'?cmp:-cmp;
+}
+function promoGroupRank(key){return PROMO_GROUPS.findIndex(g=>g.key===key);}
+function sortPromoParents(rows){
+  const state=sortState.promo.czsk;
+  if(state.key==='date')return [...rows].sort((a,b)=>promoGroupRank(a.group)-promoGroupRank(b.group));
+  return [...rows].sort(promoSortComparator);
+}
+function sortPromoChildren(rows){
+  const state=sortState.promo.czsk;
+  if(state.key==='date')return [...rows].sort(promoSortComparator);
+  return [...rows].sort(promoSortComparator);
+}
 function renderPromoTable(){
   const container=document.getElementById('promo-table');if(!container)return;
-  const rows=byDateGroup(getSegmentRows('czsk','daily'));
+  const rows=byDateGroupFiltered(getSegmentRows('czsk','daily'),filterState['czsk-promo']);
   if(!rows.length){container.innerHTML='<div class="empty">No CZSK promo data for this range.</div>';return;}
   const columns=promoTableMode==='groups'
-    ? ['Group','Date','Spend','Revenue','ROAS','Purchases','CPA','Checkouts','LP Views']
-    : ['Date','Group','Spend','Revenue','ROAS','Purchases','CPA','Checkouts','LP Views'];
+    ? ['Group','Date','Spend','Revenue','ROAS','Purchases','CPA','AOV','LP→Checkout','Checkout→Purchase','Checkouts','Cost/Checkout','LP Views','Cost/LP','CTR','LP→Purchase','CPM']
+    : ['Date','Group','Spend','Revenue','ROAS','Purchases','CPA','AOV','LP→Checkout','Checkout→Purchase','Checkouts','Cost/Checkout','LP Views','Cost/LP','CTR','LP→Purchase','CPM'];
   let body='';
   if(promoTableMode==='groups'){
-    for(const g of PROMO_GROUPS){
-      const groupRows=rows.filter(r=>r.group===g.key).sort((a,b)=>b.date.localeCompare(a.date));
+    const groups=sortPromoParents(PROMO_GROUPS.map(g=>sumPromoRows(rows.filter(r=>r.group===g.key),null,g.key)).filter(g=>g.spend>0||g.revenue>0||g.purchases>0||g.checkouts>0||g.lp>0));
+    for(const groupTotal of groups){
+      const groupRows=sortPromoChildren(rows.filter(r=>r.group===groupTotal.group));
       if(!groupRows.length)continue;
-      body+=promoNestedRow('subtotal-row',promoGroupHtml(g.key),'Subtotal',sumPromoRows(groupRows,null,g.key));
+      body+=promoNestedRow('subtotal-row',promoGroupHtml(groupTotal.group),'Subtotal',groupTotal);
       body+=groupRows.map(r=>promoNestedRow('child-row','',`<span class="nested-child">${escapeHtml(r.date)}</span>`,r)).join('');
     }
   }else{
-    const dates=[...new Set(rows.map(r=>r.date))].sort((a,b)=>b.localeCompare(a));
-    for(const date of dates){
-      const dateRows=rows.filter(r=>r.date===date).sort((a,b)=>PROMO_GROUPS.findIndex(g=>g.key===a.group)-PROMO_GROUPS.findIndex(g=>g.key===b.group));
-      body+=promoNestedRow('subtotal-row',escapeHtml(date),'Subtotal',sumPromoRows(dateRows,date,null));
+    const dates=sortPromoChildren([...new Set(rows.map(r=>r.date))].map(date=>sumPromoRows(rows.filter(r=>r.date===date),date,null)));
+    for(const dateTotal of dates){
+      const dateRows=rows.filter(r=>r.date===dateTotal.date).sort((a,b)=>{
+        const state=sortState.promo.czsk;
+        return state.key==='date'
+          ? promoGroupRank(a.group)-promoGroupRank(b.group)
+          : promoSortComparator(a,b);
+      });
+      body+=promoNestedRow('subtotal-row',escapeHtml(dateTotal.date),'Subtotal',dateTotal);
       body+=dateRows.map(r=>promoNestedRow('child-row','',`<span class="nested-child">${promoGroupHtml(r.group)}</span>`,r)).join('');
     }
   }
@@ -1147,7 +1211,7 @@ async function loadData(){
     try{
       const d=await apiFetch('aggregate');
       campaignMeta={};aggregateCampaigns=processAggregateRows(d.rows);
-      filterState={czsk:null,us:null,'czsk-creative':null,'us-creative':null};
+      filterState={czsk:null,us:null,'czsk-promo':null,'czsk-creative':null,'us-creative':null};
       ['czsk','us'].forEach(seg=>{renderKPIs(seg);});
       renderPromoKPIs();
     }catch(err){errors.push('Totals: '+err.message);}
