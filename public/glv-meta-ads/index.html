@@ -89,6 +89,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .group-promo{background:#eff6ff;color:#2563eb;}.group-wl{background:#f5f3ff;color:#7c3aed;}.group-bau{background:#f0fdf4;color:#15803d;}
 .toggle-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .tick-filter{display:flex;align-items:center;gap:8px;background:var(--gray50);border:1px solid var(--gray200);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--gray800);cursor:pointer;user-select:none;}
+.tick-filter.hidden{display:none;}
 .tick-filter input{accent-color:var(--blue);cursor:pointer;}
 .header-right .tick-filter{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff;padding:6px 10px;font-size:12px;white-space:nowrap;}
 .header-right .tick-filter:hover{background:rgba(255,255,255,.14);}
@@ -220,7 +221,7 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
           </div>
         </div>
       </div>
-      <label class="tick-filter">
+      <label class="tick-filter hidden" id="promo-active-days-wrap">
         <input type="checkbox" id="promo-active-days-only" onchange="setPromoActiveDaysOnly(this.checked)">
         <span>Promo only</span>
       </label>
@@ -1053,6 +1054,9 @@ function setPromoActiveDaysOnly(checked){
   refreshPromoCharts();
   renderPromoTable();
 }
+function syncPromoFilterVisibility(activeTab){
+  document.getElementById('promo-active-days-wrap')?.classList.toggle('hidden',activeTab!=='czsk-promo');
+}
 function promoGroupHtml(key){
   const g=promoGroup(key);
   return`<span class="group-badge ${g.className}">${escapeHtml(g.label)}</span>`;
@@ -1264,11 +1268,13 @@ async function loadData(){
     document.getElementById('updated-at').textContent='Updated '+formatUtcTimestamp(new Date());
     if(errors.length){errEl.style.display='block';errEl.textContent='Partial errors: '+errors.join(' | ');}
     const activeTab=document.querySelector('.tab-btn.active')?.dataset.tab||'czsk';
+    syncPromoFilterVisibility(activeTab);
     document.getElementById('panel-'+activeTab)?.classList.add('active');
   }catch(err){
     loadEl.style.display='none';
     errEl.style.display='block';
     errEl.textContent='Dashboard failed to render: '+(err?.message||err);
+    syncPromoFilterVisibility('czsk');
     document.getElementById('panel-czsk')?.classList.add('active');
   }
 }
@@ -1278,6 +1284,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
     document.getElementById('panel-'+btn.dataset.tab)?.classList.add('active');
     const seg=btn.dataset.tab;
+    syncPromoFilterVisibility(seg);
     if(seg==='czsk'||seg==='us'){if(charts[seg])charts[seg].resize();}
     if(seg==='czsk-promo'){['promo-spend','promo-roas','promo-pie'].forEach(k=>charts[k]?.resize());}
   });
