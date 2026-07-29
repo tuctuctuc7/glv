@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-28 00:10 UTC",
+  "updated_at": "2026-07-29 00:10 UTC",
   "source": {
     "sheet_id": "1KjiRfumk3w8tNZFpfI8RO9X5RTcqoq5LcKfyCzcpplQ",
     "tab": "Daily",
@@ -9,7 +9,7 @@
   "currency": "USD",
   "date_range": {
     "start": "2026-01-01",
-    "end": "2026-07-27"
+    "end": "2026-07-28"
   },
   "absolute_metrics": [
     "spend",
@@ -4875,7 +4875,7 @@
     {
       "date": "2026-07-22",
       "region": "czsk",
-      "revenue": 20154.0,
+      "revenue": 20100.0,
       "spend": 4149.0,
       "purchases": 141,
       "unique_visitors": 3352
@@ -4899,7 +4899,7 @@
     {
       "date": "2026-07-23",
       "region": "czsk",
-      "revenue": 12703.0,
+      "revenue": 12668.0,
       "spend": 4264.0,
       "purchases": 84,
       "unique_visitors": 2859
@@ -4923,7 +4923,7 @@
     {
       "date": "2026-07-24",
       "region": "czsk",
-      "revenue": 13040.0,
+      "revenue": 13006.0,
       "spend": 4917.0,
       "purchases": 82,
       "unique_visitors": 3039
@@ -4947,7 +4947,7 @@
     {
       "date": "2026-07-25",
       "region": "czsk",
-      "revenue": 10275.0,
+      "revenue": 10248.0,
       "spend": 5533.0,
       "purchases": 78,
       "unique_visitors": 3374
@@ -4971,7 +4971,7 @@
     {
       "date": "2026-07-26",
       "region": "czsk",
-      "revenue": 11804.0,
+      "revenue": 11773.0,
       "spend": 5440.0,
       "purchases": 86,
       "unique_visitors": 4692
@@ -4995,9 +4995,9 @@
     {
       "date": "2026-07-27",
       "region": "czsk",
-      "revenue": 15794.0,
+      "revenue": 16101.0,
       "spend": 5068.0,
-      "purchases": 114,
+      "purchases": 117,
       "unique_visitors": 3564
     },
     {
@@ -5015,6 +5015,30 @@
       "spend": 431.0,
       "purchases": 4,
       "unique_visitors": 118
+    },
+    {
+      "date": "2026-07-28",
+      "region": "czsk",
+      "revenue": 28907.0,
+      "spend": 7163.0,
+      "purchases": 213,
+      "unique_visitors": 4249
+    },
+    {
+      "date": "2026-07-28",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 144
+    },
+    {
+      "date": "2026-07-28",
+      "region": "us",
+      "revenue": 574.0,
+      "spend": 519.0,
+      "purchases": 5,
+      "unique_visitors": 110
     }
   ]
 }
