@@ -10,6 +10,7 @@ This repo is the `agenthic-lab` Vercel project that serves the GLV dashboard sur
 - Production domain: `https://lab.agenthic.com`
 - Lab index: `https://lab.agenthic.com/`
 - Business KPI dashboard: `https://lab.agenthic.com/glv/`
+- Business KPI dashboard V2 overlap route: `https://lab.agenthic.com/glv-2/`
 - Meta Ads dashboard: `https://lab.agenthic.com/glv-meta-ads/`
 - Media Buyer OS: `https://lab.agenthic.com/glv-mb-os/`
 
@@ -28,6 +29,7 @@ Do not deploy this to Tom's personal Vercel scope. `agenthic.com` belongs to the
 public/
   index.html                 Agenthic Lab index
   glv/                       static business KPI dashboard
+  glv-2/                     V2 business KPI dashboard, running in parallel
   glv-meta-ads/              password-gated Meta Ads dashboard
   glv-mb-os/                 password-gated Media Buyer OS cockpit
 api/
@@ -45,11 +47,14 @@ Static assets are served from `public/`. Serverless functions live in `api/`. Pr
 
 Route: `/glv/`
 
-The business KPI dashboard is a static frontend backed by:
+The business KPI dashboards are static frontends. Both versions use synchronized copies of the same exported snapshot:
 
 ```text
 public/glv/glv_dashboard.json
+public/glv-2/glv_dashboard.json
 ```
+
+`/glv/` remains the production reference while `/glv-2/` runs in an overlap period for comparison. Do not deprecate V1 until V2 has proven reliable and Tom explicitly approves the switch.
 
 The JSON is generated locally from a read-only Google Sheet:
 
@@ -65,21 +70,25 @@ Export command:
 /home/tom/.config/fb-sync/.venv/bin/python /home/tom/.openclaw/workspace/dashboard/glv/export_glv_dashboard.py
 ```
 
-The exporter includes only absolute metrics:
+The exporter includes only absolute metrics, so ratios are always recalculated after filtering and aggregation:
 
 - spend
 - revenue
 - purchases
 - unique visitors
+- new customers
+- returning customers
+- new customer revenue
 
 `BLENDED` rows are excluded. The dashboard `All` filter is calculated from `CZSK`, `US`, and `ROW` rows.
 
 Derived metrics are calculated after date and region aggregation:
 
 - ROAS = revenue / spend
-- CPA = spend / purchases
+- Cost per purchase = spend / purchases
 - AOV = revenue / purchases
 - CVR = purchases / unique visitors
+- New customer rate = new customers / (new customers + returning customers)
 
 Currency for the business KPI dashboard JSON is USD.
 
@@ -223,8 +232,8 @@ Schedule:
 Flow:
 
 1. Run `deploy_glv_dashboard.sh`.
-2. Export the private Google Sheet into `public/glv/glv_dashboard.json`.
-3. Commit changed JSON as `refresh GLV dashboard data`.
+2. Export the private Google Sheet once and write the identical snapshot to both `public/glv/glv_dashboard.json` and `public/glv-2/glv_dashboard.json`.
+3. Commit both changed JSON files together as `refresh GLV dashboard data`.
 4. Push to `origin main` if ahead.
 5. Deploy production to Vercel with `--scope agenthic`.
 
