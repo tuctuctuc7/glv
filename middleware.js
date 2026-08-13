@@ -18,6 +18,8 @@ function isDashboardPath(pathname) {
   return (
     pathname === '/glv-meta-ads'
     || pathname.startsWith('/glv-meta-ads/')
+    || pathname === '/glv-meta-ads-2'
+    || pathname.startsWith('/glv-meta-ads-2/')
     || pathname === '/glv-mb-os'
     || pathname.startsWith('/glv-mb-os/')
   );
@@ -48,5 +50,5 @@ export default function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/glv-meta-ads/:path*', '/glv-mb-os/:path*', '/api/glv-meta-ads/fb-data', '/api/glv-mb-os/decision-report'],
+  matcher: ['/glv-meta-ads/:path*', '/glv-meta-ads-2/:path*', '/glv-mb-os/:path*', '/api/glv-meta-ads/fb-data', '/api/glv-mb-os/decision-report'],
 };
