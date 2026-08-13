@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="GLV executive business performance dashboard" />
+  <meta name="color-scheme" content="dark light" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23c8ff52'/%3E%3Cpath d='M6 7h10v4h-6v10h6v-3h-4v-4h8v11H6zM22 7h5l-3 18h-5z' fill='%23080b10'/%3E%3C/svg%3E" />
+  <title>GLV Executive Pulse</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="/glv-2/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f" crossorigin="anonymous" defer></script>
+  <script src="/glv-2/metrics.js" defer></script>
+  <script src="/glv-2/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#mainContent">Skip to dashboard content</a>
+
+  <header class="app-header">
+    <div class="header-brand">
+      <a class="brand-mark" href="#overview" aria-label="GLV Executive Pulse home">
+        <img class="brand-logo" src="/glv-2/agenthic-logo.svg" alt="" />
+      </a>
+      <div>
+        <p class="eyebrow">GELAVIS · Business intelligence by AGENTHIC</p>
+        <p class="product-name">Executive Pulse</p>
+      </div>
+    </div>
+
+    <nav aria-label="Dashboard sections">
+      <a href="#overview" aria-current="page">Overview</a>
+      <a href="#analysis">Analysis</a>
+      <a href="#details">Details</a>
+    </nav>
+
+    <div class="header-actions">
+      <div class="freshness" id="freshnessBadge" data-status="loading">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="updatedAt">Loading data</span>
+        <span id="dataThrough" class="data-through">Loading</span>
+      </div>
+      <button class="icon-button" id="themeToggle" type="button" aria-label="Switch to light theme" title="Switch theme">
+        <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/></svg>
+        <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <aside class="command-bar" aria-label="Dashboard controls">
+    <div class="command-inner">
+      <button class="mobile-filter-toggle" id="filtersToggle" type="button" aria-expanded="false" aria-controls="dashboardFilters">
+        <span id="controlSummary">View controls</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M7 12h10M10 17h4"/></svg>
+      </button>
+
+      <form id="dashboardFilters" class="filter-grid" aria-label="Performance filters">
+        <label class="field field-period">
+          <span>Period</span>
+          <select id="periodPreset">
+            <option value="1d">Latest day</option>
+            <option value="7d">Last 7 days</option>
+            <option value="14d">Last 14 days</option>
+            <option value="28d" selected>Last 28 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 90 days</option>
+            <option value="mtd">Month to date</option>
+            <option value="ytd">Year to date</option>
+            <option value="custom">Custom range</option>
+          </select>
+        </label>
+
+        <div class="date-fields" id="customDateFields">
+          <label class="field">
+            <span>From</span>
+            <input id="dateFrom" type="date" />
+          </label>
+          <label class="field">
+            <span>To</span>
+            <input id="dateTo" type="date" />
+          </label>
+        </div>
+
+        <fieldset class="region-filter">
+          <legend>Markets</legend>
+          <div class="region-buttons">
+            <button type="button" data-region="all" aria-pressed="true">All</button>
+            <button type="button" data-region="czsk" aria-pressed="false"><span class="market-dot market-czsk"></span>CZSK</button>
+            <button type="button" data-region="us" aria-pressed="false"><span class="market-dot market-us"></span>US</button>
+            <button type="button" data-region="row" aria-pressed="false"><span class="market-dot market-row"></span>ROW</button>
+          </div>
+        </fieldset>
+
+        <label class="comparison-control" for="comparisonToggle">
+          <input id="comparisonToggle" type="checkbox" checked />
+          <span class="switch" aria-hidden="true"></span>
+          <span>Compare previous period</span>
+        </label>
+
+        <button class="secondary-button" id="exportCsv" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3"/></svg>
+          Export CSV
+        </button>
+      </form>
+    </div>
+  </aside>
+
+  <main id="mainContent" class="dashboard-shell" tabindex="-1">
+    <div id="loadingState" class="state-banner" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      Building your executive view…
+    </div>
+    <div id="errorState" class="state-banner state-error" role="alert" hidden>
+      <strong>Dashboard data could not be loaded.</strong>
+      <span id="errorMessage">Try refreshing this page.</span>
+      <button id="retryLoad" type="button">Retry</button>
+    </div>
+    <p id="screenReaderStatus" class="sr-only" aria-live="polite"></p>
+
+    <div id="dashboardContent" hidden>
+      <section id="overview" class="overview-heading" aria-labelledby="overviewTitle">
+        <div>
+          <p class="eyebrow">Executive control room</p>
+          <h1 id="overviewTitle">GLV performance pulse</h1>
+          <p id="activeRange" class="range-label">Loading selected period…</p>
+        </div>
+        <div class="scope-summary" aria-label="Current dashboard scope">
+          <span id="scopeMarkets">All markets</span><span aria-hidden="true">·</span><span>USD</span><span aria-hidden="true">·</span><span id="scopeDays">— days</span>
+        </div>
+      </section>
+
+
+      <section class="collapsible-section" aria-labelledby="executiveKpiTitle">
+        <div class="section-heading compact-heading">
+          <div class="kpi-heading-copy"><span class="eyebrow">Company pulse</span><span class="section-title" id="executiveKpiTitle">8-metric executive read</span></div>
+          <p id="comparisonLabel" class="section-note">Compared with previous period</p>
+        </div>
+        <div id="executiveKpis" class="kpi-grid kpi-grid-executive" aria-label="Executive key performance indicators"></div>
+      </section>
+
+      <section id="analysis" class="analysis-canvas" aria-label="Open performance analysis">
+        <section id="trendSection" class="panel panel-large" aria-labelledby="trendTitle">
+          <div class="panel-heading toggle-heading">
+            <button class="section-toggle" type="button" aria-controls="trendContent" aria-expanded="true"><span><span class="eyebrow">Trajectory</span><span class="section-title" id="trendTitle">Performance trend</span><span id="chartSubtitle" class="panel-subtitle">Selected period over time</span></span><span class="toggle-chevron" aria-hidden="true"></span></button>
+            <div class="chart-controls">
+              <label class="field field-compact">
+                <span>Bars</span>
+                <select id="trendMetric">
+                  <option value="none">None</option>
+                  <option value="revenue" selected>Revenue</option>
+                  <option value="spend">Spend</option>
+                  <option value="purchases">Purchases</option>
+                  <option value="unique_visitors">Visitors</option>
+                  <option value="new_customer_revenue">New customer revenue</option>
+                  <option value="roas">ROAS</option>
+                  <option value="cvr">CVR</option>
+                  <option value="cpa">Cost per purchase</option>
+                  <option value="aov">AOV</option>
+                  <option value="new_customer_rate">New customer rate</option>
+                </select>
+              </label>
+              <label class="field field-compact">
+                <span>Line</span>
+                <select id="trendMetricSecondary">
+                  <option value="none">None</option>
+                  <option value="revenue">Revenue</option>
+                  <option value="spend">Spend</option>
+                  <option value="purchases">Purchases</option>
+                  <option value="unique_visitors">Visitors</option>
+                  <option value="new_customer_revenue">New customer revenue</option>
+                  <option value="roas" selected>ROAS</option>
+                  <option value="cvr">CVR</option>
+                  <option value="cpa">Cost per purchase</option>
+                  <option value="aov">AOV</option>
+                  <option value="new_customer_rate">New customer rate</option>
+                </select>
+              </label>
+              <label class="field field-compact">
+                <span>Grain</span>
+                <select id="grain">
+                  <option value="day" selected>Day</option>
+                  <option value="week">Week</option>
+                  <option value="month">Month</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <div id="trendContent" class="section-content">
+          <div class="chart-legend" id="trendLegend" aria-hidden="true"></div>
+          <div class="chart-wrap">
+            <canvas id="trendChart" role="img" aria-label="Performance trend chart" aria-describedby="trendDataTable"></canvas>
+            <p id="chartFallback" class="sr-only">Chart summary will appear after data loads.</p>
+            <table id="trendDataTable" class="sr-only">
+              <caption id="trendDataCaption">Performance trend chart data</caption>
+              <thead><tr><th scope="col">Period</th><th id="trendPrimaryHeader" scope="col">Revenue</th><th id="trendSecondaryHeader" scope="col">ROAS</th></tr></thead>
+              <tbody id="trendDataBody"></tbody>
+            </table>
+          </div></div>
+        </section>
+      </section>
+      <section id="details" class="details-section" aria-label="Performance detail">
+      <section id="auditTable" class="panel detail-panel" aria-labelledby="detailTitle">
+        <div class="panel-heading detail-heading toggle-heading">
+          <button class="section-toggle" type="button" aria-controls="auditContent" aria-expanded="true"><span><span class="eyebrow">Audit trail</span><span class="section-title" id="detailTitle">Performance detail</span><span id="tableSubtitle" class="panel-subtitle">Aggregated rows for the selected view.</span></span><span class="toggle-chevron" aria-hidden="true"></span></button>
+        </div>
+        <div id="auditContent" class="section-content">
+        <p class="table-scroll-hint">Swipe horizontally to inspect every metric →</p>
+        <div class="table-wrap audit-table-wrap" id="auditTableWrap" tabindex="0" aria-label="Scrollable performance detail table">
+          <table id="metricsTable">
+            <caption class="sr-only">GLV business performance by selected date</caption>
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Spend</th>
+                <th scope="col">Revenue</th>
+                <th scope="col">ROAS</th>
+                <th scope="col">Purchases</th>
+                <th scope="col">Cost per purchase</th>
+                <th scope="col">AOV</th>
+                <th scope="col">CVR</th>
+                <th scope="col">Visitors</th>
+                <th scope="col">New customer revenue</th>
+                <th scope="col">New customer rate</th>
+              </tr>
+            </thead>
+            <tbody id="metricsTableBody"></tbody>
+          </table>
+        </div></div>
+      </section>
+
+      <section id="marketComparison" class="panel data-panel" aria-labelledby="marketComparisonTitle">
+        <div class="panel-heading toggle-heading"><button class="section-toggle" type="button" aria-controls="marketComparisonContent" aria-expanded="true"><span><span class="eyebrow">Market comparison</span><span class="section-title" id="marketComparisonTitle">CZSK, US &amp; ROW</span></span><span class="toggle-chevron" aria-hidden="true"></span></button></div>
+        <div id="marketComparisonContent" class="section-content">
+        <p class="table-scroll-hint">Swipe horizontally to inspect every metric →</p>
+        <div class="table-wrap compact-table-wrap" id="marketComparisonWrap" tabindex="0" aria-label="Scrollable market comparison table"><table id="marketComparisonTable"><caption class="sr-only">Market performance comparison</caption><thead><tr>
+          <th scope="col">Market</th><th scope="col" data-segment="revenue">Revenue</th><th scope="col">Share</th><th scope="col">Growth</th><th scope="col">Spend</th><th scope="col" data-segment="volume">Purchases</th><th scope="col">Cost / purchase</th><th scope="col">AOV</th><th scope="col" data-segment="efficiency">CVR</th><th scope="col">ROAS</th>
+        </tr></thead><tbody id="marketComparisonBody"></tbody></table></div></div>
+      </section>
+
+      </section>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <span>GLV Executive Pulse</span>
+    <span>Decision support, not automated decision-making.</span>
+  </footer>
+</body>
+</html>

@@ -12,7 +12,11 @@ from google.oauth2.service_account import Credentials
 ENV_PATH = "/home/tom/.config/fb-sync/.env"
 SOURCE_SHEET_ID = "1KjiRfumk3w8tNZFpfI8RO9X5RTcqoq5LcKfyCzcpplQ"
 SOURCE_TAB = "Daily"
-OUT_PATH = "/home/tom/.openclaw/workspace/dashboard/glv/public/glv/glv_dashboard.json"
+ROOT = os.path.dirname(__file__)
+OUT_PATHS = (
+    os.path.join(ROOT, "public", "glv", "glv_dashboard.json"),
+    os.path.join(ROOT, "public", "glv-2", "glv_dashboard.json"),
+)
 
 
 def number(value):
@@ -72,6 +76,9 @@ def main():
             "spend": round(number(record.get("Ad spend ($)")), 2),
             "purchases": int(round(number(record.get("Orders")))),
             "unique_visitors": int(round(number(record.get("Unique visitors")))),
+            "new_customers": int(round(number(record.get("New customers")))),
+            "returning_customers": int(round(number(record.get("Returning customers")))),
+            "new_customer_revenue": round(number(record.get("New customers revenue ($)")), 2),
         })
 
     rows.sort(key=lambda item: (item["date"], item["region"]))
@@ -89,20 +96,23 @@ def main():
             "start": dates[0] if dates else None,
             "end": dates[-1] if dates else None,
         },
-        "absolute_metrics": ["spend", "revenue", "purchases", "unique_visitors"],
+        "absolute_metrics": ["spend", "revenue", "purchases", "unique_visitors", "new_customers", "returning_customers", "new_customer_revenue"],
         "derived_metrics": {
             "roas": "revenue / spend",
             "cpa": "spend / purchases",
             "aov": "revenue / purchases",
             "cvr": "purchases / unique_visitors",
+            "new_customer_rate": "new_customers / (new_customers + returning_customers)",
         },
         "rows": rows,
     }
 
-    os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
-    with open(OUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2)
-    print(f"Wrote {OUT_PATH} with {len(rows):,} rows")
+    serialized = json.dumps(payload, indent=2)
+    for out_path in OUT_PATHS:
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        with open(out_path, "w", encoding="utf-8") as f:
+            f.write(serialized)
+        print(f"Wrote {out_path} with {len(rows):,} rows")
 
 
 if __name__ == "__main__":

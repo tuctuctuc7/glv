@@ -7,8 +7,13 @@ export PATH="/home/tom/.local/node/bin:$PATH"
 /home/tom/.config/fb-sync/.venv/bin/python "$ROOT/export_glv_dashboard.py"
 cd "$ROOT"
 
-if ! git diff --quiet -- public/glv/glv_dashboard.json; then
-  git add public/glv/glv_dashboard.json
+DATASETS=(
+  public/glv/glv_dashboard.json
+  public/glv-2/glv_dashboard.json
+)
+
+if ! git diff --quiet -- "${DATASETS[@]}"; then
+  git add "${DATASETS[@]}"
   git commit -m "refresh GLV dashboard data"
 fi
 

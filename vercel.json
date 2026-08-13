@@ -16,6 +16,15 @@
       ]
     },
     {
+      "source": "/glv-2/glv_dashboard.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
       "source": "/elm-meta-ads/elm_meta_ads.json",
       "headers": [
         {

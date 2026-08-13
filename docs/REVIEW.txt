@@ -1,0 +1,42 @@
+GLV CEO BI PROTOTYPE — TOM REVIEW
+=================================
+
+This bundle is a private review artifact for the August dashboard revision.
+The verified dashboard assets were already deployed to https://lab.agenthic.com/glv/ before this final handoff run; this bundle itself performs no deployment, push, merge, or live mutation.
+
+REVIEW FIRST
+------------
+Private Tailscale preview: http://100.92.59.85:8765/glv/
+
+1. Open qa/screenshots/desktop-dark.png.
+2. Open qa/screenshots/desktop-light-us.png.
+3. Open qa/screenshots/mobile-dark-filters.png.
+4. Open qa/screenshots/mobile-320-dark-filters.png.
+5. Read qa/GLV-BI-QA.md for calculations, browser evidence, limitations, board scores, and production-safety checks.
+
+Review bundle: /home/tom/.hermes/artifacts/glv-ceo-bi-august-review-2026-08-12.tar.gz
+
+RUN THE INTERACTIVE PROTOTYPE
+-----------------------------
+From the extracted bundle directory:
+
+  python3 -m http.server 8088 --directory public
+
+Then open:
+
+  http://127.0.0.1:8088/glv/
+
+The page loads the bundled USD dataset from public/glv/glv_dashboard.json.
+Chart.js is loaded from its pinned CDN URL; KPI cards, tables, and the accessible chart summary remain available if the CDN is unavailable.
+
+AUGUST 12 REVIEW SCOPE
+----------------------
+- The existing visual skeleton is preserved.
+- Removed narrative, contribution, funnel, exception, action, and methodology panels stay out of the executive canvas.
+- The main chart defaults to Revenue bars and a colored ROAS line on separate y axes.
+- Performance detail follows the selected date range, starts with a summary row, and includes Spend, new customer revenue, and post-aggregation new customer rate.
+- CVR and ROAS use Tom's requested concise labels.
+
+CURRENT RELEASE STATE
+---------------------
+The live GLV dashboard assets match this verified candidate by SHA-256. No additional production change is performed by opening or running this review bundle.
