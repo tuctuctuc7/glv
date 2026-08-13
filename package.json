@@ -6,6 +6,7 @@
   "scripts": {
     "export:glv": "/home/tom/.config/fb-sync/.venv/bin/python ./export_glv_dashboard.py",
     "test": "node --test tests/*.test.cjs",
+    "verify:glv-release": "node scripts/verify-glv-release.cjs",
     "qa:browser": "GLV_QA_EVIDENCE_DIR=${GLV_QA_EVIDENCE_DIR:-/tmp/glv-bi-qa-screenshots} node qa/browser-smoke.cjs",
     "deploy": "vercel --prod --yes --scope agenthic"
   },

@@ -6,6 +6,7 @@ export PATH="/home/tom/.local/node/bin:$PATH"
 
 /home/tom/.config/fb-sync/.venv/bin/python "$ROOT/export_glv_dashboard.py"
 cd "$ROOT"
+npm run verify:glv-release
 
 DATASETS=(
   public/glv/glv_dashboard.json
