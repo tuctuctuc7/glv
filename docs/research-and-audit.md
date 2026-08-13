@@ -1,8 +1,8 @@
 # GLV Executive BI — Research, Audit, and Design Rationale
 
-**Status:** Prototype research record  
-**Scope:** Daily spend, revenue, purchases, and daily unique visitors for CZSK, US, and ROW  
-**Prototype:** `prototype/glv-ceo-bi-v1` in the isolated worktree  
+**Status:** Prototype research record
+**Scope:** Daily spend, revenue, purchases, and daily unique visitors for CZSK, US, and ROW
+**Prototype:** `prototype/glv-ceo-bi-v1` in the isolated worktree
 **Production:** Not modified
 
 ## 1. Executive decision contract
@@ -115,28 +115,28 @@ The original public implementation was clean and lightweight, but not decision-s
 
 ## 6. Source references
 
-- Microsoft, **Tips for designing a great Power BI dashboard**: hierarchy, uncluttered overview, consistent scales and time frames.  
+- Microsoft, **Tips for designing a great Power BI dashboard**: hierarchy, uncluttered overview, consistent scales and time frames.
   https://learn.microsoft.com/en-us/power-bi/create-reports/service-dashboards-design-tips
-- Microsoft, **KPI visualizations**: current measure against target and trend; ahead/behind and distance to goal.  
+- Microsoft, **KPI visualizations**: current measure against target and trend; ahead/behind and distance to goal.
   https://learn.microsoft.com/en-us/power-bi/visuals/power-bi-visualization-kpi
-- Microsoft, **Anomaly detection**: expected ranges, sensitivity, and explanatory dimensions.  
+- Microsoft, **Anomaly detection**: expected ranges, sensitivity, and explanatory dimensions.
   https://learn.microsoft.com/en-us/power-bi/visuals/power-bi-visualization-anomaly-detection
-- Microsoft, **Drillthrough**: context-preserving path from summary to detail.  
+- Microsoft, **Drillthrough**: context-preserving path from summary to detail.
   https://learn.microsoft.com/en-us/power-bi/create-reports/desktop-drillthrough
-- Microsoft, **Mobile-optimized Power BI reports**: intentionally rearrange and select mobile-relevant views.  
+- Microsoft, **Mobile-optimized Power BI reports**: intentionally rearrange and select mobile-relevant views.
   https://learn.microsoft.com/en-us/power-bi/create-reports/power-bi-create-mobile-optimized-report-about
-- Shopify, **Ecommerce metrics**: KPI set and operational vs strategic monitoring cadence.  
+- Shopify, **Ecommerce metrics**: KPI set and operational vs strategic monitoring cadence.
   https://www.shopify.com/blog/basic-ecommerce-metrics
-- Shopify, **Ecommerce conversion rate**: sessions vs users, context-specific benchmarks, and source-of-truth consistency.  
+- Shopify, **Ecommerce conversion rate**: sessions vs users, context-specific benchmarks, and source-of-truth consistency.
   https://www.shopify.com/blog/ecommerce-conversion-rate
-- Google Analytics, **Data freshness**: processing delays, temporary intraday gaps, and changing attribution credit.  
+- Google Analytics, **Data freshness**: processing delays, temporary intraday gaps, and changing attribution credit.
   https://support.google.com/analytics/answer/11198161
-- Looker, **Creating alerts**: thresholds, change conditions, schedules, notifications, and driver analysis.  
+- Looker, **Creating alerts**: thresholds, change conditions, schedules, notifications, and driver analysis.
   https://cloud.google.com/looker/docs/creating-alerts
-- Looker, **Content certification**: accuracy, consistency, governance, reliability, and documentation.  
+- Looker, **Content certification**: accuracy, consistency, governance, reliability, and documentation.
   https://cloud.google.com/looker/docs/content-certification
-- WCAG 2.2, **Quick Reference**: semantic structure, keyboard access, contrast, focus, status, and reflow.  
+- WCAG 2.2, **Quick Reference**: semantic structure, keyboard access, contrast, focus, status, and reflow.
   https://www.w3.org/WAI/WCAG22/quickref/
-- WCAG 2.2, **Reflow** and **Target Size**.  
-  https://www.w3.org/WAI/WCAG22/Understanding/reflow.html  
+- WCAG 2.2, **Reflow** and **Target Size**.
+  https://www.w3.org/WAI/WCAG22/Understanding/reflow.html
   https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html

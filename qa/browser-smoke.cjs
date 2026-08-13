@@ -9,6 +9,14 @@ const publicRoot = path.join(projectRoot, 'public');
 const chromePath = '/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome';
 const browserLibRoot = '/home/tom/.cache/hermes-browser-libs/root';
 const evidenceDir = path.resolve(process.env.GLV_QA_EVIDENCE_DIR || path.join(projectRoot, 'qa', 'screenshots'));
+const dashboardData = JSON.parse(fs.readFileSync(path.join(publicRoot, 'glv-2', 'glv_dashboard.json'), 'utf8'));
+const latestDataDate = dashboardData.date_range.end;
+const latestDate = new Date(`${latestDataDate}T00:00:00Z`);
+const defaultStartDate = new Date(latestDate.getTime() - (27 * 86_400_000));
+const previousDataDate = new Date(latestDate.getTime() - 86_400_000).toISOString().slice(0, 10);
+const displayDate = (date) => new Intl.DateTimeFormat('en-US', {
+  month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
+}).format(date);
 fs.mkdirSync(evidenceDir, { recursive: true });
 
 const mime = {
@@ -86,7 +94,10 @@ async function run() {
       return { totalBottom: total.bottom, sectionBottom: bounds.bottom };
     });
     assert.ok(marketContainment.totalBottom <= marketContainment.sectionBottom, `market Total row should not be clipped: ${JSON.stringify(marketContainment)}`);
-    assert.match(await page.locator('#activeRange').textContent(), /Jul 16, 2026.*Aug 12, 2026/);
+    assert.match(
+      await page.locator('#activeRange').textContent(),
+      new RegExp(`${displayDate(defaultStartDate)}.*${displayDate(latestDate)}`),
+    );
     assert.match(await page.locator('#comparisonLabel').textContent(), /no targets configured/);
     assert.ok(await page.locator('#trendChart').isVisible(), 'primary trend should be open by default');
     assert.equal(await page.locator('#trendMetric').inputValue(), 'revenue');
@@ -208,9 +219,9 @@ async function run() {
     await page.locator('[data-region="row"]').click();
     assert.equal((await page.locator('#scopeMarkets').textContent()).trim(), 'ROW');
     assert.equal(await page.locator('#metricsTableBody tr').count(), 29);
-    await page.locator('#dateFrom').fill('2026-08-12');
+    await page.locator('#dateFrom').fill(latestDataDate);
     await page.locator('#dateFrom').dispatchEvent('change');
-    await page.locator('#dateTo').fill('2026-08-11');
+    await page.locator('#dateTo').fill(previousDataDate);
     await page.locator('#dateTo').dispatchEvent('change');
     assert.equal(await page.locator('#errorState').isVisible(), true);
     assert.match(await page.locator('#errorMessage').textContent(), /From is on or before To/);
