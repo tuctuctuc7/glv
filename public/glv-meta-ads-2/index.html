@@ -84,6 +84,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .metric-label{font-size:12px;font-weight:600;color:var(--gray600);}
 .chart-wrap{position:relative;height:240px;}
 .chart-grid{display:grid;grid-template-columns:2fr 2fr 1.25fr;gap:16px;}
+.leadgen-chart-grid{grid-template-columns:2fr 1.25fr;}
 .chart-card{min-width:0;}
 .chart-card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray600);margin-bottom:10px;}
 .promo-note{font-size:12px;color:var(--gray600);line-height:1.45;margin-bottom:14px;}
@@ -404,9 +405,18 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   </div>
   <div class="section">
     <div class="section-title">Lead-gen Group Charts</div>
-    <div class="chart-grid">
-      <div class="chart-card"><div class="chart-card-title">Spend By Group</div><div class="chart-wrap"><canvas id="chart-leadgen-spend"></canvas></div></div>
-      <div class="chart-card"><div class="chart-card-title">ROAS By Group</div><div class="chart-wrap"><canvas id="chart-leadgen-roas"></canvas></div></div>
+    <div class="chart-controls">
+      <span class="metric-label">Metric:</span>
+      <select class="metric-select" id="chart-metric-leadgen" onchange="refreshLeadgenCharts()"></select>
+      <span class="metric-label">X-axis:</span>
+      <select class="metric-select" id="chart-grain-leadgen" onchange="setLeadgenChartGranularity(this.value)">
+        <option value="day">Day</option>
+        <option value="week">Week</option>
+        <option value="month">Month</option>
+      </select>
+    </div>
+    <div class="chart-grid leadgen-chart-grid">
+      <div class="chart-card"><div class="chart-card-title" id="leadgen-chart-title">Spend By Group</div><div class="chart-wrap"><canvas id="chart-leadgen-metric" aria-label="Spend by Lead-gen group"></canvas></div></div>
       <div class="chart-card"><div class="chart-card-title">Spend Mix</div><div class="chart-wrap"><canvas id="chart-leadgen-pie"></canvas></div></div>
     </div>
   </div>
@@ -948,9 +958,9 @@ function initSelects(){
     });
   });
   const te=document.getElementById('chart-trends-metric');
-  if(!te)return;
-  te.innerHTML=CHART_METRIC_OPTIONS.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');
-  te.value='spend';
+  if(te){te.innerHTML=CHART_METRIC_OPTIONS.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');te.value='spend';}
+  const le=document.getElementById('chart-metric-leadgen');
+  if(le){const previous=le.value;const options=[...CHART_METRIC_OPTIONS,...LEAD_CHART_METRIC_OPTIONS];le.innerHTML=options.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');le.value=options.some(m=>m.key===previous)?previous:'spend';}
 }
 function formatChartVal(key,v){
   if(key==='roas')return v.toFixed(2)+'x';
@@ -1101,18 +1111,24 @@ function renderLeadgenKPIs(){
     return`<div class="kpi-card"><div class="kpi-label"><span class="group-badge ${g.className}">${g.label}</span></div><div class="kpi-val">${fmtInt(a.spend)}</div><div class="kpi-sub">Spend CZK</div><div class="kpi-sub2">${a.leads?`${fmtInt(a.leads)} leads · ${fmtInt(m.cpl)} CPL`:`${fmtRoas(m.roas)} ROAS · ${a.revenue>0?fmtInt(a.revenue):'—'} revenue`}</div></div>`;
   }).join('');
 }
+function setLeadgenChartGranularity(grain){
+  document.getElementById('chart-grain-leadgen').value=grain;
+  refreshLeadgenCharts();
+}
 function refreshLeadgenCharts(){
-  const daily=byDateLeadgenGroup(getLeadgenRows('daily'));
-  const dates=[...new Set(daily.map(r=>r.date))].sort();
-  const byKey=Object.fromEntries(daily.map(r=>[`${r.date}|${r.group}`,r]));
   const groups=activeLeadgenGroups();
-  const makeLine=(chartKey,canvasId,metricKey)=>{
-    if(charts[chartKey])charts[chartKey].destroy();
-    const ctx=document.getElementById(canvasId)?.getContext('2d');if(!ctx)return;
-    charts[chartKey]=new Chart(ctx,{type:'line',data:{labels:dates.map(fmtDate),datasets:groups.map(g=>({label:g.label,data:dates.map(date=>{const r=byKey[`${date}|${g.key}`]||emptyAgg(date,g.key);return metricKey==='roas'?calcMetrics(r).roas:r[metricKey]||0;}),borderColor:g.color,backgroundColor:g.color+'22',borderWidth:2,tension:.3,pointRadius:3,fill:false}))},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${formatChartVal(metricKey,ctx.raw)}`}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>formatChartVal(metricKey,v)}}}}});
-  };
-  makeLine('leadgen-spend','chart-leadgen-spend','spend');
-  makeLine('leadgen-roas','chart-leadgen-roas','roas');
+  const metricKey=document.getElementById('chart-metric-leadgen')?.value||'spend';
+  const grain=document.getElementById('chart-grain-leadgen')?.value||'day';
+  const metricOptions=[...CHART_METRIC_OPTIONS,...LEAD_CHART_METRIC_OPTIONS];
+  const metricLabel=metricOptions.find(m=>m.key===metricKey)?.label||metricKey;
+  const source=getLeadgenRows('daily');
+  const periods=groups.map(g=>({group:g,rows:byPeriod(source.filter(r=>leadgenGroupKey(r.name)===g.key),null,grain)}));
+  const dates=[...new Set(periods.flatMap(item=>item.rows.map(r=>r.date)))].sort();
+  const title=document.getElementById('leadgen-chart-title');if(title)title.textContent=`${metricLabel} By Group`;
+  const canvas=document.getElementById('chart-leadgen-metric');canvas?.setAttribute('aria-label',`${metricLabel} by Lead-gen group, ${grain}`);
+  if(charts['leadgen-metric'])charts['leadgen-metric'].destroy();
+  const ctx=canvas?.getContext('2d');
+  if(ctx)charts['leadgen-metric']=new Chart(ctx,{type:'line',data:{labels:dates.map(date=>fmtChartDate(date,grain)),datasets:periods.map(({group,rows})=>{const byDate=Object.fromEntries(rows.map(r=>[r.date,r]));return{label:group.label,data:dates.map(date=>{const row=byDate[date]||emptyAgg(date,group.key);return computeChartMetric(metricKey,row,calcMetrics(row));}),borderColor:group.color,backgroundColor:group.color+'22',borderWidth:2,tension:.3,pointRadius:3,fill:false};})},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${formatChartVal(metricKey,ctx.raw)}`}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>formatChartVal(metricKey,v)}}}}});
   const totals=byLeadgenGroup(getLeadgenRows('aggregate'));const totalSpend=totals.reduce((sum,row)=>sum+row.spend,0);
   if(charts['leadgen-pie'])charts['leadgen-pie'].destroy();
   const pieCtx=document.getElementById('chart-leadgen-pie')?.getContext('2d');
@@ -1514,7 +1530,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     syncPromoFilterVisibility(seg);
     if(seg==='czsk'||seg==='us'){if(charts[seg])charts[seg].resize();}
     if(seg==='czsk-promo'){['promo-spend','promo-roas','promo-pie'].forEach(k=>charts[k]?.resize());}
-    if(seg==='czsk-leadgen'){['leadgen-spend','leadgen-roas','leadgen-pie'].forEach(k=>charts[k]?.resize());}
+    if(seg==='czsk-leadgen'){['leadgen-metric','leadgen-pie'].forEach(k=>charts[k]?.resize());}
   });
 });
 function formatUtcTimestamp(date){

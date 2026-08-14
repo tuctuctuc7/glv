@@ -14,7 +14,7 @@ const requiredIds = [
   'kpi-czsk', 'chart-grain-czsk', 'chart-left-czsk', 'chart-right-czsk', 'chart-czsk',
   'daily-table-czsk', 'creative-type-czsk', 'creative-sort-czsk', 'creative-czsk',
   'kpi-czsk-promo', 'chart-promo-spend', 'chart-promo-roas', 'chart-promo-pie', 'promo-table',
-  'kpi-czsk-leadgen', 'chart-leadgen-spend', 'chart-leadgen-roas', 'chart-leadgen-pie', 'leadgen-table',
+  'kpi-czsk-leadgen', 'chart-metric-leadgen', 'chart-grain-leadgen', 'chart-leadgen-metric', 'chart-leadgen-pie', 'leadgen-table',
   'kpi-us', 'chart-grain-us', 'chart-left-us', 'chart-right-us', 'chart-us',
   'daily-table-us', 'creative-type-us', 'creative-sort-us', 'creative-us',
 ];
@@ -50,6 +50,9 @@ test('Meta Ads V2 defines the Lead-gen inclusion and metric contract', () => {
   assert.match(v2, /const isLeadGen/);
   assert.match(v2, /includeLeadGen = false/);
   assert.match(v2, /leadgenOnly = false/);
+  assert.match(v2, /id="chart-metric-leadgen"/);
+  assert.match(v2, /id="chart-grain-leadgen"/);
+  assert.match(v2, /setLeadgenChartGranularity/);
 });
 
 test('shared Meta API exposes lead actions without changing the V1 route', () => {

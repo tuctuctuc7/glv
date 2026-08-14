@@ -120,7 +120,15 @@ async function run() {
       assert.equal((await page.locator('#leadgen-table tbody').textContent()).includes('Lead-gen'), true);
       assert.equal((await page.locator('#leadgen-table tbody').textContent()).includes('Sales'), true);
       assert.match(await page.locator('#leadgen-table tbody').textContent(), /20\.00%/);
-      assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-leadgen-spend')) && Boolean(window.Chart.getChart('chart-leadgen-pie'))));
+      assert.equal(await page.locator('#chart-metric-leadgen').inputValue(), 'spend');
+      assert.equal(await page.locator('#chart-grain-leadgen').inputValue(), 'day');
+      assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-leadgen-metric')) && Boolean(window.Chart.getChart('chart-leadgen-pie'))));
+      const dayPointCount = await page.evaluate(() => window.Chart.getChart('chart-leadgen-metric').data.labels.length);
+      await page.locator('#chart-metric-leadgen').selectOption('leads');
+      assert.equal(await page.locator('#leadgen-chart-title').textContent(), 'Leads By Group');
+      assert.ok(await page.evaluate(() => window.Chart.getChart('chart-leadgen-metric').data.datasets.some(dataset => dataset.data.some(value => value > 0))));
+      await page.locator('#chart-grain-leadgen').selectOption('week');
+      assert.ok(await page.evaluate(count => window.Chart.getChart('chart-leadgen-metric').data.labels.length < count, dayPointCount));
       await page.locator('#leadgen-only').check();
       assert.equal(await page.locator('#kpi-czsk-leadgen .kpi-card').count(), 1);
       assert.equal((await page.locator('#leadgen-table tbody').textContent()).includes('Lead-gen'), true);
