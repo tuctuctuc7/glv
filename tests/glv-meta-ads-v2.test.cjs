@@ -43,10 +43,13 @@ test('Meta Ads V2 preserves the V1 feature surface and shared API', () => {
 test('Meta Ads V2 defines the Lead-gen inclusion and metric contract', () => {
   const v2 = read('public/glv-meta-ads-2/index.html');
   assert.match(v2, /Include Lead-gen/);
+  assert.match(v2, /Lead-gen only/);
+  assert.match(v2, /id="leadgen-only"/);
   assert.match(v2, /_Lead<\/strong> = Lead-gen/);
   for (const metric of ["key:'leads'", "key:'cpl'", "key:'lp2lead'"]) assert.match(v2, new RegExp(metric));
   assert.match(v2, /const isLeadGen/);
   assert.match(v2, /includeLeadGen = false/);
+  assert.match(v2, /leadgenOnly = false/);
 });
 
 test('shared Meta API exposes lead actions without changing the V1 route', () => {

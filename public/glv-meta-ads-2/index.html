@@ -241,6 +241,10 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
         <input type="checkbox" id="include-leadgen" onchange="setIncludeLeadGen(this.checked)">
         <span>Include Lead-gen</span>
       </label>
+      <label class="tick-filter hidden" id="leadgen-only-wrap">
+        <input type="checkbox" id="leadgen-only" onchange="setLeadgenOnly(this.checked)">
+        <span>Lead-gen only</span>
+      </label>
       <span class="updated-at" id="updated-at"></span>
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">☀</button>
       <button class="mobile-controls-toggle" id="mobile-controls-toggle" type="button" aria-expanded="true" aria-controls="date-wrap">Filters</button>
@@ -555,6 +559,7 @@ let promoTableMode     = 'groups';
 let leadgenTableMode   = 'groups';
 let promoActiveDaysOnly = false;
 let includeLeadGen = false;
+let leadgenOnly = false;
 let sortState          = {
   daily: { czsk: { key: 'date', dir: 'desc' }, us: { key: 'date', dir: 'desc' } },
   promo: { czsk: { key: 'date', dir: 'desc' } },
@@ -583,6 +588,7 @@ const promoGroupKey = name => String(name||'').includes('_Promo') ? 'promo' : St
 const promoGroup = key => PROMO_GROUPS.find(g=>g.key===key)||PROMO_GROUPS[2];
 const leadgenGroupKey = name => isLeadGen(name) ? 'leadgen' : 'sales';
 const leadgenGroup = key => LEADGEN_GROUPS.find(g=>g.key===key)||LEADGEN_GROUPS[1];
+const activeLeadgenGroups = () => leadgenOnly ? LEADGEN_GROUPS.filter(g=>g.key==='leadgen') : LEADGEN_GROUPS;
 
 function getCampaignColor(name) {
   let h = 0;
@@ -684,7 +690,7 @@ function initSortControls(){
     populateSortSelect(`creative-sort-${seg}`,seg==='czsk'&&includeLeadGen?[...CREATIVE_COLUMNS,...LEAD_DAILY_COLUMNS]:CREATIVE_COLUMNS,sortState.creative[seg].key);
   });
   populateSortSelect('promo-sort-czsk',DAILY_COLUMNS,sortState.promo.czsk.key);
-  populateSortSelect('leadgen-sort-czsk',includeLeadGen?[...DAILY_COLUMNS,...LEAD_DAILY_COLUMNS]:DAILY_COLUMNS,sortState.leadgen.czsk.key);
+  populateSortSelect('leadgen-sort-czsk',[...DAILY_COLUMNS,...LEAD_DAILY_COLUMNS],sortState.leadgen.czsk.key);
 }
 function campaignCode(name){
   const parts=String(name||'').split('_').filter(Boolean);
@@ -810,7 +816,7 @@ function getMainSegmentRows(seg,source='daily'){
 }
 function getLeadgenRows(source='daily'){
   const rows=getSegmentRows('czsk',source);
-  return includeLeadGen?rows:rows.filter(r=>!isLeadGen(r.name));
+  return leadgenOnly?rows.filter(r=>isLeadGen(r.name)):rows;
 }
 function promoActiveDateSet(){
   return new Set(getSegmentRows('czsk','daily').filter(r=>r.group==='promo'&&r.spend>0).map(r=>r.date));
@@ -1064,7 +1070,7 @@ function byLeadgenGroup(rows){
     const key=leadgenGroupKey(row.name);
     addToAgg(map[key],row);
   }
-  return LEADGEN_GROUPS.map(g=>map[g.key]);
+  return activeLeadgenGroups().map(g=>map[g.key]);
 }
 function byDateLeadgenGroup(rows,selectedIds=null){
   const map={};
@@ -1087,17 +1093,18 @@ function refreshLeadgenCharts(){
   const daily=byDateLeadgenGroup(getLeadgenRows('daily'));
   const dates=[...new Set(daily.map(r=>r.date))].sort();
   const byKey=Object.fromEntries(daily.map(r=>[`${r.date}|${r.group}`,r]));
+  const groups=activeLeadgenGroups();
   const makeLine=(chartKey,canvasId,metricKey)=>{
     if(charts[chartKey])charts[chartKey].destroy();
     const ctx=document.getElementById(canvasId)?.getContext('2d');if(!ctx)return;
-    charts[chartKey]=new Chart(ctx,{type:'line',data:{labels:dates.map(fmtDate),datasets:LEADGEN_GROUPS.map(g=>({label:g.label,data:dates.map(date=>{const r=byKey[`${date}|${g.key}`]||emptyAgg(date,g.key);return metricKey==='roas'?calcMetrics(r).roas:r[metricKey]||0;}),borderColor:g.color,backgroundColor:g.color+'22',borderWidth:2,tension:.3,pointRadius:3,fill:false}))},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${formatChartVal(metricKey,ctx.raw)}`}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>formatChartVal(metricKey,v)}}}}});
+    charts[chartKey]=new Chart(ctx,{type:'line',data:{labels:dates.map(fmtDate),datasets:groups.map(g=>({label:g.label,data:dates.map(date=>{const r=byKey[`${date}|${g.key}`]||emptyAgg(date,g.key);return metricKey==='roas'?calcMetrics(r).roas:r[metricKey]||0;}),borderColor:g.color,backgroundColor:g.color+'22',borderWidth:2,tension:.3,pointRadius:3,fill:false}))},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${formatChartVal(metricKey,ctx.raw)}`}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>formatChartVal(metricKey,v)}}}}});
   };
   makeLine('leadgen-spend','chart-leadgen-spend','spend');
   makeLine('leadgen-roas','chart-leadgen-roas','roas');
   const totals=byLeadgenGroup(getLeadgenRows('aggregate'));const totalSpend=totals.reduce((sum,row)=>sum+row.spend,0);
   if(charts['leadgen-pie'])charts['leadgen-pie'].destroy();
   const pieCtx=document.getElementById('chart-leadgen-pie')?.getContext('2d');
-  if(pieCtx)charts['leadgen-pie']=new Chart(pieCtx,{type:'doughnut',data:{labels:LEADGEN_GROUPS.map(g=>g.label),datasets:[{data:totals.map(r=>r.spend),backgroundColor:LEADGEN_GROUPS.map(g=>g.color),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${formatChartVal('spend',ctx.raw)} (${(totalSpend?ctx.raw/totalSpend*100:0).toFixed(1)}%)`}}}}});
+  if(pieCtx)charts['leadgen-pie']=new Chart(pieCtx,{type:'doughnut',data:{labels:groups.map(g=>g.label),datasets:[{data:totals.map(r=>r.spend),backgroundColor:groups.map(g=>g.color),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${formatChartVal('spend',ctx.raw)} (${(totalSpend?ctx.raw/totalSpend*100:0).toFixed(1)}%)`}}}}});
 }
 
 function buildFilterOptions(filterKey,campaignIds){
@@ -1206,7 +1213,8 @@ function setPromoActiveDaysOnly(checked){
 }
 function syncPromoFilterVisibility(activeTab){
   document.getElementById('promo-active-days-wrap')?.classList.toggle('hidden',activeTab!=='czsk-promo');
-  document.getElementById('include-leadgen-wrap')?.classList.toggle('hidden',activeTab!=='czsk'&&activeTab!=='czsk-leadgen');
+  document.getElementById('include-leadgen-wrap')?.classList.toggle('hidden',activeTab!=='czsk');
+  document.getElementById('leadgen-only-wrap')?.classList.toggle('hidden',activeTab!=='czsk-leadgen');
 }
 function setIncludeLeadGen(checked){
   includeLeadGen=checked;
@@ -1215,11 +1223,16 @@ function setIncludeLeadGen(checked){
     const leadKeys=new Set(LEAD_DAILY_COLUMNS.map(column=>column.key));
     if(leadKeys.has(sortState.daily.czsk.key))sortState.daily.czsk.key='date';
     if(leadKeys.has(sortState.creative.czsk.key))sortState.creative.czsk.key='spend';
-    if(leadKeys.has(sortState.leadgen.czsk.key))sortState.leadgen.czsk.key='date';
   }
-  filterState.czsk=null;filterState['czsk-creative']=null;filterState['czsk-leadgen']=null;
+  filterState.czsk=null;filterState['czsk-creative']=null;
   initSelects();initSortControls();buildAllFilters();
   renderKPIs('czsk');refreshChart('czsk');renderDailyTable('czsk');renderCreatives('czsk');
+}
+function setLeadgenOnly(checked){
+  leadgenOnly=checked;
+  document.getElementById('leadgen-only').checked=checked;
+  filterState['czsk-leadgen']=null;
+  buildAllFilters();
   renderLeadgenKPIs();refreshLeadgenCharts();renderLeadgenTable();
 }
 function setLeadgenTableMode(mode){
@@ -1321,7 +1334,7 @@ function leadgenGroupHtml(key){
 }
 function leadgenMetricCells(d){
   const m=calcMetrics(d);const cells=promoMetricCells(d);
-  if(includeLeadGen)cells.push(d.leads||'—',m.cpl>0?fmtInt(m.cpl):'—',fmtPct(m.lp2lead));
+  cells.push(d.leads||'—',m.cpl>0?fmtInt(m.cpl):'—',fmtPct(m.lp2lead));
   return cells;
 }
 function leadgenNestedRow(rowClass,firstHtml,secondHtml,d){
@@ -1336,12 +1349,11 @@ function renderLeadgenTable(){
   const container=document.getElementById('leadgen-table');if(!container)return;
   const rows=byDateLeadgenGroup(getLeadgenRows('daily'),filterState['czsk-leadgen']);
   if(!rows.length){container.innerHTML='<div class="empty">No CZSK Lead-gen data for this range.</div>';return;}
-  const metricColumns=['Spend','Revenue','ROAS','Purchases','CPA','AOV','LP→Checkout','Checkout→Purchase','Checkouts','Cost/Checkout','LP Views','Cost/LP','CTR','LP→Purchase','CPM'];
-  if(includeLeadGen)metricColumns.push('Leads','CPL','LP→Lead');
+  const metricColumns=['Spend','Revenue','ROAS','Purchases','CPA','AOV','LP→Checkout','Checkout→Purchase','Checkouts','Cost/Checkout','LP Views','Cost/LP','CTR','LP→Purchase','CPM','Leads','CPL','LP→Lead'];
   const columns=leadgenTableMode==='groups'?['Group','Date',...metricColumns]:['Date','Group',...metricColumns];
   const state=sortState.leadgen.czsk;let body='';
   if(leadgenTableMode==='groups'){
-    let groups=LEADGEN_GROUPS.map(g=>sumPromoRows(rows.filter(r=>r.group===g.key),null,g.key)).filter(g=>g.spend||g.revenue||g.purchases||g.checkouts||g.leads||g.lp);
+    let groups=activeLeadgenGroups().map(g=>sumPromoRows(rows.filter(r=>r.group===g.key),null,g.key)).filter(g=>g.spend||g.revenue||g.purchases||g.checkouts||g.leads||g.lp);
     groups=state.key==='date'?groups.sort((a,b)=>LEADGEN_GROUPS.findIndex(g=>g.key===a.group)-LEADGEN_GROUPS.findIndex(g=>g.key===b.group)):groups.sort(leadgenSortComparator);
     for(const total of groups){const children=rows.filter(r=>r.group===total.group).sort(leadgenSortComparator);body+=leadgenNestedRow('subtotal-row',leadgenGroupHtml(total.group),'Subtotal',total);body+=children.map(r=>leadgenNestedRow('child-row','',`<span class="nested-child">${escapeHtml(r.date)}</span>`,r)).join('');}
   }else{

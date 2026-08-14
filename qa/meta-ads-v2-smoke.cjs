@@ -104,12 +104,18 @@ async function run() {
       assert.ok(await page.locator('#promo-table tbody tr').count() >= 6);
 
       await page.locator('[data-tab="czsk-leadgen"]').click();
-      assert.equal(await page.locator('#include-leadgen').isVisible(), true);
+      assert.equal(await page.locator('#include-leadgen').isVisible(), false);
+      assert.equal(await page.locator('#leadgen-only').isVisible(), true);
+      assert.equal(await page.locator('#leadgen-only').isChecked(), false);
       assert.equal(await page.locator('#kpi-czsk-leadgen .kpi-card').count(), 2);
       assert.ok(await page.locator('#leadgen-table tbody tr').count() >= 8);
+      assert.equal((await page.locator('#leadgen-table tbody').textContent()).includes('Lead-gen'), true);
+      assert.equal((await page.locator('#leadgen-table tbody').textContent()).includes('Sales'), true);
       assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-leadgen-spend')) && Boolean(window.Chart.getChart('chart-leadgen-pie'))));
-      await page.locator('#include-leadgen').uncheck();
-      assert.equal((await page.locator('#leadgen-table tbody').textContent()).includes('Lead-gen'), false);
+      await page.locator('#leadgen-only').check();
+      assert.equal(await page.locator('#kpi-czsk-leadgen .kpi-card').count(), 1);
+      assert.equal((await page.locator('#leadgen-table tbody').textContent()).includes('Lead-gen'), true);
+      assert.equal((await page.locator('#leadgen-table tbody').textContent()).includes('Sales'), false);
 
       await page.locator('[data-tab="us"]').click();
       assert.equal(await page.locator('#kpi-us .kpi-card').count(), 8);
