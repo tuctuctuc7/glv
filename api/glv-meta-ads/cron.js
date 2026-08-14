@@ -46,7 +46,10 @@ async function redisCmd(...args) {
     },
     body: JSON.stringify(args),
   });
-  return r.json();
+  const payload = await r.json();
+  if (!r.ok) throw new Error(`Redis HTTP ${r.status}`);
+  if (payload?.error) throw new Error(`Redis: ${payload.error}`);
+  return payload;
 }
 
 function getAction(actions, type) {
@@ -220,4 +223,4 @@ async function handler(req, res) {
 }
 
 module.exports = handler;
-module.exports._test = { cutoffDate, sinceDate, monthRange };
+module.exports._test = { cutoffDate, sinceDate, monthRange, redisCmd };

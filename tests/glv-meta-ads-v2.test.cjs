@@ -77,6 +77,25 @@ test('manual Meta cron can include the current partial day without changing the 
   assert.match(source, /partial current day/);
 });
 
+test('Meta cron rejects failed Redis writes instead of reporting a false success', async () => {
+  const cron = require('../api/glv-meta-ads/cron.js');
+  const originalFetch = global.fetch;
+  const originalUrl = process.env.KV_REST_API_URL;
+  const originalToken = process.env.KV_REST_API_TOKEN;
+  process.env.KV_REST_API_URL = 'https://redis.invalid';
+  process.env.KV_REST_API_TOKEN = 'test-token';
+  try {
+    global.fetch = async () => ({ ok: false, status: 500, json: async () => ({ error: 'write failed' }) });
+    await assert.rejects(cron._test.redisCmd('SET', 'key', 'value'), /Redis HTTP 500/);
+    global.fetch = async () => ({ ok: true, status: 200, json: async () => ({ error: 'ERR simulated' }) });
+    await assert.rejects(cron._test.redisCmd('SET', 'key', 'value'), /Redis: ERR simulated/);
+  } finally {
+    global.fetch = originalFetch;
+    if (originalUrl === undefined) delete process.env.KV_REST_API_URL; else process.env.KV_REST_API_URL = originalUrl;
+    if (originalToken === undefined) delete process.env.KV_REST_API_TOKEN; else process.env.KV_REST_API_TOKEN = originalToken;
+  }
+});
+
 test('Meta Ads V2 provides accessible light and dark theme UX', () => {
   const v2 = read('public/glv-meta-ads-2/index.html');
   assert.match(v2, /rel="icon" type="image\/svg\+xml" href="\/glv-meta-ads-2\/agenthic-logo\.svg"/);
