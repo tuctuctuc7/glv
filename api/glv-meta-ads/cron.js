@@ -1,5 +1,5 @@
 // GLV Meta Ads daily cron — runs at 00:00 UTC (07:00 GMT+7)
-// Fetches all preset date ranges ending YESTERDAY, stores in Upstash Redis
+// Scheduled runs end yesterday; authorized manual runs may include today's partial data.
 
 const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
@@ -8,30 +8,29 @@ const PRESETS = ['last_7d', 'last_14d', 'last_30d', 'last_90d', 'this_month', 'l
 const PRESET_DAYS = { last_7d: 6, last_14d: 13, last_30d: 29, last_90d: 89 };
 const TTL = 90000; // 25 hours
 
-function yesterday() {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
+function cutoffDate(includeToday = false, now = new Date()) {
+  const d = new Date(now);
+  if (!includeToday) d.setUTCDate(d.getUTCDate() - 1);
   return d.toISOString().slice(0, 10);
 }
 
-function sinceDate(preset) {
-  const d = new Date();
-  d.setDate(d.getDate() - 1 - PRESET_DAYS[preset]);
+function sinceDate(preset, includeToday = false, now = new Date()) {
+  const d = new Date(now);
+  d.setUTCDate(d.getUTCDate() - (includeToday ? 0 : 1) - PRESET_DAYS[preset]);
   return d.toISOString().slice(0, 10);
 }
 
-function monthRange(preset) {
-  const now = new Date();
+function monthRange(preset, includeToday = false, now = new Date()) {
   if (preset === 'this_month') {
     const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-    return { since: since.toISOString().slice(0, 10), until: yesterday() };
+    return { since: since.toISOString().slice(0, 10), until: cutoffDate(includeToday, now) };
   }
   if (preset === 'last_month') {
     const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
     const until = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0));
     return { since: since.toISOString().slice(0, 10), until: until.toISOString().slice(0, 10) };
   }
-  return { since: sinceDate(preset), until: yesterday() };
+  return { since: sinceDate(preset, includeToday, now), until: cutoffDate(includeToday, now) };
 }
 
 async function redisCmd(...args) {
@@ -54,6 +53,16 @@ function getAction(actions, type) {
   return item ? item.value : '0';
 }
 
+function getFirstAction(actions, types) {
+  for (const type of types) {
+    const value = getAction(actions, type);
+    if (Number(value) > 0) return value;
+  }
+  return '0';
+}
+
+const LEAD_ACTION_TYPES = ['lead', 'onsite_conversion.lead_grouped', 'offsite_conversion.fb_pixel_lead'];
+
 function getActionValue(action_values, type) {
   if (!Array.isArray(action_values)) return '0';
   const item = action_values.find(a => a.action_type === type);
@@ -75,6 +84,7 @@ function normalizeCampaign(row) {
     'actions:omni_purchase': getAction(row.actions, 'omni_purchase'),
     'actions:initiate_checkout': getAction(row.actions, 'initiate_checkout'),
     'actions:outbound_click': getAction(row.actions, 'outbound_click'),
+    'actions:lead': getFirstAction(row.actions, LEAD_ACTION_TYPES),
     'action_values:omni_purchase': getActionValue(row.action_values, 'omni_purchase'),
     date_start: row.date_start || null,
     date_stop: row.date_stop || null,
@@ -94,6 +104,7 @@ function normalizeAd(row, statusMap) {
     'actions:omni_purchase': getAction(row.actions, 'omni_purchase'),
     'actions:initiate_checkout': getAction(row.actions, 'initiate_checkout'),
     'actions:outbound_click': getAction(row.actions, 'outbound_click'),
+    'actions:lead': getFirstAction(row.actions, LEAD_ACTION_TYPES),
     'action_values:omni_purchase': getActionValue(row.action_values, 'omni_purchase'),
     video_thruplay_watched_actions: getVideoMetric(row.video_thruplay_watched_actions),
     video_3_sec_watched_actions: getAction(row.actions, 'video_view'),
@@ -114,8 +125,8 @@ async function paginate(url) {
   return rows;
 }
 
-async function fetchAndCache(token, preset) {
-  const { since, until } = monthRange(preset);
+async function fetchAndCache(token, preset, includeToday = false) {
+  const { since, until } = monthRange(preset, includeToday);
   const dateParam = `time_range=${encodeURIComponent(JSON.stringify({ since, until }))}`;
   const auth = `access_token=${token}`;
   const errors = [];
@@ -169,7 +180,7 @@ async function fetchAndCache(token, preset) {
   return errors;
 }
 
-module.exports = async (req, res) => {
+async function handler(req, res) {
   // Vercel cron passes this header; block unauthorised calls
   const cronSecret = process.env.CRON_SECRET || process.env.GLV_META_CRON_SECRET;
   const token = process.env.GLV_META_FB_ACCESS_TOKEN || process.env.FB_ACCESS_TOKEN;
@@ -186,17 +197,23 @@ module.exports = async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  const includeToday = ['1', 'true'].includes(String(req.query?.include_today || '').toLowerCase());
   const allErrors = [];
   for (const preset of PRESETS) {
-    const errs = await fetchAndCache(token, preset);
+    const errs = await fetchAndCache(token, preset, includeToday);
     allErrors.push(...errs);
   }
 
   const success = allErrors.length === 0;
+  const through = cutoffDate(includeToday);
+  const coverageNote = includeToday ? ' including partial current day' : '';
   const message = success
-    ? `Cache refreshed for ${PRESETS.join(', ')} — data through ${yesterday()}`
+    ? `Cache refreshed for ${PRESETS.join(', ')} — data through ${through}${coverageNote}`
     : `Cache refresh completed with errors: ${allErrors.join('; ')}`;
 
   console.log(message);
   res.json({ ok: success, message });
-};
+}
+
+module.exports = handler;
+module.exports._test = { cutoffDate, sinceDate, monthRange };

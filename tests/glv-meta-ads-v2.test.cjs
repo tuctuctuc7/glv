@@ -10,10 +10,11 @@ const read = (...parts) => fs.readFileSync(path.join(root, ...parts), 'utf8');
 const V1_HASH = '422aa897010d80a8c8d4f40302c3a4c6a6bd85d982186c9d63560171dbfcbd7a';
 const APPROVED_ICON_HASH = '4ee12623258531a1210f18833815132cdbf2be8624d1a43f72f9685b527d8685';
 const requiredIds = [
-  'date-btn', 'date-from', 'date-to', 'promo-active-days-only',
+  'date-btn', 'date-from', 'date-to', 'promo-active-days-only', 'include-leadgen',
   'kpi-czsk', 'chart-grain-czsk', 'chart-left-czsk', 'chart-right-czsk', 'chart-czsk',
   'daily-table-czsk', 'creative-type-czsk', 'creative-sort-czsk', 'creative-czsk',
   'kpi-czsk-promo', 'chart-promo-spend', 'chart-promo-roas', 'chart-promo-pie', 'promo-table',
+  'kpi-czsk-leadgen', 'chart-leadgen-spend', 'chart-leadgen-roas', 'chart-leadgen-pie', 'leadgen-table',
   'kpi-us', 'chart-grain-us', 'chart-left-us', 'chart-right-us', 'chart-us',
   'daily-table-us', 'creative-type-us', 'creative-sort-us', 'creative-us',
 ];
@@ -28,7 +29,7 @@ test('Meta Ads V1 remains byte-identical while V2 is a separate route', () => {
 
 test('Meta Ads V2 preserves the V1 feature surface and shared API', () => {
   const v2 = read('public/glv-meta-ads-2/index.html');
-  for (const tab of ['czsk', 'czsk-promo', 'us']) assert.match(v2, new RegExp(`data-tab="${tab}"`));
+  for (const tab of ['czsk', 'czsk-promo', 'czsk-leadgen', 'us']) assert.match(v2, new RegExp(`data-tab="${tab}"`));
   for (const id of requiredIds) assert.match(v2, new RegExp(`id="${id}"`), `missing V1 control #${id}`);
   assert.match(v2, /\/api\/glv-meta-ads\/fb-data/);
   assert.match(v2, /last_7d/);
@@ -37,6 +38,35 @@ test('Meta Ads V2 preserves the V1 feature surface and shared API', () => {
   assert.match(v2, /last_90d/);
   assert.match(v2, /this_month/);
   assert.match(v2, /last_month/);
+});
+
+test('Meta Ads V2 defines the Lead-gen inclusion and metric contract', () => {
+  const v2 = read('public/glv-meta-ads-2/index.html');
+  assert.match(v2, /Include Lead-gen/);
+  assert.match(v2, /_Lead<\/strong> = Lead-gen/);
+  for (const metric of ["key:'leads'", "key:'cpl'", "key:'lp2lead'"]) assert.match(v2, new RegExp(metric));
+  assert.match(v2, /const isLeadGen/);
+  assert.match(v2, /includeLeadGen = false/);
+});
+
+test('shared Meta API exposes lead actions without changing the V1 route', () => {
+  for (const file of ['api/glv-meta-ads/fb-data.js', 'api/glv-meta-ads/cron.js']) {
+    const api = read(file);
+    assert.match(api, /'actions:lead'/);
+    assert.match(api, /onsite_conversion\.lead_grouped/);
+    assert.match(api, /offsite_conversion\.fb_pixel_lead/);
+  }
+});
+
+test('manual Meta cron can include the current partial day without changing the scheduled yesterday cutoff', () => {
+  const cron = require('../api/glv-meta-ads/cron.js');
+  const now = new Date('2026-08-14T12:00:00Z');
+  assert.deepEqual(cron._test.monthRange('last_7d', false, now), { since: '2026-08-07', until: '2026-08-13' });
+  assert.deepEqual(cron._test.monthRange('last_7d', true, now), { since: '2026-08-08', until: '2026-08-14' });
+  assert.deepEqual(cron._test.monthRange('this_month', true, now), { since: '2026-08-01', until: '2026-08-14' });
+  const source = read('api/glv-meta-ads/cron.js');
+  assert.match(source, /include_today/);
+  assert.match(source, /partial current day/);
 });
 
 test('Meta Ads V2 provides accessible light and dark theme UX', () => {

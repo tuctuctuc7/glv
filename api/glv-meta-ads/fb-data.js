@@ -26,6 +26,16 @@ function getAction(actions, type) {
   return item ? item.value : '0';
 }
 
+function getFirstAction(actions, types) {
+  for (const type of types) {
+    const value = getAction(actions, type);
+    if (Number(value) > 0) return value;
+  }
+  return '0';
+}
+
+const LEAD_ACTION_TYPES = ['lead', 'onsite_conversion.lead_grouped', 'offsite_conversion.fb_pixel_lead'];
+
 function getActionValue(action_values, type) {
   if (!Array.isArray(action_values)) return '0';
   const item = action_values.find(a => a.action_type === type);
@@ -47,6 +57,7 @@ function normalizeCampaign(row) {
     'actions:omni_purchase':       getAction(row.actions, 'omni_purchase'),
     'actions:initiate_checkout':   getAction(row.actions, 'initiate_checkout'),
     'actions:outbound_click':      getAction(row.actions, 'outbound_click'),
+    'actions:lead':                getFirstAction(row.actions, LEAD_ACTION_TYPES),
     'action_values:omni_purchase': getActionValue(row.action_values, 'omni_purchase'),
     date_start: row.date_start || null,
     date_stop:  row.date_stop  || null,
@@ -66,6 +77,7 @@ function normalizeAd(row, statusMap) {
     'actions:omni_purchase':       getAction(row.actions, 'omni_purchase'),
     'actions:initiate_checkout':   getAction(row.actions, 'initiate_checkout'),
     'actions:outbound_click':      getAction(row.actions, 'outbound_click'),
+    'actions:lead':                getFirstAction(row.actions, LEAD_ACTION_TYPES),
     'action_values:omni_purchase': getActionValue(row.action_values, 'omni_purchase'),
     video_thruplay_watched_actions: getVideoMetric(row.video_thruplay_watched_actions),
     video_3_sec_watched_actions:    getAction(row.actions, 'video_view'),

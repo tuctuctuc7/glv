@@ -11,22 +11,24 @@ const browserLibRoot = '/home/tom/.cache/hermes-browser-libs/root';
 const evidenceDir = path.resolve(process.env.GLV_META_QA_EVIDENCE_DIR || '/tmp/glv-meta-ads-v2-qa');
 fs.mkdirSync(evidenceDir, { recursive: true });
 
-const campaign = (id, name, spend, revenue, purchases, checkouts, clicks, impressions, date) => ({
+const campaign = (id, name, spend, revenue, purchases, checkouts, clicks, impressions, date, leads = 0) => ({
   id, name, amount_spent: String(spend), impressions: String(impressions),
   'actions:link_click': String(clicks), 'actions:omni_purchase': String(purchases),
   'actions:initiate_checkout': String(checkouts), 'actions:outbound_click': String(clicks),
+  'actions:lead': String(leads),
   'action_values:omni_purchase': String(revenue), date_start: date, date_stop: date,
 });
 const aggregate = [
   campaign('c1', 'GLV_101_CZ_Promo_August', 42000, 91000, 121, 238, 1280, 92000),
   campaign('c2', 'GLV_102_CZ_Kristyna_Core', 26000, 51000, 69, 141, 840, 61000),
   campaign('c3', 'GLV_103_CZ_BAU_Core', 31000, 58000, 72, 156, 950, 73000),
+  campaign('c4', 'GLV_104_CZ_Leads_August', 12000, 0, 0, 0, 360, 28000, undefined, 48),
   campaign('u1', 'GLV_201_US_Core', 55000, 47000, 38, 106, 1210, 132000),
 ];
 const daily = ['2026-08-10', '2026-08-11', '2026-08-12'].flatMap((date, day) => aggregate.map((row, i) => campaign(
   row.id, row.name, Number(row.amount_spent) / 3 + day * 100 + i, Number(row['action_values:omni_purchase']) / 3 + day * 250,
   Math.max(1, Math.round(Number(row['actions:omni_purchase']) / 3)), Math.max(1, Math.round(Number(row['actions:initiate_checkout']) / 3)),
-  Math.round(Number(row['actions:link_click']) / 3), Math.round(Number(row.impressions) / 3), date,
+  Math.round(Number(row['actions:link_click']) / 3), Math.round(Number(row.impressions) / 3), date, Math.round(Number(row['actions:lead']) / 3),
 )));
 const ads = [
   { id: 'a1', name: 'PAC500 · Founder video', status: 'ACTIVE', campaign_id: 'c1', amount_spent: '14000', impressions: '31000', 'actions:link_click': '430', 'actions:omni_purchase': '40', 'actions:initiate_checkout': '76', 'actions:outbound_click': '430', 'action_values:omni_purchase': '30000', video_thruplay_watched_actions: '4000', video_3_sec_watched_actions: '9000', video_p100_watched_actions: '1200' },
@@ -79,6 +81,19 @@ async function run() {
       assert.equal(await page.locator('#daily-table-czsk tbody tr').count(), 3);
       assert.equal(await page.locator('#creative-czsk tbody tr').count(), 2);
       assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-czsk'))));
+      assert.equal(await page.locator('#include-leadgen').isChecked(), false);
+      assert.equal(await page.locator('#kpi-czsk .kpi-card').first().locator('.kpi-val').textContent(), '99,000');
+      assert.equal(await page.locator('#daily-table-czsk th', { hasText: 'Leads' }).count(), 0);
+      assert.equal(await page.locator('#chart-left-czsk option[value="leads"]').count(), 0);
+      await page.locator('#include-leadgen').check();
+      assert.equal(await page.locator('#kpi-czsk .kpi-card').first().locator('.kpi-val').textContent(), '111,000');
+      assert.equal(await page.locator('#daily-table-czsk th', { hasText: 'Leads' }).count(), 1);
+      assert.equal(await page.locator('#daily-table-czsk th', { hasText: 'CPL' }).count(), 1);
+      assert.equal(await page.locator('#daily-table-czsk th', { hasText: 'LP→Lead' }).count(), 1);
+      assert.equal(await page.locator('#creative-czsk th', { hasText: 'Leads' }).count(), 1);
+      assert.equal(await page.locator('#creative-czsk th', { hasText: 'CPL' }).count(), 1);
+      assert.equal(await page.locator('#creative-czsk th', { hasText: 'LP→Lead' }).count(), 1);
+      for (const metric of ['leads', 'cpl', 'lp2lead']) assert.equal(await page.locator(`#chart-left-czsk option[value="${metric}"]`).count(), 1);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), 0);
 
       await page.locator('[data-tab="czsk-promo"]').click();
@@ -87,6 +102,14 @@ async function run() {
       assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-promo-spend')) && Boolean(window.Chart.getChart('chart-promo-pie'))));
       await page.locator('#promo-active-days-only').check();
       assert.ok(await page.locator('#promo-table tbody tr').count() >= 6);
+
+      await page.locator('[data-tab="czsk-leadgen"]').click();
+      assert.equal(await page.locator('#include-leadgen').isVisible(), true);
+      assert.equal(await page.locator('#kpi-czsk-leadgen .kpi-card').count(), 2);
+      assert.ok(await page.locator('#leadgen-table tbody tr').count() >= 8);
+      assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-leadgen-spend')) && Boolean(window.Chart.getChart('chart-leadgen-pie'))));
+      await page.locator('#include-leadgen').uncheck();
+      assert.equal((await page.locator('#leadgen-table tbody').textContent()).includes('Lead-gen'), false);
 
       await page.locator('[data-tab="us"]').click();
       assert.equal(await page.locator('#kpi-us .kpi-card').count(), 8);
