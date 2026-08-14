@@ -686,8 +686,8 @@ function setChartGranularity(seg,grain){
 }
 function initSortControls(){
   ['czsk','us'].forEach(seg=>{
-    populateSortSelect(`daily-sort-${seg}`,seg==='czsk'&&includeLeadGen?[...DAILY_COLUMNS,...LEAD_DAILY_COLUMNS]:DAILY_COLUMNS,sortState.daily[seg].key);
-    populateSortSelect(`creative-sort-${seg}`,seg==='czsk'&&includeLeadGen?[...CREATIVE_COLUMNS,...LEAD_DAILY_COLUMNS]:CREATIVE_COLUMNS,sortState.creative[seg].key);
+    populateSortSelect(`daily-sort-${seg}`,DAILY_COLUMNS,sortState.daily[seg].key);
+    populateSortSelect(`creative-sort-${seg}`,CREATIVE_COLUMNS,sortState.creative[seg].key);
   });
   populateSortSelect('promo-sort-czsk',DAILY_COLUMNS,sortState.promo.czsk.key);
   populateSortSelect('leadgen-sort-czsk',[...DAILY_COLUMNS,...LEAD_DAILY_COLUMNS],sortState.leadgen.czsk.key);
@@ -815,9 +815,13 @@ function processCreatives(rawRows){
 function getSegmentRows(seg,source='daily'){
   return(source==='daily'?dailyCampaigns:aggregateCampaigns).filter(r=>r.segment===seg);
 }
+function spendOnlyRow(row){
+  return{...row,lp:0,purchases:0,checkouts:0,leads:0,outboundClicks:0,revenue:0,impressions:0};
+}
 function getMainSegmentRows(seg,source='daily'){
   const rows=getSegmentRows(seg,source);
-  return seg==='czsk'&&!includeLeadGen?rows.filter(r=>!isLeadGen(r.name)):rows;
+  if(seg!=='czsk')return rows;
+  return includeLeadGen?rows.map(r=>isLeadGen(r.name)?spendOnlyRow(r):r):rows.filter(r=>!isLeadGen(r.name));
 }
 function getLeadgenRows(source='daily'){
   const rows=getSegmentRows('czsk',source);
@@ -937,7 +941,7 @@ function initSelects(){
   ['czsk','us'].forEach(seg=>{
     ['chart-left-','chart-right-'].forEach((prefix,i)=>{
       const el=document.getElementById(prefix+seg);
-      const options=seg==='czsk'&&includeLeadGen?[...CHART_METRIC_OPTIONS,...LEAD_CHART_METRIC_OPTIONS]:CHART_METRIC_OPTIONS;
+      const options=CHART_METRIC_OPTIONS;
       const previous=el.value;
       el.innerHTML=options.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');
       el.value=options.some(m=>m.key===previous)?previous:(i===0?'spend':'roas');
@@ -1200,11 +1204,6 @@ function renderDailyTable(seg){
     {label:'LP→Purchase',text:r=>fmtPct(r.m.lp2pur)},
     {label:'CPM',text:r=>r.m.cpm>0?fmtInt(r.m.cpm):'—'},
   ];
-  if(seg==='czsk'&&includeLeadGen)columns.push(
-    {label:'Leads',text:r=>r.d.leads||'—'},
-    {label:'CPL',text:r=>r.m.cpl>0?fmtInt(r.m.cpl):'—'},
-    {label:'LP→Lead',text:r=>fmtPct(r.m.lp2lead)},
-  );
   renderControlledTable(container,columns,tableRows,'daily-data-table');
 }
 function setPromoTableMode(mode){
@@ -1227,11 +1226,6 @@ function syncPromoFilterVisibility(activeTab){
 function setIncludeLeadGen(checked){
   includeLeadGen=checked;
   document.getElementById('include-leadgen').checked=checked;
-  if(!checked){
-    const leadKeys=new Set(LEAD_DAILY_COLUMNS.map(column=>column.key));
-    if(leadKeys.has(sortState.daily.czsk.key))sortState.daily.czsk.key='date';
-    if(leadKeys.has(sortState.creative.czsk.key))sortState.creative.czsk.key='spend';
-  }
   filterState.czsk=null;filterState['czsk-creative']=null;
   initSelects();initSortControls();buildAllFilters();
   renderKPIs('czsk');refreshChart('czsk');renderDailyTable('czsk');renderCreatives('czsk');
@@ -1410,6 +1404,7 @@ function renderCreatives(seg){
   const campFilter=filterState[seg+'-creative'];const typeFilter=creativeTypeFilter[seg];
   let creatives=adCreatives.filter(c=>c.segment===seg&&c.spend>0);
   if(seg==='czsk'&&!includeLeadGen)creatives=creatives.filter(c=>!isLeadGen(c.campaignName));
+  if(seg==='czsk'&&includeLeadGen)creatives=creatives.map(c=>isLeadGen(c.campaignName)?spendOnlyRow(c):c);
   if(campFilter)creatives=creatives.filter(c=>campFilter.has(c.campaignId));
   if(typeFilter==='video')creatives=creatives.filter(c=>c.isVideo);
   if(typeFilter==='static')creatives=creatives.filter(c=>!c.isVideo);
@@ -1440,11 +1435,6 @@ function renderCreatives(seg){
     {label:'Hook%',text:r=>r.c.isVideo?fmtPct(r.c.hookRate):'—'},
     {label:'Hold%',text:r=>r.c.isVideo?fmtPct(r.c.holdRate):'—'},
   ];
-  if(seg==='czsk'&&includeLeadGen)columns.push(
-    {label:'Leads',text:r=>r.c.leads||'—'},
-    {label:'CPL',text:r=>r.m.cpl>0?fmtInt(r.m.cpl):'—'},
-    {label:'LP→Lead',text:r=>fmtPct(r.m.lp2lead)},
-  );
   renderControlledTable(container,columns,tableRows,'creative-data-table');
 }
 
