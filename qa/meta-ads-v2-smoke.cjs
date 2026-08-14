@@ -133,6 +133,17 @@ async function run() {
       assert.equal(await page.locator('#kpi-czsk-leadgen .kpi-card').count(), 1);
       assert.equal((await page.locator('#leadgen-table tbody').textContent()).includes('Lead-gen'), true);
       assert.equal((await page.locator('#leadgen-table tbody').textContent()).includes('Sales'), false);
+      assert.equal(await page.locator('#leadgen-single-metric-wrap').isVisible(), false);
+      assert.equal(await page.locator('#leadgen-dual-metric-controls').isVisible(), true);
+      assert.equal(await page.locator('#chart-left-leadgen').inputValue(), 'spend');
+      assert.equal(await page.locator('#chart-right-leadgen').inputValue(), 'cpl');
+      assert.equal(await page.locator('#leadgen-pie-card').isVisible(), false);
+      assert.equal(await page.evaluate(() => Boolean(window.Chart.getChart('chart-leadgen-pie'))), false);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+      assert.deepEqual(await page.evaluate(() => window.Chart.getChart('chart-leadgen-metric').data.datasets.map(dataset => [dataset.type, dataset.yAxisID, dataset.label])), [['bar', 'y', 'Spend (CZK)'], ['line', 'y1', 'CPL (CZK)']]);
+      await page.locator('#chart-left-leadgen').selectOption('revenue');
+      await page.locator('#chart-right-leadgen').selectOption('leads');
+      assert.deepEqual(await page.evaluate(() => window.Chart.getChart('chart-leadgen-metric').data.datasets.map(dataset => dataset.label)), ['Revenue (CZK)', 'Leads']);
 
       await page.locator('[data-tab="us"]').click();
       assert.equal(await page.locator('#kpi-us .kpi-card').count(), 8);

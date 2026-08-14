@@ -85,6 +85,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .chart-wrap{position:relative;height:240px;}
 .chart-grid{display:grid;grid-template-columns:2fr 2fr 1.25fr;gap:16px;}
 .leadgen-chart-grid{grid-template-columns:2fr 1.25fr;}
+.leadgen-chart-grid.single{grid-template-columns:1fr;}
+.leadgen-chart-grid .chart-card.hidden{display:none;}
+.leadgen-single-metric,.leadgen-dual-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.leadgen-single-metric.hidden,.leadgen-dual-controls.hidden{display:none;}
 .chart-card{min-width:0;}
 .chart-card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray600);margin-bottom:10px;}
 .promo-note{font-size:12px;color:var(--gray600);line-height:1.45;margin-bottom:14px;}
@@ -406,8 +410,16 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   <div class="section">
     <div class="section-title">Lead-gen Group Charts</div>
     <div class="chart-controls">
-      <span class="metric-label">Metric:</span>
-      <select class="metric-select" id="chart-metric-leadgen" onchange="refreshLeadgenCharts()"></select>
+      <span class="leadgen-single-metric" id="leadgen-single-metric-wrap">
+        <span class="metric-label">Metric:</span>
+        <select class="metric-select" id="chart-metric-leadgen" onchange="refreshLeadgenCharts()"></select>
+      </span>
+      <span class="leadgen-dual-controls hidden" id="leadgen-dual-metric-controls">
+        <span class="metric-label">Bar · left:</span>
+        <select class="metric-select" id="chart-left-leadgen" onchange="refreshLeadgenCharts()"></select>
+        <span class="metric-label">Line · right:</span>
+        <select class="metric-select" id="chart-right-leadgen" onchange="refreshLeadgenCharts()"></select>
+      </span>
       <span class="metric-label">X-axis:</span>
       <select class="metric-select" id="chart-grain-leadgen" onchange="setLeadgenChartGranularity(this.value)">
         <option value="day">Day</option>
@@ -415,9 +427,9 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
         <option value="month">Month</option>
       </select>
     </div>
-    <div class="chart-grid leadgen-chart-grid">
+    <div class="chart-grid leadgen-chart-grid" id="leadgen-chart-grid">
       <div class="chart-card"><div class="chart-card-title" id="leadgen-chart-title">Spend By Group</div><div class="chart-wrap"><canvas id="chart-leadgen-metric" aria-label="Spend by Lead-gen group"></canvas></div></div>
-      <div class="chart-card"><div class="chart-card-title">Spend Mix</div><div class="chart-wrap"><canvas id="chart-leadgen-pie"></canvas></div></div>
+      <div class="chart-card" id="leadgen-pie-card"><div class="chart-card-title">Spend Mix</div><div class="chart-wrap"><canvas id="chart-leadgen-pie"></canvas></div></div>
     </div>
   </div>
   <div class="section">
@@ -960,7 +972,9 @@ function initSelects(){
   const te=document.getElementById('chart-trends-metric');
   if(te){te.innerHTML=CHART_METRIC_OPTIONS.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');te.value='spend';}
   const le=document.getElementById('chart-metric-leadgen');
-  if(le){const previous=le.value;const options=[...CHART_METRIC_OPTIONS,...LEAD_CHART_METRIC_OPTIONS];le.innerHTML=options.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');le.value=options.some(m=>m.key===previous)?previous:'spend';}
+  const leadOptions=[...CHART_METRIC_OPTIONS,...LEAD_CHART_METRIC_OPTIONS];
+  if(le){const previous=le.value;le.innerHTML=leadOptions.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');le.value=leadOptions.some(m=>m.key===previous)?previous:'spend';}
+  [['chart-left-leadgen','spend'],['chart-right-leadgen','cpl']].forEach(([id,fallback])=>{const el=document.getElementById(id);if(!el)return;const previous=el.value;el.innerHTML=leadOptions.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');el.value=leadOptions.some(m=>m.key===previous)?previous:fallback;});
 }
 function formatChartVal(key,v){
   if(key==='roas')return v.toFixed(2)+'x';
@@ -1122,15 +1136,29 @@ function refreshLeadgenCharts(){
   const metricOptions=[...CHART_METRIC_OPTIONS,...LEAD_CHART_METRIC_OPTIONS];
   const metricLabel=metricOptions.find(m=>m.key===metricKey)?.label||metricKey;
   const source=getLeadgenRows('daily');
-  const periods=groups.map(g=>({group:g,rows:byPeriod(source.filter(r=>leadgenGroupKey(r.name)===g.key),null,grain)}));
-  const dates=[...new Set(periods.flatMap(item=>item.rows.map(r=>r.date)))].sort();
-  const title=document.getElementById('leadgen-chart-title');if(title)title.textContent=`${metricLabel} By Group`;
-  const canvas=document.getElementById('chart-leadgen-metric');canvas?.setAttribute('aria-label',`${metricLabel} by Lead-gen group, ${grain}`);
+  const title=document.getElementById('leadgen-chart-title');
+  const canvas=document.getElementById('chart-leadgen-metric');
+  document.getElementById('leadgen-single-metric-wrap')?.classList.toggle('hidden',leadgenOnly);
+  document.getElementById('leadgen-dual-metric-controls')?.classList.toggle('hidden',!leadgenOnly);
+  document.getElementById('leadgen-chart-grid')?.classList.toggle('single',leadgenOnly);
+  document.getElementById('leadgen-pie-card')?.classList.toggle('hidden',leadgenOnly);
   if(charts['leadgen-metric'])charts['leadgen-metric'].destroy();
   const ctx=canvas?.getContext('2d');
-  if(ctx)charts['leadgen-metric']=new Chart(ctx,{type:'line',data:{labels:dates.map(date=>fmtChartDate(date,grain)),datasets:periods.map(({group,rows})=>{const byDate=Object.fromEntries(rows.map(r=>[r.date,r]));return{label:group.label,data:dates.map(date=>{const row=byDate[date]||emptyAgg(date,group.key);return computeChartMetric(metricKey,row,calcMetrics(row));}),borderColor:group.color,backgroundColor:group.color+'22',borderWidth:2,tension:.3,pointRadius:3,fill:false};})},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${formatChartVal(metricKey,ctx.raw)}`}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>formatChartVal(metricKey,v)}}}}});
+  if(leadgenOnly){
+    const leftKey=document.getElementById('chart-left-leadgen')?.value||'spend';const rightKey=document.getElementById('chart-right-leadgen')?.value||'cpl';
+    const leftLabel=metricOptions.find(m=>m.key===leftKey)?.label||leftKey;const rightLabel=metricOptions.find(m=>m.key===rightKey)?.label||rightKey;
+    const rows=byPeriod(source,null,grain);const labels=rows.map(row=>fmtChartDate(row.date,grain));
+    if(title)title.textContent=`${leftLabel} & ${rightLabel}`;canvas?.setAttribute('aria-label',`${leftLabel} bars and ${rightLabel} line, ${grain}`);
+    if(ctx)charts['leadgen-metric']=new Chart(ctx,{type:'bar',data:{labels,datasets:[{type:'bar',label:leftLabel,metricKey:leftKey,data:rows.map(row=>computeChartMetric(leftKey,row,calcMetrics(row))),yAxisID:'y',backgroundColor:'#f59e0bcc',borderColor:'#f59e0b',borderWidth:1,borderRadius:4},{type:'line',label:rightLabel,metricKey:rightKey,data:rows.map(row=>computeChartMetric(rightKey,row,calcMetrics(row))),yAxisID:'y1',borderColor:'#3b82f6',backgroundColor:'#3b82f622',borderWidth:2,tension:.3,pointRadius:3,fill:false}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(item.dataset.metricKey,item.raw)}`}}},scales:{x:{grid:{display:false}},y:{position:'left',title:{display:true,text:leftLabel},ticks:{callback:v=>formatChartVal(leftKey,v)}},y1:{position:'right',title:{display:true,text:rightLabel},grid:{drawOnChartArea:false},ticks:{callback:v=>formatChartVal(rightKey,v)}}}}});
+  }else{
+    const periods=groups.map(g=>({group:g,rows:byPeriod(source.filter(r=>leadgenGroupKey(r.name)===g.key),null,grain)}));
+    const dates=[...new Set(periods.flatMap(item=>item.rows.map(r=>r.date)))].sort();
+    if(title)title.textContent=`${metricLabel} By Group`;canvas?.setAttribute('aria-label',`${metricLabel} by Lead-gen group, ${grain}`);
+    if(ctx)charts['leadgen-metric']=new Chart(ctx,{type:'line',data:{labels:dates.map(date=>fmtChartDate(date,grain)),datasets:periods.map(({group,rows})=>{const byDate=Object.fromEntries(rows.map(r=>[r.date,r]));return{label:group.label,data:dates.map(date=>{const row=byDate[date]||emptyAgg(date,group.key);return computeChartMetric(metricKey,row,calcMetrics(row));}),borderColor:group.color,backgroundColor:group.color+'22',borderWidth:2,tension:.3,pointRadius:3,fill:false};})},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(metricKey,item.raw)}`}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>formatChartVal(metricKey,v)}}}}});
+  }
   const totals=byLeadgenGroup(getLeadgenRows('aggregate'));const totalSpend=totals.reduce((sum,row)=>sum+row.spend,0);
   if(charts['leadgen-pie'])charts['leadgen-pie'].destroy();
+  if(leadgenOnly){delete charts['leadgen-pie'];return;}
   const pieCtx=document.getElementById('chart-leadgen-pie')?.getContext('2d');
   if(pieCtx)charts['leadgen-pie']=new Chart(pieCtx,{type:'doughnut',data:{labels:groups.map(g=>g.label),datasets:[{data:totals.map(r=>r.spend),backgroundColor:groups.map(g=>g.color),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${formatChartVal('spend',ctx.raw)} (${(totalSpend?ctx.raw/totalSpend*100:0).toFixed(1)}%)`}}}}});
 }

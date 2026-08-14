@@ -52,6 +52,9 @@ test('Meta Ads V2 defines the Lead-gen inclusion and metric contract', () => {
   assert.match(v2, /leadgenOnly = false/);
   assert.match(v2, /id="chart-metric-leadgen"/);
   assert.match(v2, /id="chart-grain-leadgen"/);
+  assert.match(v2, /id="chart-left-leadgen"/);
+  assert.match(v2, /id="chart-right-leadgen"/);
+  assert.match(v2, /id="leadgen-pie-card"/);
   assert.match(v2, /setLeadgenChartGranularity/);
 });
 
