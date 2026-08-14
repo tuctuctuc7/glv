@@ -96,6 +96,14 @@ test('Meta cron rejects failed Redis writes instead of reporting a false success
   }
 });
 
+test('Meta cron reports aggregate lead and landing-page-view totals for verification', () => {
+  const cron = require('../api/glv-meta-ads/cron.js');
+  assert.deepEqual(cron._test.summarizeRows([
+    { 'actions:lead': '3', 'actions:landing_page_view': '12' },
+    { 'actions:lead': '2', 'actions:landing_page_view': '8' },
+  ]), { rows: 2, leads: 5, landingPageViews: 20 });
+});
+
 test('Meta Ads V2 provides accessible light and dark theme UX', () => {
   const v2 = read('public/glv-meta-ads-2/index.html');
   assert.match(v2, /rel="icon" type="image\/svg\+xml" href="\/glv-meta-ads-2\/agenthic-logo\.svg"/);

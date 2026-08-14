@@ -68,6 +68,15 @@ function getFirstAction(actions, types) {
 
 const LEAD_ACTION_TYPES = ['lead', 'onsite_conversion.lead_grouped', 'offsite_conversion.fb_pixel_lead'];
 
+function summarizeRows(rows) {
+  return rows.reduce((summary, row) => {
+    summary.rows += 1;
+    summary.leads += Number(row['actions:lead']) || 0;
+    summary.landingPageViews += Number(row['actions:landing_page_view']) || 0;
+    return summary;
+  }, { rows: 0, leads: 0, landingPageViews: 0 });
+}
+
 function getActionValue(action_values, type) {
   if (!Array.isArray(action_values)) return '0';
   const item = action_values.find(a => a.action_type === type);
@@ -137,6 +146,7 @@ async function fetchAndCache(token, preset, includeToday = false) {
   const dateParam = `time_range=${encodeURIComponent(JSON.stringify({ since, until }))}`;
   const auth = `access_token=${token}`;
   const errors = [];
+  const stats = { preset, since, until };
 
   // aggregate
   try {
@@ -145,6 +155,7 @@ async function fetchAndCache(token, preset, includeToday = false) {
     const raw = await paginate(url);
     const rows = raw.map(normalizeCampaign);
     await redisCmd('SET', `glv:aggregate:${preset}`, JSON.stringify({ rows }), 'EX', String(TTL));
+    stats.aggregate = summarizeRows(rows);
   } catch (e) {
     errors.push(`aggregate/${preset}: ${e.message}`);
   }
@@ -156,6 +167,7 @@ async function fetchAndCache(token, preset, includeToday = false) {
     const raw = await paginate(url);
     const rows = raw.map(normalizeCampaign);
     await redisCmd('SET', `glv:daily:${preset}`, JSON.stringify({ rows }), 'EX', String(TTL));
+    stats.daily = summarizeRows(rows);
   } catch (e) {
     errors.push(`daily/${preset}: ${e.message}`);
   }
@@ -180,11 +192,12 @@ async function fetchAndCache(token, preset, includeToday = false) {
 
     const rows = raw.map(r => normalizeAd(r, statusMap));
     await redisCmd('SET', `glv:ads:${preset}`, JSON.stringify({ rows }), 'EX', String(TTL));
+    stats.ads = summarizeRows(rows);
   } catch (e) {
     errors.push(`ads/${preset}: ${e.message}`);
   }
 
-  return errors;
+  return { errors, stats };
 }
 
 async function handler(req, res) {
@@ -206,9 +219,11 @@ async function handler(req, res) {
 
   const includeToday = ['1', 'true'].includes(String(req.query?.include_today || '').toLowerCase());
   const allErrors = [];
+  const summaries = [];
   for (const preset of PRESETS) {
-    const errs = await fetchAndCache(token, preset, includeToday);
-    allErrors.push(...errs);
+    const result = await fetchAndCache(token, preset, includeToday);
+    allErrors.push(...result.errors);
+    summaries.push(result.stats);
   }
 
   const success = allErrors.length === 0;
@@ -218,9 +233,9 @@ async function handler(req, res) {
     ? `Cache refreshed for ${PRESETS.join(', ')} — data through ${through}${coverageNote}`
     : `Cache refresh completed with errors: ${allErrors.join('; ')}`;
 
-  console.log(message);
-  res.json({ ok: success, message });
+  console.log(JSON.stringify({ event: 'glv-meta-ads-cron', message, summaries }));
+  res.json({ ok: success, message, summaries });
 }
 
 module.exports = handler;
-module.exports._test = { cutoffDate, sinceDate, monthRange, redisCmd };
+module.exports._test = { cutoffDate, sinceDate, monthRange, redisCmd, summarizeRows };
