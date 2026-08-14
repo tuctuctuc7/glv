@@ -227,7 +227,7 @@ function renderKpiCard(key, view) {
     ? `Previous ${formatMetric(key, previous, true)}`
     : 'No valid previous baseline';
   const baselines = element('div', 'kpi-baselines');
-  baselines.append(element('span', 'kpi-context-text', baseline), element('span', 'kpi-target', 'Target · not connected'));
+  baselines.append(element('span', 'kpi-context-text', baseline));
   context.append(baselines, createSparkline(view.currentRows, key, config.color));
   card.append(top, valueRow, context);
   return card;
@@ -239,8 +239,8 @@ function renderKpis(view) {
   ['revenue', 'spend', 'purchases', 'new_customer_rate', 'cvr', 'aov', 'cpa', 'roas']
     .forEach((key) => container.appendChild(renderKpiCard(key, view)));
   $('comparisonLabel').textContent = view.comparison.previous
-    ? `${formatDate(view.previousBounds.from)} – ${formatDate(view.previousBounds.to)} · historical comparison · no targets configured`
-    : 'No valid previous-period baseline · no targets configured';
+    ? `${formatDate(view.previousBounds.from)} – ${formatDate(view.previousBounds.to)} · historical comparison`
+    : 'No valid previous-period baseline';
 }
 
 function renderExecutiveStrip(view, regions, actions) {

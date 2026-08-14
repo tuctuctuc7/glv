@@ -11,9 +11,12 @@ function has(pattern, message) {
   assert.match(html, pattern, message);
 }
 
-test('page has semantic navigation, main content, skip link, and status regions', () => {
+test('page has main content, a skip link, status regions, and no section tabs', () => {
   has(/class="skip-link"[^>]*href="#mainContent"/, 'missing skip link');
-  has(/<nav[^>]*aria-label="Dashboard sections"/, 'missing labelled dashboard navigation');
+  assert.doesNotMatch(html, /<nav[^>]*aria-label="Dashboard sections"/, 'top section tabs must be removed');
+  for (const label of ['Overview', 'Analysis', 'Details']) {
+    assert.doesNotMatch(html, new RegExp(`<a[^>]*>${label}<`, 'i'), `${label} tab must be removed`);
+  }
   has(/<main[^>]*id="mainContent"/, 'missing main landmark target');
   has(/id="loadingState"[^>]*role="status"/, 'missing loading status');
   has(/id="errorState"[^>]*role="alert"/, 'missing error alert');
@@ -107,8 +110,10 @@ test('market comparison exposes CEO decision columns with concise metric names',
   assert.doesNotMatch(html, /data-market-segment=/, 'nonfunctional market segment controls must be removed');
 });
 
-test('analysis and detail sections expose accessible toggles while KPI cards stay permanently visible', () => {
-  for (const target of ['trendContent', 'auditContent', 'marketComparisonContent']) {
+test('trajectory and KPI sections stay visible while detail sections expose accessible toggles', () => {
+  assert.doesNotMatch(html, /class="section-toggle"[^>]*aria-controls="trendContent"/, 'trajectory chart must not have a collapse toggle');
+  has(/id="trendContent"/, 'missing mandatory trajectory content');
+  for (const target of ['auditContent', 'marketComparisonContent']) {
     has(new RegExp(`class="section-toggle"[^>]*aria-controls="${target}"[^>]*aria-expanded="true"`), `missing toggle for ${target}`);
     has(new RegExp(`id="${target}"`), `missing collapsible content ${target}`);
   }
@@ -116,6 +121,11 @@ test('analysis and detail sections expose accessible toggles while KPI cards sta
   const kpiHeading = html.match(/<div class="section-heading compact-heading">([\s\S]*?)<div id="executiveKpis"/)?.[1] || '';
   assert.doesNotMatch(kpiHeading, /toggle-chevron/, '8-metric executive read must not show a toggle arrow');
   assert.match(app, /document\.querySelectorAll\('\.section-toggle'\)/, 'section toggles need event handling');
+});
+
+test('dashboard omits unconfigured target copy', () => {
+  assert.doesNotMatch(app, /no targets configured/i);
+  assert.doesNotMatch(app, /Target · not connected/i);
 });
 
 test('latest audit and market presentation feedback is encoded', () => {

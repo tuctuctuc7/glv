@@ -203,7 +203,7 @@ svg {
   border-bottom: 1px solid var(--border);
   display: grid;
   gap: 32px;
-  grid-template-columns: minmax(280px, 1fr) auto minmax(280px, 1fr);
+  grid-template-columns: minmax(280px, 1fr) auto;
   height: var(--header-height);
   padding: 0 28px;
   position: sticky;
@@ -213,7 +213,6 @@ svg {
 
 .header-brand,
 .header-actions,
-.app-header nav,
 .freshness,
 .scope-summary,
 .legend,
@@ -266,32 +265,6 @@ svg {
   letter-spacing: -0.01em;
   line-height: 1.1;
   margin: 0;
-}
-
-.app-header nav {
-  align-self: stretch;
-  gap: 4px;
-}
-
-.app-header nav a {
-  align-items: center;
-  border-bottom: 2px solid transparent;
-  color: var(--text-tertiary);
-  display: inline-flex;
-  font-size: 13px;
-  font-weight: 560;
-  padding: 2px 14px 0;
-  text-decoration: none;
-  transition: color 160ms ease, border-color 160ms ease;
-}
-
-.app-header nav a:hover,
-.app-header nav a[aria-current="page"] {
-  color: var(--text);
-}
-
-.app-header nav a[aria-current="page"] {
-  border-bottom-color: var(--accent);
 }
 
 .header-actions {
@@ -1875,7 +1848,6 @@ tbody tr:last-child td {
 .kpi-grid-executive .kpi-value-row { align-items: flex-start; flex-direction: column; gap: 5px; margin-top: 10px; }
 .kpi-grid-executive .kpi-context { margin-top: 9px; position: static; }
 .kpi-baselines { display: grid; gap: 2px; min-width: 0; }
-.kpi-target { color: var(--text-tertiary); font-size: 8px; opacity: .72; }
 .kpi-grid-executive .sparkline { width: 52px; }
 
 .analysis-canvas { display: grid; gap: 10px; }

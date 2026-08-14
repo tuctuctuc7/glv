@@ -98,7 +98,9 @@ async function run() {
       await page.locator('#activeRange').textContent(),
       new RegExp(`${displayDate(defaultStartDate)}.*${displayDate(latestDate)}`),
     );
-    assert.match(await page.locator('#comparisonLabel').textContent(), /no targets configured/);
+    assert.doesNotMatch(await page.locator('#comparisonLabel').textContent(), /no targets configured/i);
+    assert.equal(await page.getByText('Target · not connected', { exact: true }).count(), 0);
+    assert.equal(await page.locator('nav[aria-label="Dashboard sections"]').count(), 0, 'top section tabs must be removed');
     assert.ok(await page.locator('#trendChart').isVisible(), 'primary trend should be open by default');
     assert.equal(await page.locator('#trendMetric').inputValue(), 'revenue');
     assert.equal(await page.locator('#trendMetricSecondary').inputValue(), 'roas');
@@ -123,7 +125,9 @@ async function run() {
     assert.equal(logoGeometry.image.height, logoGeometry.mark.height, 'logo should fill its square vertically');
     assert.equal(await page.locator('.section-toggle[aria-controls="executiveKpis"]').count(), 0, 'KPI section must not have a toggle');
     assert.ok(await page.locator('#executiveKpis').isVisible(), 'KPI cards must stay visible');
-    for (const target of ['trendContent', 'auditContent', 'marketComparisonContent']) {
+    assert.equal(await page.locator('.section-toggle[aria-controls="trendContent"]').count(), 0, 'trajectory must not have a collapse toggle');
+    assert.ok(await page.locator('#trendContent').isVisible(), 'trajectory must stay visible');
+    for (const target of ['auditContent', 'marketComparisonContent']) {
       const toggle = page.locator(`.section-toggle[aria-controls="${target}"]`);
       await toggle.click();
       assert.equal(await page.locator(`#${target}`).isVisible(), false, `${target} should collapse`);
