@@ -22,8 +22,10 @@ function sinceDate(preset, includeToday = false, now = new Date()) {
 
 function monthRange(preset, includeToday = false, now = new Date()) {
   if (preset === 'this_month') {
-    const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-    return { since: since.toISOString().slice(0, 10), until: cutoffDate(includeToday, now) };
+    const until = cutoffDate(includeToday, now);
+    const cutoff = new Date(`${until}T00:00:00Z`);
+    const since = new Date(Date.UTC(cutoff.getUTCFullYear(), cutoff.getUTCMonth(), 1));
+    return { since: since.toISOString().slice(0, 10), until };
   }
   if (preset === 'last_month') {
     const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
@@ -81,6 +83,7 @@ function normalizeCampaign(row) {
     amount_spent: row.spend || '0',
     impressions: row.impressions || '0',
     'actions:link_click': getAction(row.actions, 'link_click'),
+    'actions:landing_page_view': getAction(row.actions, 'landing_page_view'),
     'actions:omni_purchase': getAction(row.actions, 'omni_purchase'),
     'actions:initiate_checkout': getAction(row.actions, 'initiate_checkout'),
     'actions:outbound_click': getAction(row.actions, 'outbound_click'),
@@ -101,6 +104,7 @@ function normalizeAd(row, statusMap) {
     amount_spent: row.spend || '0',
     impressions: row.impressions || '0',
     'actions:link_click': getAction(row.actions, 'link_click'),
+    'actions:landing_page_view': getAction(row.actions, 'landing_page_view'),
     'actions:omni_purchase': getAction(row.actions, 'omni_purchase'),
     'actions:initiate_checkout': getAction(row.actions, 'initiate_checkout'),
     'actions:outbound_click': getAction(row.actions, 'outbound_click'),

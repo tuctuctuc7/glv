@@ -56,9 +56,13 @@ test('shared Meta API exposes lead actions without changing the V1 route', () =>
   for (const file of ['api/glv-meta-ads/fb-data.js', 'api/glv-meta-ads/cron.js']) {
     const api = read(file);
     assert.match(api, /'actions:lead'/);
+    assert.match(api, /'actions:landing_page_view'/);
     assert.match(api, /onsite_conversion\.lead_grouped/);
     assert.match(api, /offsite_conversion\.fb_pixel_lead/);
   }
+  const v2 = read('public/glv-meta-ads-2/index.html');
+  assert.match(v2, /lp:parseNum\(r\['actions:landing_page_view'\]\)/);
+  assert.match(v2, /getPromoSegmentRows/);
 });
 
 test('manual Meta cron can include the current partial day without changing the scheduled yesterday cutoff', () => {
@@ -67,6 +71,7 @@ test('manual Meta cron can include the current partial day without changing the 
   assert.deepEqual(cron._test.monthRange('last_7d', false, now), { since: '2026-08-07', until: '2026-08-13' });
   assert.deepEqual(cron._test.monthRange('last_7d', true, now), { since: '2026-08-08', until: '2026-08-14' });
   assert.deepEqual(cron._test.monthRange('this_month', true, now), { since: '2026-08-01', until: '2026-08-14' });
+  assert.deepEqual(cron._test.monthRange('this_month', false, new Date('2026-09-01T00:05:00Z')), { since: '2026-08-01', until: '2026-08-31' });
   const source = read('api/glv-meta-ads/cron.js');
   assert.match(source, /include_today/);
   assert.match(source, /partial current day/);

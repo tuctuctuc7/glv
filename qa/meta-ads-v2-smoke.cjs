@@ -11,29 +11,31 @@ const browserLibRoot = '/home/tom/.cache/hermes-browser-libs/root';
 const evidenceDir = path.resolve(process.env.GLV_META_QA_EVIDENCE_DIR || '/tmp/glv-meta-ads-v2-qa');
 fs.mkdirSync(evidenceDir, { recursive: true });
 
-const campaign = (id, name, spend, revenue, purchases, checkouts, clicks, impressions, date, leads = 0) => ({
+const campaign = (id, name, spend, revenue, purchases, checkouts, clicks, impressions, date, leads = 0, landingViews = clicks) => ({
   id, name, amount_spent: String(spend), impressions: String(impressions),
   'actions:link_click': String(clicks), 'actions:omni_purchase': String(purchases),
   'actions:initiate_checkout': String(checkouts), 'actions:outbound_click': String(clicks),
-  'actions:lead': String(leads),
+  'actions:lead': String(leads), 'actions:landing_page_view': String(landingViews),
   'action_values:omni_purchase': String(revenue), date_start: date, date_stop: date,
 });
 const aggregate = [
   campaign('c1', 'GLV_101_CZ_Promo_August', 42000, 91000, 121, 238, 1280, 92000),
   campaign('c2', 'GLV_102_CZ_Kristyna_Core', 26000, 51000, 69, 141, 840, 61000),
   campaign('c3', 'GLV_103_CZ_BAU_Core', 31000, 58000, 72, 156, 950, 73000),
-  campaign('c4', 'GLV_104_CZ_Leads_August', 12000, 0, 0, 0, 360, 28000, undefined, 48),
+  campaign('c4', 'GLV_104_CZ_Leads_August', 12000, 0, 0, 0, 360, 28000, undefined, 48, 240),
   campaign('u1', 'GLV_201_US_Core', 55000, 47000, 38, 106, 1210, 132000),
 ];
 const daily = ['2026-08-10', '2026-08-11', '2026-08-12'].flatMap((date, day) => aggregate.map((row, i) => campaign(
   row.id, row.name, Number(row.amount_spent) / 3 + day * 100 + i, Number(row['action_values:omni_purchase']) / 3 + day * 250,
   Math.max(1, Math.round(Number(row['actions:omni_purchase']) / 3)), Math.max(1, Math.round(Number(row['actions:initiate_checkout']) / 3)),
-  Math.round(Number(row['actions:link_click']) / 3), Math.round(Number(row.impressions) / 3), date, Math.round(Number(row['actions:lead']) / 3),
+  Math.round(Number(row['actions:link_click']) / 3), Math.round(Number(row.impressions) / 3), date,
+  Math.round(Number(row['actions:lead']) / 3), Math.round(Number(row['actions:landing_page_view']) / 3),
 )));
 const ads = [
-  { id: 'a1', name: 'PAC500 · Founder video', status: 'ACTIVE', campaign_id: 'c1', amount_spent: '14000', impressions: '31000', 'actions:link_click': '430', 'actions:omni_purchase': '40', 'actions:initiate_checkout': '76', 'actions:outbound_click': '430', 'action_values:omni_purchase': '30000', video_thruplay_watched_actions: '4000', video_3_sec_watched_actions: '9000', video_p100_watched_actions: '1200' },
-  { id: 'a2', name: 'PAC501 · Product static', status: 'ACTIVE', campaign_id: 'c2', amount_spent: '9000', impressions: '23000', 'actions:link_click': '260', 'actions:omni_purchase': '23', 'actions:initiate_checkout': '48', 'actions:outbound_click': '260', 'action_values:omni_purchase': '18000', video_thruplay_watched_actions: '0', video_3_sec_watched_actions: '0', video_p100_watched_actions: '0' },
-  { id: 'a3', name: 'PAC502 · US proof video', status: 'ACTIVE', campaign_id: 'u1', amount_spent: '18000', impressions: '44000', 'actions:link_click': '390', 'actions:omni_purchase': '12', 'actions:initiate_checkout': '33', 'actions:outbound_click': '390', 'action_values:omni_purchase': '15000', video_thruplay_watched_actions: '5100', video_3_sec_watched_actions: '12000', video_p100_watched_actions: '1600' },
+  { id: 'a1', name: 'PAC500 · Founder video', status: 'ACTIVE', campaign_id: 'c1', amount_spent: '14000', impressions: '31000', 'actions:link_click': '430', 'actions:landing_page_view': '390', 'actions:omni_purchase': '40', 'actions:initiate_checkout': '76', 'actions:outbound_click': '430', 'actions:lead': '0', 'action_values:omni_purchase': '30000', video_thruplay_watched_actions: '4000', video_3_sec_watched_actions: '9000', video_p100_watched_actions: '1200' },
+  { id: 'a2', name: 'PAC501 · Product static', status: 'ACTIVE', campaign_id: 'c2', amount_spent: '9000', impressions: '23000', 'actions:link_click': '260', 'actions:landing_page_view': '220', 'actions:omni_purchase': '23', 'actions:initiate_checkout': '48', 'actions:outbound_click': '260', 'actions:lead': '0', 'action_values:omni_purchase': '18000', video_thruplay_watched_actions: '0', video_3_sec_watched_actions: '0', video_p100_watched_actions: '0' },
+  { id: 'a3', name: 'PAC502 · US proof video', status: 'ACTIVE', campaign_id: 'u1', amount_spent: '18000', impressions: '44000', 'actions:link_click': '390', 'actions:landing_page_view': '340', 'actions:omni_purchase': '12', 'actions:initiate_checkout': '33', 'actions:outbound_click': '390', 'actions:lead': '0', 'action_values:omni_purchase': '15000', video_thruplay_watched_actions: '5100', video_3_sec_watched_actions: '12000', video_p100_watched_actions: '1600' },
+  { id: 'a4', name: 'PAC503 · Lead form static', status: 'ACTIVE', campaign_id: 'c4', amount_spent: '4000', impressions: '9000', 'actions:link_click': '120', 'actions:landing_page_view': '80', 'actions:omni_purchase': '0', 'actions:initiate_checkout': '0', 'actions:outbound_click': '120', 'actions:lead': '16', 'action_values:omni_purchase': '0', video_thruplay_watched_actions: '0', video_3_sec_watched_actions: '0', video_p100_watched_actions: '0' },
 ];
 
 function server() {
@@ -93,11 +95,17 @@ async function run() {
       assert.equal(await page.locator('#creative-czsk th', { hasText: 'Leads' }).count(), 1);
       assert.equal(await page.locator('#creative-czsk th', { hasText: 'CPL' }).count(), 1);
       assert.equal(await page.locator('#creative-czsk th', { hasText: 'LP→Lead' }).count(), 1);
+      assert.equal(await page.locator('#creative-czsk tbody tr').count(), 3);
+      const leadCreativeText = await page.locator('#creative-czsk tbody tr', { hasText: 'PAC503' }).textContent();
+      assert.match(leadCreativeText, /16/);
+      assert.match(leadCreativeText, /250/);
+      assert.match(leadCreativeText, /20\.00%/);
       for (const metric of ['leads', 'cpl', 'lp2lead']) assert.equal(await page.locator(`#chart-left-czsk option[value="${metric}"]`).count(), 1);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), 0);
 
       await page.locator('[data-tab="czsk-promo"]').click();
       assert.equal(await page.locator('#kpi-czsk-promo .kpi-card').count(), 3);
+      assert.deepEqual(await page.locator('#kpi-czsk-promo .kpi-val').allTextContents(), ['42,000', '26,000', '31,000']);
       assert.ok(await page.locator('#promo-table tbody tr').count() >= 6);
       assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-promo-spend')) && Boolean(window.Chart.getChart('chart-promo-pie'))));
       await page.locator('#promo-active-days-only').check();
@@ -111,6 +119,7 @@ async function run() {
       assert.ok(await page.locator('#leadgen-table tbody tr').count() >= 8);
       assert.equal((await page.locator('#leadgen-table tbody').textContent()).includes('Lead-gen'), true);
       assert.equal((await page.locator('#leadgen-table tbody').textContent()).includes('Sales'), true);
+      assert.match(await page.locator('#leadgen-table tbody').textContent(), /20\.00%/);
       assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-leadgen-spend')) && Boolean(window.Chart.getChart('chart-leadgen-pie'))));
       await page.locator('#leadgen-only').check();
       assert.equal(await page.locator('#kpi-czsk-leadgen .kpi-card').count(), 1);
