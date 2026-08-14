@@ -234,7 +234,7 @@ async function handler(req, res) {
     : `Cache refresh completed with errors: ${allErrors.join('; ')}`;
 
   console.log(JSON.stringify({ event: 'glv-meta-ads-cron', message, summaries }));
-  res.json({ ok: success, message, summaries });
+  res.status(success ? 200 : 500).json({ ok: success, message, summaries });
 }
 
 module.exports = handler;

@@ -89,6 +89,8 @@ test('Meta cron rejects failed Redis writes instead of reporting a false success
     await assert.rejects(cron._test.redisCmd('SET', 'key', 'value'), /Redis HTTP 500/);
     global.fetch = async () => ({ ok: true, status: 200, json: async () => ({ error: 'ERR simulated' }) });
     await assert.rejects(cron._test.redisCmd('SET', 'key', 'value'), /Redis: ERR simulated/);
+    global.fetch = async () => ({ ok: true, status: 200, json: async () => ({ result: 'OK' }) });
+    assert.deepEqual(await cron._test.redisCmd('SET', 'key', 'value'), { result: 'OK' });
   } finally {
     global.fetch = originalFetch;
     if (originalUrl === undefined) delete process.env.KV_REST_API_URL; else process.env.KV_REST_API_URL = originalUrl;
@@ -102,6 +104,42 @@ test('Meta cron reports aggregate lead and landing-page-view totals for verifica
     { 'actions:lead': '3', 'actions:landing_page_view': '12' },
     { 'actions:lead': '2', 'actions:landing_page_view': '8' },
   ]), { rows: 2, leads: 5, landingPageViews: 20 });
+});
+
+test('Meta cron returns HTTP 500 when cache writes fail', async () => {
+  const cron = require('../api/glv-meta-ads/cron.js');
+  const originalFetch = global.fetch;
+  const originalLog = console.log;
+  const envNames = ['CRON_SECRET', 'GLV_META_FB_ACCESS_TOKEN', 'KV_REST_API_URL', 'KV_REST_API_TOKEN'];
+  const originalEnv = Object.fromEntries(envNames.map(name => [name, process.env[name]]));
+  Object.assign(process.env, {
+    CRON_SECRET: 'test-cron-secret',
+    GLV_META_FB_ACCESS_TOKEN: 'test-meta-token',
+    KV_REST_API_URL: 'https://redis.invalid',
+    KV_REST_API_TOKEN: 'test-redis-token',
+  });
+  try {
+    console.log = () => {};
+    global.fetch = async (_url, options) => options?.method === 'POST'
+      ? { ok: false, status: 500, json: async () => ({ error: 'write failed' }) }
+      : { ok: true, status: 200, json: async () => ({ data: [] }) };
+    const response = {
+      statusCode: 200,
+      body: null,
+      status(code) { this.statusCode = code; return this; },
+      json(body) { this.body = body; return body; },
+    };
+    await cron({ headers: { authorization: 'Bearer test-cron-secret' }, query: { include_today: '1' } }, response);
+    assert.equal(response.statusCode, 500);
+    assert.equal(response.body.ok, false);
+    assert.match(response.body.message, /Redis HTTP 500/);
+  } finally {
+    global.fetch = originalFetch;
+    console.log = originalLog;
+    for (const name of envNames) {
+      if (originalEnv[name] === undefined) delete process.env[name]; else process.env[name] = originalEnv[name];
+    }
+  }
 });
 
 test('Meta Ads V2 provides accessible light and dark theme UX', () => {
