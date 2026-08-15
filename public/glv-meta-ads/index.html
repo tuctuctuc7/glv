@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GLV Dashboard · Gelavis Ads</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GLV Meta Ads Pulse</title>
+<link rel="icon" type="image/svg+xml" href="/glv-meta-ads/agenthic-logo.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="/glv-meta-ads/apple-touch-icon.png">
+<meta name="color-scheme" content="dark light">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/theme/mermaid.min.css" integrity="sha384-jZvDSsmGB9oGGT/4l9bHXGoAv1OxvG/cFmSo0dZaSqmBgvQTKDBFAMftlXTmMbNW" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/gridjs.umd.js" integrity="sha384-/XXDzxe4FsGiAe50i/u9pY/Vy/uX654MHB1xoc1BJNnH1WXHhqHga9g3q5tF4gj7" crossorigin="anonymous"></script>
@@ -82,11 +85,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .metric-label{font-size:12px;font-weight:600;color:var(--gray600);}
 .chart-wrap{position:relative;height:240px;}
 .chart-grid{display:grid;grid-template-columns:2fr 2fr 1.25fr;gap:16px;}
+.leadgen-chart-grid{grid-template-columns:2fr 1.25fr;}
+.leadgen-chart-grid.single{grid-template-columns:1fr;}
+.leadgen-chart-grid .chart-card.hidden{display:none;}
+.leadgen-single-metric,.leadgen-dual-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.leadgen-single-metric.hidden,.leadgen-dual-controls.hidden{display:none;}
+.mobile-axis-label{display:none;}
 .chart-card{min-width:0;}
 .chart-card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray600);margin-bottom:10px;}
 .promo-note{font-size:12px;color:var(--gray600);line-height:1.45;margin-bottom:14px;}
 .group-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;}
-.group-promo{background:#eff6ff;color:#2563eb;}.group-wl{background:#f5f3ff;color:#7c3aed;}.group-bau{background:#f0fdf4;color:#15803d;}
+.group-promo{background:#eff6ff;color:#2563eb;}.group-wl{background:#f5f3ff;color:#7c3aed;}.group-bau{background:#f0fdf4;color:#15803d;}.group-leadgen{background:#fff7ed;color:#c2410c;}.group-sales{background:#f0fdf4;color:#15803d;}
 .toggle-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .tick-filter{display:flex;align-items:center;gap:8px;background:var(--gray50);border:1px solid var(--gray200);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--gray800);cursor:pointer;user-select:none;}
 .tick-filter.hidden{display:none;}
@@ -100,7 +109,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* ── Campaign Filter ── */
 .filter-wrap{position:relative;margin-bottom:14px;}
-.filter-toggle{background:var(--gray50);border:1px solid var(--gray200);border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:220px;max-width:400px;user-select:none;}
+.filter-toggle{background:var(--gray50);border:1px solid var(--gray200);border-radius:8px;padding:7px 12px;font-family:inherit;font-size:13px;color:var(--gray800);text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:220px;max-width:400px;user-select:none;}
 .filter-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:50;background:#fff;border:1px solid var(--gray200);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:340px;padding:8px;}
 .filter-dropdown.open{display:block;}
 .filter-search{width:100%;border:1px solid var(--gray200);border-radius:6px;padding:6px 10px;font-size:13px;margin-bottom:6px;outline:none;}
@@ -186,14 +195,65 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
 /* ── Responsive ── */
 @media(max-width:1100px){.chart-grid{grid-template-columns:1fr;}}
 @media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.header-tabs{overflow-x:auto;}.tab-btn{padding-left:14px;padding-right:14px;}}
+
+html[data-theme="dark"]{color-scheme:dark;--bg:#080d14;--surface:#101924;--surface-2:#152230;--line:#28384a;--line-soft:#1d2b3a;--ink:#f7f9fc;--muted:#9bacc0;--blue:#63b9ee;--green:#8edba7;--red:#ff817d;--amber:#ffbd63;--violet:#ac98ff;--shadow:0 18px 46px rgba(0,0,0,.22)}
+html[data-theme="light"]{color-scheme:light;--bg:#f1f5f8;--surface:#fff;--surface-2:#f7fafc;--line:#d9e2ea;--line-soft:#e7edf2;--ink:#111c28;--muted:#637589;--blue:#177fbe;--green:#238a51;--red:#c74642;--amber:#a8680a;--violet:#7458c7;--shadow:0 14px 36px rgba(36,57,78,.10)}
+body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transparent 30%),var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding-top:126px;transition:background .2s ease,color .2s ease}.skip-link{position:fixed;left:16px;top:-60px;z-index:1000;background:var(--blue);color:#071019;padding:10px 14px;border-radius:8px;font-weight:800}.skip-link:focus{top:12px}.sticky-header{background:color-mix(in srgb,var(--bg) 92%,transparent);border-bottom:1px solid var(--line-soft);box-shadow:none;backdrop-filter:blur(18px)}.header-top{max-width:1480px;margin:auto;padding:14px 24px;border-bottom:1px solid var(--line-soft)}.header-brand{display:flex;align-items:center;gap:12px;min-width:0}.brand-logo{width:38px;height:38px;border-radius:9px}.brand-copy{display:flex;flex-direction:column;gap:2px}.header-logo{color:var(--ink);font-size:14px;letter-spacing:.01em}.header-logo span{display:block;color:var(--muted);font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin:0}.header-eyebrow{color:var(--blue);font-size:10px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}.header-right{gap:10px}.updated-at{color:var(--muted)}
+.date-btn,.header-right .tick-filter,.theme-toggle{min-height:42px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:10px}.date-btn:hover,.header-right .tick-filter:hover,.theme-toggle:hover{background:color-mix(in srgb,var(--surface-2) 80%,var(--blue))}.date-btn-range,.date-btn-arrow{color:var(--muted)}.theme-toggle{width:42px;display:grid;place-items:center;cursor:pointer;font-size:17px}.theme-toggle:focus-visible,.date-btn:focus-visible,.tab-btn:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid color-mix(in srgb,var(--blue) 45%,transparent);outline-offset:2px}.header-tabs{max-width:1480px;margin:auto;background:transparent;padding:0 24px;gap:6px}.tab-btn{color:var(--muted);border:0;padding:11px 14px;border-radius:9px 9px 0 0;min-height:42px}.tab-btn.active{color:var(--ink);background:var(--surface);box-shadow:inset 0 -2px var(--blue)}.tab-btn:hover:not(.active){color:var(--ink);background:var(--surface-2)}
+.page{max-width:1480px;padding:24px}.dashboard-intro{display:flex;justify-content:space-between;gap:24px;align-items:end;margin-bottom:20px}.dashboard-kicker{color:var(--blue);font-size:10px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}.dashboard-title{font-size:clamp(26px,3vw,42px);letter-spacing:-.05em;line-height:1;font-weight:850;margin:7px 0}.dashboard-sub{color:var(--muted);max-width:720px;line-height:1.5}.scope-pill{border:1px solid var(--line);background:var(--surface);border-radius:999px;color:var(--muted);padding:8px 12px;font-size:11px;font-weight:750;white-space:nowrap}.section,.kpi-card{background:linear-gradient(145deg,var(--surface),color-mix(in srgb,var(--surface) 92%,var(--blue)));border:1px solid var(--line-soft);box-shadow:var(--shadow)}.section{border-radius:16px;padding:18px;margin-bottom:16px}.section-title{color:var(--muted);font-size:10px;letter-spacing:.12em}.kpi-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.kpi-card{border-radius:14px;padding:16px}.kpi-card:hover{border-color:var(--line);box-shadow:var(--shadow);transform:translateY(-1px)}.kpi-card.hl{border-top:1px solid var(--line-soft);box-shadow:inset 0 2px var(--blue),var(--shadow)}.kpi-label{color:var(--muted);font-size:10px;letter-spacing:.1em}.kpi-val{color:var(--ink);font-size:clamp(22px,2.1vw,31px);letter-spacing:-.045em}.kpi-sub{color:var(--muted)}.kpi-sub2{color:var(--ink)}
+.metric-select,.filter-toggle,.filter-search,.segmented,.sort-dir-btn,.tick-filter,.date-menu,.date-custom-row input[type=date]{background:var(--surface-2);border-color:var(--line);color:var(--ink)}.date-menu,.filter-dropdown{background:var(--surface);border-color:var(--line);box-shadow:var(--shadow)}.date-preset-item{color:var(--ink)}.date-preset-item:hover,.filter-option:hover{background:var(--surface-2)}.date-preset-item.active{background:color-mix(in srgb,var(--blue) 14%,var(--surface));color:var(--blue)}.date-custom-section,.filter-actions{border-color:var(--line-soft)}.segmented button{border-color:var(--line);color:var(--muted)}.segmented button.active{background:var(--surface);color:var(--blue)}.chart-wrap{height:280px}.chart-card-title,.metric-label,.promo-note{color:var(--muted)}.table-outer::before{content:'Swipe horizontally for all metrics →';display:block;margin:0 0 8px;color:var(--muted);font-size:10px;font-weight:750;letter-spacing:.06em}.data-table-wrap{border-color:var(--line-soft)}.data-table th,.data-table td{background:var(--surface);border-color:var(--line-soft);color:var(--ink)}.data-table th{background:var(--surface-2);color:var(--muted)}.data-table tr.subtotal-row td{background:color-mix(in srgb,var(--green) 10%,var(--surface));border-color:var(--line)}.data-table tr.child-row td:first-child,.nested-child{color:var(--muted)}.loading,.empty{color:var(--muted)}.spinner{border-color:var(--line);border-top-color:var(--blue)}.err{background:color-mix(in srgb,var(--red) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--red) 36%,var(--line));border-radius:12px;margin-bottom:16px}.mobile-controls-toggle{display:none}
+@media(min-width:901px){.table-outer::before{display:none}}@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.chart-grid{grid-template-columns:1fr}.dashboard-intro{align-items:flex-start}}@media(max-width:720px){body{padding-top:118px}.header-top{padding:10px 14px}.header-tabs{padding:0 10px}.header-logo span,.updated-at,.date-btn-range{display:none}.header-right{gap:6px}.brand-logo{width:34px;height:34px}.date-btn{padding:6px 9px}.page{padding:16px 12px}.dashboard-intro{display:block}.scope-pill{display:inline-flex;margin-top:12px}.kpi-grid{gap:8px}.kpi-card{padding:13px 12px}.kpi-val{font-size:23px}.section{padding:14px 12px}.chart-wrap{height:240px}.mobile-controls-toggle{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink);font-weight:750}.header-right.controls-collapsed .date-wrap,.header-right.controls-collapsed .tick-filter,.header-right.controls-collapsed .updated-at{display:none}.date-menu{position:fixed;left:12px;right:12px;top:70px;min-width:0}.filter-dropdown{position:fixed;left:12px;right:12px;top:130px;min-width:0;max-height:70vh;overflow:auto}.section-controls,.creative-controls{align-items:stretch}.filter-toggle{min-width:0;width:100%}}@media(max-width:360px){.header-logo{font-size:12px}.tab-btn{font-size:12px}.kpi-val{font-size:20px}}
+.tab-mobile-label{display:none}
+@media(max-width:720px){
+  body{padding-top:calc(64px + env(safe-area-inset-top));padding-bottom:calc(76px + env(safe-area-inset-bottom));overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent}
+  .sticky-header{backdrop-filter:none;-webkit-backdrop-filter:none}
+  .header-top{height:calc(64px + env(safe-area-inset-top));padding:calc(10px + env(safe-area-inset-top)) 12px 10px;border-bottom:1px solid var(--line-soft)}
+  .header-brand{gap:9px}.brand-logo{width:32px;height:32px}.header-eyebrow{display:none}.header-logo{font-size:13px;line-height:1.15}.header-logo span{display:none}
+  .header-right{gap:6px}.header-right.controls-collapsed{position:static}.header-right.controls-collapsed .date-wrap,.header-right.controls-collapsed .tick-filter,.header-right.controls-collapsed .updated-at{display:none}
+  .header-right:not(.controls-collapsed){position:fixed;z-index:220;top:calc(70px + env(safe-area-inset-top));left:10px;right:10px;display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .header-right:not(.controls-collapsed) .date-wrap,.header-right:not(.controls-collapsed) .tick-filter{display:flex;grid-column:1/-1;width:100%}
+  .header-right:not(.controls-collapsed) .tick-filter.hidden{display:none}
+  .header-right:not(.controls-collapsed) .date-btn{width:100%;justify-content:space-between}.header-right:not(.controls-collapsed) .theme-toggle{grid-column:1}.header-right:not(.controls-collapsed) .mobile-controls-toggle{grid-column:2}
+  .mobile-controls-toggle,.theme-toggle{min-height:44px;height:44px;touch-action:manipulation}.mobile-controls-toggle{padding:0 12px}.theme-toggle{width:44px}
+  .header-right:not(.controls-collapsed) .date-btn,.header-right:not(.controls-collapsed) .tick-filter{min-height:44px}
+  .header-tabs{position:fixed;z-index:190;left:0;right:0;bottom:0;height:calc(64px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;padding:0 max(4px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(4px,env(safe-area-inset-left));overflow:visible;background:color-mix(in srgb,var(--bg) 94%,transparent);border-top:1px solid var(--line);box-shadow:0 -8px 28px rgba(0,0,0,.18);backdrop-filter:blur(18px)}
+  .header-tabs .tab-btn{display:flex;align-items:center;justify-content:center;min-width:0;min-height:63px;padding:6px 2px;border-radius:0;font-size:10px;line-height:1.1;box-shadow:none!important;touch-action:manipulation}
+  .tab-desktop-label{display:none}.tab-mobile-label{display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:800}.tab-mobile-icon{font-size:17px;line-height:1;transition:transform .15s ease}.tab-btn.active{color:var(--blue);background:color-mix(in srgb,var(--blue) 10%,var(--surface));box-shadow:inset 0 3px var(--blue)!important}.tab-btn.active .tab-mobile-icon{transform:translateY(-1px) scale(1.06)}
+  .page{padding:12px 10px 8px}.dashboard-intro{margin:0 2px 12px}.dashboard-kicker,.dashboard-sub,.scope-pill{display:none}.dashboard-title{font-size:24px;line-height:1.05;margin:0;letter-spacing:-.04em}
+  .kpi-grid{display:grid;grid-template-rows:repeat(2,minmax(94px,auto));grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:calc(42.857% - 7px);gap:8px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x mandatory;scrollbar-width:none;padding:0 2px 6px;margin-bottom:10px}.kpi-grid::-webkit-scrollbar{display:none}.kpi-card{scroll-snap-align:start;min-width:0;padding:12px}.kpi-label{font-size:9px}.kpi-val{font-size:22px}.kpi-sub,.kpi-sub2{font-size:10px}
+  #kpi-czsk-promo,#kpi-czsk-leadgen{grid-template-rows:none;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-flow:row;grid-auto-columns:auto;overflow:visible;scroll-snap-type:none}
+  #kpi-czsk-leadgen .kpi-card:only-child{grid-column:1/-1}
+  .section{padding:13px 10px;margin-bottom:10px;border-radius:14px}.section-title{margin-bottom:11px}.promo-note{font-size:11px;margin-bottom:10px}
+  .chart-controls{display:grid;gap:8px 10px;align-items:center;margin-bottom:10px}.mobile-axis-label{display:inline}.desktop-axis-label{display:none}.axis-controls{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto 44px;gap:5px 8px;align-items:end}.axis-controls .metric-label{grid-row:1;font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em}.axis-controls .metric-select{grid-row:2;width:100%;min-width:0;height:44px;padding:0 8px}.axis-controls .axis-bars{grid-column:1}.axis-controls .axis-line{grid-column:2}.axis-controls .axis-grain{grid-column:3}.axis-controls .axis-metric{grid-column:1/3}.leadgen-axis-controls .leadgen-single-metric:not(.hidden),.leadgen-axis-controls .leadgen-dual-controls:not(.hidden){display:contents}.leadgen-dual-controls.hidden,.leadgen-single-metric.hidden{display:none}.chart-wrap{height:220px;margin-left:0}.chart-card-title{margin-bottom:7px}
+  .section-controls,.creative-controls{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px}.section-controls .filter-wrap,.creative-controls .filter-wrap{width:100%;margin:0}.sort-controls{display:grid;grid-template-columns:auto minmax(0,1fr) 44px;gap:8px;width:100%;align-items:center}.creative-controls .sort-controls{grid-template-columns:54px minmax(0,1fr) 44px}.creative-controls .sort-controls>:nth-child(2){grid-column:2/4}.creative-controls .sort-controls>:nth-child(3){grid-column:1}.creative-controls .sort-controls>:nth-child(4){grid-column:2}.creative-controls .sort-controls>:nth-child(5){grid-column:3}.metric-select,.filter-toggle{height:44px;min-height:44px;padding:0 12px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:500;line-height:1.2}.sort-dir-btn{width:44px;height:44px;min-height:44px}.filter-toggle{max-width:none!important}.filter-dropdown{top:78px}
+  .compact-table-controls{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) 44px;grid-template-rows:auto 44px;gap:5px 8px;align-items:end}.compact-creative-controls{grid-template-columns:minmax(0,1.35fr) minmax(50px,.72fr) minmax(60px,1fr) 44px;grid-template-rows:auto 44px;gap:5px 8px;align-items:end}.compact-table-controls>.filter-wrap,.compact-creative-controls>.filter-wrap{display:grid;grid-template-rows:auto 44px;gap:5px;grid-column:1;grid-row:1/3;min-width:0}.compact-table-controls>.filter-wrap::before,.compact-creative-controls>.filter-wrap::before{content:attr(data-mobile-label);font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em;color:var(--gray600)}.compact-table-controls>.sort-controls,.compact-creative-controls>.sort-controls{display:contents}.compact-table-controls>.sort-controls>.metric-label,.compact-creative-controls>.sort-controls>.metric-label{grid-row:1;font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em}.compact-table-controls>.sort-controls>.metric-label{grid-column:2}.compact-table-controls>.sort-controls>.metric-select{grid-column:2;grid-row:2;min-width:0;width:100%}.compact-table-controls>.sort-controls>.sort-dir-btn{grid-column:3;grid-row:2}.compact-creative-controls>.sort-controls>:nth-child(1){grid-column:2;grid-row:1}.compact-creative-controls>.sort-controls>:nth-child(2){grid-column:2;grid-row:2;min-width:0;width:100%;padding-inline:8px}.compact-creative-controls>.sort-controls>:nth-child(3){grid-column:3;grid-row:1}.compact-creative-controls>.sort-controls>:nth-child(4){grid-column:3;grid-row:2;min-width:0;width:100%;padding-inline:8px}.compact-creative-controls>.sort-controls>:nth-child(5){grid-column:4;grid-row:2}.compact-table-controls .filter-toggle>span:first-child,.compact-creative-controls .filter-toggle>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.compact-table-controls .filter-dropdown,.compact-creative-controls .filter-dropdown{left:20px;right:auto;top:66px;width:calc(100vw - 40px)}
+  .filter-search,.filter-option,.filter-action-btn{min-height:44px}.filter-search{padding:10px 12px}.filter-option{padding:9px 10px}.filter-action-btn{display:inline-flex;align-items:center;justify-content:center;padding:9px 12px}
+  .table-outer{margin:0 -2px}.table-outer::before{margin:0 2px 7px;font-size:9px}.data-table-wrap,.scrollable-grid .gridjs-wrapper{max-height:62vh;scrollbar-width:thin;overscroll-behavior:contain}.data-table th,.data-table td{height:42px;padding:9px 8px;width:104px;min-width:104px;max-width:104px}.data-table .wide{width:154px;min-width:154px;max-width:154px}
+  .daily-data-table th:nth-child(2),.daily-data-table th:nth-child(3),.daily-data-table th:nth-child(4),.creative-data-table th:nth-child(2),.creative-data-table th:nth-child(3),.creative-grid th.gridjs-th:nth-child(2),.creative-grid th.gridjs-th:nth-child(3){position:sticky!important;top:0!important;left:auto!important;z-index:4!important;box-shadow:none!important}
+  .daily-data-table td:nth-child(2),.daily-data-table td:nth-child(3),.daily-data-table td:nth-child(4),.creative-data-table td:nth-child(2),.creative-data-table td:nth-child(3),.creative-grid td.gridjs-td:nth-child(2),.creative-grid td.gridjs-td:nth-child(3){position:static!important;left:auto!important;box-shadow:none!important}
+  .daily-data-table th:nth-child(1),.daily-data-table td:nth-child(1),.creative-data-table th:nth-child(1),.creative-data-table td:nth-child(1),.creative-grid th.gridjs-th:nth-child(1),.creative-grid td.gridjs-td:nth-child(1){left:0!important;box-shadow:1px 0 0 var(--line)!important}
+  .date-menu{top:122px}.filter-dropdown{left:10px;right:10px;top:80px}
+}
+@media(max-width:720px){
+  .compact-table-controls>.filter-wrap::before,.compact-creative-controls>.filter-wrap::before,.compact-table-controls>.sort-controls>.metric-label,.compact-creative-controls>.sort-controls>.metric-label,.compact-grouped-table-controls>.toggle-row>.metric-label{color:var(--muted)}
+  .compact-grouped-table-controls{grid-template-rows:auto 44px auto 44px}
+  .compact-grouped-table-controls>.toggle-row{display:grid;grid-template-rows:auto 44px;grid-column:1/-1;grid-row:3/5;gap:5px;min-width:0}
+  .compact-grouped-table-controls>.toggle-row>.metric-label{font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em}
+  .compact-grouped-table-controls>.toggle-row>.segmented{display:flex;width:100%;height:44px;min-width:0}
+  .compact-grouped-table-controls>.toggle-row>.segmented button{flex:1;min-width:0;min-height:44px;padding:0 8px}
+}
+@media(max-width:720px) and (hover:none){.kpi-card:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
 </style>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to dashboard content</a>
 
 <!-- ═══ STICKY HEADER ═══ -->
 <header class="sticky-header">
   <div class="header-top">
-    <div class="header-logo">GELAVIS Meta Ads <span>Account 359758259164738 · CZK</span></div>
+    <div class="header-brand"><img class="brand-logo" src="/glv-meta-ads/agenthic-logo.svg" alt=""><div class="brand-copy"><span class="header-eyebrow">Paid media intelligence</span><div class="header-logo">GLV Meta Ads Pulse <span>GELAVIS · CZK reporting</span></div></div></div>
     <div class="header-right">
       <div class="date-wrap" id="date-wrap">
         <button class="date-btn" id="date-btn" onclick="toggleDateMenu()">
@@ -225,17 +285,29 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
         <input type="checkbox" id="promo-active-days-only" onchange="setPromoActiveDaysOnly(this.checked)">
         <span>Promo only</span>
       </label>
+      <label class="tick-filter" id="include-leadgen-wrap">
+        <input type="checkbox" id="include-leadgen" onchange="setIncludeLeadGen(this.checked)">
+        <span>Include Lead-gen</span>
+      </label>
+      <label class="tick-filter hidden" id="leadgen-only-wrap">
+        <input type="checkbox" id="leadgen-only" onchange="setLeadgenOnly(this.checked)">
+        <span>Lead-gen only</span>
+      </label>
       <span class="updated-at" id="updated-at"></span>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">☀</button>
+      <button class="mobile-controls-toggle" id="mobile-controls-toggle" type="button" aria-expanded="true" aria-controls="date-wrap">Filters</button>
     </div>
   </div>
   <div class="header-tabs">
-    <button class="tab-btn active" data-tab="czsk">🇨🇿 CZSK</button>
-    <button class="tab-btn" data-tab="czsk-promo">CZSK Promo</button>
-    <button class="tab-btn" data-tab="us">🇺🇸 US</button>
+    <button class="tab-btn active" data-tab="czsk"><span class="tab-desktop-label">🇨🇿 CZSK</span><span class="tab-mobile-label"><span class="tab-mobile-icon">🇨🇿</span>CZSK</span></button>
+    <button class="tab-btn" data-tab="czsk-promo"><span class="tab-desktop-label">CZSK Promo</span><span class="tab-mobile-label"><span class="tab-mobile-icon">◫</span>Promo</span></button>
+    <button class="tab-btn" data-tab="czsk-leadgen"><span class="tab-desktop-label">CZSK Lead-gen</span><span class="tab-mobile-label"><span class="tab-mobile-icon">◎</span>Lead-gen</span></button>
+    <button class="tab-btn" data-tab="us"><span class="tab-desktop-label">🇺🇸 US</span><span class="tab-mobile-label"><span class="tab-mobile-icon">🇺🇸</span>US</span></button>
   </div>
 </header>
 
-<div class="page">
+<main class="page" id="main-content">
+  <section class="dashboard-intro" aria-labelledby="dashboard-title"><div><p class="dashboard-kicker">Executive media control room</p><h1 class="dashboard-title" id="dashboard-title">Performance, without the noise.</h1><p class="dashboard-sub">Campaign efficiency, promo contribution, creative health, and daily evidence across CZSK and US.</p></div><div class="scope-pill">META ADS · ACCOUNT CURRENCY CZK</div></section>
 <div id="loading" class="loading"><div class="spinner"></div><span id="loading-msg">Loading campaigns…</span></div>
 <div id="error" class="err" style="display:none;"></div>
 
@@ -244,27 +316,27 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
   <div class="kpi-grid" id="kpi-czsk"></div>
   <div class="section">
     <div class="section-title">Daily Performance Chart</div>
-    <div class="chart-controls">
-      <span class="metric-label">X-axis:</span>
-      <select class="metric-select" id="chart-grain-czsk" onchange="setChartGranularity('czsk',this.value)">
+    <div class="chart-controls axis-controls">
+      <span class="metric-label axis-grain"><span class="desktop-axis-label">X-axis:</span><span class="mobile-axis-label">Grain</span></span>
+      <select class="metric-select axis-grain" id="chart-grain-czsk" onchange="setChartGranularity('czsk',this.value)">
         <option value="day">Day</option>
         <option value="week">Week</option>
         <option value="month">Month</option>
       </select>
-      <span class="metric-label">Left Y:</span>
-      <select class="metric-select" id="chart-left-czsk" onchange="refreshChart('czsk')"></select>
-      <span class="metric-label">Right Y:</span>
-      <select class="metric-select" id="chart-right-czsk" onchange="refreshChart('czsk')"></select>
+      <span class="metric-label axis-bars"><span class="desktop-axis-label">Left Y:</span><span class="mobile-axis-label">Bars</span></span>
+      <select class="metric-select axis-bars" id="chart-left-czsk" onchange="refreshChart('czsk')"></select>
+      <span class="metric-label axis-line"><span class="desktop-axis-label">Right Y:</span><span class="mobile-axis-label">Line</span></span>
+      <select class="metric-select axis-line" id="chart-right-czsk" onchange="refreshChart('czsk')"></select>
     </div>
     <div class="chart-wrap"><canvas id="chart-czsk"></canvas></div>
   </div>
   <div class="section">
     <div class="section-title">Daily Campaign Table</div>
-    <div class="section-controls">
-      <div class="filter-wrap" id="filter-wrap-czsk">
-        <div class="filter-toggle" id="filter-toggle-czsk" onclick="toggleFilter('czsk')">
+    <div class="section-controls compact-table-controls">
+      <div class="filter-wrap" id="filter-wrap-czsk" data-mobile-label="Campaign">
+        <button type="button" class="filter-toggle" id="filter-toggle-czsk" aria-expanded="false" aria-controls="filter-dropdown-czsk" onclick="toggleFilter('czsk')">
           <span id="filter-label-czsk">All campaigns</span><span style="color:var(--gray400)">▾</span>
-        </div>
+        </button>
         <div class="filter-dropdown" id="filter-dropdown-czsk">
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk', this.value)">
           <div class="filter-options-list" id="filter-options-czsk"></div>
@@ -284,11 +356,11 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
   </div>
   <div class="section">
     <div class="section-title">Creative Evaluation</div>
-    <div class="creative-controls">
-      <div class="filter-wrap" id="creative-filter-wrap-czsk">
-        <div class="filter-toggle" id="creative-filter-toggle-czsk" onclick="toggleFilter('czsk-creative')" style="max-width:300px;">
+    <div class="creative-controls compact-creative-controls">
+      <div class="filter-wrap" id="creative-filter-wrap-czsk" data-mobile-label="Campaign">
+        <button type="button" class="filter-toggle" id="creative-filter-toggle-czsk" aria-expanded="false" aria-controls="filter-dropdown-czsk-creative" onclick="toggleFilter('czsk-creative')" style="max-width:300px;">
           <span id="creative-filter-label-czsk">All campaigns</span><span style="color:var(--gray400)">▾</span>
-        </div>
+        </button>
         <div class="filter-dropdown" id="filter-dropdown-czsk-creative">
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk-creative', this.value)">
           <div class="filter-options-list" id="filter-options-czsk-creative"></div>
@@ -340,11 +412,11 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
   </div>
   <div class="section">
     <div class="section-title">Promo Group Table</div>
-    <div class="section-controls">
-      <div class="filter-wrap" id="filter-wrap-czsk-promo">
-        <div class="filter-toggle" id="filter-toggle-czsk-promo" onclick="toggleFilter('czsk-promo')">
+    <div class="section-controls compact-table-controls compact-grouped-table-controls">
+      <div class="filter-wrap" id="filter-wrap-czsk-promo" data-mobile-label="Campaign">
+        <button type="button" class="filter-toggle" id="filter-toggle-czsk-promo" aria-expanded="false" aria-controls="filter-dropdown-czsk-promo" onclick="toggleFilter('czsk-promo')">
           <span id="filter-label-czsk-promo">All campaigns</span><span style="color:var(--gray400)">▾</span>
-        </div>
+        </button>
         <div class="filter-dropdown" id="filter-dropdown-czsk-promo">
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk-promo', this.value)">
           <div class="filter-options-list" id="filter-options-czsk-promo"></div>
@@ -371,32 +443,85 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
   </div>
 </div>
 
+<!-- ═══ CZSK LEAD-GEN PANEL ═══ -->
+<div class="panel" id="panel-czsk-leadgen">
+  <div class="section">
+    <div class="section-title">Lead-gen Split</div>
+    <div class="promo-note">CZSK campaign grouping uses campaign names: <strong>_Lead</strong> = Lead-gen, everything else = Sales.</div>
+    <div class="kpi-grid" id="kpi-czsk-leadgen"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Lead-gen Group Charts</div>
+    <div class="chart-controls axis-controls leadgen-axis-controls">
+      <span class="leadgen-single-metric" id="leadgen-single-metric-wrap">
+        <span class="metric-label axis-metric">Metric</span>
+        <select class="metric-select axis-metric" id="chart-metric-leadgen" onchange="refreshLeadgenCharts()"></select>
+      </span>
+      <span class="leadgen-dual-controls hidden" id="leadgen-dual-metric-controls">
+        <span class="metric-label axis-bars"><span class="desktop-axis-label">Bar · left:</span><span class="mobile-axis-label">Bars</span></span>
+        <select class="metric-select axis-bars" id="chart-left-leadgen" onchange="refreshLeadgenCharts()"></select>
+        <span class="metric-label axis-line"><span class="desktop-axis-label">Line · right:</span><span class="mobile-axis-label">Line</span></span>
+        <select class="metric-select axis-line" id="chart-right-leadgen" onchange="refreshLeadgenCharts()"></select>
+      </span>
+      <span class="metric-label axis-grain"><span class="desktop-axis-label">X-axis:</span><span class="mobile-axis-label">Grain</span></span>
+      <select class="metric-select axis-grain" id="chart-grain-leadgen" onchange="setLeadgenChartGranularity(this.value)">
+        <option value="day">Day</option>
+        <option value="week">Week</option>
+        <option value="month">Month</option>
+      </select>
+    </div>
+    <div class="chart-grid leadgen-chart-grid" id="leadgen-chart-grid">
+      <div class="chart-card"><div class="chart-card-title" id="leadgen-chart-title">Spend By Group</div><div class="chart-wrap"><canvas id="chart-leadgen-metric" aria-label="Spend by Lead-gen group"></canvas></div></div>
+      <div class="chart-card" id="leadgen-pie-card"><div class="chart-card-title">Spend Mix</div><div class="chart-wrap"><canvas id="chart-leadgen-pie"></canvas></div></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Lead-gen Group Table</div>
+    <div class="section-controls compact-table-controls compact-grouped-table-controls">
+      <div class="filter-wrap" id="filter-wrap-czsk-leadgen" data-mobile-label="Campaign">
+        <button type="button" class="filter-toggle" id="filter-toggle-czsk-leadgen" aria-expanded="false" aria-controls="filter-dropdown-czsk-leadgen" onclick="toggleFilter('czsk-leadgen')"><span id="filter-label-czsk-leadgen">All campaigns</span><span style="color:var(--gray400)">▾</span></button>
+        <div class="filter-dropdown" id="filter-dropdown-czsk-leadgen">
+          <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk-leadgen', this.value)">
+          <div class="filter-options-list" id="filter-options-czsk-leadgen"></div>
+          <div class="filter-actions"><button class="filter-action-btn" onclick="selectAll('czsk-leadgen')">Select all</button><button class="filter-action-btn" onclick="clearAll('czsk-leadgen')">Clear</button></div>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <span class="metric-label">Grouping</span>
+        <div class="segmented" role="group" aria-label="Lead-gen table grouping"><button id="leadgen-mode-groups" class="active" onclick="setLeadgenTableMode('groups')">Groups → days</button><button id="leadgen-mode-days" onclick="setLeadgenTableMode('days')">Days → groups</button></div>
+      </div>
+      <div class="sort-controls"><span class="metric-label">Sort by</span><select class="metric-select" id="leadgen-sort-czsk" onchange="setSort('leadgen','czsk',this.value)"></select><button class="sort-dir-btn" id="leadgen-sort-dir-czsk" onclick="toggleSortDir('leadgen','czsk')" title="Toggle sort direction">↓</button></div>
+    </div>
+    <div class="table-outer"><div id="leadgen-table"></div></div>
+  </div>
+</div>
+
 <!-- ═══ US PANEL ═══ -->
 <div class="panel" id="panel-us">
   <div class="kpi-grid" id="kpi-us"></div>
   <div class="section">
     <div class="section-title">Daily Performance Chart</div>
-    <div class="chart-controls">
-      <span class="metric-label">X-axis:</span>
-      <select class="metric-select" id="chart-grain-us" onchange="setChartGranularity('us',this.value)">
+    <div class="chart-controls axis-controls">
+      <span class="metric-label axis-grain"><span class="desktop-axis-label">X-axis:</span><span class="mobile-axis-label">Grain</span></span>
+      <select class="metric-select axis-grain" id="chart-grain-us" onchange="setChartGranularity('us',this.value)">
         <option value="day">Day</option>
         <option value="week">Week</option>
         <option value="month">Month</option>
       </select>
-      <span class="metric-label">Left Y:</span>
-      <select class="metric-select" id="chart-left-us" onchange="refreshChart('us')"></select>
-      <span class="metric-label">Right Y:</span>
-      <select class="metric-select" id="chart-right-us" onchange="refreshChart('us')"></select>
+      <span class="metric-label axis-bars"><span class="desktop-axis-label">Left Y:</span><span class="mobile-axis-label">Bars</span></span>
+      <select class="metric-select axis-bars" id="chart-left-us" onchange="refreshChart('us')"></select>
+      <span class="metric-label axis-line"><span class="desktop-axis-label">Right Y:</span><span class="mobile-axis-label">Line</span></span>
+      <select class="metric-select axis-line" id="chart-right-us" onchange="refreshChart('us')"></select>
     </div>
     <div class="chart-wrap"><canvas id="chart-us"></canvas></div>
   </div>
   <div class="section">
     <div class="section-title">Daily Campaign Table</div>
-    <div class="section-controls">
-      <div class="filter-wrap" id="filter-wrap-us">
-        <div class="filter-toggle" id="filter-toggle-us" onclick="toggleFilter('us')">
+    <div class="section-controls compact-table-controls">
+      <div class="filter-wrap" id="filter-wrap-us" data-mobile-label="Campaign">
+        <button type="button" class="filter-toggle" id="filter-toggle-us" aria-expanded="false" aria-controls="filter-dropdown-us" onclick="toggleFilter('us')">
           <span id="filter-label-us">All campaigns</span><span style="color:var(--gray400)">▾</span>
-        </div>
+        </button>
         <div class="filter-dropdown" id="filter-dropdown-us">
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('us', this.value)">
           <div class="filter-options-list" id="filter-options-us"></div>
@@ -416,11 +541,11 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
   </div>
   <div class="section">
     <div class="section-title">Creative Evaluation</div>
-    <div class="creative-controls">
-      <div class="filter-wrap" id="creative-filter-wrap-us">
-        <div class="filter-toggle" id="creative-filter-toggle-us" onclick="toggleFilter('us-creative')" style="max-width:300px;">
+    <div class="creative-controls compact-creative-controls">
+      <div class="filter-wrap" id="creative-filter-wrap-us" data-mobile-label="Campaign">
+        <button type="button" class="filter-toggle" id="creative-filter-toggle-us" aria-expanded="false" aria-controls="filter-dropdown-us-creative" onclick="toggleFilter('us-creative')" style="max-width:300px;">
           <span id="creative-filter-label-us">All campaigns</span><span style="color:var(--gray400)">▾</span>
-        </div>
+        </button>
         <div class="filter-dropdown" id="filter-dropdown-us-creative">
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('us-creative', this.value)">
           <div class="filter-options-list" id="filter-options-us-creative"></div>
@@ -446,7 +571,7 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
   </div>
 </div>
 
-</div>
+</main>
 
 <script>
 const CHART_METRIC_OPTIONS = [
@@ -459,6 +584,11 @@ const CHART_METRIC_OPTIONS = [
   { key:'cpa',      label:'CPA' },
   { key:'cpm',      label:'CPM' },
 ];
+const LEAD_CHART_METRIC_OPTIONS = [
+  { key:'leads',    label:'Leads' },
+  { key:'cpl',      label:'CPL (CZK)' },
+  { key:'lp2lead',  label:'LP → Lead' },
+];
 const CAMPAIGN_COLORS = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#6366f1','#ec4899','#14b8a6','#f97316','#0ea5e9'];
 const DAILY_COLUMNS = [
   {key:'date',label:'Date'},{key:'spend',label:'Spend'},{key:'revenue',label:'Revenue'},{key:'roas',label:'ROAS'},
@@ -466,6 +596,9 @@ const DAILY_COLUMNS = [
   {key:'lp2co',label:'LP→Checkout'},{key:'co2pur',label:'Checkout→Purchase'},
   {key:'checkouts',label:'Checkouts'},{key:'costChk',label:'Cost/Checkout'},{key:'lp',label:'LP Views'},
   {key:'costLp',label:'Cost/LP'},{key:'ctr',label:'CTR'},{key:'lp2pur',label:'LP→Purchase'},{key:'cpm',label:'CPM'},
+];
+const LEAD_DAILY_COLUMNS = [
+  {key:'leads',label:'Leads'},{key:'cpl',label:'CPL'},{key:'lp2lead',label:'LP→Lead'},
 ];
 const CREATIVE_COLUMNS = [
   {key:'name',label:'Creative'},{key:'campaignCode',label:'Campaign ID'},{key:'type',label:'Type'},
@@ -484,14 +617,18 @@ let aggregateCampaigns = [];
 let dailyCampaigns     = [];
 let adCreatives        = [];
 let campaignMeta       = {};
-let filterState        = { czsk: null, us: null, 'czsk-promo': null, 'czsk-creative': null, 'us-creative': null };
+let filterState        = { czsk: null, us: null, 'czsk-promo': null, 'czsk-leadgen': null, 'czsk-creative': null, 'us-creative': null };
 let creativeTypeFilter = { czsk: 'all', us: 'all' };
 let chartGranularity   = { czsk: 'day', us: 'day' };
 let promoTableMode     = 'groups';
+let leadgenTableMode   = 'groups';
 let promoActiveDaysOnly = false;
+let includeLeadGen = false;
+let leadgenOnly = false;
 let sortState          = {
   daily: { czsk: { key: 'date', dir: 'desc' }, us: { key: 'date', dir: 'desc' } },
   promo: { czsk: { key: 'date', dir: 'desc' } },
+  leadgen: { czsk: { key: 'date', dir: 'desc' } },
   creative: { czsk: { key: 'spend', dir: 'desc' }, us: { key: 'spend', dir: 'desc' } },
 };
 let charts = {};
@@ -501,14 +638,22 @@ const PROMO_GROUPS = [
   {key:'wl',label:'WL',color:'#8b5cf6',className:'group-wl'},
   {key:'bau',label:'BAU',color:'#10b981',className:'group-bau'},
 ];
+const LEADGEN_GROUPS = [
+  {key:'leadgen',label:'Lead-gen',color:'#f97316',className:'group-leadgen'},
+  {key:'sales',label:'Sales',color:'#10b981',className:'group-sales'},
+];
 
 const parseAmt = s => (!s || s === 'Not available') ? 0 : (parseFloat(String(s).replace(/[^0-9.-]/g,'')) || 0);
 const parseNum = s => (!s || s === 'Not available') ? 0 : (parseInt(String(s).replace(/,/g,'')) || 0);
 const isValid  = n => /^(TUC|GLV)_\d+_/.test(n);
 const isUS     = n => n.includes('_US_');
 const isAdvert = n => n.toLowerCase().includes('advertorial');
+const isLeadGen = n => String(n||'').includes('_Lead');
 const promoGroupKey = name => String(name||'').includes('_Promo') ? 'promo' : String(name||'').includes('_Kristyna') ? 'wl' : 'bau';
 const promoGroup = key => PROMO_GROUPS.find(g=>g.key===key)||PROMO_GROUPS[2];
+const leadgenGroupKey = name => isLeadGen(name) ? 'leadgen' : 'sales';
+const leadgenGroup = key => LEADGEN_GROUPS.find(g=>g.key===key)||LEADGEN_GROUPS[1];
+const activeLeadgenGroups = () => leadgenOnly ? LEADGEN_GROUPS.filter(g=>g.key==='leadgen') : LEADGEN_GROUPS;
 
 function getCampaignColor(name) {
   let h = 0;
@@ -527,13 +672,13 @@ function roasClass(v){return v>=1.7?'roas-good':v>=1?'roas-warn':'roas-bad';}
 function aggregate(rows){
   return {
     spend:rows.reduce((s,r)=>s+r.spend,0),lp:rows.reduce((s,r)=>s+r.lp,0),
-    purchases:rows.reduce((s,r)=>s+r.purchases,0),checkouts:rows.reduce((s,r)=>s+r.checkouts,0),
+    purchases:rows.reduce((s,r)=>s+r.purchases,0),checkouts:rows.reduce((s,r)=>s+r.checkouts,0),leads:rows.reduce((s,r)=>s+r.leads,0),
     revenue:rows.reduce((s,r)=>s+r.revenue,0),impressions:rows.reduce((s,r)=>s+r.impressions,0),
     outboundClicks:rows.reduce((s,r)=>s+r.outboundClicks,0),
   };
 }
 function emptyAgg(date=null,group=null){
-  return {date,group,spend:0,lp:0,purchases:0,checkouts:0,outboundClicks:0,revenue:0,impressions:0};
+  return {date,group,spend:0,lp:0,purchases:0,checkouts:0,leads:0,outboundClicks:0,revenue:0,impressions:0};
 }
 
 function calcMetrics(a){
@@ -548,12 +693,15 @@ function calcMetrics(a){
   const costLp=a.lp>0?a.spend/a.lp:0;
   const ctr=a.impressions>0?a.lp/a.impressions*100:0;
   const cpm=a.impressions>0?a.spend/a.impressions*1000:0;
-  return{roas,cpa,aov,cvr,lp2co,co2pur,lp2pur,costChk,costLp,ctr,cpm};
+  const cpl=a.leads>0?a.spend/a.leads:0;
+  const lp2lead=a.lp>0?a.leads/a.lp*100:0;
+  return{roas,cpa,aov,cvr,lp2co,co2pur,lp2pur,costChk,costLp,ctr,cpm,cpl,lp2lead};
 }
 
 function computeChartMetric(key,a,m){
   if(key==='spend')return a.spend;if(key==='revenue')return a.revenue;if(key==='roas')return m.roas;
   if(key==='lp')return a.lp;if(key==='purchases')return a.purchases;if(key==='checkouts')return a.checkouts;
+  if(key==='leads')return a.leads;if(key==='cpl')return m.cpl;if(key==='lp2lead')return m.lp2lead;
   if(key==='cpa')return m.cpa;if(key==='cpm')return m.cpm;return 0;
 }
 
@@ -582,6 +730,7 @@ function setSort(group,seg,key){
   sortState[group][seg].key=key;
   if(group==='daily')renderDailyTable(seg);
   else if(group==='promo')renderPromoTable();
+  else if(group==='leadgen')renderLeadgenTable();
   else renderCreatives(seg);
 }
 function toggleSortDir(group,seg){
@@ -591,6 +740,7 @@ function toggleSortDir(group,seg){
   if(el)el.textContent=state.dir==='asc'?'↑':'↓';
   if(group==='daily')renderDailyTable(seg);
   else if(group==='promo')renderPromoTable();
+  else if(group==='leadgen')renderLeadgenTable();
   else renderCreatives(seg);
 }
 function setChartGranularity(seg,grain){
@@ -605,6 +755,7 @@ function initSortControls(){
     populateSortSelect(`creative-sort-${seg}`,CREATIVE_COLUMNS,sortState.creative[seg].key);
   });
   populateSortSelect('promo-sort-czsk',DAILY_COLUMNS,sortState.promo.czsk.key);
+  populateSortSelect('leadgen-sort-czsk',[...DAILY_COLUMNS,...LEAD_DAILY_COLUMNS],sortState.leadgen.czsk.key);
 }
 function campaignCode(name){
   const parts=String(name||'').split('_').filter(Boolean);
@@ -632,20 +783,25 @@ function shiftIsoDate(iso,offsetDays){
   return d.toISOString().slice(0,10);
 }
 function presetLabel(p){return{last_7d:'Last 7 days',last_14d:'Last 14 days',last_30d:'Last 30 days',last_90d:'Last 90 days',this_month:'This month',last_month:'Last month'}[p]||p;}
-function presetRange(p){
+function presetBounds(p){
   const until=utcIsoDate(-1);
-  if(p==='this_month'){
-    return`${isoToShort(utcMonthStart())} – ${isoToShort(until)}`;
-  }
-  if(p==='last_month'){
-    return`${isoToShort(utcMonthStart(-1))} – ${isoToShort(utcMonthEnd(-1))}`;
-  }
-  const days={last_7d:7,last_14d:14,last_30d:30,last_90d:90}[p];if(!days)return'';
-  return`${isoToShort(shiftIsoDate(until,1-days))} – ${isoToShort(until)}`;
+  if(p==='this_month')return{since:utcMonthStart(),until};
+  if(p==='last_month')return{since:utcMonthStart(-1),until:utcMonthEnd(-1)};
+  const days={last_7d:7,last_14d:14,last_30d:30,last_90d:90}[p];
+  return days?{since:shiftIsoDate(until,1-days),until}:null;
+}
+function presetRange(p){
+  const range=presetBounds(p);return range?`${isoToShort(range.since)} – ${isoToShort(range.until)}`:'';
+}
+function populateCustomDateInputs(range){
+  if(!range)return;
+  document.getElementById('date-from').value=range.since;
+  document.getElementById('date-to').value=range.until;
 }
 function updateDateLabel(){
   if(customRange){document.getElementById('date-btn-label').textContent='Custom';document.getElementById('date-btn-range').textContent=`${isoToShort(customRange.since)} – ${isoToShort(customRange.until)}`;}
   else{document.getElementById('date-btn-label').textContent=presetLabel(datePreset);document.getElementById('date-btn-range').textContent=presetRange(datePreset);}
+  populateCustomDateInputs(customRange||presetBounds(datePreset));
   document.querySelectorAll('.date-preset-item').forEach(el=>el.classList.toggle('active',el.dataset.p===datePreset&&!customRange));
 }
 function toggleDateMenu(){document.getElementById('date-menu').classList.toggle('open');}
@@ -658,10 +814,10 @@ function applyCustomDate(){
 document.addEventListener('click',e=>{
   const wrap=document.getElementById('date-wrap');
   if(wrap&&!wrap.contains(e.target))document.getElementById('date-menu').classList.remove('open');
-  ['czsk','us','czsk-promo','czsk-creative','us-creative'].forEach(key=>{
+  ['czsk','us','czsk-promo','czsk-leadgen','czsk-creative','us-creative'].forEach(key=>{
     const dd=document.getElementById('filter-dropdown-'+key);
     const tg=document.getElementById('filter-toggle-'+key)||document.getElementById('creative-filter-toggle-'+key.replace('-creative',''));
-    if(dd&&!dd.contains(e.target)&&tg&&!tg.contains(e.target))dd.classList.remove('open');
+    if(dd&&!dd.contains(e.target)&&tg&&!tg.contains(e.target)){dd.classList.remove('open');tg.setAttribute('aria-expanded','false');}
   });
 });
 
@@ -675,8 +831,9 @@ function extractDate(r){
 function fmtDate(iso){return iso?iso.slice(5):'—';}
 function processRow(r){
   return{
-    spend:parseAmt(r.amount_spent),lp:parseNum(r['actions:link_click']),
+    spend:parseAmt(r.amount_spent),lp:parseNum(r['actions:landing_page_view']),
     purchases:parseNum(r['actions:omni_purchase']),checkouts:parseNum(r['actions:initiate_checkout']),
+    leads:parseNum(r['actions:lead']),
     outboundClicks:parseNum(r['actions:outbound_click']),revenue:parseAmt(r['action_values:omni_purchase']),
     impressions:parseNum(r.impressions),
   };
@@ -706,8 +863,9 @@ function processDaily(rawRows){
 }
 function processCreatives(rawRows){
   return rawRows.map(r=>{
-    const spend=parseAmt(r.amount_spent),lp=parseNum(r['actions:link_click']);
+    const spend=parseAmt(r.amount_spent),lp=parseNum(r['actions:landing_page_view']);
     const purchases=parseNum(r['actions:omni_purchase']),checkouts=parseNum(r['actions:initiate_checkout']);
+    const leads=parseNum(r['actions:lead']);
     const outboundClicks=parseNum(r['actions:outbound_click']),revenue=parseAmt(r['action_values:omni_purchase']);
     const impressions=parseNum(r.impressions),thruplay=parseNum(r.video_thruplay_watched_actions);
     const v3sec=parseNum(r.video_3_sec_watched_actions);
@@ -715,15 +873,30 @@ function processCreatives(rawRows){
     const isVideo=thruplay>0||v3sec>0;
     const campaignName=campInfo.name||'';
     return{id:r.id,name:r.name,status:r.status,campaignId:r.campaign_id,campaignName,campaignCode:campaignCode(campaignName),type:isVideo?'Video':'Static',
-      segment:campInfo.segment||null,spend,lp,purchases,checkouts,outboundClicks,revenue,impressions,isVideo,
+      segment:campInfo.segment||null,spend,lp,purchases,checkouts,leads,outboundClicks,revenue,impressions,isVideo,
       hookRate:impressions>0?v3sec/impressions*100:0,holdRate:impressions>0?thruplay/impressions*100:0};
   }).filter(c=>campaignMeta[c.campaignId]&&c.spend>0);
 }
 function getSegmentRows(seg,source='daily'){
   return(source==='daily'?dailyCampaigns:aggregateCampaigns).filter(r=>r.segment===seg);
 }
+function spendOnlyRow(row){
+  return{...row,lp:0,purchases:0,checkouts:0,leads:0,outboundClicks:0,revenue:0,impressions:0};
+}
+function getMainSegmentRows(seg,source='daily'){
+  const rows=getSegmentRows(seg,source);
+  if(seg!=='czsk')return rows;
+  return includeLeadGen?rows.map(r=>isLeadGen(r.name)?spendOnlyRow(r):r):rows.filter(r=>!isLeadGen(r.name));
+}
+function getLeadgenRows(source='daily'){
+  const rows=getSegmentRows('czsk',source);
+  return leadgenOnly?rows.filter(r=>isLeadGen(r.name)):rows;
+}
+function getPromoSegmentRows(source='daily'){
+  return getSegmentRows('czsk',source).filter(r=>!isLeadGen(r.name));
+}
 function promoActiveDateSet(){
-  return new Set(getSegmentRows('czsk','daily').filter(r=>r.group==='promo'&&r.spend>0).map(r=>r.date));
+  return new Set(getPromoSegmentRows('daily').filter(r=>r.group==='promo'&&r.spend>0).map(r=>r.date));
 }
 function filterPromoActiveDays(rows){
   if(!promoActiveDaysOnly)return rows;
@@ -731,10 +904,10 @@ function filterPromoActiveDays(rows){
   return rows.filter(r=>!r.date||dates.has(r.date));
 }
 function getPromoDailyRows(){
-  return filterPromoActiveDays(getSegmentRows('czsk','daily'));
+  return filterPromoActiveDays(getPromoSegmentRows('daily'));
 }
 function getPromoKpiRows(){
-  return promoActiveDaysOnly?getPromoDailyRows():getSegmentRows('czsk','aggregate');
+  return promoActiveDaysOnly?getPromoDailyRows():getPromoSegmentRows('aggregate');
 }
 function byPromoGroup(rows){
   const map={};
@@ -742,7 +915,7 @@ function byPromoGroup(rows){
   for(const r of rows.filter(r=>r.segment==='czsk')){
     const key=r.group||promoGroupKey(r.name);
     const d=map[key]||(map[key]=emptyAgg(null,key));
-    d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;
+    d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
     d.outboundClicks+=r.outboundClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;
   }
   return PROMO_GROUPS.map(g=>map[g.key]);
@@ -759,7 +932,7 @@ function byDateGroupFiltered(rows,selectedIds){
     const mapKey=`${r.date}|${key}`;
     if(!map[mapKey])map[mapKey]=emptyAgg(r.date,key);
     const d=map[mapKey];
-    d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;
+    d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
     d.outboundClicks+=r.outboundClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;
   }
   return Object.values(map).sort((a,b)=>a.date===b.date?PROMO_GROUPS.findIndex(g=>g.key===a.group)-PROMO_GROUPS.findIndex(g=>g.key===b.group):a.date<b.date?-1:1);
@@ -769,9 +942,9 @@ function byDate(rows,selectedIds){
   const map={};
   for(const r of filtered){
     if(!r.date)continue;
-    if(!map[r.date])map[r.date]={date:r.date,spend:0,lp:0,purchases:0,checkouts:0,outboundClicks:0,revenue:0,impressions:0};
+    if(!map[r.date])map[r.date]={date:r.date,spend:0,lp:0,purchases:0,checkouts:0,leads:0,outboundClicks:0,revenue:0,impressions:0};
     const d=map[r.date];
-    d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;
+    d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
     d.outboundClicks+=r.outboundClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;
   }
   return Object.values(map).sort((a,b)=>a.date<b.date?-1:1);
@@ -789,9 +962,9 @@ function byPeriod(rows,selectedIds,grain='day'){
   const map={};
   for(const r of daily){
     const key=grain==='week'?startOfWeek(r.date):monthKey(r.date);
-    if(!map[key])map[key]={date:key,spend:0,lp:0,purchases:0,checkouts:0,outboundClicks:0,revenue:0,impressions:0};
+    if(!map[key])map[key]={date:key,spend:0,lp:0,purchases:0,checkouts:0,leads:0,outboundClicks:0,revenue:0,impressions:0};
     const d=map[key];
-    d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;
+    d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
     d.outboundClicks+=r.outboundClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;
   }
   return Object.values(map).sort((a,b)=>a.date<b.date?-1:1);
@@ -803,7 +976,7 @@ function fmtChartDate(iso,grain){
 }
 
 function renderKPIs(seg){
-  const rows=getSegmentRows(seg,'aggregate');const a=aggregate(rows);const m=calcMetrics(a);
+  const rows=getMainSegmentRows(seg,'aggregate');const a=aggregate(rows);const m=calcMetrics(a);
   document.getElementById('kpi-'+seg).innerHTML=`
     <div class="kpi-card"><div class="kpi-label">Spend</div><div class="kpi-val">${fmtInt(a.spend)}</div><div class="kpi-sub">CZK</div><div class="kpi-sub2">${fmtUsd(a.spend)}</div></div>
     <div class="kpi-card"><div class="kpi-label">Revenue</div><div class="kpi-val">${a.revenue>0?fmtInt(a.revenue):'—'}</div><div class="kpi-sub">CZK</div><div class="kpi-sub2">${fmtUsd(a.revenue)}</div></div>
@@ -833,30 +1006,45 @@ function initSelects(){
   ['czsk','us'].forEach(seg=>{
     ['chart-left-','chart-right-'].forEach((prefix,i)=>{
       const el=document.getElementById(prefix+seg);
-      el.innerHTML=CHART_METRIC_OPTIONS.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');
-      el.value=i===0?'spend':'roas';
+      const options=CHART_METRIC_OPTIONS;
+      const previous=el.value;
+      el.innerHTML=options.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');
+      el.value=options.some(m=>m.key===previous)?previous:(i===0?'spend':'roas');
     });
   });
   const te=document.getElementById('chart-trends-metric');
-  if(!te)return;
-  te.innerHTML=CHART_METRIC_OPTIONS.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');
-  te.value='spend';
+  if(te){te.innerHTML=CHART_METRIC_OPTIONS.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');te.value='spend';}
+  const le=document.getElementById('chart-metric-leadgen');
+  const leadOptions=[...CHART_METRIC_OPTIONS,...LEAD_CHART_METRIC_OPTIONS];
+  if(le){const previous=le.value;le.innerHTML=leadOptions.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');le.value=leadOptions.some(m=>m.key===previous)?previous:'spend';}
+  [['chart-left-leadgen','spend'],['chart-right-leadgen','cpl']].forEach(([id,fallback])=>{const el=document.getElementById(id);if(!el)return;const previous=el.value;el.innerHTML=leadOptions.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');el.value=leadOptions.some(m=>m.key===previous)?previous:fallback;});
 }
 function formatChartVal(key,v){
   if(key==='roas')return v.toFixed(2)+'x';
-  if(key==='cpm'||key==='cpa'||key==='spend'||key==='revenue')return Math.round(v).toLocaleString('en-US')+' CZK';
+  if(key==='lp2lead')return v.toFixed(2)+'%';
+  if(key==='cpm'||key==='cpa'||key==='cpl'||key==='spend'||key==='revenue')return Math.round(v).toLocaleString('en-US')+' CZK';
   return Math.round(v).toLocaleString('en-US');
 }
+function formatChartTick(key,v){
+  if(window.matchMedia('(max-width:720px)').matches){
+    if(key==='roas')return Number(v).toFixed(2)+'x';
+    if(key==='lp2lead')return Number(v).toFixed(1)+'%';
+    if(['cpm','cpa','cpl','spend','revenue'].includes(key))return Math.abs(v)>=1000?`${Math.round(v/1000)}K`:Math.round(v).toLocaleString('en-US');
+    return Math.abs(v)>=1000?`${Math.round(v/1000)}K`:Math.round(v).toLocaleString('en-US');
+  }
+  return formatChartVal(key,v);
+}
 function refreshChart(seg){
-  const sel=filterState[seg];const rows=getSegmentRows(seg,'daily');const grain=chartGranularity[seg]||'day';const daily=byPeriod(rows,sel,grain);
+  const sel=filterState[seg];const rows=getMainSegmentRows(seg,'daily');const grain=chartGranularity[seg]||'day';const daily=byPeriod(rows,sel,grain);
   const lKey=document.getElementById('chart-left-'+seg).value;const rKey=document.getElementById('chart-right-'+seg).value;
   const labels=daily.map(d=>fmtChartDate(d.date,grain));
   const leftVals=daily.map(d=>{const m=calcMetrics(d);return computeChartMetric(lKey,d,m);});
   const rightVals=daily.map(d=>{const m=calcMetrics(d);return computeChartMetric(rKey,d,m);});
   if(charts[seg]){charts[seg].destroy();delete charts[seg];}
   const ctx=document.getElementById('chart-'+seg).getContext('2d');
-  const lLabel=CHART_METRIC_OPTIONS.find(m=>m.key===lKey)?.label||lKey;
-  const rLabel=CHART_METRIC_OPTIONS.find(m=>m.key===rKey)?.label||rKey;
+  const allMetrics=[...CHART_METRIC_OPTIONS,...LEAD_CHART_METRIC_OPTIONS];
+  const lLabel=allMetrics.find(m=>m.key===lKey)?.label||lKey;
+  const rLabel=allMetrics.find(m=>m.key===rKey)?.label||rKey;
   charts[seg]=new Chart(ctx,{
     data:{labels,datasets:[
       {type:'bar',label:lLabel,data:leftVals,backgroundColor:'rgba(59,130,246,.25)',borderColor:'#3b82f6',borderWidth:1.5,yAxisID:'y',order:2},
@@ -866,8 +1054,8 @@ function refreshChart(seg){
       plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
         tooltip:{callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${formatChartVal(ctx.datasetIndex===0?lKey:rKey,ctx.raw)}`}}},
       scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
-        y:{position:'left',grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},callback:v=>formatChartVal(lKey,v)}},
-        y1:{position:'right',grid:{display:false},ticks:{font:{size:11},callback:v=>formatChartVal(rKey,v)}}}}
+        y:{position:'left',grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},callback:v=>formatChartTick(lKey,v)}},
+        y1:{position:'right',grid:{display:false},ticks:{font:{size:11},callback:v=>formatChartTick(rKey,v)}}}}
   });
 }
 function refreshTrendsChart(){
@@ -889,7 +1077,7 @@ function refreshTrendsChart(){
       plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
         tooltip:{callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${formatChartVal(key,ctx.raw)}`}}},
       scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
-        y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},callback:v=>formatChartVal(key,v)}}}}
+        y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},callback:v=>formatChartTick(key,v)}}}}
   });
 }
 function refreshPromoCharts(){
@@ -914,7 +1102,7 @@ function refreshPromoCharts(){
         plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
           tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${titleFormatter(ctx.raw)}`}}},
         scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
-          y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},callback:v=>titleFormatter(v)}}}}
+          y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},callback:v=>formatChartTick(metricKey,v)}}}}
     });
   };
   makeLine('promo-spend','chart-promo-spend','spend',v=>formatChartVal('spend',v));
@@ -959,6 +1147,74 @@ function refreshPromoCharts(){
   }
 }
 
+function addToAgg(target,row){
+  target.spend+=row.spend;target.lp+=row.lp;target.purchases+=row.purchases;target.checkouts+=row.checkouts;target.leads+=row.leads;
+  target.outboundClicks+=row.outboundClicks;target.revenue+=row.revenue;target.impressions+=row.impressions;
+}
+function byLeadgenGroup(rows){
+  const map={};
+  LEADGEN_GROUPS.forEach(g=>{map[g.key]=emptyAgg(null,g.key);});
+  for(const row of rows){
+    const key=leadgenGroupKey(row.name);
+    addToAgg(map[key],row);
+  }
+  return activeLeadgenGroups().map(g=>map[g.key]);
+}
+function byDateLeadgenGroup(rows,selectedIds=null){
+  const map={};
+  for(const row of selectedIds?rows.filter(r=>selectedIds.has(r.id)):rows){
+    if(!row.date)continue;
+    const group=leadgenGroupKey(row.name);const key=`${row.date}|${group}`;
+    if(!map[key])map[key]=emptyAgg(row.date,group);
+    addToAgg(map[key],row);
+  }
+  return Object.values(map).sort((a,b)=>a.date===b.date?LEADGEN_GROUPS.findIndex(g=>g.key===a.group)-LEADGEN_GROUPS.findIndex(g=>g.key===b.group):a.date<b.date?-1:1);
+}
+function renderLeadgenKPIs(){
+  const rows=byLeadgenGroup(getLeadgenRows('aggregate'));
+  document.getElementById('kpi-czsk-leadgen').innerHTML=rows.map(a=>{
+    const m=calcMetrics(a);const g=leadgenGroup(a.group);
+    return`<div class="kpi-card"><div class="kpi-label"><span class="group-badge ${g.className}">${g.label}</span></div><div class="kpi-val">${fmtInt(a.spend)}</div><div class="kpi-sub">Spend CZK</div><div class="kpi-sub2">${a.leads?`${fmtInt(a.leads)} leads · ${fmtInt(m.cpl)} CPL`:`${fmtRoas(m.roas)} ROAS · ${a.revenue>0?fmtInt(a.revenue):'—'} revenue`}</div></div>`;
+  }).join('');
+}
+function setLeadgenChartGranularity(grain){
+  document.getElementById('chart-grain-leadgen').value=grain;
+  refreshLeadgenCharts();
+}
+function refreshLeadgenCharts(){
+  const groups=activeLeadgenGroups();
+  const metricKey=document.getElementById('chart-metric-leadgen')?.value||'spend';
+  const grain=document.getElementById('chart-grain-leadgen')?.value||'day';
+  const metricOptions=[...CHART_METRIC_OPTIONS,...LEAD_CHART_METRIC_OPTIONS];
+  const metricLabel=metricOptions.find(m=>m.key===metricKey)?.label||metricKey;
+  const source=getLeadgenRows('daily');
+  const title=document.getElementById('leadgen-chart-title');
+  const canvas=document.getElementById('chart-leadgen-metric');
+  document.getElementById('leadgen-single-metric-wrap')?.classList.toggle('hidden',leadgenOnly);
+  document.getElementById('leadgen-dual-metric-controls')?.classList.toggle('hidden',!leadgenOnly);
+  document.getElementById('leadgen-chart-grid')?.classList.toggle('single',leadgenOnly);
+  document.getElementById('leadgen-pie-card')?.classList.toggle('hidden',leadgenOnly);
+  if(charts['leadgen-metric'])charts['leadgen-metric'].destroy();
+  const ctx=canvas?.getContext('2d');
+  if(leadgenOnly){
+    const leftKey=document.getElementById('chart-left-leadgen')?.value||'spend';const rightKey=document.getElementById('chart-right-leadgen')?.value||'cpl';
+    const leftLabel=metricOptions.find(m=>m.key===leftKey)?.label||leftKey;const rightLabel=metricOptions.find(m=>m.key===rightKey)?.label||rightKey;
+    const rows=byPeriod(source,null,grain);const labels=rows.map(row=>fmtChartDate(row.date,grain));
+    if(title)title.textContent=`${leftLabel} & ${rightLabel}`;canvas?.setAttribute('aria-label',`${leftLabel} bars and ${rightLabel} line, ${grain}`);
+    if(ctx)charts['leadgen-metric']=new Chart(ctx,{type:'bar',data:{labels,datasets:[{type:'bar',label:leftLabel,metricKey:leftKey,data:rows.map(row=>computeChartMetric(leftKey,row,calcMetrics(row))),yAxisID:'y',backgroundColor:'#f59e0bcc',borderColor:'#f59e0b',borderWidth:1,borderRadius:4},{type:'line',label:rightLabel,metricKey:rightKey,data:rows.map(row=>computeChartMetric(rightKey,row,calcMetrics(row))),yAxisID:'y1',borderColor:'#3b82f6',backgroundColor:'#3b82f622',borderWidth:2,tension:.3,pointRadius:3,fill:false}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(item.dataset.metricKey,item.raw)}`}}},scales:{x:{grid:{display:false}},y:{position:'left',title:{display:true,text:leftLabel},ticks:{callback:v=>formatChartTick(leftKey,v)}},y1:{position:'right',title:{display:true,text:rightLabel},grid:{drawOnChartArea:false},ticks:{callback:v=>formatChartTick(rightKey,v)}}}}});
+  }else{
+    const periods=groups.map(g=>({group:g,rows:byPeriod(source.filter(r=>leadgenGroupKey(r.name)===g.key),null,grain)}));
+    const dates=[...new Set(periods.flatMap(item=>item.rows.map(r=>r.date)))].sort();
+    if(title)title.textContent=`${metricLabel} By Group`;canvas?.setAttribute('aria-label',`${metricLabel} by Lead-gen group, ${grain}`);
+    if(ctx)charts['leadgen-metric']=new Chart(ctx,{type:'line',data:{labels:dates.map(date=>fmtChartDate(date,grain)),datasets:periods.map(({group,rows})=>{const byDate=Object.fromEntries(rows.map(r=>[r.date,r]));return{label:group.label,data:dates.map(date=>{const row=byDate[date]||emptyAgg(date,group.key);return computeChartMetric(metricKey,row,calcMetrics(row));}),borderColor:group.color,backgroundColor:group.color+'22',borderWidth:2,tension:.3,pointRadius:3,fill:false};})},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(metricKey,item.raw)}`}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>formatChartTick(metricKey,v)}}}}});
+  }
+  const totals=byLeadgenGroup(getLeadgenRows('aggregate'));const totalSpend=totals.reduce((sum,row)=>sum+row.spend,0);
+  if(charts['leadgen-pie'])charts['leadgen-pie'].destroy();
+  if(leadgenOnly){delete charts['leadgen-pie'];return;}
+  const pieCtx=document.getElementById('chart-leadgen-pie')?.getContext('2d');
+  if(pieCtx)charts['leadgen-pie']=new Chart(pieCtx,{type:'doughnut',data:{labels:groups.map(g=>g.label),datasets:[{data:totals.map(r=>r.spend),backgroundColor:groups.map(g=>g.color),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${formatChartVal('spend',ctx.raw)} (${(totalSpend?ctx.raw/totalSpend*100:0).toFixed(1)}%)`}}}}});
+}
+
 function buildFilterOptions(filterKey,campaignIds){
   const container=document.getElementById('filter-options-'+filterKey);if(!container)return;
   container.innerHTML=campaignIds.map(id=>{
@@ -966,7 +1222,12 @@ function buildFilterOptions(filterKey,campaignIds){
     return`<label class="filter-option" title="${name}"><input type="checkbox" value="${id}" checked onchange="onFilterChange('${filterKey}')"><span class="camp-dot" style="background:${color}"></span><span class="camp-name">${name}</span></label>`;
   }).join('');
 }
-function toggleFilter(key){document.getElementById('filter-dropdown-'+key)?.classList.toggle('open');}
+function toggleFilter(key){
+  const dropdown=document.getElementById('filter-dropdown-'+key);if(!dropdown)return;
+  const toggle=document.getElementById('filter-toggle-'+key)||document.getElementById('creative-filter-toggle-'+key.replace('-creative',''));
+  const open=dropdown.classList.toggle('open');
+  toggle?.setAttribute('aria-expanded',String(open));
+}
 function filterSearch(key,q){
   const lq=q.toLowerCase();
   document.querySelectorAll(`#filter-options-${key} .filter-option`).forEach(el=>{
@@ -982,6 +1243,7 @@ function onFilterChange(key){
   updateFilterLabel(key);
   if(key==='czsk'||key==='us'){renderDailyTable(key);}
   else if(key==='czsk-promo')renderPromoTable();
+  else if(key==='czsk-leadgen')renderLeadgenTable();
   else if(key==='czsk-creative'||key==='us-creative')renderCreatives(key.replace('-creative',''));
 }
 function updateFilterLabel(key){
@@ -993,13 +1255,15 @@ function updateFilterLabel(key){
 }
 function buildAllFilters(){
   ['czsk','us'].forEach(seg=>{
-    buildFilterOptions(seg,[...new Set(getSegmentRows(seg,'daily').map(r=>r.id))]);
+    buildFilterOptions(seg,[...new Set(getMainSegmentRows(seg,'daily').map(r=>r.id))]);
     updateFilterLabel(seg);
-    buildFilterOptions(seg+'-creative',[...new Set(adCreatives.filter(c=>c.segment===seg).map(c=>c.campaignId))]);
+    buildFilterOptions(seg+'-creative',[...new Set(adCreatives.filter(c=>c.segment===seg&&(seg!=='czsk'||includeLeadGen||!isLeadGen(c.campaignName))).map(c=>c.campaignId))]);
     updateFilterLabel(seg+'-creative');
   });
-  buildFilterOptions('czsk-promo',[...new Set(getSegmentRows('czsk','daily').map(r=>r.id))]);
+  buildFilterOptions('czsk-promo',[...new Set(getPromoSegmentRows('daily').map(r=>r.id))]);
   updateFilterLabel('czsk-promo');
+  buildFilterOptions('czsk-leadgen',[...new Set(getLeadgenRows('daily').map(r=>r.id))]);
+  updateFilterLabel('czsk-leadgen');
 }
 
 function escapeHtml(value){
@@ -1016,14 +1280,14 @@ function roasHtml(v){return`<span class="${roasClass(v)}">${escapeHtml(fmtRoas(v
 function badgeHtml(type){return`<span class="badge ${type==='Video'?'badge-v':'badge-s'}">${escapeHtml(type)}</span>`;}
 
 function renderDailyTable(seg){
-  const sel=filterState[seg];const rows=getSegmentRows(seg,'daily');const daily=byDate(rows,sel);
+  const sel=filterState[seg];const rows=getMainSegmentRows(seg,'daily');const daily=byDate(rows,sel);
   const container=document.getElementById('daily-table-'+seg);
   container.innerHTML='';
   if(!daily.length){container.innerHTML='<div class="empty">No data.</div>';return;}
   if(grids['daily-'+seg]){try{grids['daily-'+seg].destroy();}catch(e){}}
   const sorted=sortRows(daily,'daily',seg);
   const tableRows=sorted.map(d=>({d,m:calcMetrics(d)}));
-  renderControlledTable(container,[
+  const columns=[
     {label:'Date',text:r=>r.d.date},
     {label:'Spend',text:r=>fmtInt(r.d.spend)},
     {label:'Revenue',text:r=>r.d.revenue>0?fmtInt(r.d.revenue):'—'},
@@ -1040,7 +1304,8 @@ function renderDailyTable(seg){
     {label:'CTR',text:r=>fmtPct(r.m.ctr)},
     {label:'LP→Purchase',text:r=>fmtPct(r.m.lp2pur)},
     {label:'CPM',text:r=>r.m.cpm>0?fmtInt(r.m.cpm):'—'},
-  ],tableRows,'daily-data-table');
+  ];
+  renderControlledTable(container,columns,tableRows,'daily-data-table');
 }
 function setPromoTableMode(mode){
   promoTableMode=mode;
@@ -1056,6 +1321,28 @@ function setPromoActiveDaysOnly(checked){
 }
 function syncPromoFilterVisibility(activeTab){
   document.getElementById('promo-active-days-wrap')?.classList.toggle('hidden',activeTab!=='czsk-promo');
+  document.getElementById('include-leadgen-wrap')?.classList.toggle('hidden',activeTab!=='czsk');
+  document.getElementById('leadgen-only-wrap')?.classList.toggle('hidden',activeTab!=='czsk-leadgen');
+}
+function setIncludeLeadGen(checked){
+  includeLeadGen=checked;
+  document.getElementById('include-leadgen').checked=checked;
+  filterState.czsk=null;filterState['czsk-creative']=null;
+  initSelects();initSortControls();buildAllFilters();
+  renderKPIs('czsk');refreshChart('czsk');renderDailyTable('czsk');renderCreatives('czsk');
+}
+function setLeadgenOnly(checked){
+  leadgenOnly=checked;
+  document.getElementById('leadgen-only').checked=checked;
+  filterState['czsk-leadgen']=null;
+  buildAllFilters();
+  renderLeadgenKPIs();refreshLeadgenCharts();renderLeadgenTable();
+}
+function setLeadgenTableMode(mode){
+  leadgenTableMode=mode;
+  document.getElementById('leadgen-mode-groups')?.classList.toggle('active',mode==='groups');
+  document.getElementById('leadgen-mode-days')?.classList.toggle('active',mode==='days');
+  renderLeadgenTable();
 }
 function promoGroupHtml(key){
   const g=promoGroup(key);
@@ -1064,7 +1351,7 @@ function promoGroupHtml(key){
 function sumPromoRows(rows,date=null,group=null){
   const total=emptyAgg(date,group);
   for(const r of rows){
-    total.spend+=r.spend;total.lp+=r.lp;total.purchases+=r.purchases;total.checkouts+=r.checkouts;
+    total.spend+=r.spend;total.lp+=r.lp;total.purchases+=r.purchases;total.checkouts+=r.checkouts;total.leads+=r.leads;
     total.outboundClicks+=r.outboundClicks;total.revenue+=r.revenue;total.impressions+=r.impressions;
   }
   return total;
@@ -1144,6 +1431,41 @@ function renderPromoTable(){
   container.innerHTML=`<div class="data-table-wrap"><table class="data-table daily-data-table"><thead><tr>${columns.map(label=>`<th title="${escapeHtml(label)}">${escapeHtml(label)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
+function leadgenGroupHtml(key){
+  const g=leadgenGroup(key);
+  return`<span class="group-badge ${g.className}">${escapeHtml(g.label)}</span>`;
+}
+function leadgenMetricCells(d){
+  const m=calcMetrics(d);const cells=promoMetricCells(d);
+  cells.push(d.leads||'—',m.cpl>0?fmtInt(m.cpl):'—',fmtPct(m.lp2lead));
+  return cells;
+}
+function leadgenNestedRow(rowClass,firstHtml,secondHtml,d){
+  return`<tr class="${rowClass}"><td class="narrow">${firstHtml}</td><td class="narrow">${secondHtml}</td>${leadgenMetricCells(d).map(v=>`<td>${v}</td>`).join('')}</tr>`;
+}
+function leadgenSortComparator(a,b){
+  const state=sortState.leadgen.czsk;const av=metricForSort(a,state.key),bv=metricForSort(b,state.key);
+  const cmp=typeof av==='string'||typeof bv==='string'?String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:'base'}):av-bv;
+  return state.dir==='asc'?cmp:-cmp;
+}
+function renderLeadgenTable(){
+  const container=document.getElementById('leadgen-table');if(!container)return;
+  const rows=byDateLeadgenGroup(getLeadgenRows('daily'),filterState['czsk-leadgen']);
+  if(!rows.length){container.innerHTML='<div class="empty">No CZSK Lead-gen data for this range.</div>';return;}
+  const metricColumns=['Spend','Revenue','ROAS','Purchases','CPA','AOV','LP→Checkout','Checkout→Purchase','Checkouts','Cost/Checkout','LP Views','Cost/LP','CTR','LP→Purchase','CPM','Leads','CPL','LP→Lead'];
+  const columns=leadgenTableMode==='groups'?['Group','Date',...metricColumns]:['Date','Group',...metricColumns];
+  const state=sortState.leadgen.czsk;let body='';
+  if(leadgenTableMode==='groups'){
+    let groups=activeLeadgenGroups().map(g=>sumPromoRows(rows.filter(r=>r.group===g.key),null,g.key)).filter(g=>g.spend||g.revenue||g.purchases||g.checkouts||g.leads||g.lp);
+    groups=state.key==='date'?groups.sort((a,b)=>LEADGEN_GROUPS.findIndex(g=>g.key===a.group)-LEADGEN_GROUPS.findIndex(g=>g.key===b.group)):groups.sort(leadgenSortComparator);
+    for(const total of groups){const children=rows.filter(r=>r.group===total.group).sort(leadgenSortComparator);body+=leadgenNestedRow('subtotal-row',leadgenGroupHtml(total.group),'Subtotal',total);body+=children.map(r=>leadgenNestedRow('child-row','',`<span class="nested-child">${escapeHtml(r.date)}</span>`,r)).join('');}
+  }else{
+    const dates=[...new Set(rows.map(r=>r.date))].map(date=>sumPromoRows(rows.filter(r=>r.date===date),date,null)).sort(leadgenSortComparator);
+    for(const total of dates){let children=rows.filter(r=>r.date===total.date);children=state.key==='date'?children.sort((a,b)=>LEADGEN_GROUPS.findIndex(g=>g.key===a.group)-LEADGEN_GROUPS.findIndex(g=>g.key===b.group)):children.sort(leadgenSortComparator);body+=leadgenNestedRow('subtotal-row',escapeHtml(total.date),'Subtotal',total);body+=children.map(r=>leadgenNestedRow('child-row','',`<span class="nested-child">${leadgenGroupHtml(r.group)}</span>`,r)).join('');}
+  }
+  container.innerHTML=`<div class="data-table-wrap"><table class="data-table daily-data-table"><thead><tr>${columns.map(label=>`<th title="${escapeHtml(label)}">${escapeHtml(label)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
 function renderTrendsTable(){
   const czskMap=Object.fromEntries(byDate(getSegmentRows('czsk','daily')).map(d=>[d.date,d]));
   const usMap=Object.fromEntries(byDate(getSegmentRows('us','daily')).map(d=>[d.date,d]));
@@ -1182,6 +1504,8 @@ function setTypeFilter(seg,type){
 function renderCreatives(seg){
   const campFilter=filterState[seg+'-creative'];const typeFilter=creativeTypeFilter[seg];
   let creatives=adCreatives.filter(c=>c.segment===seg&&c.spend>0);
+  if(seg==='czsk'&&!includeLeadGen)creatives=creatives.filter(c=>!isLeadGen(c.campaignName));
+  if(seg==='czsk'&&includeLeadGen)creatives=creatives.map(c=>isLeadGen(c.campaignName)?spendOnlyRow(c):c);
   if(campFilter)creatives=creatives.filter(c=>campFilter.has(c.campaignId));
   if(typeFilter==='video')creatives=creatives.filter(c=>c.isVideo);
   if(typeFilter==='static')creatives=creatives.filter(c=>!c.isVideo);
@@ -1190,7 +1514,7 @@ function renderCreatives(seg){
   if(grids['creative-'+seg]){try{grids['creative-'+seg].destroy();}catch(e){}}
   const sorted=sortRows(creatives,'creative',seg);
   const tableRows=sorted.map(c=>({c,m:calcMetrics(c)}));
-  renderControlledTable(container,[
+  const columns=[
     {label:'Creative',className:'wide',text:r=>r.c.name,title:r=>r.c.name},
     {label:'Campaign ID',className:'mid',text:r=>r.c.campaignCode},
     {label:'Type',text:r=>r.c.type,html:r=>badgeHtml(r.c.type)},
@@ -1211,7 +1535,8 @@ function renderCreatives(seg){
     {label:'CPM',text:r=>r.m.cpm>0?fmtInt(r.m.cpm):'—'},
     {label:'Hook%',text:r=>r.c.isVideo?fmtPct(r.c.hookRate):'—'},
     {label:'Hold%',text:r=>r.c.isVideo?fmtPct(r.c.holdRate):'—'},
-  ],tableRows,'creative-data-table');
+  ];
+  renderControlledTable(container,columns,tableRows,'creative-data-table');
 }
 
 async function fetchUsdRate(){
@@ -1245,9 +1570,10 @@ async function loadData(){
     try{
       const d=await apiFetch('aggregate');
       campaignMeta={};aggregateCampaigns=processAggregateRows(d.rows);
-      filterState={czsk:null,us:null,'czsk-promo':null,'czsk-creative':null,'us-creative':null};
+      filterState={czsk:null,us:null,'czsk-promo':null,'czsk-leadgen':null,'czsk-creative':null,'us-creative':null};
       ['czsk','us'].forEach(seg=>{renderKPIs(seg);});
       renderPromoKPIs();
+      renderLeadgenKPIs();
     }catch(err){errors.push('Totals: '+err.message);}
     setStatus('Loading daily breakdown...');
     try{
@@ -1255,10 +1581,12 @@ async function loadData(){
       dailyCampaigns=processDaily(d.rows);
       ['czsk','us'].forEach(seg=>{refreshChart(seg);renderDailyTable(seg);});
       renderPromoKPIs();refreshPromoCharts();renderPromoTable();
+      renderLeadgenKPIs();refreshLeadgenCharts();renderLeadgenTable();
     }catch(err){
       errors.push('Daily: '+err.message);
       ['czsk','us'].forEach(seg=>{const el=document.getElementById('daily-table-'+seg);if(el)el.innerHTML=`<div class="empty" style="color:var(--red)">Daily data unavailable: ${err.message}</div>`;});
       const el=document.getElementById('promo-table');if(el)el.innerHTML=`<div class="empty" style="color:var(--red)">Daily data unavailable: ${err.message}</div>`;
+      const leadEl=document.getElementById('leadgen-table');if(leadEl)leadEl.innerHTML=`<div class="empty" style="color:var(--red)">Daily data unavailable: ${err.message}</div>`;
     }
     setStatus('Loading creatives...');
     try{const d=await apiFetch('ads');adCreatives=processCreatives(d.rows);}catch(err){errors.push('Creatives: '+err.message);}
@@ -1287,12 +1615,15 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     syncPromoFilterVisibility(seg);
     if(seg==='czsk'||seg==='us'){if(charts[seg])charts[seg].resize();}
     if(seg==='czsk-promo'){['promo-spend','promo-roas','promo-pie'].forEach(k=>charts[k]?.resize());}
+    if(seg==='czsk-leadgen'){['leadgen-metric','leadgen-pie'].forEach(k=>charts[k]?.resize());}
+    if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');mobileControlsToggle.textContent='Filters';window.scrollTo({top:0,behavior:'auto'});requestAnimationFrame(()=>{if(seg==='czsk'||seg==='us')charts[seg]?.resize();if(seg==='czsk-promo')['promo-spend','promo-roas','promo-pie'].forEach(k=>charts[k]?.resize());if(seg==='czsk-leadgen')['leadgen-metric','leadgen-pie'].forEach(k=>charts[k]?.resize());});}
   });
 });
 function formatUtcTimestamp(date){
   const pad=n=>String(n).padStart(2,'0');
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth()+1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())} UTC`;
 }
+const root=document.documentElement;const themeToggle=document.getElementById('theme-toggle');const mobileControlsToggle=document.getElementById('mobile-controls-toggle');const headerRight=document.querySelector('.header-right');function setTheme(theme){root.dataset.theme=theme;try{localStorage.setItem('glv-meta-ads-theme',theme);}catch(e){}const light=theme==='light';themeToggle.textContent=light?'☾':'☀';themeToggle.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');Chart.defaults.color=light?'#637589':'#9bacc0';Chart.defaults.borderColor=light?'rgba(99,117,137,.18)':'rgba(155,172,192,.16)';Object.values(charts).forEach(chart=>chart?.update('none'));}let preferred='dark';try{preferred=localStorage.getItem('glv-meta-ads-theme')||'dark';}catch(e){}setTheme(preferred==='light'?'light':'dark');if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');}themeToggle.addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));mobileControlsToggle.addEventListener('click',()=>{const collapsed=headerRight.classList.toggle('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded',String(!collapsed));mobileControlsToggle.textContent=collapsed?'Filters':'Done';});
 initSelects();initSortControls();updateDateLabel();loadData();
 </script>
 </body>

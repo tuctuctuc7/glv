@@ -7,7 +7,6 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const read = (...parts) => fs.readFileSync(path.join(root, ...parts), 'utf8');
 
-const V1_HASH = '422aa897010d80a8c8d4f40302c3a4c6a6bd85d982186c9d63560171dbfcbd7a';
 const APPROVED_ICON_HASH = '4ee12623258531a1210f18833815132cdbf2be8624d1a43f72f9685b527d8685';
 const requiredIds = [
   'date-btn', 'date-from', 'date-to', 'promo-active-days-only', 'include-leadgen',
@@ -19,34 +18,41 @@ const requiredIds = [
   'daily-table-us', 'creative-type-us', 'creative-sort-us', 'creative-us',
 ];
 
-test('Meta Ads V1 remains byte-identical while V2 is a separate route', () => {
-  const v1 = fs.readFileSync(path.join(root, 'public/glv-meta-ads/index.html'));
-  assert.equal(crypto.createHash('sha256').update(v1).digest('hex'), V1_HASH);
-  const v2 = read('public/glv-meta-ads-2/index.html');
-  assert.match(v2, /GLV Meta Ads Pulse/);
-  assert.doesNotMatch(v1.toString('utf8'), /GLV Meta Ads Pulse/);
+test('the approved Meta Ads Pulse is the one canonical dashboard', () => {
+  const dashboard = read('public/glv-meta-ads/index.html');
+  const login = read('public/glv-meta-ads/login.html');
+  assert.match(dashboard, /GLV Meta Ads Pulse/);
+  assert.equal(fs.existsSync(path.join(root, 'public/glv-meta-ads-2')), false);
+  assert.doesNotMatch(dashboard, /\/glv-meta-ads-2\//);
+  assert.match(login, /Private dashboard access/);
+  assert.doesNotMatch(login, /Beta access/i);
 });
 
-test('Meta Ads V2 exposes the Agenthic favicon as an iPhone home-screen icon', async () => {
-  const v2 = read('public/glv-meta-ads-2/index.html');
-  assert.match(v2, /<link rel="apple-touch-icon" sizes="180x180" href="\/glv-meta-ads-2\/apple-touch-icon\.png">/);
-  const icon = fs.readFileSync(path.join(root, 'public/glv-meta-ads-2/apple-touch-icon.png'));
+test('the canonical Meta dashboard exposes its home-screen icon and retires the old URL', async () => {
+  const dashboard = read('public/glv-meta-ads/index.html');
+  assert.match(dashboard, /<link rel="apple-touch-icon" sizes="180x180" href="\/glv-meta-ads\/apple-touch-icon\.png">/);
+  const icon = fs.readFileSync(path.join(root, 'public/glv-meta-ads/apple-touch-icon.png'));
   assert.equal(icon.subarray(1, 4).toString('ascii'), 'PNG');
   assert.deepEqual([icon.readUInt32BE(16), icon.readUInt32BE(20)], [180, 180]);
   const middleware = read('middleware.js');
-  assert.match(middleware, /'\/glv-meta-ads-2\/agenthic-logo\.svg'/);
-  assert.match(middleware, /'\/glv-meta-ads-2\/apple-touch-icon\.png'/);
+  assert.match(middleware, /'\/glv-meta-ads\/agenthic-logo\.svg'/);
+  assert.match(middleware, /'\/glv-meta-ads\/apple-touch-icon\.png'/);
   assert.match(middleware, /PUBLIC_ASSET_PATHS\.has\(pathname\)/);
   const { default: authorize } = await import(`data:text/javascript;base64,${Buffer.from(middleware).toString('base64')}`);
   const request = pathname => ({ url: `https://lab.agenthic.com${pathname}`, headers: new Headers() });
-  assert.equal(authorize(request('/glv-meta-ads-2/agenthic-logo.svg')), undefined);
-  assert.equal(authorize(request('/glv-meta-ads-2/apple-touch-icon.png')), undefined);
-  assert.equal(authorize(request('/glv-meta-ads-2/')).status, 302);
+  assert.equal(authorize(request('/glv-meta-ads/agenthic-logo.svg')), undefined);
+  assert.equal(authorize(request('/glv-meta-ads/apple-touch-icon.png')), undefined);
+  assert.equal(authorize(request('/glv-meta-ads/')).status, 302);
+  for (const oldPath of ['/glv-meta-ads-2', '/glv-meta-ads-2/', '/glv-meta-ads-2/apple-touch-icon.png?install=1']) {
+    const response = authorize(request(oldPath));
+    assert.equal(response.status, 308);
+    assert.equal(response.headers.get('location'), `https://lab.agenthic.com${oldPath.replace('/glv-meta-ads-2', '/glv-meta-ads')}`);
+  }
   assert.equal(authorize(request('/api/glv-meta-ads/fb-data')).status, 401);
 });
 
-test('Meta Ads V2 preserves the V1 feature surface and shared API', () => {
-  const v2 = read('public/glv-meta-ads-2/index.html');
+test('the canonical Meta dashboard preserves the approved feature surface and shared API', () => {
+  const v2 = read('public/glv-meta-ads/index.html');
   for (const tab of ['czsk', 'czsk-promo', 'czsk-leadgen', 'us']) assert.match(v2, new RegExp(`data-tab="${tab}"`));
   for (const id of requiredIds) assert.match(v2, new RegExp(`id="${id}"`), `missing V1 control #${id}`);
   assert.match(v2, /\/api\/glv-meta-ads\/fb-data/);
@@ -58,8 +64,8 @@ test('Meta Ads V2 preserves the V1 feature surface and shared API', () => {
   assert.match(v2, /last_month/);
 });
 
-test('Meta Ads V2 defines the Lead-gen inclusion and metric contract', () => {
-  const v2 = read('public/glv-meta-ads-2/index.html');
+test('the canonical Meta dashboard defines the Lead-gen inclusion and metric contract', () => {
+  const v2 = read('public/glv-meta-ads/index.html');
   assert.match(v2, /Include Lead-gen/);
   assert.match(v2, /Lead-gen only/);
   assert.match(v2, /id="leadgen-only"/);
@@ -76,7 +82,7 @@ test('Meta Ads V2 defines the Lead-gen inclusion and metric contract', () => {
   assert.match(v2, /setLeadgenChartGranularity/);
 });
 
-test('shared Meta API exposes lead actions without changing the V1 route', () => {
+test('shared Meta API exposes lead actions to the canonical dashboard', () => {
   for (const file of ['api/glv-meta-ads/fb-data.js', 'api/glv-meta-ads/cron.js']) {
     const api = read(file);
     assert.match(api, /'actions:lead'/);
@@ -84,7 +90,7 @@ test('shared Meta API exposes lead actions without changing the V1 route', () =>
     assert.match(api, /onsite_conversion\.lead_grouped/);
     assert.match(api, /offsite_conversion\.fb_pixel_lead/);
   }
-  const v2 = read('public/glv-meta-ads-2/index.html');
+  const v2 = read('public/glv-meta-ads/index.html');
   assert.match(v2, /lp:parseNum\(r\['actions:landing_page_view'\]\)/);
   assert.match(v2, /getPromoSegmentRows/);
 });
@@ -166,10 +172,10 @@ test('Meta cron returns HTTP 500 when cache writes fail', async () => {
   }
 });
 
-test('Meta Ads V2 provides accessible light and dark theme UX', () => {
-  const v2 = read('public/glv-meta-ads-2/index.html');
-  assert.match(v2, /rel="icon" type="image\/svg\+xml" href="\/glv-meta-ads-2\/agenthic-logo\.svg"/);
-  const icon = fs.readFileSync(path.join(root, 'public/glv-meta-ads-2/agenthic-logo.svg'));
+test('the canonical Meta dashboard provides accessible light and dark theme UX', () => {
+  const v2 = read('public/glv-meta-ads/index.html');
+  assert.match(v2, /rel="icon" type="image\/svg\+xml" href="\/glv-meta-ads\/agenthic-logo\.svg"/);
+  const icon = fs.readFileSync(path.join(root, 'public/glv-meta-ads/agenthic-logo.svg'));
   assert.equal(crypto.createHash('sha256').update(icon).digest('hex'), APPROVED_ICON_HASH);
   assert.match(v2, /data-theme="dark"/);
   assert.match(v2, /data-theme="light"/);
@@ -180,19 +186,19 @@ test('Meta Ads V2 provides accessible light and dark theme UX', () => {
   assert.match(v2, /<main/);
 });
 
-test('one existing Meta Ads cron feeds both authenticated dashboard versions', () => {
+test('one existing Meta Ads cron feeds the canonical dashboard without a duplicate schedule', () => {
   const vercel = JSON.parse(read('vercel.json'));
   const cronPaths = vercel.crons.map(({ path: cronPath }) => cronPath);
   assert.deepEqual(cronPaths.filter(cronPath => cronPath.includes('glv-meta-ads')), ['/api/glv-meta-ads/cron']);
 
   const middleware = read('middleware.js');
-  assert.match(middleware, /pathname === '\/glv-meta-ads-2'/);
-  assert.match(middleware, /pathname\.startsWith\('\/glv-meta-ads-2\/'\)/);
+  assert.match(middleware, /const LEGACY_META_PATH = '\/glv-meta-ads-2'/);
+  assert.match(middleware, /Response\.redirect\(canonicalUrl, 308\)/);
   assert.match(middleware, /'\/glv-meta-ads-2\/:path\*'/);
   assert.match(middleware, /const DATA_PATH = '\/api\/glv-meta-ads\/fb-data'/);
 
   const releaseGuard = read('scripts/verify-glv-release.cjs');
-  assert.match(releaseGuard, /glv-meta-ads-2/, 'the production build guard must preserve Meta Ads V2');
-  assert.match(releaseGuard, /422aa897010d80a8c8d4f40302c3a4c6a6bd85d982186c9d63560171dbfcbd7a/, 'the production build guard must pin Meta Ads V1');
+  assert.match(releaseGuard, /approved Meta Ads Pulse/, 'the production build guard must enforce the promoted dashboard');
+  assert.match(releaseGuard, /legacy Meta Ads V2 public directory still exists/, 'the production build guard must enforce old-route cleanup');
   assert.match(releaseGuard, /\/api\/glv-meta-ads\/cron/, 'the production build guard must enforce the shared cron');
 });

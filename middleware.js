@@ -3,9 +3,10 @@ const LOGIN_PATH = '/glv-meta-ads/login';
 const AUTH_PATH = '/api/glv-meta-ads/auth';
 const DATA_PATH = '/api/glv-meta-ads/fb-data';
 const MB_OS_DATA_PATH = '/api/glv-mb-os/decision-report';
+const LEGACY_META_PATH = '/glv-meta-ads-2';
 const PUBLIC_ASSET_PATHS = new Set([
-  '/glv-meta-ads-2/agenthic-logo.svg',
-  '/glv-meta-ads-2/apple-touch-icon.png',
+  '/glv-meta-ads/agenthic-logo.svg',
+  '/glv-meta-ads/apple-touch-icon.png',
 ]);
 
 function cookieValue(cookieHeader, name) {
@@ -22,8 +23,6 @@ function isDashboardPath(pathname) {
   return (
     pathname === '/glv-meta-ads'
     || pathname.startsWith('/glv-meta-ads/')
-    || pathname === '/glv-meta-ads-2'
-    || pathname.startsWith('/glv-meta-ads-2/')
     || pathname === '/glv-mb-os'
     || pathname.startsWith('/glv-mb-os/')
   );
@@ -37,6 +36,12 @@ function hasAccess(request) {
 export default function middleware(request) {
   const url = new URL(request.url);
   const { pathname } = url;
+
+  if (pathname === LEGACY_META_PATH || pathname.startsWith(`${LEGACY_META_PATH}/`)) {
+    const canonicalUrl = new URL(request.url);
+    canonicalUrl.pathname = `/glv-meta-ads${pathname.slice(LEGACY_META_PATH.length)}`;
+    return Response.redirect(canonicalUrl, 308);
+  }
 
   if (PUBLIC_ASSET_PATHS.has(pathname)) return;
 
@@ -56,5 +61,5 @@ export default function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/glv-meta-ads/:path*', '/glv-meta-ads-2/:path*', '/glv-mb-os/:path*', '/api/glv-meta-ads/fb-data', '/api/glv-mb-os/decision-report'],
+  matcher: ['/glv-meta-ads/:path*', '/glv-meta-ads-2', '/glv-meta-ads-2/:path*', '/glv-mb-os/:path*', '/api/glv-meta-ads/fb-data', '/api/glv-mb-os/decision-report'],
 };

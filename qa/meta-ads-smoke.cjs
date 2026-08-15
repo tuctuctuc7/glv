@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, '..');
 const publicRoot = path.join(root, 'public');
 const chromePath = '/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome';
 const browserLibRoot = '/home/tom/.cache/hermes-browser-libs/root';
-const evidenceDir = path.resolve(process.env.GLV_META_QA_EVIDENCE_DIR || '/tmp/glv-meta-ads-v2-qa');
+const evidenceDir = path.resolve(process.env.GLV_META_QA_EVIDENCE_DIR || '/tmp/glv-meta-ads-qa');
 fs.rmSync(evidenceDir, { recursive: true, force: true });
 fs.mkdirSync(evidenceDir, { recursive: true });
 
@@ -65,7 +65,7 @@ function server() {
 async function run() {
   const app = server();
   await new Promise(resolve => app.listen(0, '127.0.0.1', resolve));
-  const base = `http://127.0.0.1:${app.address().port}/glv-meta-ads-2/`;
+  const base = `http://127.0.0.1:${app.address().port}/glv-meta-ads/`;
   const browser = await chromium.launch({ executablePath: chromePath, headless: true, args: ['--no-sandbox'], env: { ...process.env, LD_LIBRARY_PATH: `${browserLibRoot}/usr/lib/x86_64-linux-gnu:${browserLibRoot}/usr/lib`, FONTCONFIG_PATH: `${browserLibRoot}/etc/fonts` } });
   const errors = [];
   try {
@@ -78,10 +78,15 @@ async function run() {
         if (response.status() >= 400) errors.push(`${viewport.name}: HTTP ${response.status()} ${response.url()}`);
       });
       await page.route('https://api.frankfurter.dev/**', route => route.fulfill({ json: { rates: { USD: 0.044 } } }));
+      if (viewport.name === 'desktop') {
+        await page.goto(base.slice(0, -1), { waitUntil: 'networkidle' });
+        await page.locator('#kpi-czsk .kpi-card').first().waitFor();
+        assert.equal(await page.locator('h1, .header-logo').filter({ hasText: 'GLV Meta Ads Pulse' }).count() > 0, true);
+      }
       await page.goto(base, { waitUntil: 'networkidle' });
       await page.locator('#kpi-czsk .kpi-card').first().waitFor();
       const homeIconHref = await page.locator('link[rel="apple-touch-icon"]').getAttribute('href');
-      assert.equal(homeIconHref, '/glv-meta-ads-2/apple-touch-icon.png');
+      assert.equal(homeIconHref, '/glv-meta-ads/apple-touch-icon.png');
       const homeIconResponse = await page.request.get(new URL(homeIconHref, base).href);
       assert.equal(homeIconResponse.status(), 200);
       assert.match(homeIconResponse.headers()['content-type'] || '', /^image\/png/);

@@ -96,6 +96,8 @@ Currency for the business KPI dashboard JSON is USD.
 
 Route: `/glv-meta-ads/`
 
+The approved GLV Meta Ads Pulse interface is the canonical dashboard at this route. The former overlap URL `/glv-meta-ads-2/` is retired and permanently redirects to `/glv-meta-ads/`; its duplicate public directory no longer ships.
+
 This is password-gated by Vercel middleware using the `glv_meta_beta` cookie. Login lives at:
 
 ```text
@@ -278,6 +280,8 @@ Needs check ❌
 Use `/home/linuxbrew/.linuxbrew/bin/openclaw` in this script. The older `/home/tom/.openclaw/bin/openclaw` wrapper can fail config validation.
 
 ### Meta Ads Cron And Slack Summary
+
+The canonical dashboard still depends on the single shared Meta cache-refresh schedule below. There was no separate V2 cron to stop after the route cutover, so keeping this one schedule avoids stale dashboard data without retaining duplicate automation.
 
 Vercel cron:
 

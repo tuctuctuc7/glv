@@ -63,24 +63,25 @@ for (const route of ['glv', 'glv-2']) {
   }
 }
 
-const metaV1Path = routePath('glv-meta-ads', 'index.html');
-const metaV2Path = routePath('glv-meta-ads-2', 'index.html');
-const metaV1Hash = '422aa897010d80a8c8d4f40302c3a4c6a6bd85d982186c9d63560171dbfcbd7a';
-if (sha256(fs.readFileSync(metaV1Path)) !== metaV1Hash) {
-  fail('GLV Meta Ads V1 changed while the parallel V2 route is under review');
+const metaPath = routePath('glv-meta-ads', 'index.html');
+const metaHtml = fs.readFileSync(metaPath, 'utf8');
+if (!metaHtml.includes('<title>GLV Meta Ads Pulse</title>') || !metaHtml.includes('/api/glv-meta-ads/fb-data')) {
+  fail('canonical route no longer contains the approved Meta Ads Pulse dashboard');
 }
-const metaV2Html = fs.readFileSync(metaV2Path, 'utf8');
-if (!metaV2Html.includes('<title>GLV Meta Ads Pulse</title>') || !metaV2Html.includes('/api/glv-meta-ads/fb-data')) {
-  fail('GLV Meta Ads V2 route or shared data source is missing');
+if (metaHtml.includes('/glv-meta-ads-2/')) {
+  fail('canonical Meta dashboard still references the retired V2 route');
 }
-const metaV2IconPath = routePath('glv-meta-ads-2', 'agenthic-logo.svg');
-if (!metaV2Html.includes('/glv-meta-ads-2/agenthic-logo.svg') || !fs.existsSync(metaV2IconPath) || sha256(fs.readFileSync(metaV2IconPath)) !== approvedIconHash) {
-  fail('GLV Meta Ads V2 is missing its approved route-local icon');
+if (fs.existsSync(path.join(root, 'public', 'glv-meta-ads-2'))) {
+  fail('legacy Meta Ads V2 public directory still exists');
+}
+const metaIconPath = routePath('glv-meta-ads', 'agenthic-logo.svg');
+if (!metaHtml.includes('/glv-meta-ads/agenthic-logo.svg') || !fs.existsSync(metaIconPath) || sha256(fs.readFileSync(metaIconPath)) !== approvedIconHash) {
+  fail('canonical Meta Ads dashboard is missing its approved route-local icon');
 }
 const config = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
 const metaCronPaths = (config.crons || []).map(({ path: cronPath }) => cronPath).filter(cronPath => cronPath.includes('glv-meta-ads'));
 if (metaCronPaths.length !== 1 || metaCronPaths[0] !== '/api/glv-meta-ads/cron') {
-  fail('GLV Meta Ads V1 and V2 must share the one existing cron');
+  fail('the canonical GLV Meta Ads dashboard must retain one cache-refresh cron');
 }
 
 console.log(JSON.stringify({
@@ -88,5 +89,5 @@ console.log(JSON.stringify({
   coverageEnd,
   expectedAtLeast: yesterdayUtc,
   snapshotsByteIdentical: true,
-  routes: { v1: 'GLV Dashboard', v2: 'GLV Executive Pulse', metaV1: 'GLV Meta Ads', metaV2: 'GLV Meta Ads Pulse' },
+  routes: { v1: 'GLV Dashboard', v2: 'GLV Executive Pulse', meta: 'GLV Meta Ads Pulse' },
 }));
