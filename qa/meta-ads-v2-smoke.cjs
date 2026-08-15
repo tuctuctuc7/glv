@@ -94,6 +94,18 @@ async function run() {
           return Math.abs(cardWidth - expectedWidth) <= 1;
         }), true);
         assert.equal(await page.locator('#panel-czsk .chart-controls').first().evaluate(el => getComputedStyle(el).display), 'grid');
+        assert.equal(await page.locator('#panel-czsk .axis-controls').count(), 1);
+        assert.equal(await page.locator('#panel-czsk .axis-controls').evaluate(controls => {
+          const bars = controls.querySelector('#chart-left-czsk').getBoundingClientRect();
+          const line = controls.querySelector('#chart-right-czsk').getBoundingClientRect();
+          const grain = controls.querySelector('#chart-grain-czsk').getBoundingClientRect();
+          const labels = [...controls.querySelectorAll('.metric-label')].map(label => label.getBoundingClientRect());
+          return bars.left < line.left && line.left < grain.left
+            && Math.max(bars.top, line.top, grain.top) - Math.min(bars.top, line.top, grain.top) <= 1
+            && labels.every(label => label.bottom <= bars.top)
+            && controls.getBoundingClientRect().height <= 68;
+        }), true);
+        assert.deepEqual(await page.locator('#panel-czsk .axis-controls > .metric-label').allInnerTexts(), ['GRAIN', 'BARS', 'LINE']);
         assert.equal(await page.locator('#daily-table-czsk tbody td').first().evaluate(el => getComputedStyle(el).position), 'sticky');
         assert.equal(await page.locator('#daily-table-czsk tbody td').nth(1).evaluate(el => getComputedStyle(el).position), 'static');
         assert.equal(await page.locator('#daily-table-czsk thead th').evaluateAll(headers => headers.every(header => getComputedStyle(header).position === 'sticky' && getComputedStyle(header).top === '0px')), true);
@@ -140,17 +152,21 @@ async function run() {
         assert.equal(await page.locator('.header-right').evaluate(el => getComputedStyle(el).position), 'fixed');
         assert.equal(await page.evaluate(() => [document.querySelector('#date-btn'), document.querySelector('.header-right .tick-filter:not(.hidden)')].every(control => control.getBoundingClientRect().height >= 44)), true);
         await page.locator('#mobile-controls-toggle').click();
+        assert.deepEqual(await page.locator('#filter-toggle-czsk').evaluate(toggle => ({ tag: toggle.tagName, expanded: toggle.getAttribute('aria-expanded'), controls: toggle.getAttribute('aria-controls') })), { tag: 'BUTTON', expanded: 'false', controls: 'filter-dropdown-czsk' });
         await page.locator('#filter-toggle-czsk').click();
         assert.equal(await page.locator('#filter-dropdown-czsk').evaluate(el => el.classList.contains('open')), true);
+        assert.equal(await page.locator('#filter-toggle-czsk').getAttribute('aria-expanded'), 'true');
         for (const selector of ['#filter-dropdown-czsk .filter-search', '#filter-dropdown-czsk .filter-option', '#filter-dropdown-czsk .filter-action-btn']) {
           assert.ok(await page.locator(selector).first().evaluate(el => el.getBoundingClientRect().height >= 44));
         }
         await page.locator('#filter-toggle-czsk').click();
+        assert.equal(await page.locator('#filter-toggle-czsk').getAttribute('aria-expanded'), 'false');
       } else {
         assert.equal(await page.locator('.header-tabs').evaluate(el => getComputedStyle(el).position), 'static');
         assert.equal(await page.locator('.dashboard-sub').isVisible(), true);
         assert.equal(await page.locator('#kpi-czsk').evaluate(el => el.scrollWidth === el.clientWidth), true);
         assert.equal(await page.locator('#panel-czsk .chart-controls').first().evaluate(el => getComputedStyle(el).display), 'flex');
+        assert.deepEqual(await page.locator('#panel-czsk .axis-controls > .metric-label').allInnerTexts(), ['X-axis:', 'Left Y:', 'Right Y:']);
         assert.equal(await page.locator('#daily-table-czsk tbody td').nth(1).evaluate(el => getComputedStyle(el).position), 'sticky');
         assert.equal(await page.locator('#kpi-czsk').evaluate((el, width) => getComputedStyle(el).gridTemplateColumns.split(' ').length === (width > 1100 ? 4 : 2), viewport.width), true);
       }
@@ -202,6 +218,11 @@ async function run() {
       assert.equal(await page.locator('#chart-metric-leadgen').inputValue(), 'spend');
       assert.equal(await page.locator('#chart-grain-leadgen').inputValue(), 'day');
       assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-leadgen-metric')) && Boolean(window.Chart.getChart('chart-leadgen-pie'))));
+      if (viewport.width <= 720) assert.equal(await page.locator('#panel-czsk-leadgen .axis-controls').evaluate(controls => {
+        const metric = controls.querySelector('#chart-metric-leadgen').getBoundingClientRect();
+        const grain = controls.querySelector('#chart-grain-leadgen').getBoundingClientRect();
+        return metric.top === grain.top && metric.width > grain.width && controls.getBoundingClientRect().height <= 68;
+      }), true);
       if (viewport.width <= 720) await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-leadgen.png`), fullPage: true });
       const dayPointCount = await page.evaluate(() => window.Chart.getChart('chart-leadgen-metric').data.labels.length);
       await page.locator('#chart-metric-leadgen').selectOption('leads');
@@ -220,6 +241,12 @@ async function run() {
       assert.equal(await page.locator('#chart-right-leadgen').inputValue(), 'cpl');
       assert.equal(await page.locator('#leadgen-pie-card').isVisible(), false);
       assert.equal(await page.evaluate(() => Boolean(window.Chart.getChart('chart-leadgen-pie'))), false);
+      if (viewport.width <= 720) assert.equal(await page.locator('#panel-czsk-leadgen .axis-controls').evaluate(controls => {
+        const boxes = ['#chart-left-leadgen', '#chart-right-leadgen', '#chart-grain-leadgen'].map(selector => controls.querySelector(selector).getBoundingClientRect());
+        return boxes[0].left < boxes[1].left && boxes[1].left < boxes[2].left
+          && Math.max(...boxes.map(box => box.top)) - Math.min(...boxes.map(box => box.top)) <= 1
+          && controls.getBoundingClientRect().height <= 68;
+      }), true);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
       assert.deepEqual(await page.evaluate(() => window.Chart.getChart('chart-leadgen-metric').data.datasets.map(dataset => [dataset.type, dataset.yAxisID, dataset.label])), [['bar', 'y', 'Spend (CZK)'], ['line', 'y1', 'CPL (CZK)']]);
       if (viewport.width <= 720) await page.locator('#mobile-controls-toggle').click();
