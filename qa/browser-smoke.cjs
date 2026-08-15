@@ -184,6 +184,18 @@ async function run() {
     assert.match(await page.locator('#trendDataCaption').textContent(), /Revenue and ROAS by week/);
     assert.equal(await page.locator('#metricsTableBody tr').count(), 29, 'chart grain must not reduce selected-date detail rows');
     assert.match(await page.locator('#tableSubtitle').textContent(), /Summary \+ 28 day rows/);
+    assert.equal(await page.locator('#auditGrain').isVisible(), true, 'audit grain must be available on desktop');
+    await page.locator('#auditGrain').selectOption('week');
+    assert.equal(await page.locator('#metricsTableBody tr').count(), 6, 'weekly audit grain should show summary plus five week rows');
+    assert.equal((await page.locator('#auditPeriodHeader').textContent()).trim(), 'Week');
+    assert.match(await page.locator('#tableSubtitle').textContent(), /Summary \+ 5 week rows/);
+    assert.ok((await page.locator('#metricsTableBody tr:not(.summary-row) td:first-child').allTextContents()).every((label) => /^\d{4}-W\d{2}$/.test(label)), 'weekly audit labels must use ISO week labels');
+    assert.equal(await page.locator('#grain').inputValue(), 'week', 'audit grain must not change the chart grain');
+    await page.locator('#auditGrain').selectOption('month');
+    assert.equal(await page.locator('#metricsTableBody tr').count(), 3, 'monthly audit grain should show summary plus two month rows');
+    assert.equal((await page.locator('#auditPeriodHeader').textContent()).trim(), 'Month');
+    assert.match(await page.locator('#metricsTableCaption').textContent(), /by month/);
+    await page.locator('#auditGrain').selectOption('day');
     await page.locator('#grain').selectOption('day');
     await page.evaluate(() => {
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -255,7 +267,7 @@ async function run() {
     assert.equal(await slashless.locator('#errorState').isVisible(), false, 'slashless /glv-2 must load all route assets and data');
     await slashlessContext.close();
 
-    const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: 'dark', reducedMotion: 'reduce' });
+    const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, colorScheme: 'dark', reducedMotion: 'reduce' });
     const mobile = await mobileContext.newPage();
     mobile.on('console', (message) => {
       if (message.type() === 'error') consoleErrors.push(`mobile: ${message.text()}`);
@@ -270,7 +282,10 @@ async function run() {
     assert.equal(await mobile.locator('.scope-summary').isVisible(), false, 'mobile pulse heading should not repeat market, currency, or duration');
     const mobileKpiGeometry = await mobile.locator('#executiveKpis').evaluate((grid) => {
       const gridRect = grid.getBoundingClientRect();
-      const cards = [...grid.children].map((card) => card.getBoundingClientRect());
+      const cards = [...grid.children].map((card) => {
+        const rect = card.getBoundingClientRect();
+        return { label: card.querySelector('.kpi-label')?.textContent?.trim(), left: rect.left, top: rect.top, width: rect.width };
+      });
       const rows = [...new Set(cards.map((card) => Math.round(card.top)))];
       const columns = [...new Set(cards.map((card) => Math.round(card.left)))];
       return {
@@ -278,6 +293,7 @@ async function run() {
         scrollWidth: grid.scrollWidth,
         rows,
         columns,
+        cards,
         cardWidth: cards[0].width,
         visibleThirdWidth: gridRect.right - cards[4].left,
       };
@@ -287,6 +303,22 @@ async function run() {
     assert.ok(mobileKpiGeometry.scrollWidth > mobileKpiGeometry.clientWidth, `mobile KPI cards should scroll horizontally: ${JSON.stringify(mobileKpiGeometry)}`);
     const visibleThirdRatio = mobileKpiGeometry.visibleThirdWidth / mobileKpiGeometry.cardWidth;
     assert.ok(visibleThirdRatio >= 0.28 && visibleThirdRatio <= 0.38, `mobile KPI grid should reveal about one-third of the third column: ${JSON.stringify({ visibleThirdRatio, ...mobileKpiGeometry })}`);
+    const scorecardPlacement = Object.fromEntries(mobileKpiGeometry.cards.map((card) => [card.label, card]));
+    assert.equal(scorecardPlacement.Revenue.left, scorecardPlacement.Spend.left, 'Revenue and Spend should form mobile column A');
+    assert.equal(scorecardPlacement.ROAS.left, scorecardPlacement['New customer rate'].left, 'ROAS and NC rate should form mobile column B');
+    assert.equal(scorecardPlacement.Revenue.top, scorecardPlacement.ROAS.top, 'Revenue and ROAS should form mobile row 1');
+    assert.equal(scorecardPlacement.Spend.top, scorecardPlacement['New customer rate'].top, 'Spend and NC rate should form mobile row 2');
+    assert.ok(scorecardPlacement.ROAS.left > scorecardPlacement.Revenue.left, 'ROAS should be the second visible scorecard on mobile');
+    const mobileAuditGrain = await mobile.locator('#auditGrain').evaluate((node) => ({
+      visible: Boolean(node.offsetWidth || node.offsetHeight),
+      height: Math.round(node.getBoundingClientRect().height),
+    }));
+    assert.equal(mobileAuditGrain.visible, true, 'audit grain must be available on mobile');
+    assert.ok(mobileAuditGrain.height >= 44, `mobile audit grain must keep a 44px touch target: ${JSON.stringify(mobileAuditGrain)}`);
+    await mobile.locator('#auditGrain').selectOption('week');
+    assert.equal(await mobile.locator('#metricsTableBody tr').count(), 6, 'mobile weekly audit grain should show summary plus five week rows');
+    assert.equal((await mobile.locator('#auditPeriodHeader').textContent()).trim(), 'Week');
+    await mobile.locator('#auditGrain').selectOption('day');
     assert.equal(await mobile.locator('body').evaluate((node) => getComputedStyle(node).minHeight), '0px', 'mobile page height should follow its content');
     const mobileOverflow = await mobile.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     const mobileOverflowContext = await mobile.evaluate(() => {
@@ -354,6 +386,63 @@ async function run() {
     await mobile.locator('#marketComparison .section-toggle').click();
     assert.equal(await mobile.locator('#auditContent').isVisible(), true, 'audit section should expand');
     assert.equal(await mobile.locator('#marketComparisonContent').isVisible(), true, 'market comparison section should expand');
+    await mobile.evaluate(() => {
+      window.scrollTo(0, 0);
+      window.__pullRefreshHaptics = [];
+      Object.defineProperty(navigator, 'vibrate', {
+        configurable: true,
+        value(duration) {
+          window.__pullRefreshHaptics.push(duration);
+          return true;
+        },
+      });
+    });
+    let releaseRefresh;
+    const refreshGate = new Promise((resolve) => { releaseRefresh = resolve; });
+    await mobile.route('**/glv_dashboard.json', async (route) => {
+      await refreshGate;
+      await route.continue();
+    });
+    const dispatchTouch = (type, y) => mobile.evaluate(({ touchType, clientY }) => {
+      const target = document.body;
+      const point = new Touch({
+        identifier: 1,
+        target,
+        clientX: 195,
+        clientY,
+        pageX: 195,
+        pageY: clientY,
+        screenX: 195,
+        screenY: clientY,
+        radiusX: 2,
+        radiusY: 2,
+        force: 0.5,
+      });
+      target.dispatchEvent(new TouchEvent(touchType, {
+        bubbles: true,
+        cancelable: true,
+        touches: touchType === 'touchend' ? [] : [point],
+        targetTouches: touchType === 'touchend' ? [] : [point],
+        changedTouches: [point],
+      }));
+    }, { touchType: type, clientY: y });
+    await dispatchTouch('touchstart', 100);
+    await dispatchTouch('touchmove', 270);
+    assert.equal(await mobile.locator('#pullRefreshIndicator').getAttribute('data-state'), 'armed');
+    assert.equal((await mobile.locator('#pullRefreshText').textContent()).trim(), 'Release to refresh');
+    assert.deepEqual(await mobile.evaluate(() => window.__pullRefreshHaptics), [10], 'crossing the refresh threshold should produce one haptic');
+    await dispatchTouch('touchend', 270);
+    await mobile.locator('#pullRefreshIndicator[data-state="loading"]').waitFor();
+    assert.equal(await mobile.locator('.pull-refresh-spinner').isVisible(), true, 'refresh spinner should be visible while loading');
+    assert.equal(await mobile.locator('#dashboardContent').isVisible(), true, 'refresh should preserve the current dashboard while loading');
+    assert.deepEqual(await mobile.evaluate(() => window.__pullRefreshHaptics), [10, 14], 'release should produce the refresh haptic');
+    releaseRefresh();
+    await mobile.waitForFunction(() => document.querySelector('#pullRefreshIndicator')?.dataset.state === 'success', null, { polling: 20, timeout: 3_000 });
+    assert.equal((await mobile.locator('#pullRefreshText').textContent()).trim(), 'Updated');
+    assert.deepEqual(await mobile.evaluate(() => window.__pullRefreshHaptics), [10, 14, 8], 'successful refresh should produce completion haptic feedback');
+    await mobile.waitForFunction(() => document.querySelector('#pullRefreshIndicator')?.dataset.state === 'idle', null, { polling: 20, timeout: 3_000 });
+    assert.equal(await mobile.locator('#appSurface').evaluate((element) => element.style.transform), '', 'page surface should settle back after refresh');
+    await mobile.unroute('**/glv_dashboard.json');
     await mobile.locator('#details').scrollIntoViewIfNeeded();
     assert.ok(await mobile.locator('#details').isVisible(), 'performance detail should be reachable by vertical scrolling');
     await mobile.evaluate(() => {
@@ -364,7 +453,7 @@ async function run() {
     await mobile.screenshot({ path: path.join(evidenceDir, 'mobile-dark-filters.png'), fullPage: true });
     await mobileContext.close();
 
-    const narrowContext = await browser.newContext({ viewport: { width: 320, height: 720 }, colorScheme: 'dark', reducedMotion: 'reduce' });
+    const narrowContext = await browser.newContext({ viewport: { width: 320, height: 720 }, hasTouch: true, colorScheme: 'dark', reducedMotion: 'reduce' });
     const narrow = await narrowContext.newPage();
     narrow.on('console', (message) => {
       if (message.type() === 'error') consoleErrors.push(`narrow: ${message.text()}`);

@@ -85,13 +85,26 @@ test('latest executive branding and KPI copy are present', () => {
   assert.match(html, /class="brand-mark"[\s\S]*?<img[^>]*class="brand-logo"/, 'logo needs an explicit full-square rendering hook');
 });
 
+test('mobile pull-to-refresh exposes loading, refresh, and haptic hooks', () => {
+  for (const id of ['pullRefreshIndicator', 'pullRefreshText', 'pullRefreshHaptic', 'appSurface']) {
+    has(new RegExp(`id="${id}"`), `missing ${id}`);
+  }
+  has(/id="pullRefreshIndicator"[^>]*role="status"[^>]*aria-live="polite"/, 'pull refresh needs an accessible live status');
+  has(/id="pullRefreshHaptic"[^>]*type="checkbox"[^>]*switch/, 'pull refresh needs the iOS switch haptic fallback');
+  assert.match(app, /addEventListener\('touchstart'/, 'pull refresh must begin from a touch gesture');
+  assert.match(app, /addEventListener\('touchmove'[\s\S]*?event\.preventDefault\(\)/, 'pull refresh must own the active downward gesture');
+  assert.match(app, /navigator\.vibrate[\s\S]*?hapticSwitch\?\.click\(\)/, 'pull refresh needs standard and iOS haptic paths');
+  assert.match(app, /loadData\(\{ preserveContent: true \}\)/, 'pull refresh must reload data without blanking the dashboard');
+  assert.match(styles, /\.pull-refresh-spinner[\s\S]*?animation:\s*pull-refresh-spin/, 'pull refresh needs a visible loading spinner');
+});
+
 test('pinned Chart.js dependency has subresource integrity protection', () => {
   has(/chart\.js@4\.4\.9\/dist\/chart\.umd\.min\.js"[^>]*integrity="sha384-[A-Za-z0-9+/=]+"[^>]*crossorigin="anonymous"/, 'Chart.js CDN script needs verified SRI and anonymous CORS');
 });
 
 test('detail table exposes the approved audit metrics and no row-limit control', () => {
   has(/<table[^>]*id="metricsTable"/, 'missing detail table');
-  has(/<caption[^>]*>GLV business performance by selected date</i, 'detail table must describe daily rows independently of chart grain');
+  has(/<caption[^>]*id="metricsTableCaption"[^>]*>GLV business performance by day</i, 'detail table must describe its default daily grain');
   for (const label of ['Date', 'Spend', 'Revenue', 'ROAS', 'Purchases', 'Cost per purchase', 'AOV', 'CVR', 'Visitors', 'New customer revenue', 'New customer rate']) {
     has(new RegExp(`<th[^>]*[^>]*>${label}<`, 'i'), `missing ${label} header`);
   }
@@ -101,6 +114,12 @@ test('detail table exposes the approved audit metrics and no row-limit control',
   assert.match(app, /formatAuditMetric\('roas'/, 'audit ROAS must omit the x suffix');
   assert.doesNotMatch(html, /id="tableLimit"/, 'row limit must follow the selected date range');
   has(/id="auditTableWrap"/, 'audit table needs a dedicated two-axis scroll container');
+});
+
+test('audit trail has an independent day, week, and month grain filter', () => {
+  has(/<select id="auditGrain">[\s\S]*?value="day" selected[\s\S]*?value="week"[\s\S]*?value="month"/, 'audit grain options are incomplete');
+  assert.match(app, /const grain = \$\('auditGrain'\)\.value;[\s\S]*?metrics\.groupRows\(view\.currentRows, grain\)/, 'audit table must group by its own grain');
+  assert.match(app, /\$\('auditGrain'\)\.addEventListener\('change'/, 'audit grain must update interactively');
 });
 
 test('dashboard copy uses the approved CVR and ROAS names throughout', () => {

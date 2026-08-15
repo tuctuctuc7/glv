@@ -206,6 +206,7 @@ function renderKpiCard(key, view) {
   const previous = view.comparison.previous?.[key];
   const change = view.comparison.changes[key];
   const card = element('article', 'kpi-card');
+  card.dataset.metric = key;
   card.style.setProperty('--metric-color', config.color);
 
   const top = element('div', 'kpi-topline');
@@ -827,7 +828,9 @@ function formatAuditMetric(key, value) {
 }
 
 function renderTable(view) {
-  const rows = metrics.groupRows(view.currentRows, 'day').reverse();
+  const grain = $('auditGrain').value;
+  const rows = metrics.groupRows(view.currentRows, grain).reverse();
+  const grainLabel = { day: 'day', week: 'week', month: 'month' }[grain];
   const body = $('metricsTableBody');
   clear(body);
   const summary = view.comparison.current;
@@ -865,7 +868,9 @@ function renderTable(view) {
     values.forEach((value) => tr.appendChild(element('td', '', value)));
     body.appendChild(tr);
   });
-  $('tableSubtitle').textContent = `Summary + ${rows.length} day rows · selected date range · newest first`;
+  $('auditPeriodHeader').textContent = grain === 'day' ? 'Date' : grain === 'week' ? 'Week' : 'Month';
+  $('metricsTableCaption').textContent = `GLV business performance by ${grainLabel}`;
+  $('tableSubtitle').textContent = `Summary + ${rows.length} ${grainLabel} ${rows.length === 1 ? 'row' : 'rows'} · selected date range · newest first`;
 }
 
 function renderScope(view) {
@@ -972,6 +977,9 @@ function setupEvents() {
     render();
   }));
   ['comparisonToggle', 'trendMetric', 'trendMetricSecondary', 'grain'].forEach((id) => $(id).addEventListener('change', render));
+  $('auditGrain').addEventListener('change', () => {
+    if (state.data) renderTable(getViewData());
+  });
 
   document.querySelectorAll('.section-toggle').forEach((button) => {
     button.addEventListener('click', () => {
@@ -1018,6 +1026,91 @@ function setupEvents() {
   });
 }
 
+function setupPullToRefresh() {
+  const indicator = $('pullRefreshIndicator');
+  const indicatorText = $('pullRefreshText');
+  const hapticSwitch = $('pullRefreshHaptic');
+  const appSurface = $('appSurface');
+  const threshold = 64;
+  const maxDistance = 78;
+  let startY = 0;
+  let distance = 0;
+  let tracking = false;
+  let armed = false;
+  let refreshing = false;
+
+  const isEnabled = () => window.matchMedia('(max-width: 720px)').matches
+    && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
+  const haptic = (duration = 10) => {
+    if (typeof navigator.vibrate === 'function' && navigator.vibrate(duration)) return;
+    hapticSwitch?.click();
+  };
+
+  const setIndicator = (status, text, pullDistance = distance) => {
+    indicator.dataset.state = status;
+    indicatorText.textContent = text;
+    indicator.setAttribute('aria-hidden', String(status === 'idle'));
+    indicator.style.setProperty('--pull-offset', `${Math.max(0, pullDistance)}px`);
+    appSurface.classList.toggle('pull-refresh-active', status !== 'idle');
+    if (status === 'idle') appSurface.removeAttribute('style');
+    else appSurface.style.transform = `translateY(${Math.max(0, pullDistance)}px)`;
+  };
+
+  const reset = () => {
+    tracking = false;
+    armed = false;
+    distance = 0;
+    setIndicator('idle', 'Pull to refresh', 0);
+  };
+
+  const refresh = async () => {
+    refreshing = true;
+    setIndicator('loading', 'Refreshing', maxDistance);
+    haptic(14);
+    const minimumDisplay = new Promise((resolve) => window.setTimeout(resolve, 550));
+    const [success] = await Promise.all([loadData({ preserveContent: true }), minimumDisplay]);
+    setIndicator(success ? 'success' : 'error', success ? 'Updated' : 'Refresh failed', maxDistance);
+    if (success) haptic(8);
+    await new Promise((resolve) => window.setTimeout(resolve, success ? 450 : 900));
+    refreshing = false;
+    reset();
+  };
+
+  document.addEventListener('touchstart', (event) => {
+    if (!isEnabled() || refreshing || window.scrollY > 0 || event.touches.length !== 1) return;
+    startY = event.touches[0].clientY;
+    tracking = true;
+    armed = false;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (event) => {
+    if (!tracking || refreshing || event.touches.length !== 1) return;
+    if (window.scrollY > 0) {
+      reset();
+      return;
+    }
+    const delta = event.touches[0].clientY - startY;
+    if (delta <= 0) return;
+    event.preventDefault();
+    distance = Math.min(maxDistance, delta * 0.45);
+    const nextArmed = distance >= threshold;
+    if (nextArmed && !armed) haptic(10);
+    armed = nextArmed;
+    setIndicator(armed ? 'armed' : 'pulling', armed ? 'Release to refresh' : 'Pull to refresh');
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => {
+    if (!tracking || refreshing) return;
+    tracking = false;
+    if (armed) refresh(); else reset();
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', () => {
+    if (!refreshing) reset();
+  }, { passive: true });
+}
+
 function validateData(data) {
   if (!data || !Array.isArray(data.rows) || !data.date_range?.start || !data.date_range?.end) throw new Error('Dashboard data has an invalid structure.');
   if (data.currency !== 'USD') throw new Error('Dashboard currency must be USD.');
@@ -1033,11 +1126,11 @@ function updateFreshness() {
   $('freshnessBadge').dataset.status = ageHours === null ? 'loading' : ageHours <= 36 ? 'fresh' : 'stale';
 }
 
-async function loadData() {
+async function loadData({ preserveContent = false } = {}) {
   state.loadAttempts += 1;
-  $('loadingState').hidden = false;
+  $('loadingState').hidden = preserveContent;
   $('errorState').hidden = true;
-  $('dashboardContent').hidden = true;
+  $('dashboardContent').hidden = !preserveContent;
   try {
     const response = await fetch('/glv-2/glv_dashboard.json', { cache: 'no-store' });
     if (!response.ok) throw new Error(`Data request failed (${response.status}).`);
@@ -1051,11 +1144,14 @@ async function loadData() {
     restoreUrlState();
     updateFreshness();
     render();
+    return true;
   } catch (error) {
-    showEmpty(error instanceof Error ? error.message : 'Unknown data-loading error.');
+    if (!preserveContent || !state.data) showEmpty(error instanceof Error ? error.message : 'Unknown data-loading error.');
+    return false;
   }
 }
 
 setupTheme();
 setupEvents();
+setupPullToRefresh();
 loadData();

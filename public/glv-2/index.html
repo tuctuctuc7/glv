@@ -17,6 +17,14 @@
 <body>
   <a class="skip-link" href="#mainContent">Skip to dashboard content</a>
 
+  <div class="pull-refresh-indicator" id="pullRefreshIndicator" data-state="idle" role="status" aria-live="polite" aria-hidden="true">
+    <svg class="pull-refresh-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v14M6 12l6 6 6-6" /></svg>
+    <svg class="pull-refresh-spinner" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /></svg>
+    <span id="pullRefreshText">Pull to refresh</span>
+  </div>
+  <input class="pull-refresh-haptic" id="pullRefreshHaptic" type="checkbox" switch tabindex="-1" aria-hidden="true" />
+
+  <div class="app-surface" id="appSurface">
   <header class="app-header">
     <div class="header-brand">
       <a class="brand-mark" href="#overview" aria-label="GLV Executive Pulse home">
@@ -198,13 +206,23 @@
           <button class="section-toggle" type="button" aria-controls="auditContent" aria-expanded="true"><span><span class="eyebrow">Audit trail</span><span class="section-title" id="detailTitle">Performance detail</span><span id="tableSubtitle" class="panel-subtitle">Aggregated rows for the selected view.</span></span><span class="toggle-chevron" aria-hidden="true"></span></button>
         </div>
         <div id="auditContent" class="section-content">
+        <div class="audit-toolbar">
+          <label class="field field-compact audit-grain-field">
+            <span>Grain</span>
+            <select id="auditGrain">
+              <option value="day" selected>Day</option>
+              <option value="week">Week</option>
+              <option value="month">Month</option>
+            </select>
+          </label>
+        </div>
         <p class="table-scroll-hint">Swipe horizontally to inspect every metric →</p>
         <div class="table-wrap audit-table-wrap" id="auditTableWrap" tabindex="0" aria-label="Scrollable performance detail table">
           <table id="metricsTable">
-            <caption class="sr-only">GLV business performance by selected date</caption>
+            <caption class="sr-only" id="metricsTableCaption">GLV business performance by day</caption>
             <thead>
               <tr>
-                <th scope="col">Date</th>
+                <th id="auditPeriodHeader" scope="col">Date</th>
                 <th scope="col">Spend</th>
                 <th scope="col">Revenue</th>
                 <th scope="col">ROAS</th>
@@ -238,5 +256,6 @@
   <footer class="app-footer">
     <span>Made with love for GELAVIS · Business intelligence by AGENTHIC</span>
   </footer>
+  </div>
 </body>
 </html>

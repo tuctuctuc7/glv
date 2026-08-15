@@ -196,6 +196,11 @@ svg {
   top: 12px;
 }
 
+.pull-refresh-indicator,
+.pull-refresh-haptic {
+  display: none;
+}
+
 .app-header {
   align-items: center;
   backdrop-filter: blur(20px) saturate(140%);
@@ -1371,6 +1376,16 @@ html[data-theme="light"] .region-card {
   align-items: end;
 }
 
+.audit-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.audit-grain-field {
+  width: 140px;
+}
+
 .table-wrap {
   margin: 16px -20px -20px;
   max-width: calc(100% + 40px);
@@ -2156,6 +2171,93 @@ tbody tr:last-child td {
 
   body {
     min-height: auto;
+    overscroll-behavior-y: contain;
+  }
+
+  .pull-refresh-indicator {
+    align-items: center;
+    backdrop-filter: blur(16px) saturate(140%);
+    background: color-mix(in srgb, var(--surface-raised) 92%, transparent);
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    box-shadow: var(--shadow);
+    color: var(--text-secondary);
+    display: flex;
+    font-size: 11px;
+    font-weight: 650;
+    gap: 8px;
+    left: 50%;
+    min-height: 38px;
+    opacity: 0;
+    padding: 0 14px 0 11px;
+    pointer-events: none;
+    position: fixed;
+    top: max(8px, env(safe-area-inset-top));
+    transform: translate(-50%, calc(-54px + var(--pull-offset, 0px))) scale(0.94);
+    transition: opacity 140ms ease, transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    white-space: nowrap;
+    z-index: 100;
+  }
+
+  .app-surface {
+    transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .pull-refresh-indicator:not([data-state="idle"]) {
+    opacity: 1;
+    transform: translate(-50%, calc(-54px + var(--pull-offset, 0px))) scale(1);
+  }
+
+  .pull-refresh-arrow,
+  .pull-refresh-spinner {
+    fill: none;
+    height: 17px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    width: 17px;
+  }
+
+  .pull-refresh-arrow {
+    transition: transform 160ms ease;
+  }
+
+  .pull-refresh-indicator[data-state="armed"] .pull-refresh-arrow {
+    transform: rotate(180deg);
+  }
+
+  .pull-refresh-spinner {
+    animation: pull-refresh-spin 700ms linear infinite;
+    display: none;
+    stroke-dasharray: 34 18;
+  }
+
+  .pull-refresh-indicator[data-state="loading"] .pull-refresh-arrow {
+    display: none;
+  }
+
+  .pull-refresh-indicator[data-state="loading"] .pull-refresh-spinner {
+    display: block;
+  }
+
+  .pull-refresh-indicator[data-state="success"] {
+    color: var(--positive);
+  }
+
+  .pull-refresh-indicator[data-state="error"] {
+    color: var(--negative);
+  }
+
+  .pull-refresh-haptic {
+    appearance: auto;
+    height: 1px;
+    left: -20px;
+    opacity: 0.001;
+    pointer-events: none;
+    position: fixed;
+    top: -20px;
+    width: 1px;
   }
 
   .overview-heading .range-label,
@@ -2183,8 +2285,26 @@ tbody tr:last-child td {
     scroll-snap-align: start;
   }
 
+  .kpi-grid-executive .kpi-card[data-metric="revenue"] { order: 1; }
+  .kpi-grid-executive .kpi-card[data-metric="spend"] { order: 2; }
+  .kpi-grid-executive .kpi-card[data-metric="roas"] { order: 3; }
+  .kpi-grid-executive .kpi-card[data-metric="new_customer_rate"] { order: 4; }
+  .kpi-grid-executive .kpi-card[data-metric="purchases"] { order: 5; }
+  .kpi-grid-executive .kpi-card[data-metric="cvr"] { order: 6; }
+  .kpi-grid-executive .kpi-card[data-metric="aov"] { order: 7; }
+  .kpi-grid-executive .kpi-card[data-metric="cpa"] { order: 8; }
+
   .panel.is-collapsed {
     padding: 16px;
+  }
+
+  .audit-toolbar {
+    justify-content: stretch;
+    margin-top: 14px;
+  }
+
+  .audit-grain-field {
+    width: 100%;
   }
 
   .panel.is-collapsed .panel-heading,
@@ -2386,6 +2506,10 @@ tbody tr:last-child td {
   .kpi-grid-secondary {
     grid-template-columns: 1fr;
   }
+}
+
+@keyframes pull-refresh-spin {
+  to { transform: rotate(360deg); }
 }
 
 @media print {
