@@ -140,6 +140,35 @@ async function run() {
             weight: campaign.fontWeight,
           };
         }), { heights: [44, 44], sameFont: true, sameSize: true, sameWeight: true, weight: '500' });
+        assert.equal(await page.locator('#panel-czsk .compact-table-controls').count(), 1);
+        assert.equal(await page.locator('#panel-czsk .compact-creative-controls').count(), 1);
+        assert.equal(await page.locator('#panel-czsk .compact-table-controls').evaluate(controls => {
+          const filter = controls.querySelector('.filter-wrap');
+          const campaign = controls.querySelector('.filter-toggle').getBoundingClientRect();
+          const sortLabel = controls.querySelector('.metric-label').getBoundingClientRect();
+          const sort = controls.querySelector('.metric-select').getBoundingClientRect();
+          const direction = controls.querySelector('.sort-dir-btn').getBoundingClientRect();
+          return getComputedStyle(filter, '::before').content === '"Campaign"'
+            && sortLabel.bottom <= sort.top
+            && campaign.left < sort.left && sort.left < direction.left
+            && Math.max(campaign.top, sort.top, direction.top) - Math.min(campaign.top, sort.top, direction.top) <= 1
+            && [campaign, sort, direction].every(box => box.height === 44)
+            && controls.getBoundingClientRect().height <= 68;
+        }), true);
+        assert.equal(await page.locator('#panel-czsk .compact-creative-controls').evaluate(controls => {
+          const filter = controls.querySelector('.filter-wrap');
+          const campaign = controls.querySelector('.filter-toggle').getBoundingClientRect();
+          const labels = [...controls.querySelectorAll('.metric-label')].map(label => label.getBoundingClientRect());
+          const type = controls.querySelector('#creative-type-czsk').getBoundingClientRect();
+          const sort = controls.querySelector('#creative-sort-czsk').getBoundingClientRect();
+          const direction = controls.querySelector('.sort-dir-btn').getBoundingClientRect();
+          return getComputedStyle(filter, '::before').content === '"Campaign"'
+            && labels.every(label => label.bottom <= type.top)
+            && campaign.left < type.left && type.left < sort.left && sort.left < direction.left
+            && Math.max(campaign.top, type.top, sort.top, direction.top) - Math.min(campaign.top, type.top, sort.top, direction.top) <= 1
+            && [campaign, type, sort, direction].every(box => box.height === 44)
+            && controls.getBoundingClientRect().height <= 68;
+        }), true);
         const tabGeometry = await page.evaluate(() => {
           const boxes = [...document.querySelectorAll('.header-tabs .tab-btn')].map(tab => tab.getBoundingClientRect().toJSON());
           return { boxes, width: innerWidth, height: innerHeight, inside: boxes.every(box => box.left >= 0 && box.right <= innerWidth && box.bottom <= innerHeight + 1.5) };
@@ -161,6 +190,11 @@ async function run() {
         await page.locator('#filter-toggle-czsk').click();
         assert.equal(await page.locator('#filter-dropdown-czsk').evaluate(el => el.classList.contains('open')), true);
         assert.equal(await page.locator('#filter-toggle-czsk').getAttribute('aria-expanded'), 'true');
+        assert.equal(await page.locator('#filter-dropdown-czsk').evaluate(dropdown => {
+          const controls = dropdown.closest('.compact-table-controls').getBoundingClientRect();
+          const box = dropdown.getBoundingClientRect();
+          return Math.abs(box.left - controls.left) <= 2.5 && Math.abs(box.width - controls.width) <= 2.5;
+        }), true);
         for (const selector of ['#filter-dropdown-czsk .filter-search', '#filter-dropdown-czsk .filter-option', '#filter-dropdown-czsk .filter-action-btn']) {
           assert.ok(await page.locator(selector).first().evaluate(el => el.getBoundingClientRect().height >= 44));
         }

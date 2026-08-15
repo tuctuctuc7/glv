@@ -226,6 +226,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   .section{padding:13px 10px;margin-bottom:10px;border-radius:14px}.section-title{margin-bottom:11px}.promo-note{font-size:11px;margin-bottom:10px}
   .chart-controls{display:grid;gap:8px 10px;align-items:center;margin-bottom:10px}.mobile-axis-label{display:inline}.desktop-axis-label{display:none}.axis-controls{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto 44px;gap:5px 8px;align-items:end}.axis-controls .metric-label{grid-row:1;font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em}.axis-controls .metric-select{grid-row:2;width:100%;min-width:0;height:44px;padding:0 8px}.axis-controls .axis-bars{grid-column:1}.axis-controls .axis-line{grid-column:2}.axis-controls .axis-grain{grid-column:3}.axis-controls .axis-metric{grid-column:1/3}.leadgen-axis-controls .leadgen-single-metric:not(.hidden),.leadgen-axis-controls .leadgen-dual-controls:not(.hidden){display:contents}.leadgen-dual-controls.hidden,.leadgen-single-metric.hidden{display:none}.chart-wrap{height:220px;margin-left:0}.chart-card-title{margin-bottom:7px}
   .section-controls,.creative-controls{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px}.section-controls .filter-wrap,.creative-controls .filter-wrap{width:100%;margin:0}.sort-controls{display:grid;grid-template-columns:auto minmax(0,1fr) 44px;gap:8px;width:100%;align-items:center}.creative-controls .sort-controls{grid-template-columns:54px minmax(0,1fr) 44px}.creative-controls .sort-controls>:nth-child(2){grid-column:2/4}.creative-controls .sort-controls>:nth-child(3){grid-column:1}.creative-controls .sort-controls>:nth-child(4){grid-column:2}.creative-controls .sort-controls>:nth-child(5){grid-column:3}.metric-select,.filter-toggle{height:44px;min-height:44px;padding:0 12px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:500;line-height:1.2}.sort-dir-btn{width:44px;height:44px;min-height:44px}.filter-toggle{max-width:none!important}.filter-dropdown{top:78px}
+  .compact-table-controls{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) 44px;grid-template-rows:auto 44px;gap:5px 8px;align-items:end}.compact-creative-controls{grid-template-columns:minmax(0,1.35fr) minmax(50px,.72fr) minmax(60px,1fr) 44px;grid-template-rows:auto 44px;gap:5px 8px;align-items:end}.compact-table-controls>.filter-wrap,.compact-creative-controls>.filter-wrap{display:grid;grid-template-rows:auto 44px;gap:5px;grid-column:1;grid-row:1/3;min-width:0}.compact-table-controls>.filter-wrap::before,.compact-creative-controls>.filter-wrap::before{content:attr(data-mobile-label);font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em;color:var(--gray600)}.compact-table-controls>.sort-controls,.compact-creative-controls>.sort-controls{display:contents}.compact-table-controls>.sort-controls>.metric-label,.compact-creative-controls>.sort-controls>.metric-label{grid-row:1;font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em}.compact-table-controls>.sort-controls>.metric-label{grid-column:2}.compact-table-controls>.sort-controls>.metric-select{grid-column:2;grid-row:2;min-width:0;width:100%}.compact-table-controls>.sort-controls>.sort-dir-btn{grid-column:3;grid-row:2}.compact-creative-controls>.sort-controls>:nth-child(1){grid-column:2;grid-row:1}.compact-creative-controls>.sort-controls>:nth-child(2){grid-column:2;grid-row:2;min-width:0;width:100%;padding-inline:8px}.compact-creative-controls>.sort-controls>:nth-child(3){grid-column:3;grid-row:1}.compact-creative-controls>.sort-controls>:nth-child(4){grid-column:3;grid-row:2;min-width:0;width:100%;padding-inline:8px}.compact-creative-controls>.sort-controls>:nth-child(5){grid-column:4;grid-row:2}.compact-table-controls .filter-toggle>span:first-child,.compact-creative-controls .filter-toggle>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.compact-table-controls .filter-dropdown,.compact-creative-controls .filter-dropdown{left:20px;right:auto;top:66px;width:calc(100vw - 40px)}
   .filter-search,.filter-option,.filter-action-btn{min-height:44px}.filter-search{padding:10px 12px}.filter-option{padding:9px 10px}.filter-action-btn{display:inline-flex;align-items:center;justify-content:center;padding:9px 12px}
   .table-outer{margin:0 -2px}.table-outer::before{margin:0 2px 7px;font-size:9px}.data-table-wrap,.scrollable-grid .gridjs-wrapper{max-height:62vh;scrollbar-width:thin;overscroll-behavior:contain}.data-table th,.data-table td{height:42px;padding:9px 8px;width:104px;min-width:104px;max-width:104px}.data-table .wide{width:154px;min-width:154px;max-width:154px}
   .daily-data-table th:nth-child(2),.daily-data-table th:nth-child(3),.daily-data-table th:nth-child(4),.creative-data-table th:nth-child(2),.creative-data-table th:nth-child(3),.creative-grid th.gridjs-th:nth-child(2),.creative-grid th.gridjs-th:nth-child(3){position:sticky!important;top:0!important;left:auto!important;z-index:4!important;box-shadow:none!important}
@@ -323,8 +324,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   </div>
   <div class="section">
     <div class="section-title">Daily Campaign Table</div>
-    <div class="section-controls">
-      <div class="filter-wrap" id="filter-wrap-czsk">
+    <div class="section-controls compact-table-controls">
+      <div class="filter-wrap" id="filter-wrap-czsk" data-mobile-label="Campaign">
         <button type="button" class="filter-toggle" id="filter-toggle-czsk" aria-expanded="false" aria-controls="filter-dropdown-czsk" onclick="toggleFilter('czsk')">
           <span id="filter-label-czsk">All campaigns</span><span style="color:var(--gray400)">▾</span>
         </button>
@@ -347,8 +348,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   </div>
   <div class="section">
     <div class="section-title">Creative Evaluation</div>
-    <div class="creative-controls">
-      <div class="filter-wrap" id="creative-filter-wrap-czsk">
+    <div class="creative-controls compact-creative-controls">
+      <div class="filter-wrap" id="creative-filter-wrap-czsk" data-mobile-label="Campaign">
         <button type="button" class="filter-toggle" id="creative-filter-toggle-czsk" aria-expanded="false" aria-controls="filter-dropdown-czsk-creative" onclick="toggleFilter('czsk-creative')" style="max-width:300px;">
           <span id="creative-filter-label-czsk">All campaigns</span><span style="color:var(--gray400)">▾</span>
         </button>
@@ -508,8 +509,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   </div>
   <div class="section">
     <div class="section-title">Daily Campaign Table</div>
-    <div class="section-controls">
-      <div class="filter-wrap" id="filter-wrap-us">
+    <div class="section-controls compact-table-controls">
+      <div class="filter-wrap" id="filter-wrap-us" data-mobile-label="Campaign">
         <button type="button" class="filter-toggle" id="filter-toggle-us" aria-expanded="false" aria-controls="filter-dropdown-us" onclick="toggleFilter('us')">
           <span id="filter-label-us">All campaigns</span><span style="color:var(--gray400)">▾</span>
         </button>
@@ -532,8 +533,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   </div>
   <div class="section">
     <div class="section-title">Creative Evaluation</div>
-    <div class="creative-controls">
-      <div class="filter-wrap" id="creative-filter-wrap-us">
+    <div class="creative-controls compact-creative-controls">
+      <div class="filter-wrap" id="creative-filter-wrap-us" data-mobile-label="Campaign">
         <button type="button" class="filter-toggle" id="creative-filter-toggle-us" aria-expanded="false" aria-controls="filter-dropdown-us-creative" onclick="toggleFilter('us-creative')" style="max-width:300px;">
           <span id="creative-filter-label-us">All campaigns</span><span style="color:var(--gray400)">▾</span>
         </button>
