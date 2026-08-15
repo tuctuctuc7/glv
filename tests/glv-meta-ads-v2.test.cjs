@@ -27,12 +27,22 @@ test('Meta Ads V1 remains byte-identical while V2 is a separate route', () => {
   assert.doesNotMatch(v1.toString('utf8'), /GLV Meta Ads Pulse/);
 });
 
-test('Meta Ads V2 exposes the Agenthic favicon as an iPhone home-screen icon', () => {
+test('Meta Ads V2 exposes the Agenthic favicon as an iPhone home-screen icon', async () => {
   const v2 = read('public/glv-meta-ads-2/index.html');
   assert.match(v2, /<link rel="apple-touch-icon" sizes="180x180" href="\/glv-meta-ads-2\/apple-touch-icon\.png">/);
   const icon = fs.readFileSync(path.join(root, 'public/glv-meta-ads-2/apple-touch-icon.png'));
   assert.equal(icon.subarray(1, 4).toString('ascii'), 'PNG');
   assert.deepEqual([icon.readUInt32BE(16), icon.readUInt32BE(20)], [180, 180]);
+  const middleware = read('middleware.js');
+  assert.match(middleware, /'\/glv-meta-ads-2\/agenthic-logo\.svg'/);
+  assert.match(middleware, /'\/glv-meta-ads-2\/apple-touch-icon\.png'/);
+  assert.match(middleware, /PUBLIC_ASSET_PATHS\.has\(pathname\)/);
+  const { default: authorize } = await import(`data:text/javascript;base64,${Buffer.from(middleware).toString('base64')}`);
+  const request = pathname => ({ url: `https://lab.agenthic.com${pathname}`, headers: new Headers() });
+  assert.equal(authorize(request('/glv-meta-ads-2/agenthic-logo.svg')), undefined);
+  assert.equal(authorize(request('/glv-meta-ads-2/apple-touch-icon.png')), undefined);
+  assert.equal(authorize(request('/glv-meta-ads-2/')).status, 302);
+  assert.equal(authorize(request('/api/glv-meta-ads/fb-data')).status, 401);
 });
 
 test('Meta Ads V2 preserves the V1 feature surface and shared API', () => {

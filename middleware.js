@@ -3,6 +3,10 @@ const LOGIN_PATH = '/glv-meta-ads/login';
 const AUTH_PATH = '/api/glv-meta-ads/auth';
 const DATA_PATH = '/api/glv-meta-ads/fb-data';
 const MB_OS_DATA_PATH = '/api/glv-mb-os/decision-report';
+const PUBLIC_ASSET_PATHS = new Set([
+  '/glv-meta-ads-2/agenthic-logo.svg',
+  '/glv-meta-ads-2/apple-touch-icon.png',
+]);
 
 function cookieValue(cookieHeader, name) {
   if (!cookieHeader) return '';
@@ -33,6 +37,8 @@ function hasAccess(request) {
 export default function middleware(request) {
   const url = new URL(request.url);
   const { pathname } = url;
+
+  if (PUBLIC_ASSET_PATHS.has(pathname)) return;
 
   if (pathname === AUTH_PATH || pathname === LOGIN_PATH || pathname === `${LOGIN_PATH}.html`) {
     return;
