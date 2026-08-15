@@ -83,27 +83,10 @@ if (metaCronPaths.length !== 1 || metaCronPaths[0] !== '/api/glv-meta-ads/cron')
   fail('GLV Meta Ads V1 and V2 must share the one existing cron');
 }
 
-const krsHtmlPath = routePath('krs-meta-ads', 'index.html');
-const krsIconPath = routePath('krs-meta-ads', 'agenthic-logo.svg');
-if (!fs.existsSync(krsHtmlPath) || !fs.existsSync(krsIconPath)) {
-  fail('KURSA Meta Ads route is incomplete');
-}
-const krsHtml = fs.readFileSync(krsHtmlPath, 'utf8');
-if (!krsHtml.includes('<title>KURSA Meta Ads Pulse</title>') || !krsHtml.includes('/api/krs-meta-ads/fb-data')) {
-  fail('KURSA Meta Ads route or isolated API is missing');
-}
-if (!krsHtml.includes('/krs-meta-ads/agenthic-logo.svg') || sha256(fs.readFileSync(krsIconPath)) !== approvedIconHash) {
-  fail('KURSA Meta Ads route is missing its approved route-local icon');
-}
-const krsCronPaths = (config.crons || []).map(({ path: cronPath }) => cronPath).filter(cronPath => cronPath.includes('krs-meta-ads'));
-if (krsCronPaths.length !== 1 || krsCronPaths[0] !== '/api/krs-meta-ads/cron') {
-  fail('KURSA Meta Ads must have one isolated cache prewarm cron');
-}
-
 console.log(JSON.stringify({
   passed: true,
   coverageEnd,
   expectedAtLeast: yesterdayUtc,
   snapshotsByteIdentical: true,
-  routes: { v1: 'GLV Dashboard', v2: 'GLV Executive Pulse', metaV1: 'GLV Meta Ads', metaV2: 'GLV Meta Ads Pulse', krsMeta: 'KURSA Meta Ads Pulse' },
+  routes: { v1: 'GLV Dashboard', v2: 'GLV Executive Pulse', metaV1: 'GLV Meta Ads', metaV2: 'GLV Meta Ads Pulse' },
 }));

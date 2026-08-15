@@ -3,15 +3,9 @@ const LOGIN_PATH = '/glv-meta-ads/login';
 const AUTH_PATH = '/api/glv-meta-ads/auth';
 const DATA_PATH = '/api/glv-meta-ads/fb-data';
 const MB_OS_DATA_PATH = '/api/glv-mb-os/decision-report';
-const KRS_AUTH_COOKIE = 'krs_meta_beta';
-const KRS_LOGIN_PATH = '/krs-meta-ads/login';
-const KRS_AUTH_PATH = '/api/krs-meta-ads/auth';
-const KRS_DATA_PATH = '/api/krs-meta-ads/fb-data';
 const PUBLIC_ASSET_PATHS = new Set([
   '/glv-meta-ads-2/agenthic-logo.svg',
   '/glv-meta-ads-2/apple-touch-icon.png',
-  '/krs-meta-ads/agenthic-logo.svg',
-  '/krs-meta-ads/apple-touch-icon.png',
 ]);
 
 function cookieValue(cookieHeader, name) {
@@ -35,18 +29,9 @@ function isDashboardPath(pathname) {
   );
 }
 
-function isKrsDashboardPath(pathname) {
-  return pathname === '/krs-meta-ads' || pathname.startsWith('/krs-meta-ads/');
-}
-
 function hasAccess(request) {
   const token = process.env.GLV_META_BETA_AUTH_TOKEN;
   return Boolean(token && cookieValue(request.headers.get('cookie'), AUTH_COOKIE) === token);
-}
-
-function hasKrsAccess(request) {
-  const token = process.env.KRS_META_BETA_AUTH_TOKEN || process.env.GLV_META_BETA_AUTH_TOKEN;
-  return Boolean(token && cookieValue(request.headers.get('cookie'), KRS_AUTH_COOKIE) === token);
 }
 
 export default function middleware(request) {
@@ -59,15 +44,7 @@ export default function middleware(request) {
     return;
   }
 
-  if (pathname === KRS_AUTH_PATH || pathname === KRS_LOGIN_PATH || pathname === `${KRS_LOGIN_PATH}.html`) {
-    return;
-  }
-
   if ((pathname === DATA_PATH || pathname === MB_OS_DATA_PATH) && !hasAccess(request)) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  if (pathname === KRS_DATA_PATH && !hasKrsAccess(request)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -76,14 +53,8 @@ export default function middleware(request) {
     loginUrl.searchParams.set('next', `${url.pathname}${url.search}`);
     return Response.redirect(loginUrl);
   }
-
-  if (isKrsDashboardPath(pathname) && !hasKrsAccess(request)) {
-    const loginUrl = new URL(KRS_LOGIN_PATH, request.url);
-    loginUrl.searchParams.set('next', `${url.pathname}${url.search}`);
-    return Response.redirect(loginUrl);
-  }
 }
 
 export const config = {
-  matcher: ['/glv-meta-ads/:path*', '/glv-meta-ads-2/:path*', '/glv-mb-os/:path*', '/krs-meta-ads/:path*', '/api/glv-meta-ads/fb-data', '/api/glv-mb-os/decision-report', '/api/krs-meta-ads/fb-data'],
+  matcher: ['/glv-meta-ads/:path*', '/glv-meta-ads-2/:path*', '/glv-mb-os/:path*', '/api/glv-meta-ads/fb-data', '/api/glv-mb-os/decision-report'],
 };
