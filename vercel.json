@@ -5,6 +5,16 @@
   "installCommand": null,
   "outputDirectory": "public",
   "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/krs-meta-ads/:path*",
+      "destination": "https://kursa-cyan.vercel.app/krs-meta-ads/:path*"
+    },
+    {
+      "source": "/api/krs-meta-ads/:path*",
+      "destination": "https://kursa-cyan.vercel.app/api/krs-meta-ads/:path*"
+    }
+  ],
   "headers": [
     {
       "source": "/glv/glv_dashboard.json",
