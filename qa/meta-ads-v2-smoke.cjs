@@ -56,7 +56,7 @@ function server() {
     if (!file.startsWith(publicRoot)) return res.writeHead(403).end();
     if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
     if (!fs.existsSync(file)) return res.writeHead(404).end('Not found');
-    const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml' };
+    const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png' };
     res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' });
     fs.createReadStream(file).pipe(res);
   });
@@ -80,6 +80,11 @@ async function run() {
       await page.route('https://api.frankfurter.dev/**', route => route.fulfill({ json: { rates: { USD: 0.044 } } }));
       await page.goto(base, { waitUntil: 'networkidle' });
       await page.locator('#kpi-czsk .kpi-card').first().waitFor();
+      const homeIconHref = await page.locator('link[rel="apple-touch-icon"]').getAttribute('href');
+      assert.equal(homeIconHref, '/glv-meta-ads-2/apple-touch-icon.png');
+      const homeIconResponse = await page.request.get(new URL(homeIconHref, base).href);
+      assert.equal(homeIconResponse.status(), 200);
+      assert.match(homeIconResponse.headers()['content-type'] || '', /^image\/png/);
       if (viewport.width <= 720) {
         assert.equal(await page.locator('#mobile-controls-toggle').getAttribute('aria-expanded'), 'false');
         assert.equal(await page.locator('.header-right').evaluate(el => el.classList.contains('controls-collapsed')), true);

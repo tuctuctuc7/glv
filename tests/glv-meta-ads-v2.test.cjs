@@ -27,6 +27,14 @@ test('Meta Ads V1 remains byte-identical while V2 is a separate route', () => {
   assert.doesNotMatch(v1.toString('utf8'), /GLV Meta Ads Pulse/);
 });
 
+test('Meta Ads V2 exposes the Agenthic favicon as an iPhone home-screen icon', () => {
+  const v2 = read('public/glv-meta-ads-2/index.html');
+  assert.match(v2, /<link rel="apple-touch-icon" sizes="180x180" href="\/glv-meta-ads-2\/apple-touch-icon\.png">/);
+  const icon = fs.readFileSync(path.join(root, 'public/glv-meta-ads-2/apple-touch-icon.png'));
+  assert.equal(icon.subarray(1, 4).toString('ascii'), 'PNG');
+  assert.deepEqual([icon.readUInt32BE(16), icon.readUInt32BE(20)], [180, 180]);
+});
+
 test('Meta Ads V2 preserves the V1 feature surface and shared API', () => {
   const v2 = read('public/glv-meta-ads-2/index.html');
   for (const tab of ['czsk', 'czsk-promo', 'czsk-leadgen', 'us']) assert.match(v2, new RegExp(`data-tab="${tab}"`));
