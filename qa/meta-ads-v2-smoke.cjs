@@ -142,6 +142,13 @@ async function run() {
         }), { heights: [44, 44], sameFont: true, sameSize: true, sameWeight: true, weight: '500' });
         assert.equal(await page.locator('#panel-czsk .compact-table-controls').count(), 1);
         assert.equal(await page.locator('#panel-czsk .compact-creative-controls').count(), 1);
+        assert.equal(await page.locator('.compact-table-controls').count(), 4);
+        assert.equal(await page.locator('.compact-grouped-table-controls').count(), 2);
+        assert.equal(await page.locator('#panel-czsk .compact-table-controls').evaluate(controls => {
+          const campaign = getComputedStyle(controls.querySelector('.filter-wrap'), '::before').color;
+          const sort = getComputedStyle(controls.querySelector('.sort-controls .metric-label')).color;
+          return campaign === sort;
+        }), true);
         assert.equal(await page.locator('#panel-czsk .compact-table-controls').evaluate(controls => {
           const filter = controls.querySelector('.filter-wrap');
           const campaign = controls.querySelector('.filter-toggle').getBoundingClientRect();
@@ -237,6 +244,20 @@ async function run() {
 
       await page.locator('[data-tab="czsk-promo"]').click();
       assert.equal(await page.locator('#kpi-czsk-promo .kpi-card').count(), 3);
+      if (viewport.width <= 720) assert.equal(await page.locator('#panel-czsk-promo .compact-grouped-table-controls').evaluate(controls => {
+        const campaign = controls.querySelector('.filter-toggle').getBoundingClientRect();
+        const sort = controls.querySelector('.metric-select').getBoundingClientRect();
+        const direction = controls.querySelector('.sort-dir-btn').getBoundingClientRect();
+        const groupLabel = controls.querySelector('.toggle-row .metric-label').getBoundingClientRect();
+        const segmented = controls.querySelector('.segmented').getBoundingClientRect();
+        return Math.max(campaign.top, sort.top, direction.top) - Math.min(campaign.top, sort.top, direction.top) <= 1
+          && [campaign, sort, direction].every(box => box.height === 44)
+          && groupLabel.bottom <= segmented.top
+          && segmented.height === 44
+          && [...controls.querySelectorAll('.segmented button')].every(button => button.getBoundingClientRect().height === 44)
+          && getComputedStyle(controls.querySelector('.filter-wrap'), '::before').color === getComputedStyle(controls.querySelector('.sort-controls .metric-label')).color
+          && getComputedStyle(controls.querySelector('.filter-wrap'), '::before').color === getComputedStyle(controls.querySelector('.toggle-row .metric-label')).color;
+      }), true);
       assert.deepEqual(await page.locator('#kpi-czsk-promo .kpi-val').allTextContents(), ['42,000', '26,000', '31,000']);
       assert.ok(await page.locator('#promo-table tbody tr').count() >= 6);
       assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-promo-spend')) && Boolean(window.Chart.getChart('chart-promo-pie'))));
@@ -247,6 +268,18 @@ async function run() {
 
       await page.locator('[data-tab="czsk-leadgen"]').click();
       assert.equal(await page.locator('#include-leadgen').isVisible(), false);
+      if (viewport.width <= 720) assert.equal(await page.locator('#panel-czsk-leadgen .compact-grouped-table-controls').evaluate(controls => {
+        const campaign = controls.querySelector('.filter-toggle').getBoundingClientRect();
+        const sort = controls.querySelector('.metric-select').getBoundingClientRect();
+        const direction = controls.querySelector('.sort-dir-btn').getBoundingClientRect();
+        const groupLabel = controls.querySelector('.toggle-row .metric-label').getBoundingClientRect();
+        const segmented = controls.querySelector('.segmented').getBoundingClientRect();
+        return Math.max(campaign.top, sort.top, direction.top) - Math.min(campaign.top, sort.top, direction.top) <= 1
+          && [campaign, sort, direction].every(box => box.height === 44)
+          && groupLabel.bottom <= segmented.top
+          && segmented.height === 44
+          && [...controls.querySelectorAll('.segmented button')].every(button => button.getBoundingClientRect().height === 44);
+      }), true);
       assert.equal(await page.locator('#leadgen-only').isVisible(), viewport.width > 720);
       assert.equal(await page.locator('#leadgen-only').isChecked(), false);
       assert.equal(await page.locator('#kpi-czsk-leadgen .kpi-card').count(), 2);

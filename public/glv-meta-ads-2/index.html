@@ -234,6 +234,14 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   .daily-data-table th:nth-child(1),.daily-data-table td:nth-child(1),.creative-data-table th:nth-child(1),.creative-data-table td:nth-child(1),.creative-grid th.gridjs-th:nth-child(1),.creative-grid td.gridjs-td:nth-child(1){left:0!important;box-shadow:1px 0 0 var(--line)!important}
   .date-menu{top:122px}.filter-dropdown{left:10px;right:10px;top:80px}
 }
+@media(max-width:720px){
+  .compact-table-controls>.filter-wrap::before,.compact-creative-controls>.filter-wrap::before,.compact-table-controls>.sort-controls>.metric-label,.compact-creative-controls>.sort-controls>.metric-label,.compact-grouped-table-controls>.toggle-row>.metric-label{color:var(--muted)}
+  .compact-grouped-table-controls{grid-template-rows:auto 44px auto 44px}
+  .compact-grouped-table-controls>.toggle-row{display:grid;grid-template-rows:auto 44px;grid-column:1/-1;grid-row:3/5;gap:5px;min-width:0}
+  .compact-grouped-table-controls>.toggle-row>.metric-label{font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em}
+  .compact-grouped-table-controls>.toggle-row>.segmented{display:flex;width:100%;height:44px;min-width:0}
+  .compact-grouped-table-controls>.toggle-row>.segmented button{flex:1;min-width:0;min-height:44px;padding:0 8px}
+}
 @media(max-width:720px) and (hover:none){.kpi-card:hover{transform:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
@@ -404,8 +412,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   </div>
   <div class="section">
     <div class="section-title">Promo Group Table</div>
-    <div class="section-controls">
-      <div class="filter-wrap" id="filter-wrap-czsk-promo">
+    <div class="section-controls compact-table-controls compact-grouped-table-controls">
+      <div class="filter-wrap" id="filter-wrap-czsk-promo" data-mobile-label="Campaign">
         <button type="button" class="filter-toggle" id="filter-toggle-czsk-promo" aria-expanded="false" aria-controls="filter-dropdown-czsk-promo" onclick="toggleFilter('czsk-promo')">
           <span id="filter-label-czsk-promo">All campaigns</span><span style="color:var(--gray400)">▾</span>
         </button>
@@ -469,8 +477,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   </div>
   <div class="section">
     <div class="section-title">Lead-gen Group Table</div>
-    <div class="section-controls">
-      <div class="filter-wrap" id="filter-wrap-czsk-leadgen">
+    <div class="section-controls compact-table-controls compact-grouped-table-controls">
+      <div class="filter-wrap" id="filter-wrap-czsk-leadgen" data-mobile-label="Campaign">
         <button type="button" class="filter-toggle" id="filter-toggle-czsk-leadgen" aria-expanded="false" aria-controls="filter-dropdown-czsk-leadgen" onclick="toggleFilter('czsk-leadgen')"><span id="filter-label-czsk-leadgen">All campaigns</span><span style="color:var(--gray400)">▾</span></button>
         <div class="filter-dropdown" id="filter-dropdown-czsk-leadgen">
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk-leadgen', this.value)">
