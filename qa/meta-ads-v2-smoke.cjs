@@ -86,15 +86,59 @@ async function run() {
         assert.equal(await page.locator('.header-tabs').evaluate(el => getComputedStyle(el).position), 'fixed');
         assert.equal(await page.locator('.dashboard-sub').evaluate(el => getComputedStyle(el).display), 'none');
         assert.equal(await page.locator('#kpi-czsk').evaluate(el => el.scrollWidth > el.clientWidth), true);
+        assert.equal(await page.locator('#kpi-czsk').evaluate(grid => {
+          const cardWidth = grid.querySelector('.kpi-card').getBoundingClientRect().width;
+          const style = getComputedStyle(grid);
+          const contentWidth = grid.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+          const expectedWidth = (contentWidth - 16) * 3 / 7;
+          return Math.abs(cardWidth - expectedWidth) <= 1;
+        }), true);
         assert.equal(await page.locator('#panel-czsk .chart-controls').first().evaluate(el => getComputedStyle(el).display), 'grid');
         assert.equal(await page.locator('#daily-table-czsk tbody td').first().evaluate(el => getComputedStyle(el).position), 'sticky');
         assert.equal(await page.locator('#daily-table-czsk tbody td').nth(1).evaluate(el => getComputedStyle(el).position), 'static');
-        assert.equal(await page.evaluate(() => [...document.querySelectorAll('.header-tabs .tab-btn')].every(tab => { const box=tab.getBoundingClientRect();return box.left>=0&&box.right<=innerWidth&&box.bottom<=innerHeight; })), true);
+        assert.equal(await page.locator('#daily-table-czsk thead th').evaluateAll(headers => headers.every(header => getComputedStyle(header).position === 'sticky' && getComputedStyle(header).top === '0px')), true);
+        assert.equal(await page.locator('#daily-table-czsk').evaluate(async container => {
+          const table = container.querySelector('table');
+          const wrapper = table.closest('.data-table-wrap');
+          const tbody = table.querySelector('tbody');
+          const originals = [...tbody.children];
+          for (let i = 0; i < 5; i += 1) originals.forEach(row => tbody.append(row.cloneNode(true)));
+          wrapper.scrollTop = 160;
+          await new Promise(resolve => requestAnimationFrame(resolve));
+          const wrapperTop = wrapper.getBoundingClientRect().top;
+          const headerTops = [...table.querySelectorAll('thead th')].map(header => header.getBoundingClientRect().top);
+          const stayedPinned = wrapper.scrollTop > 0 && headerTops.every(top => Math.abs(top - wrapperTop) <= 1.5);
+          tbody.replaceChildren(...originals);
+          wrapper.scrollTop = 0;
+          return stayedPinned;
+        }), true);
+        assert.deepEqual(await page.evaluate(() => {
+          const campaign = getComputedStyle(document.querySelector('#filter-toggle-czsk'));
+          const date = getComputedStyle(document.querySelector('#daily-sort-czsk'));
+          return {
+            heights: [document.querySelector('#filter-toggle-czsk').getBoundingClientRect().height, document.querySelector('#daily-sort-czsk').getBoundingClientRect().height],
+            sameFont: campaign.fontFamily === date.fontFamily,
+            sameSize: campaign.fontSize === date.fontSize,
+            sameWeight: campaign.fontWeight === date.fontWeight,
+            weight: campaign.fontWeight,
+          };
+        }), { heights: [44, 44], sameFont: true, sameSize: true, sameWeight: true, weight: '500' });
+        const tabGeometry = await page.evaluate(() => {
+          const boxes = [...document.querySelectorAll('.header-tabs .tab-btn')].map(tab => tab.getBoundingClientRect().toJSON());
+          return { boxes, width: innerWidth, height: innerHeight, inside: boxes.every(box => box.left >= 0 && box.right <= innerWidth && box.bottom <= innerHeight + 1.5) };
+        });
+        assert.equal(tabGeometry.inside, true, JSON.stringify(tabGeometry));
+        assert.deepEqual(await page.evaluate(() => [
+          document.querySelector('#theme-toggle').getBoundingClientRect().height,
+          document.querySelector('#mobile-controls-toggle').getBoundingClientRect().height,
+          document.querySelector('.header-tabs .tab-btn').getBoundingClientRect().height,
+        ]), [44, 44, 63]);
         await page.locator('#mobile-controls-toggle').click();
         assert.equal(await page.locator('#mobile-controls-toggle').getAttribute('aria-expanded'), 'true');
         assert.equal(await page.locator('#date-btn').isVisible(), true);
         assert.equal(await page.locator('.header-right .tick-filter:visible').count(), 1);
         assert.equal(await page.locator('.header-right').evaluate(el => getComputedStyle(el).position), 'fixed');
+        assert.equal(await page.evaluate(() => [document.querySelector('#date-btn'), document.querySelector('.header-right .tick-filter:not(.hidden)')].every(control => control.getBoundingClientRect().height >= 44)), true);
         await page.locator('#mobile-controls-toggle').click();
         await page.locator('#filter-toggle-czsk').click();
         assert.equal(await page.locator('#filter-dropdown-czsk').evaluate(el => el.classList.contains('open')), true);
