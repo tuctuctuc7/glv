@@ -67,6 +67,10 @@ test('KURSA live normalizer uses fallback precedence without double counting eve
   assert.deepEqual(api._test.presetRange('last_7d', new Date('2026-08-15T12:00:00Z')), {
     since: '2026-08-08', until: '2026-08-14',
   });
+  assert.deepEqual(api._test.presetRange('this_month', new Date('2026-08-01T12:00:00Z')), {
+    since: '2026-08-01', until: '2026-08-01', empty: true,
+  });
+  assert.equal(api._test.cacheKey('last_7d'), 'krs:preset:last_7d');
 });
 
 test('KURSA cron and live API share the same normalized funnel schema', () => {
@@ -84,6 +88,33 @@ test('KURSA cron and live API share the same normalized funnel schema', () => {
       assert.match(source, new RegExp(field.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
     }
   }
+  assert.match(read('api/krs-meta-ads/cron.js'), /redisSet\(shared\.cacheKey\(preset\), datasets\)/);
+});
+
+test('KURSA API treats a transient Redis read failure as a live-cache miss', async () => {
+  const handler = require('../api/krs-meta-ads/fb-data.js');
+  const previousFetch = global.fetch;
+  const previousEnv = { token: process.env.KRS_META_FB_ACCESS_TOKEN, url: process.env.KV_REST_API_URL, redisToken: process.env.KV_REST_API_TOKEN };
+  process.env.KRS_META_FB_ACCESS_TOKEN = 'test-token';
+  process.env.KV_REST_API_URL = 'https://redis.invalid';
+  process.env.KV_REST_API_TOKEN = 'test-redis-token';
+  global.fetch = async url => {
+    if (String(url).startsWith('https://redis.invalid')) return { ok: false, status: 503, json: async () => ({ error: 'temporary' }) };
+    return { ok: true, status: 200, json: async () => ({ data: [] }) };
+  };
+  const headers = {};
+  const response = { code: 0, body: null, setHeader: (key, value) => { headers[key] = value; }, status(code) { this.code = code; return this; }, json(body) { this.body = body; return body; } };
+  try {
+    await handler({ method: 'GET', query: { type: 'aggregate', date_preset: 'last_7d' } }, response);
+    assert.equal(response.code, 200);
+    assert.deepEqual(response.body.rows, []);
+    assert.equal(headers['X-Cache'], 'MISS');
+  } finally {
+    global.fetch = previousFetch;
+    for (const [key, value] of Object.entries({ KRS_META_FB_ACCESS_TOKEN: previousEnv.token, KV_REST_API_URL: previousEnv.url, KV_REST_API_TOKEN: previousEnv.redisToken })) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
+  }
 });
 
 test('KURSA authentication, cron, and release guard are independently wired', () => {
@@ -92,6 +123,11 @@ test('KURSA authentication, cron, and release guard are independently wired', ()
   assert.match(middleware, /\/krs-meta-ads\/login/);
   assert.match(middleware, /\/api\/krs-meta-ads\/fb-data/);
   assert.match(middleware, /'\/krs-meta-ads\/:path\*'/);
+  const auth = require('../api/krs-meta-ads/auth.js');
+  assert.match(read('api/krs-meta-ads/auth.js'), /checkRateLimit/);
+  const rateKey = auth._test.rateLimitKey({ headers: { 'x-forwarded-for': '203.0.113.7, 10.0.0.1' } });
+  assert.match(rateKey, /^krs:auth:[a-f0-9]{24}$/);
+  assert.doesNotMatch(rateKey, /203\.0\.113\.7/);
   const vercel = JSON.parse(read('vercel.json'));
   assert.equal(vercel.crons.some(({ path: cronPath }) => cronPath === '/api/krs-meta-ads/cron'), true);
   assert.equal(vercel.functions['api/krs-meta-ads/cron.js'].maxDuration, 60);

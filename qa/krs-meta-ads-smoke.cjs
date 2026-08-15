@@ -99,6 +99,16 @@ async function run() {
         zeroCtr: formatMetric('ctr', 0),
         undefinedCpl: formatMetric('cpa', null),
       })), { zeroLeads: '0', zeroCtr: '0.00%', undefinedCpl: '—' });
+      assert.deepEqual(await page.evaluate(() => {
+        const rows = [
+          { ...empty({ date: '2026-08-01' }), spend: 10 },
+          { ...empty({ date: '2026-08-07' }), spend: 20 },
+          { ...empty({ date: '2026-08-08' }), spend: 30 },
+          { ...empty({ date: '2026-08-14' }), spend: 40 },
+        ];
+        const result = comparison(rows, { since: '2026-08-01', until: '2026-08-14' });
+        return { current: result.current.spend, previous: result.previous.spend };
+      }), { current: 70, previous: 30 });
 
       if (viewport.width <= 760) {
         assert.equal(await page.locator('.brand-title').evaluate(element => element.getBoundingClientRect().right <= document.querySelector('.filters-toggle').getBoundingClientRect().left), true);

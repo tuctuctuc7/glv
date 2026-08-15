@@ -94,7 +94,10 @@ function cutoffDate(includeToday = false, now = new Date()) {
 
 function monthRange(preset, includeToday = false, now = new Date()) {
   const until = cutoffDate(includeToday, now);
-  if (preset === 'this_month') return { since: `${until.slice(0, 7)}-01`, until };
+  if (preset === 'this_month') {
+    const since = `${zonedIsoDate(now).slice(0, 7)}-01`;
+    return until < since ? { since, until: since, empty: true } : { since, until };
+  }
   if (preset === 'last_month') {
     const currentStart = new Date(`${zonedIsoDate(now).slice(0, 7)}-01T12:00:00Z`);
     currentStart.setUTCMonth(currentStart.getUTCMonth() - 1);
@@ -108,6 +111,10 @@ function monthRange(preset, includeToday = false, now = new Date()) {
 
 function presetRange(preset, now = new Date()) {
   return monthRange(preset, false, now);
+}
+
+function cacheKey(preset) {
+  return `${CACHE_PREFIX}:preset:${preset}`;
 }
 
 async function paginate(url) {
@@ -151,6 +158,7 @@ async function statusMapFor(rows, token) {
 
 async function fetchNormalized(type, token, { range = null, preset = 'last_30d' } = {}) {
   if (!['aggregate', 'daily', 'ads'].includes(type)) throw new Error('Invalid type. Use aggregate, daily, or ads.');
+  if (range?.empty) return [];
   const raw = await paginate(insightUrl({ type, token, range, preset }));
   if (type === 'ads') {
     const statusMap = await statusMapFor(raw, token);
@@ -170,18 +178,22 @@ async function redisGet(key) {
   return payload.result ? JSON.parse(payload.result) : null;
 }
 
-async function redisSet(key, value) {
+async function redisCommand(command) {
   const credentials = redisCredentials();
   if (!credentials.url || !credentials.token) throw new Error('Redis is not configured');
   const response = await fetch(credentials.url, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${credentials.token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(['SET', key, JSON.stringify(value), 'EX', String(TTL)]),
+    headers: { Authorization: 'Bearer ' + credentials.token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(command),
   });
   const payload = await response.json();
   if (!response.ok) throw new Error(`Redis HTTP ${response.status}`);
   if (payload.error) throw new Error(`Redis: ${payload.error}`);
-  return payload;
+  return payload.result;
+}
+
+async function redisSet(key, value) {
+  return redisCommand(['SET', key, JSON.stringify(value), 'EX', String(TTL)]);
 }
 
 function summarizeRows(rows) {
@@ -197,6 +209,6 @@ function summarizeRows(rows) {
 
 module.exports = {
   AD_ACCOUNT, ACCOUNT_CURRENCY, ACCOUNT_TIMEZONE, CACHE_PREFIX, CACHED_PRESETS, TTL,
-  accountContract, cutoffDate, envToken, fetchNormalized, monthRange, normalizeAd,
-  normalizeCampaign, presetRange, redisCredentials, redisGet, redisSet, summarizeRows,
+  accountContract, cacheKey, cutoffDate, envToken, fetchNormalized, monthRange, normalizeAd,
+  normalizeCampaign, presetRange, redisCommand, redisCredentials, redisGet, redisSet, summarizeRows,
 };

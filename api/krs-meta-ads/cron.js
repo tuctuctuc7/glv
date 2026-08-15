@@ -7,14 +7,16 @@ const PRESETS = [...shared.CACHED_PRESETS];
 async function refreshPreset(token, preset, includeToday) {
   const range = shared.monthRange(preset, includeToday);
   const summaries = {};
+  const datasets = {};
   for (const type of ['aggregate', 'daily', 'ads']) {
     const rows = await shared.fetchNormalized(type, token, { range });
-    await shared.redisSet(`${shared.CACHE_PREFIX}:${type}:${preset}`, {
+    datasets[type] = {
       rows,
       meta: { currency: shared.ACCOUNT_CURRENCY, timezone: shared.ACCOUNT_TIMEZONE, since: range.since, until: range.until },
-    });
+    };
     summaries[type] = shared.summarizeRows(rows);
   }
+  await shared.redisSet(shared.cacheKey(preset), datasets);
   return { preset, since: range.since, until: range.until, ...summaries };
 }
 
