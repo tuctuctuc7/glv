@@ -12,7 +12,6 @@ This repo is the `agenthic-lab` Vercel project that serves the GLV dashboard sur
 - Business KPI dashboard: `https://lab.agenthic.com/glv/`
 - Business KPI dashboard V2 overlap route: `https://lab.agenthic.com/glv-2/`
 - Meta Ads dashboard: `https://lab.agenthic.com/glv-meta-ads/`
-- KURSA Meta Ads dashboard: `https://lab.agenthic.com/krs-meta-ads/`
 - Media Buyer OS: `https://lab.agenthic.com/glv-mb-os/`
 
 Always deploy with the AGENTHIC Vercel scope:
@@ -32,11 +31,9 @@ public/
   glv/                       static business KPI dashboard
   glv-2/                     V2 business KPI dashboard, running in parallel
   glv-meta-ads/              password-gated Meta Ads dashboard
-  krs-meta-ads/              isolated KURSA lead-acquisition dashboard
   glv-mb-os/                 password-gated Media Buyer OS cockpit
 api/
   glv-meta-ads/              Meta Ads, decision, auth, and summary APIs
-  krs-meta-ads/              KURSA Meta Ads data, auth, and cache prewarm APIs
   glv-mb-os/                 browser-safe proxy for Media Buyer OS
 middleware.js                Vercel auth middleware for gated surfaces
 export_glv_dashboard.py      exports private Google Sheet to public JSON
@@ -142,14 +139,6 @@ Standard cached presets:
 Cron prewarms the standard presets into Upstash/Vercel KV. Custom ranges and cache misses can hit Meta live.
 
 Meta Ads currency is CZK. Always label it as CZK in reports, Slack summaries, and paid-media decision logic.
-
-## KURSA Meta Ads Dashboard
-
-Route: `/krs-meta-ads/`
-
-KURSA is a separate, password-gated single-market dashboard backed by the `KURSIVA s.r.o.` Meta account. Its decision funnel is `landing_page_view` → `initiate_checkout` → `purchase`, where checkout is a CTA click and purchase is a qualified lead submit. Purchase value is a lead-quality signal, so revenue and ROAS remain secondary context.
-
-The route uses isolated API and Redis namespaces under `/api/krs-meta-ads/*` and `krs:*`. Standard presets end on the previous complete Europe/Prague day and are prewarmed daily at `00:10 UTC`. The login may reuse the existing Labs beta credential unless dedicated `KRS_META_BETA_PASSWORD` and `KRS_META_BETA_AUTH_TOKEN` values are configured. Meta API credential precedence is `KRS_META_FB_ACCESS_TOKEN`, `AGENTHIC_META_ACCESS_TOKEN`, then the existing `FB_ACCESS_TOKEN`.
 
 ## Media Buyer OS
 
