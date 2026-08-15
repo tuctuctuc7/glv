@@ -9,6 +9,7 @@ const publicRoot = path.join(root, 'public');
 const chromePath = '/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome';
 const browserLibRoot = '/home/tom/.cache/hermes-browser-libs/root';
 const evidenceDir = path.resolve(process.env.GLV_META_QA_EVIDENCE_DIR || '/tmp/glv-meta-ads-v2-qa');
+fs.rmSync(evidenceDir, { recursive: true, force: true });
 fs.mkdirSync(evidenceDir, { recursive: true });
 
 const campaign = (id, name, spend, revenue, purchases, checkouts, clicks, impressions, date, leads = 0, landingViews = clicks) => ({
@@ -68,7 +69,7 @@ async function run() {
   const browser = await chromium.launch({ executablePath: chromePath, headless: true, args: ['--no-sandbox'], env: { ...process.env, LD_LIBRARY_PATH: `${browserLibRoot}/usr/lib/x86_64-linux-gnu:${browserLibRoot}/usr/lib`, FONTCONFIG_PATH: `${browserLibRoot}/etc/fonts` } });
   const errors = [];
   try {
-    for (const viewport of [{ name: 'desktop', width: 1440, height: 1100 }, { name: 'mobile-390', width: 390, height: 844 }, { name: 'mobile-320', width: 320, height: 780 }]) {
+    for (const viewport of [{ name: 'desktop', width: 1440, height: 1100 }, { name: 'desktop-800', width: 800, height: 1000 }, { name: 'mobile-390', width: 390, height: 844 }, { name: 'mobile-320', width: 320, height: 780 }]) {
       const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
       const page = await context.newPage();
       page.on('console', message => { if (message.type() === 'error') errors.push(`${viewport.name}: ${message.text()}`); });
@@ -79,15 +80,47 @@ async function run() {
       await page.route('https://api.frankfurter.dev/**', route => route.fulfill({ json: { rates: { USD: 0.044 } } }));
       await page.goto(base, { waitUntil: 'networkidle' });
       await page.locator('#kpi-czsk .kpi-card').first().waitFor();
+      if (viewport.width <= 720) {
+        assert.equal(await page.locator('#mobile-controls-toggle').getAttribute('aria-expanded'), 'false');
+        assert.equal(await page.locator('.header-right').evaluate(el => el.classList.contains('controls-collapsed')), true);
+        assert.equal(await page.locator('.header-tabs').evaluate(el => getComputedStyle(el).position), 'fixed');
+        assert.equal(await page.locator('.dashboard-sub').evaluate(el => getComputedStyle(el).display), 'none');
+        assert.equal(await page.locator('#kpi-czsk').evaluate(el => el.scrollWidth > el.clientWidth), true);
+        assert.equal(await page.locator('#panel-czsk .chart-controls').first().evaluate(el => getComputedStyle(el).display), 'grid');
+        assert.equal(await page.locator('#daily-table-czsk tbody td').first().evaluate(el => getComputedStyle(el).position), 'sticky');
+        assert.equal(await page.locator('#daily-table-czsk tbody td').nth(1).evaluate(el => getComputedStyle(el).position), 'static');
+        assert.equal(await page.evaluate(() => [...document.querySelectorAll('.header-tabs .tab-btn')].every(tab => { const box=tab.getBoundingClientRect();return box.left>=0&&box.right<=innerWidth&&box.bottom<=innerHeight; })), true);
+        await page.locator('#mobile-controls-toggle').click();
+        assert.equal(await page.locator('#mobile-controls-toggle').getAttribute('aria-expanded'), 'true');
+        assert.equal(await page.locator('#date-btn').isVisible(), true);
+        assert.equal(await page.locator('.header-right .tick-filter:visible').count(), 1);
+        assert.equal(await page.locator('.header-right').evaluate(el => getComputedStyle(el).position), 'fixed');
+        await page.locator('#mobile-controls-toggle').click();
+        await page.locator('#filter-toggle-czsk').click();
+        assert.equal(await page.locator('#filter-dropdown-czsk').evaluate(el => el.classList.contains('open')), true);
+        for (const selector of ['#filter-dropdown-czsk .filter-search', '#filter-dropdown-czsk .filter-option', '#filter-dropdown-czsk .filter-action-btn']) {
+          assert.ok(await page.locator(selector).first().evaluate(el => el.getBoundingClientRect().height >= 44));
+        }
+        await page.locator('#filter-toggle-czsk').click();
+      } else {
+        assert.equal(await page.locator('.header-tabs').evaluate(el => getComputedStyle(el).position), 'static');
+        assert.equal(await page.locator('.dashboard-sub').isVisible(), true);
+        assert.equal(await page.locator('#kpi-czsk').evaluate(el => el.scrollWidth === el.clientWidth), true);
+        assert.equal(await page.locator('#panel-czsk .chart-controls').first().evaluate(el => getComputedStyle(el).display), 'flex');
+        assert.equal(await page.locator('#daily-table-czsk tbody td').nth(1).evaluate(el => getComputedStyle(el).position), 'sticky');
+        assert.equal(await page.locator('#kpi-czsk').evaluate((el, width) => getComputedStyle(el).gridTemplateColumns.split(' ').length === (width > 1100 ? 4 : 2), viewport.width), true);
+      }
       assert.equal(await page.locator('#kpi-czsk .kpi-card').count(), 8);
       assert.equal(await page.locator('#daily-table-czsk tbody tr').count(), 3);
       assert.equal(await page.locator('#creative-czsk tbody tr').count(), 2);
       assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-czsk'))));
+      if (viewport.width <= 720) await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-czsk.png`), fullPage: true });
       assert.equal(await page.locator('#include-leadgen').isChecked(), false);
       assert.equal(await page.locator('#kpi-czsk .kpi-card').first().locator('.kpi-val').textContent(), '99,000');
       const salesRevenue = await page.locator('#kpi-czsk .kpi-card').nth(1).locator('.kpi-val').textContent();
       assert.equal(await page.locator('#daily-table-czsk th', { hasText: 'Leads' }).count(), 0);
       assert.equal(await page.locator('#chart-left-czsk option[value="leads"]').count(), 0);
+      if (viewport.width <= 720) await page.locator('#mobile-controls-toggle').click();
       await page.locator('#include-leadgen').check();
       assert.equal(await page.locator('#kpi-czsk .kpi-card').first().locator('.kpi-val').textContent(), '111,000');
       assert.equal(await page.locator('#kpi-czsk .kpi-card').nth(1).locator('.kpi-val').textContent(), salesRevenue);
@@ -108,12 +141,14 @@ async function run() {
       assert.deepEqual(await page.locator('#kpi-czsk-promo .kpi-val').allTextContents(), ['42,000', '26,000', '31,000']);
       assert.ok(await page.locator('#promo-table tbody tr').count() >= 6);
       assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-promo-spend')) && Boolean(window.Chart.getChart('chart-promo-pie'))));
+      if (viewport.width <= 720) await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-promo.png`), fullPage: true });
+      if (viewport.width <= 720) await page.locator('#mobile-controls-toggle').click();
       await page.locator('#promo-active-days-only').check();
       assert.ok(await page.locator('#promo-table tbody tr').count() >= 6);
 
       await page.locator('[data-tab="czsk-leadgen"]').click();
       assert.equal(await page.locator('#include-leadgen').isVisible(), false);
-      assert.equal(await page.locator('#leadgen-only').isVisible(), true);
+      assert.equal(await page.locator('#leadgen-only').isVisible(), viewport.width > 720);
       assert.equal(await page.locator('#leadgen-only').isChecked(), false);
       assert.equal(await page.locator('#kpi-czsk-leadgen .kpi-card').count(), 2);
       assert.ok(await page.locator('#leadgen-table tbody tr').count() >= 8);
@@ -123,12 +158,14 @@ async function run() {
       assert.equal(await page.locator('#chart-metric-leadgen').inputValue(), 'spend');
       assert.equal(await page.locator('#chart-grain-leadgen').inputValue(), 'day');
       assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-leadgen-metric')) && Boolean(window.Chart.getChart('chart-leadgen-pie'))));
+      if (viewport.width <= 720) await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-leadgen.png`), fullPage: true });
       const dayPointCount = await page.evaluate(() => window.Chart.getChart('chart-leadgen-metric').data.labels.length);
       await page.locator('#chart-metric-leadgen').selectOption('leads');
       assert.equal(await page.locator('#leadgen-chart-title').textContent(), 'Leads By Group');
       assert.ok(await page.evaluate(() => window.Chart.getChart('chart-leadgen-metric').data.datasets.some(dataset => dataset.data.some(value => value > 0))));
       await page.locator('#chart-grain-leadgen').selectOption('week');
       assert.ok(await page.evaluate(count => window.Chart.getChart('chart-leadgen-metric').data.labels.length < count, dayPointCount));
+      if (viewport.width <= 720) await page.locator('#mobile-controls-toggle').click();
       await page.locator('#leadgen-only').check();
       assert.equal(await page.locator('#kpi-czsk-leadgen .kpi-card').count(), 1);
       assert.equal((await page.locator('#leadgen-table tbody').textContent()).includes('Lead-gen'), true);
@@ -141,6 +178,8 @@ async function run() {
       assert.equal(await page.evaluate(() => Boolean(window.Chart.getChart('chart-leadgen-pie'))), false);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
       assert.deepEqual(await page.evaluate(() => window.Chart.getChart('chart-leadgen-metric').data.datasets.map(dataset => [dataset.type, dataset.yAxisID, dataset.label])), [['bar', 'y', 'Spend (CZK)'], ['line', 'y1', 'CPL (CZK)']]);
+      if (viewport.width <= 720) await page.locator('#mobile-controls-toggle').click();
+      if (viewport.width <= 720) await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-leadgen-only.png`), fullPage: true });
       await page.locator('#chart-left-leadgen').selectOption('revenue');
       await page.locator('#chart-right-leadgen').selectOption('leads');
       assert.deepEqual(await page.evaluate(() => window.Chart.getChart('chart-leadgen-metric').data.datasets.map(dataset => dataset.label)), ['Revenue (CZK)', 'Leads']);
@@ -153,10 +192,6 @@ async function run() {
       await page.locator('#theme-toggle').click();
       assert.equal(await page.locator('html').getAttribute('data-theme'), 'light');
       assert.equal(await page.locator('#theme-toggle').getAttribute('aria-label'), 'Switch to dark theme');
-      if (viewport.width <= 720) {
-        await page.locator('#mobile-controls-toggle').click();
-        assert.equal(await page.locator('#mobile-controls-toggle').getAttribute('aria-expanded'), 'false');
-      }
       await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-light.png`), fullPage: true });
       await context.close();
     }
