@@ -13,6 +13,7 @@ This repo is the `agenthic-lab` Vercel project that serves the GLV dashboard sur
 - Business KPI dashboard V2 overlap route: `https://lab.agenthic.com/glv-2/`
 - Meta Ads dashboard: `https://lab.agenthic.com/glv-meta-ads/`
 - Media Buyer OS: `https://lab.agenthic.com/glv-mb-os/`
+- KURSA Meta Ads ingress: `https://lab.agenthic.com/krs-meta-ads/`
 
 Always deploy with the AGENTHIC Vercel scope:
 
@@ -42,6 +43,10 @@ vercel.json                  static output, headers, and daily Vercel cron
 ```
 
 Static assets are served from `public/`. Serverless functions live in `api/`. Private service-account files, tokens, and Slack details stay outside the repo.
+
+The KURSA Meta Ads dashboard is an ingress-only exception. Its canonical UI, API, auth, and Meta integration live in `tucmedia-hq/tm-kursa`; this Vercel project owns only the `/krs-meta-ads/*` and `/api/krs-meta-ads/*` rewrites. Do not copy KURSA dashboard source or credentials into this repository.
+
+Cutover prerequisites: deploy and verify the `tm-kursa` proxy-compatibility release first, then publish an IP rate limit for `/api/krs-meta-ads/auth` in the Agenthic Labs Vercel Firewall before enabling these rewrites.
 
 ## Business KPI Dashboard
 
