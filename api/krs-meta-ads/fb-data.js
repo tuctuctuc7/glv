@@ -16,6 +16,7 @@ module.exports = async (req, res) => {
   }
 
   const type = String(req.query?.type || '');
+  if (!['aggregate', 'daily', 'ads'].includes(type)) return res.status(400).json({ error: 'Invalid type.' });
   const preset = String(req.query?.date_preset || 'last_30d');
   let range = null;
   if (req.query?.time_range) {
@@ -31,10 +32,14 @@ module.exports = async (req, res) => {
 
   try {
     if (!range && shared.CACHED_PRESETS.has(preset)) {
-      const cached = await shared.redisGet(`${shared.CACHE_PREFIX}:${type}:${preset}`);
-      if (cached) {
-        res.setHeader('X-Cache', 'HIT');
-        return res.status(200).json(cached);
+      try {
+        const cached = await shared.redisGet(shared.cacheKey(preset));
+        if (cached?.[type]) {
+          res.setHeader('X-Cache', 'HIT');
+          return res.status(200).json(cached[type]);
+        }
+      } catch (error) {
+        console.warn('krs-meta-ads cache read failed; falling back to Meta:', error.message);
       }
     }
     res.setHeader('X-Cache', 'MISS');
@@ -48,6 +53,7 @@ module.exports = async (req, res) => {
 
 module.exports._test = {
   accountContract: shared.accountContract,
+  cacheKey: shared.cacheKey,
   normalizeAd: shared.normalizeAd,
   normalizeCampaign: shared.normalizeCampaign,
   presetRange: shared.presetRange,
