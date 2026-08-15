@@ -5,6 +5,11 @@
   "installCommand": null,
   "outputDirectory": "public",
   "cleanUrls": true,
+  "functions": {
+    "api/krs-meta-ads/cron.js": {
+      "maxDuration": 60
+    }
+  },
   "headers": [
     {
       "source": "/glv/glv_dashboard.json",
@@ -38,6 +43,10 @@
     {
       "path": "/api/glv-meta-ads/cron",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/krs-meta-ads/cron",
+      "schedule": "10 0 * * *"
     }
   ]
 }
