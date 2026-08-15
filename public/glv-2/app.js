@@ -873,7 +873,8 @@ function renderScope(view) {
   $('activeRange').textContent = `${formatDate(view.filters.from)} – ${formatDate(view.filters.to)}`;
   $('scopeMarkets').textContent = selectedRegionLabel();
   $('scopeDays').textContent = `${days} ${days === 1 ? 'day' : 'days'}`;
-  $('controlSummary').textContent = `${days}d · ${selectedRegionLabel()} · controls`;
+  const shortDate = (date) => formatDate(date, { month: 'short', day: 'numeric' });
+  $('controlSummary').textContent = `${days}d (${shortDate(view.filters.from)} – ${shortDate(view.filters.to)}) · ${selectedRegionLabel()}`;
   $('screenReaderStatus').textContent = `Dashboard updated for ${selectedRegionLabel()}, ${days} days ending ${formatDate(view.filters.to)}.`;
 }
 
@@ -978,6 +979,7 @@ function setupEvents() {
       const expanded = button.getAttribute('aria-expanded') === 'true';
       button.setAttribute('aria-expanded', String(!expanded));
       content.hidden = expanded;
+      button.closest('.panel')?.classList.toggle('is-collapsed', expanded);
       if (!expanded && content.contains($('trendChart')) && state.chart) state.chart.resize();
     });
   });

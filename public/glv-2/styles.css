@@ -1695,7 +1695,7 @@ tbody tr:last-child td {
   margin: 0 auto;
   max-width: var(--content-width);
   padding: 18px 28px 28px;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .decision-card {
@@ -2152,6 +2152,57 @@ tbody tr:last-child td {
 
   .dashboard-shell {
     padding: 22px 16px 54px;
+  }
+
+  body {
+    min-height: auto;
+  }
+
+  .overview-heading .range-label,
+  .overview-heading .scope-summary {
+    display: none;
+  }
+
+  .kpi-grid-executive {
+    grid-auto-columns: calc((100% - 20px) / 2.333);
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-template-rows: repeat(2, 148px);
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding-bottom: 8px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .kpi-grid-executive::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kpi-grid-executive .kpi-card {
+    scroll-snap-align: start;
+  }
+
+  .panel.is-collapsed {
+    padding: 16px;
+  }
+
+  .panel.is-collapsed .panel-heading,
+  #marketComparison.is-collapsed .panel-heading {
+    align-items: center;
+    display: block;
+    padding: 0;
+    width: 100%;
+  }
+
+  .panel.is-collapsed .section-toggle {
+    align-items: center;
+    width: 100%;
+  }
+
+  .panel.is-collapsed .toggle-chevron {
+    margin-left: auto;
+    margin-right: 4px;
   }
 
   .decision-card { padding: 18px; }

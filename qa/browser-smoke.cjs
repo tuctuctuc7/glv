@@ -17,6 +17,9 @@ const previousDataDate = new Date(latestDate.getTime() - 86_400_000).toISOString
 const displayDate = (date) => new Intl.DateTimeFormat('en-US', {
   month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
 }).format(date);
+const compactDate = (date) => new Intl.DateTimeFormat('en-US', {
+  month: 'short', day: 'numeric', timeZone: 'UTC',
+}).format(date);
 fs.mkdirSync(evidenceDir, { recursive: true });
 
 const mime = {
@@ -25,6 +28,7 @@ const mime = {
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml',
+  '.png': 'image/png',
 };
 
 function server() {
@@ -83,6 +87,9 @@ async function run() {
 
     const response = await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 30_000 });
     assert.equal(response.status(), 200);
+    const touchIconResponse = await page.request.get(new URL('/glv-2/apple-touch-icon.png', baseUrl).href);
+    assert.equal(touchIconResponse.status(), 200, 'iPhone home-screen icon should load');
+    assert.match(touchIconResponse.headers()['content-type'] || '', /^image\/png\b/, 'iPhone home-screen icon should use image/png');
     await page.locator('#dashboardContent').waitFor({ state: 'visible' });
     assert.equal(await page.locator('#executiveKpis .kpi-card').count(), 8);
     assert.equal(await page.locator('#marketComparisonBody tr').count(), 4);
@@ -258,6 +265,29 @@ async function run() {
     await mobile.locator('#dashboardContent').waitFor({ state: 'visible' });
     assert.match(await mobile.locator('#dataThrough').textContent(), /Through/);
     assert.equal(await mobile.locator('#dashboardFilters').isVisible(), false);
+    assert.equal((await mobile.locator('#controlSummary').textContent()).trim(), `28d (${compactDate(defaultStartDate)} – ${compactDate(latestDate)}) · All markets`);
+    assert.equal(await mobile.locator('#activeRange').isVisible(), false, 'mobile pulse heading should not repeat the selected dates');
+    assert.equal(await mobile.locator('.scope-summary').isVisible(), false, 'mobile pulse heading should not repeat market, currency, or duration');
+    const mobileKpiGeometry = await mobile.locator('#executiveKpis').evaluate((grid) => {
+      const gridRect = grid.getBoundingClientRect();
+      const cards = [...grid.children].map((card) => card.getBoundingClientRect());
+      const rows = [...new Set(cards.map((card) => Math.round(card.top)))];
+      const columns = [...new Set(cards.map((card) => Math.round(card.left)))];
+      return {
+        clientWidth: grid.clientWidth,
+        scrollWidth: grid.scrollWidth,
+        rows,
+        columns,
+        cardWidth: cards[0].width,
+        visibleThirdWidth: gridRect.right - cards[4].left,
+      };
+    });
+    assert.equal(mobileKpiGeometry.rows.length, 2, `mobile KPI cards should use two rows: ${JSON.stringify(mobileKpiGeometry)}`);
+    assert.equal(mobileKpiGeometry.columns.length, 4, `eight mobile KPI cards should use four scrollable columns: ${JSON.stringify(mobileKpiGeometry)}`);
+    assert.ok(mobileKpiGeometry.scrollWidth > mobileKpiGeometry.clientWidth, `mobile KPI cards should scroll horizontally: ${JSON.stringify(mobileKpiGeometry)}`);
+    const visibleThirdRatio = mobileKpiGeometry.visibleThirdWidth / mobileKpiGeometry.cardWidth;
+    assert.ok(visibleThirdRatio >= 0.28 && visibleThirdRatio <= 0.38, `mobile KPI grid should reveal about one-third of the third column: ${JSON.stringify({ visibleThirdRatio, ...mobileKpiGeometry })}`);
+    assert.equal(await mobile.locator('body').evaluate((node) => getComputedStyle(node).minHeight), '0px', 'mobile page height should follow its content');
     const mobileOverflow = await mobile.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     const mobileOverflowContext = await mobile.evaluate(() => {
       const trendTable = document.querySelector('#trendDataTable');
@@ -297,9 +327,32 @@ async function run() {
     assert.equal(await mobile.locator('[data-market-segment]').count(), 0, 'market segment buttons should be removed');
     const marketScroll = await mobile.locator('#marketComparisonWrap').evaluate((node) => ({ clientWidth: node.clientWidth, scrollWidth: node.scrollWidth }));
     assert.ok(marketScroll.scrollWidth > marketScroll.clientWidth, `market comparison should scroll inside its section: ${JSON.stringify(marketScroll)}`);
+    await mobile.locator('#auditTable .section-toggle').click();
     await mobile.locator('#marketComparison .section-toggle').click();
+    assert.equal(await mobile.locator('#auditContent').isVisible(), false, 'audit section should collapse');
     assert.equal(await mobile.locator('#marketComparisonContent').isVisible(), false, 'market comparison section should collapse');
+    const collapsedGeometry = await mobile.evaluate(() => ['#auditTable', '#marketComparison'].map((selector) => {
+      const panel = document.querySelector(selector);
+      const button = panel.querySelector('.section-toggle').getBoundingClientRect();
+      const arrow = panel.querySelector('.toggle-chevron').getBoundingClientRect();
+      const panelRect = panel.getBoundingClientRect();
+      return {
+        leftPadding: Math.round(button.left - panelRect.left),
+        rightPadding: Math.round(panelRect.right - button.right),
+        arrowRight: Math.round(arrow.right),
+        arrowCenterDelta: Math.round((arrow.top + (arrow.height / 2)) - (button.top + (button.height / 2))),
+      };
+    }));
+    assert.deepEqual(collapsedGeometry.map(({ leftPadding, rightPadding }) => ({ leftPadding, rightPadding })), [
+      { leftPadding: 17, rightPadding: 17 },
+      { leftPadding: 17, rightPadding: 17 },
+    ], `collapsed mobile sections should share horizontal padding: ${JSON.stringify(collapsedGeometry)}`);
+    assert.equal(collapsedGeometry[0].arrowRight, collapsedGeometry[1].arrowRight, `collapsed arrows should share a right edge: ${JSON.stringify(collapsedGeometry)}`);
+    assert.deepEqual(collapsedGeometry.map(({ arrowCenterDelta }) => arrowCenterDelta), [0, 0], `collapsed arrows should be vertically centered: ${JSON.stringify(collapsedGeometry)}`);
+    assert.equal((await mobile.locator('.app-footer').textContent()).trim(), 'Made with love for GELAVIS · Business intelligence by AGENTHIC');
+    await mobile.locator('#auditTable .section-toggle').click();
     await mobile.locator('#marketComparison .section-toggle').click();
+    assert.equal(await mobile.locator('#auditContent').isVisible(), true, 'audit section should expand');
     assert.equal(await mobile.locator('#marketComparisonContent').isVisible(), true, 'market comparison section should expand');
     await mobile.locator('#details').scrollIntoViewIfNeeded();
     assert.ok(await mobile.locator('#details').isVisible(), 'performance detail should be reachable by vertical scrolling');

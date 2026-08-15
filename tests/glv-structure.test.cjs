@@ -6,6 +6,7 @@ const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname, '../public/glv-2/index.html'), 'utf8');
 const app = fs.readFileSync(path.join(__dirname, '../public/glv-2/app.js'), 'utf8');
 const styles = fs.readFileSync(path.join(__dirname, '../public/glv-2/styles.css'), 'utf8');
+const touchIcon = fs.readFileSync(path.join(__dirname, '../public/glv-2/apple-touch-icon.png'));
 
 function has(pattern, message) {
   assert.match(html, pattern, message);
@@ -72,7 +73,13 @@ test('trend visual has an accessible text fallback and chart controls', () => {
 test('latest executive branding and KPI copy are present', () => {
   has(/GELAVIS · Business intelligence by AGENTHIC/, 'missing approved header copy');
   has(/<img[^>]*src="\/glv-2\/agenthic-logo\.svg"/, 'missing slash-safe route-local AGENTHIC logo');
+  has(/<link[^>]*rel="apple-touch-icon"[^>]*sizes="180x180"[^>]*href="\/glv-2\/apple-touch-icon\.png"/, 'missing slash-safe iPhone home-screen icon');
+  assert.equal(touchIcon.subarray(1, 4).toString('ascii'), 'PNG', 'touch icon must be a PNG');
+  assert.equal(touchIcon.readUInt32BE(16), 180, 'touch icon width must be 180px');
+  assert.equal(touchIcon.readUInt32BE(20), 180, 'touch icon height must be 180px');
   has(/>8-metric executive read</, 'missing approved KPI heading');
+  has(/Made with love for GELAVIS · Business intelligence by AGENTHIC/, 'missing approved footer credit');
+  assert.doesNotMatch(html, /Decision support, not automated decision-making\./, 'stale footer disclaimer remains');
   assert.match(app, /'new_customer_rate'/, 'new customer rate must be in the KPI contract');
   assert.doesNotMatch(app, /\['revenue', 'spend', 'purchases', 'unique_visitors', 'cvr'/, 'visitors must no longer occupy the fourth KPI slot');
   assert.match(html, /class="brand-mark"[\s\S]*?<img[^>]*class="brand-logo"/, 'logo needs an explicit full-square rendering hook');
