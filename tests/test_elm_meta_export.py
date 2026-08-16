@@ -112,6 +112,25 @@ class ElmMetaExportTest(unittest.TestCase):
         for table_id in ("growthTable", "efficiencyTable", "accountMonthTable", "intramonthTable", "categoryScopeTable", "seasonalityTable", "structureTable", "regionMonthlyTable"):
             self.assertIn(f'id="{table_id}"', html)
 
+    def test_dashboard_exposes_persisted_light_and_dark_themes(self):
+        route = ROOT / "public" / "elm-meta-ads"
+        html = (route / "index.html").read_text(encoding="utf-8")
+        css = (route / "styles.css").read_text(encoding="utf-8")
+        app = (route / "app.js").read_text(encoding="utf-8")
+
+        self.assertIn('id="themeToggle"', html)
+        self.assertIn('aria-label="Bright theme"', html)
+        self.assertIn('aria-pressed="false"', html)
+        self.assertLess(html.index("elm-meta-theme"), html.index('rel="stylesheet"'))
+        self.assertIn(':root[data-theme="light"]', css)
+        self.assertIn('color-scheme: light', css)
+        self.assertIn("function applyTheme", app)
+        self.assertIn("localStorage.setItem(THEME_STORAGE_KEY", app)
+        self.assertIn("document.getElementById('themeToggle').addEventListener('click'", app)
+        self.assertNotIn("Switch to ${", app)
+        self.assertIn("--focus-ring:", css)
+        self.assertIn("--button-ink:", css)
+
 
 if __name__ == "__main__":
     unittest.main()

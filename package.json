@@ -8,6 +8,7 @@
     "test": "node --test tests/*.test.cjs",
     "verify:glv-release": "node scripts/verify-glv-release.cjs",
     "qa:browser": "GLV_QA_EVIDENCE_DIR=${GLV_QA_EVIDENCE_DIR:-/tmp/glv-bi-qa-screenshots} node qa/browser-smoke.cjs",
+    "qa:elm-theme": "ELM_THEME_QA_EVIDENCE_DIR=${ELM_THEME_QA_EVIDENCE_DIR:-/tmp/elm-theme-qa} node qa/elm-theme-smoke.cjs",
     "qa:meta-ads": "node qa/meta-ads-smoke.cjs",
     "deploy": "vercel --prod --yes --scope agenthic"
   },

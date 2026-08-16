@@ -12,12 +12,20 @@ import {
   withEfficiency,
 } from './metrics.mjs';
 
-const COLORS = {
-  blue: '#5bb7f2', orange: '#ffbc58', green: '#90dfa8', red: '#ff817d', violet: '#a991ff',
-  cyan: '#66e3da', pink: '#ec8eff', grid: 'rgba(154, 172, 193, .14)', muted: '#9aacc1',
+const THEME_STORAGE_KEY = 'elm-meta-theme';
+const CHART_THEMES = {
+  dark: {
+    blue: '#5bb7f2', orange: '#ffbc58', green: '#90dfa8', red: '#ff817d', violet: '#a991ff',
+    cyan: '#66e3da', pink: '#ec8eff', grid: 'rgba(154, 172, 193, .14)', muted: '#9aacc1', chartBorder: '#111a26',
+  },
+  light: {
+    blue: '#0673b2', orange: '#a45f00', green: '#207d4a', red: '#c6403c', violet: '#684dc7',
+    cyan: '#0f7a82', pink: '#ad469d', grid: 'rgba(61, 82, 105, .16)', muted: '#5d7085', chartBorder: '#ffffff',
+  },
 };
-const PALETTE = [COLORS.blue, COLORS.orange, COLORS.green, COLORS.violet, COLORS.cyan, COLORS.red, COLORS.pink, '#c4d3e6'];
-const REGION_COLORS = { South: COLORS.blue, North: COLORS.orange, Mid: COLORS.green };
+let COLORS = { ...CHART_THEMES.dark };
+let PALETTE = [COLORS.blue, COLORS.orange, COLORS.green, COLORS.violet, COLORS.cyan, COLORS.red, COLORS.pink, '#c4d3e6'];
+let REGION_COLORS = { South: COLORS.blue, North: COLORS.orange, Mid: COLORS.green };
 const state = { data: null, charts: {} };
 
 const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 2 });
@@ -42,7 +50,48 @@ const METRICS = {
   cost_per_click: { label: 'Cost / click', axis: 'Cost / click · VND', formatter: money, tick: (value) => compact.format(value), color: COLORS.violet },
   spend_share: { label: 'Spend share', axis: 'Spend share', formatter: percent, tick: (value) => percent(value), color: COLORS.blue },
 };
+const METRIC_COLOR_KEYS = {
+  spend: 'blue',
+  modelled_purchase_value: 'violet',
+  purchases: 'green',
+  landing_page_views: 'cyan',
+  modelled_roas: 'orange',
+  cost_per_purchase: 'blue',
+  purchase_cvr: 'green',
+  modelled_aov: 'violet',
+  clicks: 'cyan',
+  cost_per_click: 'violet',
+  spend_share: 'blue',
+};
 const MAIN_KPIS = ['spend', 'modelled_purchase_value', 'purchases', 'landing_page_views', 'cost_per_purchase', 'purchase_cvr', 'modelled_aov', 'modelled_roas'];
+
+function applyChartTheme(theme) {
+  COLORS = { ...CHART_THEMES[theme] };
+  PALETTE = [COLORS.blue, COLORS.orange, COLORS.green, COLORS.violet, COLORS.cyan, COLORS.red, COLORS.pink, theme === 'light' ? '#8294a8' : '#c4d3e6'];
+  REGION_COLORS = { South: COLORS.blue, North: COLORS.orange, Mid: COLORS.green };
+  Object.entries(METRIC_COLOR_KEYS).forEach(([metric, color]) => { METRICS[metric].color = COLORS[color]; });
+  if (window.Chart) window.Chart.defaults.color = COLORS.muted;
+}
+
+function applyTheme(theme, { persist = true, rerender = true } = {}) {
+  const selected = theme === 'light' ? 'light' : 'dark';
+  const isLight = selected === 'light';
+  document.documentElement.dataset.theme = selected;
+  document.getElementById('themeColor')?.setAttribute('content', isLight ? '#f4f7fb' : '#091019');
+  const toggle = document.getElementById('themeToggle');
+  if (toggle) {
+    toggle.setAttribute('aria-pressed', String(isLight));
+  }
+  if (persist) {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, selected);
+    } catch (_error) {
+      // Theme switching still works when storage is unavailable.
+    }
+  }
+  applyChartTheme(selected);
+  if (rerender && state.data) render();
+}
 
 function median(values) {
   const clean = values.filter((value) => Number.isFinite(value)).sort((a, b) => a - b);
@@ -412,7 +461,7 @@ function renderCreatives(filters) {
   document.getElementById('creativeCoverageNote').textContent = '';
   replaceChart('creative', document.getElementById('creativeChart'), {
     type: 'doughnut',
-    data: { labels: summary.map((row) => row.group), datasets: [{ data: summary.map((row) => row.spend), backgroundColor: summary.map((_row, index) => PALETTE[index % PALETTE.length]), borderColor: '#111a26', borderWidth: 3 }] },
+    data: { labels: summary.map((row) => row.group), datasets: [{ data: summary.map((row) => row.spend), backgroundColor: summary.map((_row, index) => PALETTE[index % PALETTE.length]), borderColor: COLORS.chartBorder, borderWidth: 3 }] },
     options: { ...options((item) => `${item.label}: ${money(item.raw)} · ${percent(item.raw / totalSpend)}`, {}, 'nearest'), cutout: '58%' },
   });
   document.getElementById('creativeTable').innerHTML = summary.map((row) => `<tr><td>${escapeHtml(row.group)}</td><td>${escapeHtml(percent(row.spend_share))}</td><td>${escapeHtml(money(row.spend))}</td><td>${escapeHtml(count(row.purchases))}</td><td>${escapeHtml(money(row.cost_per_purchase))}</td><td>${escapeHtml(percent(row.purchase_cvr))}</td></tr>`).join('');
@@ -567,6 +616,9 @@ function bindControls() {
     .forEach((id) => document.getElementById(id).addEventListener('change', render));
   document.querySelectorAll('.pair-metric').forEach((control) => control.addEventListener('change', render));
   document.getElementById('exportButton').addEventListener('click', exportCsv);
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+  });
 }
 
 function hydrateFilters() {
@@ -580,11 +632,11 @@ function hydrateFilters() {
 }
 
 async function init() {
+  applyTheme(document.documentElement.dataset.theme, { persist: false, rerender: false });
   if (!window.Chart) throw new Error('Chart.js did not load. Check the network and refresh.');
   const response = await fetch('./elm_meta_ads.json', { cache: 'no-store' });
   if (!response.ok) throw new Error(`Dashboard data failed to load (${response.status}).`);
   state.data = await response.json();
-  window.Chart.defaults.color = COLORS.muted;
   window.Chart.defaults.font.family = 'Inter, ui-sans-serif, system-ui, sans-serif';
   document.getElementById('dataStamp').textContent = `${state.data.meta.date_range.start} → ${state.data.meta.date_range.end} · generated ${state.data.meta.generated_at.slice(0, 10)}`;
   document.getElementById('mappingCoverage').textContent = `${(state.data.reconciliation.mapped_spend_coverage * 100).toFixed(2)}%`;
