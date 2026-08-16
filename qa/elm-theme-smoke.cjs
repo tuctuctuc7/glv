@@ -77,7 +77,7 @@ async function exerciseViewport(browser, baseUrl, viewport) {
   assert.equal(await page.locator('#languageToggle').getAttribute('aria-label'), 'Chuyển sang tiếng Anh');
   assert.equal((await page.locator('#languageToggle').textContent()).trim(), '🇬🇧');
   assert.equal(await page.locator('#themeToggle').getAttribute('aria-label'), 'Giao diện sáng');
-  assert.match(await page.locator('h1').innerText(), /Theo dõi đường cong theo tháng/);
+  assert.equal((await page.locator('h1').innerText()).replace(/\s+/g, ' ').trim(), 'Theo dõi biến động tháng. Tìm nguyên nhân.');
   assert.equal((await page.locator('#kpiGrid .kpi span').first().textContent()).trim(), 'Chi tiêu');
   assert.equal((await page.locator('#kpiGrid .kpi strong').nth(1).textContent()).trim(), '3,19x');
   assert.equal((await page.locator('#kpiGrid .kpi strong').nth(3).textContent()).trim(), '1,3%');

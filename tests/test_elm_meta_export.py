@@ -147,7 +147,9 @@ class ElmMetaExportTest(unittest.TestCase):
         self.assertIn("function applyLanguage", app)
         self.assertIn("localStorage.setItem(LANGUAGE_STORAGE_KEY", app)
         self.assertIn("document.getElementById('languageToggle').addEventListener('click'", app)
-        self.assertIn("Theo dõi đường cong theo tháng.", app)
+        self.assertIn("Theo dõi biến động tháng.", app)
+        self.assertIn("Tìm nguyên nhân.", app)
+        self.assertNotIn("Sau đó tìm yếu tố tạo ra biến động.", app)
         self.assertIn("Xuất CSV theo bộ lọc", app)
         self.assertIn("ROAS định hướng", app)
 
