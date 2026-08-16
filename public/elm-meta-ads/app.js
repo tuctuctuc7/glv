@@ -344,6 +344,12 @@ function baseScales() {
   };
 }
 
+function sortLegendByAxis(a, b, data) {
+  const rightAxes = new Set(['secondary', 'cost']);
+  const rank = item => rightAxes.has(data.datasets[item.datasetIndex]?.yAxisID) ? 1 : 0;
+  return rank(a) - rank(b);
+}
+
 function options(tooltip, scales = baseScales(), mode = 'index') {
   return {
     responsive: true,
@@ -351,7 +357,7 @@ function options(tooltip, scales = baseScales(), mode = 'index') {
     animation: { duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 220 },
     interaction: { intersect: false, mode },
     plugins: {
-      legend: { labels: { color: COLORS.muted, usePointStyle: true, boxWidth: 8, padding: 16 } },
+      legend: { labels: { color: COLORS.muted, usePointStyle: true, boxWidth: 8, padding: 16, sort: sortLegendByAxis } },
       tooltip: { callbacks: { label: tooltip } },
     },
     scales,

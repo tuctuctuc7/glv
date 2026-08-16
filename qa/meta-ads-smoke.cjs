@@ -263,6 +263,10 @@ async function run() {
       assert.equal(await page.locator('#daily-table-czsk tbody tr').count(), 3);
       assert.equal(await page.locator('#creative-czsk tbody tr').count(), 2);
       assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-czsk'))));
+      assert.deepEqual(await page.evaluate(() => {
+        const chart = window.Chart.getChart('chart-czsk');
+        return chart.legend.legendItems.map(item => chart.data.datasets[item.datasetIndex].yAxisID);
+      }), ['y', 'y1']);
       if (viewport.width <= 720) await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-czsk.png`), fullPage: true });
       assert.equal(await page.locator('#include-leadgen').isChecked(), false);
       assert.equal(await page.locator('#kpi-czsk .kpi-card').first().locator('.kpi-val').textContent(), '99,000');
@@ -305,6 +309,7 @@ async function run() {
           id: canvas.id,
           labels: chart.data.labels.length,
           datasets: chart.data.datasets.map(dataset => ({ type: dataset.type, metricKey: dataset.metricKey, color: dataset.borderColor, values: dataset.data })),
+          legendAxes: chart.legend.legendItems.map(item => chart.data.datasets[item.datasetIndex].yAxisID),
           tableRows: canvas.closest('.triage-card').querySelectorAll('.triage-data-table tbody tr').length,
         };
       }));
@@ -320,6 +325,7 @@ async function run() {
       const defaultColors = triageCharts.flatMap(chart => chart.datasets.map(dataset => dataset.color));
       assert.equal(new Set(defaultColors).size, 14);
       assert.equal(triageCharts.every(chart => chart.labels > 0 && chart.tableRows === chart.labels), true);
+      assert.equal(triageCharts.every(chart => chart.legendAxes.join(',') === 'y,y1'), true);
       const expectedCtr = daily
         .filter(row => ['c1', 'c2', 'c3'].includes(row.id) && row.date_start === '2026-08-10')
         .reduce((totals, row) => ({ clicks: totals.clicks + Number(row['actions:link_click']), impressions: totals.impressions + Number(row.impressions) }), { clicks: 0, impressions: 0 });
@@ -546,6 +552,10 @@ async function run() {
       }), true);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
       assert.deepEqual(await page.evaluate(() => window.Chart.getChart('chart-leadgen-metric').data.datasets.map(dataset => [dataset.type, dataset.yAxisID, dataset.label])), [['bar', 'y', 'Spend (CZK)'], ['line', 'y1', 'CPL (CZK)']]);
+      assert.deepEqual(await page.evaluate(() => {
+        const chart = window.Chart.getChart('chart-leadgen-metric');
+        return chart.legend.legendItems.map(item => chart.data.datasets[item.datasetIndex].yAxisID);
+      }), ['y', 'y1']);
       if (viewport.width <= 720) await page.locator('#mobile-controls-toggle').click();
       if (viewport.width <= 720) await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-leadgen-only.png`), fullPage: true });
       await page.locator('#chart-left-leadgen').selectOption('revenue');
@@ -556,6 +566,10 @@ async function run() {
       assert.equal(await page.locator('#kpi-us .kpi-card').count(), 8);
       assert.equal(await page.locator('#creative-us tbody tr').count(), 1);
       assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-us'))));
+      assert.deepEqual(await page.evaluate(() => {
+        const chart = window.Chart.getChart('chart-us');
+        return chart.legend.legendItems.map(item => chart.data.datasets[item.datasetIndex].yAxisID);
+      }), ['y', 'y1']);
 
       await page.locator('#theme-toggle').click();
       assert.equal(await page.locator('html').getAttribute('data-theme'), 'light');
