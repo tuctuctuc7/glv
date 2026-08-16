@@ -142,6 +142,8 @@ test('CZSK Triage defines seven independent presets and one unique color per sel
   assert.match(dashboard, /class="triage-primary-header"/);
   assert.match(dashboard, /class="triage-secondary-header"/);
   assert.match(dashboard, /tableCaption\.textContent/);
+  assert.match(dashboard, /<h3 class="triage-preset" id="triage-preset-\$\{preset\.id\}" aria-live="polite"><\/h3>/);
+  assert.doesNotMatch(dashboard, /<div class="chart-card-title">\$\{preset\.title\}<\/div>/);
   assert.match(dashboard, /role="tablist"/);
   assert.match(dashboard, /aria-selected="true"/);
   assert.match(dashboard, /setAttribute\('aria-selected'/);

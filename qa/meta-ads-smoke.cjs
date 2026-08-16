@@ -281,6 +281,9 @@ async function run() {
       assert.equal(await page.locator('#panel-czsk-triage .triage-intro').count(), 0);
       assert.equal(await page.locator('#panel-czsk-triage .triage-card').count(), 7);
       assert.equal(await page.locator('#panel-czsk-triage .triage-card--hero').count(), 1);
+      assert.equal(await page.locator('#panel-czsk-triage .triage-card-heading h3.triage-preset').count(), 7);
+      assert.equal(await page.locator('#panel-czsk-triage .triage-card-heading .chart-card-title').count(), 0);
+      assert.equal(await page.locator('#triage-preset-lp-purchase').textContent(), 'Purchases · LP → Purchase · day');
       assert.equal(await page.locator('#panel-czsk-triage .triage-controls').count(), 7);
       assert.equal(await page.locator('#panel-czsk-triage .triage-controls select').count(), 21);
       assert.equal(await page.locator('#panel-czsk-triage .triage-data-table').count(), 7);
@@ -351,10 +354,12 @@ async function run() {
       const lpDayCount = triageCharts[1].labels;
       await page.locator('#triage-primary-lp-checkout').selectOption('purchases');
       assert.deepEqual(await page.evaluate(() => window.Chart.getChart('triage-chart-lp-checkout').data.datasets.map(dataset => dataset.metricKey)), ['purchases', 'lp2co']);
+      assert.equal(await page.locator('#triage-preset-lp-checkout').textContent(), 'Purchases · LP → Checkout · day');
       assert.equal(await page.evaluate(() => window.Chart.getChart('triage-chart-lp-checkout').data.datasets[0].borderColor === window.Chart.getChart('triage-chart-lp-purchase').data.datasets[0].borderColor), true);
       assert.deepEqual(await page.evaluate(() => window.Chart.getChart('triage-chart-efficiency').data.datasets[0].data), efficiencyBefore);
       await page.locator('#triage-grain-lp-checkout').selectOption('week');
       assert.ok(await page.evaluate(() => window.Chart.getChart('triage-chart-lp-checkout').data.labels.length) < lpDayCount);
+      assert.equal(await page.locator('#triage-preset-lp-checkout').textContent(), 'Purchases · LP → Checkout · week');
       assert.equal(await page.evaluate(() => window.Chart.getChart('triage-chart-efficiency').data.labels.length), triageCharts[0].labels);
       await page.locator('#triage-primary-lp-checkout').selectOption('lp');
       await page.locator('#triage-grain-lp-checkout').selectOption('day');

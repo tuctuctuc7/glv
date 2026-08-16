@@ -102,7 +102,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .triage-card--hero{grid-column:1/-1;}
 .triage-card--hero .chart-wrap{height:320px;}
 .triage-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;}
-.triage-card-heading .chart-card-title{margin-bottom:3px;color:var(--ink);font-size:12px;}
 .triage-preset{color:var(--muted);font-size:11px;font-weight:650;}
 .triage-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px;}
 .triage-field{display:grid;grid-template-rows:auto 38px;gap:5px;min-width:0;}
@@ -1102,7 +1101,7 @@ function initTriageCards(){
   grid.innerHTML=TRIAGE_PRESETS.map(preset=>{
     const state=triageState[preset.id];const primaryRole=preset.primaryType==='bar'?'Bars':'Line 1';const secondaryRole=preset.primaryType==='line'?'Line 2':'Line';
     return`<section class="section triage-card${preset.hero?' triage-card--hero':''}" data-triage-chart="${preset.id}">
-      <div class="triage-card-heading"><div><div class="chart-card-title">${preset.title}</div><div class="triage-preset" id="triage-preset-${preset.id}"></div></div></div>
+      <div class="triage-card-heading"><h3 class="triage-preset" id="triage-preset-${preset.id}" aria-live="polite"></h3></div>
       <div class="chart-controls triage-controls">
         <label class="triage-field"><span class="metric-label">${primaryRole}</span><select class="metric-select triage-metric-select" id="triage-primary-${preset.id}" onchange="setTriageControl('${preset.id}','primary',this.value)">${triageMetricOptions(state.primary)}</select></label>
         <label class="triage-field"><span class="metric-label">${secondaryRole}</span><select class="metric-select triage-metric-select" id="triage-secondary-${preset.id}" onchange="setTriageControl('${preset.id}','secondary',this.value)">${triageMetricOptions(state.secondary)}</select></label>
