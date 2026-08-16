@@ -81,6 +81,7 @@ function applyTheme(theme, { persist = true, rerender = true } = {}) {
   const toggle = document.getElementById('themeToggle');
   if (toggle) {
     toggle.setAttribute('aria-pressed', String(isLight));
+    toggle.querySelector('.theme-toggle-icon').textContent = isLight ? '☀' : '☾';
   }
   if (persist) {
     try {

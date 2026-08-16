@@ -70,7 +70,8 @@ async function exerciseViewport(browser, baseUrl, viewport) {
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
   assert.equal(await page.locator('#themeToggle').getAttribute('aria-pressed'), 'false');
   assert.equal(await page.locator('#themeToggle').getAttribute('aria-label'), 'Bright theme');
-  assert.equal((await page.locator('#themeToggle').textContent()).trim().replace(/\s+/g, ' '), '☀ Bright theme');
+  assert.equal((await page.locator('#themeToggle').textContent()).trim(), '☾');
+  assert.equal(await page.locator('#themeToggle .theme-toggle-label').count(), 0);
   assert.ok(await page.getByRole('button', { name: 'Bright theme', pressed: false }).isVisible());
   assert.ok(await page.locator('#themeToggle').isVisible());
   assert.ok(await page.locator('#themeToggle').evaluate(node => node.getBoundingClientRect().height >= 42));
@@ -98,7 +99,7 @@ async function exerciseViewport(browser, baseUrl, viewport) {
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'light');
   assert.equal(await page.locator('#themeToggle').getAttribute('aria-pressed'), 'true');
   assert.equal(await page.locator('#themeToggle').getAttribute('aria-label'), 'Bright theme');
-  assert.equal((await page.locator('#themeToggle').textContent()).trim().replace(/\s+/g, ' '), '☀ Bright theme');
+  assert.equal((await page.locator('#themeToggle').textContent()).trim(), '☀');
   assert.ok(await page.getByRole('button', { name: 'Bright theme', pressed: true }).isVisible());
   await page.locator('#dateFrom').focus();
   const lightTheme = await page.evaluate(() => ({
@@ -130,6 +131,7 @@ async function exerciseViewport(browser, baseUrl, viewport) {
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'light');
   assert.equal(await page.locator('#themeToggle').getAttribute('aria-pressed'), 'true');
   assert.equal(await page.locator('#themeToggle').getAttribute('aria-label'), 'Bright theme');
+  assert.equal((await page.locator('#themeToggle').textContent()).trim(), '☀');
   assert.equal(await page.evaluate(() => window.Chart.defaults.color), '#5d7085');
 
   const chartCount = await page.evaluate(() => Object.keys(window.Chart.instances).length);

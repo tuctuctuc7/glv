@@ -131,13 +131,10 @@ h1 {
   color: var(--ink);
   cursor: pointer;
   display: inline-flex;
-  font-size: 11px;
-  font-weight: 800;
-  gap: 8px;
-  letter-spacing: .04em;
+  justify-content: center;
   min-height: 42px;
-  padding: 8px 12px;
-  white-space: nowrap;
+  padding: 0;
+  width: 42px;
 }
 .theme-toggle:hover { border-color: var(--blue); }
 .theme-toggle-icon { color: var(--orange); font-size: 16px; line-height: 1; }
