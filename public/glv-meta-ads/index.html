@@ -1051,7 +1051,7 @@ function renderKPIs(seg){
     <div class="kpi-card"><div class="kpi-label">Spend</div><div class="kpi-val">${fmtInt(a.spend)}</div><div class="kpi-sub">CZK</div><div class="kpi-sub2">${fmtUsd(a.spend)}</div></div>
     <div class="kpi-card"><div class="kpi-label">Revenue</div><div class="kpi-val">${a.revenue>0?fmtInt(a.revenue):'—'}</div><div class="kpi-sub">CZK</div><div class="kpi-sub2">${fmtUsd(a.revenue)}</div></div>
     <div class="kpi-card hl"><div class="kpi-label">ROAS</div><div class="kpi-val ${roasClass(m.roas)}">${fmtRoas(m.roas)}</div><div class="kpi-sub">Revenue / Spend</div></div>
-    <div class="kpi-card"><div class="kpi-label">Purchases</div><div class="kpi-val">${a.purchases||'—'}</div><div class="kpi-sub">${m.cpa>0?'CPA: '+fmtInt(m.cpa)+' CZK':'CPA: —'}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Purchases</div><div class="kpi-val">${a.purchases>0?fmtInt(a.purchases):'—'}</div><div class="kpi-sub">${m.cpa>0?'CPA: '+fmtInt(m.cpa)+' CZK':'CPA: —'}</div></div>
     <div class="kpi-card"><div class="kpi-label">LP → Purchase</div><div class="kpi-val">${fmtPct(m.lp2pur)}</div><div class="kpi-sub">${a.lp>0?fmtInt(a.lp)+' LP views':'No LP data'}</div></div>
     <div class="kpi-card"><div class="kpi-label">LP → Checkout</div><div class="kpi-val">${fmtPct(m.lp2co)}</div><div class="kpi-sub">${a.checkouts>0?fmtInt(a.checkouts)+' checkouts':'No checkout data'}</div></div>
     <div class="kpi-card"><div class="kpi-label">Checkout → Purchase</div><div class="kpi-val">${fmtPct(m.co2pur)}</div><div class="kpi-sub">Checkout to purchase</div></div>

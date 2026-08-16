@@ -248,6 +248,18 @@ async function run() {
         assert.equal(await page.locator('#kpi-czsk').evaluate((el, width) => getComputedStyle(el).gridTemplateColumns.split(' ').length === (width > 1100 ? 4 : 2), viewport.width), true);
       }
       assert.equal(await page.locator('#kpi-czsk .kpi-card').count(), 8);
+      assert.equal(await page.evaluate(() => {
+        const rows = getMainSegmentRows('czsk', 'aggregate');
+        const original = rows.map(row => row.purchases);
+        rows[0].purchases = 1234 - rows.slice(1).reduce((sum, row) => sum + row.purchases, 0);
+        renderKPIs('czsk');
+        const card = [...document.querySelectorAll('#kpi-czsk .kpi-card')]
+          .find(item => item.querySelector('.kpi-label')?.textContent === 'Purchases');
+        const formatted = card?.querySelector('.kpi-val')?.textContent;
+        rows.forEach((row, index) => { row.purchases = original[index]; });
+        renderKPIs('czsk');
+        return formatted;
+      }), '1,234');
       assert.equal(await page.locator('#daily-table-czsk tbody tr').count(), 3);
       assert.equal(await page.locator('#creative-czsk tbody tr').count(), 2);
       assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-czsk'))));

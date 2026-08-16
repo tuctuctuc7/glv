@@ -62,6 +62,7 @@ test('the canonical Meta dashboard preserves the approved feature surface and sh
   assert.match(v2, /last_90d/);
   assert.match(v2, /this_month/);
   assert.match(v2, /last_month/);
+  assert.match(v2, /\$\{a\.purchases>0\?fmtInt\(a\.purchases\):'—'\}/);
 });
 
 test('the canonical Meta dashboard defines the Lead-gen inclusion and metric contract', () => {
