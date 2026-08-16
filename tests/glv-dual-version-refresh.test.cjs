@@ -27,10 +27,16 @@ test('one exporter writes the same snapshot to v1 and v2', () => {
   );
 });
 
-test('the existing deploy flow commits both version snapshots', () => {
+test('the existing deploy flow commits both version snapshots from current origin/main', () => {
+  assert.match(deploy, /git -C "\$ROOT" fetch origin main/);
+  assert.match(deploy, /git -C "\$ROOT" worktree add --detach "\$RELEASE_ROOT" origin\/main/);
   assert.match(deploy, /public\/glv\/glv_dashboard\.json/);
   assert.match(deploy, /public\/glv-2\/glv_dashboard\.json/);
   assert.match(deploy, /npm run verify:glv-release/, 'production deployment must run the dual-route release guard');
+  assert.match(deploy, /git push origin HEAD:main/);
+  assert.doesNotMatch(deploy, /git push[^\n]+\|\| echo/, 'a rejected refresh push must block a stale direct deployment');
+  assert.doesNotMatch(deploy, /vercel --prod/, 'the refresh must rely on the Git-integrated deployment instead of overriding production from a local checkout');
+  assert.match(deploy, /commits\/\$release_sha\/status/, 'the refresh must wait for the pushed commit deployment status');
   assert.match(vercel, /"buildCommand":\s*"npm run verify:glv-release"/, 'Vercel builds must reject stale or mismatched route data');
 });
 
