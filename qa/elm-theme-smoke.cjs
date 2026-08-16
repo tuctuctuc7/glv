@@ -67,6 +67,64 @@ async function exerciseViewport(browser, baseUrl, viewport) {
   assert.equal(response.status(), 200);
   await page.locator('#kpiGrid .kpi').first().waitFor({ state: 'visible' });
   assert.equal(await page.locator('#kpiGrid .kpi').count(), 6);
+  assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+  assert.equal(await page.locator('#languageToggle').getAttribute('aria-label'), 'Switch to Vietnamese');
+  assert.equal((await page.locator('#languageToggle').textContent()).trim(), '🇻🇳');
+  assert.ok(await page.locator('#languageToggle').evaluate(node => node.getBoundingClientRect().height >= 42));
+  await page.locator('#languageToggle').click();
+  await page.waitForTimeout(50);
+  assert.equal(await page.locator('html').getAttribute('lang'), 'vi');
+  assert.equal(await page.locator('#languageToggle').getAttribute('aria-label'), 'Chuyển sang tiếng Anh');
+  assert.equal((await page.locator('#languageToggle').textContent()).trim(), '🇬🇧');
+  assert.equal(await page.locator('#themeToggle').getAttribute('aria-label'), 'Giao diện sáng');
+  assert.match(await page.locator('h1').innerText(), /Theo dõi đường cong theo tháng/);
+  assert.equal((await page.locator('#kpiGrid .kpi span').first().textContent()).trim(), 'Chi tiêu');
+  assert.equal((await page.locator('#kpiGrid .kpi strong').nth(1).textContent()).trim(), '3,19x');
+  assert.equal((await page.locator('#kpiGrid .kpi strong').nth(3).textContent()).trim(), '1,3%');
+  assert.equal(await page.evaluate(() => window.Chart.getChart('growthChart').options.scales.secondary.ticks.callback(3.19)), '3,19x');
+  assert.equal(await page.evaluate(() => window.Chart.getChart('regionBaselineChart').options.scales.share.ticks.callback(1.3)), '1,3%');
+  assert.equal(await page.evaluate(() => window.Chart.getChart('regionBaselineChart').options.plugins.tooltip.callbacks.label({ dataset: { yAxisID: 'share', label: 'Tỷ trọng' }, raw: 1.3 })), 'Tỷ trọng: 1,3%');
+  assert.equal((await page.locator('#mappingCoverage').textContent()).trim(), '99,99%');
+  assert.equal((await page.locator('#growthTitle').textContent()).trim(), 'Chi tiêu × ROAS định hướng');
+  assert.equal((await page.locator('#exportButton').textContent()).trim(), 'Xuất CSV theo bộ lọc');
+  assert.equal(await page.locator('#regionMonthlyTable').evaluate(node => node.closest('table').querySelector('thead th:last-child').textContent.trim()), 'CPC miền Nam');
+  const vietnameseHeadings = await page.locator('h2').allTextContents();
+  [
+    'Góc nhìn vận hành tăng trưởng',
+    'ROAS, chi phí, chuyển đổi và giá trị đơn hàng',
+    'Hai tài khoản, hai đường xu hướng',
+    'Phân tách theo ngành hàng, không phải vai trò tài khoản',
+    'Phân tích riêng từng tháng',
+    'Sức kéo nhu cầu Q4 theo ô',
+    'Những gì tạo thành kế hoạch vận hành miền Nam',
+    'Các nhóm hiển thị trong hệ thống đặt tên',
+    'Cấu trúc hiển thị trong thiết lập',
+    'Miền Nam như một thị trường mở rộng',
+    'Phân tích bất thường được chuyển xuống phụ lục',
+    'Những gì vẫn cần bằng chứng từ backend',
+  ].forEach(heading => assert.ok(vietnameseHeadings.includes(heading), `Missing Vietnamese heading: ${heading}`));
+  assert.equal(await page.evaluate(() => localStorage.getItem('elm-meta-language')), 'vi');
+  await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-vi-dark.png`) });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('#kpiGrid .kpi').first().waitFor({ state: 'visible' });
+  assert.equal(await page.locator('html').getAttribute('lang'), 'vi');
+  assert.equal((await page.locator('#languageToggle').textContent()).trim(), '🇬🇧');
+  assert.equal((await page.locator('#growthTitle').textContent()).trim(), 'Chi tiêu × ROAS định hướng');
+  await page.locator('#languageToggle').click();
+  await page.waitForTimeout(50);
+  assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+  assert.equal((await page.locator('#languageToggle').textContent()).trim(), '🇻🇳');
+  assert.equal((await page.locator('#growthTitle').textContent()).trim(), 'Spend × Directional ROAS');
+  assert.equal((await page.locator('#kpiGrid .kpi strong').nth(1).textContent()).trim(), '3.19x');
+  assert.equal((await page.locator('#kpiGrid .kpi strong').nth(3).textContent()).trim(), '1.3%');
+  assert.equal(await page.evaluate(() => window.Chart.getChart('growthChart').options.scales.secondary.ticks.callback(3.19)), '3.19x');
+  assert.equal(await page.evaluate(() => window.Chart.getChart('regionBaselineChart').options.scales.share.ticks.callback(1.3)), '1.3%');
+  assert.equal(await page.evaluate(() => window.Chart.getChart('regionBaselineChart').options.plugins.tooltip.callbacks.label({ dataset: { yAxisID: 'share', label: 'Share' }, raw: 1.3 })), 'Share: 1.3%');
+  assert.equal((await page.locator('#mappingCoverage').textContent()).trim(), '99.99%');
+  const languageChartCount = await page.evaluate(() => Object.keys(window.Chart.instances).length);
+  for (let index = 0; index < 4; index += 1) await page.locator('#languageToggle').click();
+  assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+  assert.equal(await page.evaluate(() => Object.keys(window.Chart.instances).length), languageChartCount);
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
   assert.equal(await page.locator('#themeToggle').getAttribute('aria-pressed'), 'false');
   assert.equal(await page.locator('#themeToggle').getAttribute('aria-label'), 'Bright theme');
@@ -125,6 +183,17 @@ async function exerciseViewport(browser, baseUrl, viewport) {
   assert.ok(contrastRatio(lightTheme.exportColor, lightTheme.exportBackground) >= 4.5);
   lightTheme.axisColors.forEach(color => assert.ok(contrastRatio(color, 'rgb(244, 247, 251)') >= 4.5, `Light chart axis color ${color} must meet 4.5:1`));
   await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-light.png`) });
+  const lightChartCount = await page.evaluate(() => Object.keys(window.Chart.instances).length);
+  await page.locator('#languageToggle').click();
+  assert.equal(await page.locator('html').getAttribute('lang'), 'vi');
+  assert.equal(await page.locator('html').getAttribute('data-theme'), 'light');
+  assert.equal(await page.locator('#themeToggle').getAttribute('aria-label'), 'Giao diện sáng');
+  assert.equal((await page.locator('#themeToggle').textContent()).trim(), '☀');
+  assert.equal(await page.evaluate(() => Object.keys(window.Chart.instances).length), lightChartCount);
+  await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-vi-light.png`) });
+  await page.locator('#languageToggle').click();
+  assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+  assert.equal(await page.locator('html').getAttribute('data-theme'), 'light');
 
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('#kpiGrid .kpi').first().waitFor({ state: 'visible' });

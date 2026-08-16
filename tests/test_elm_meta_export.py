@@ -134,6 +134,23 @@ class ElmMetaExportTest(unittest.TestCase):
         self.assertIn("--focus-ring:", css)
         self.assertIn("--button-ink:", css)
 
+    def test_dashboard_exposes_persisted_english_and_vietnamese_languages(self):
+        route = ROOT / "public" / "elm-meta-ads"
+        html = (route / "index.html").read_text(encoding="utf-8")
+        app = (route / "app.js").read_text(encoding="utf-8")
+
+        self.assertIn('id="languageToggle"', html)
+        self.assertIn('aria-label="Switch to Vietnamese"', html)
+        self.assertIn('class="language-toggle-icon" aria-hidden="true">🇻🇳</span>', html)
+        self.assertLess(html.index("elm-meta-language"), html.index('rel="stylesheet"'))
+        self.assertIn("const LANGUAGE_STORAGE_KEY = 'elm-meta-language'", app)
+        self.assertIn("function applyLanguage", app)
+        self.assertIn("localStorage.setItem(LANGUAGE_STORAGE_KEY", app)
+        self.assertIn("document.getElementById('languageToggle').addEventListener('click'", app)
+        self.assertIn("Theo dõi đường cong theo tháng.", app)
+        self.assertIn("Xuất CSV theo bộ lọc", app)
+        self.assertIn("ROAS định hướng", app)
+
 
 if __name__ == "__main__":
     unittest.main()

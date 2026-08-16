@@ -123,7 +123,8 @@ h1 {
 .status-stack { align-items: flex-end; display: flex; flex-direction: column; gap: 10px; text-align: right; }
 .status-stack p { color: var(--muted); font-size: 12px; margin: 0; max-width: 280px; }
 .status-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
-.theme-toggle {
+.theme-toggle,
+.language-toggle {
   align-items: center;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -136,8 +137,10 @@ h1 {
   padding: 0;
   width: 42px;
 }
-.theme-toggle:hover { border-color: var(--blue); }
+.theme-toggle:hover,
+.language-toggle:hover { border-color: var(--blue); }
 .theme-toggle-icon { color: var(--orange); font-size: 16px; line-height: 1; }
+.language-toggle-icon { font-size: 18px; line-height: 1; }
 :root[data-theme="light"] .theme-toggle-icon { color: var(--violet); }
 .status {
   align-items: center;
