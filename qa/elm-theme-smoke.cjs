@@ -66,6 +66,17 @@ async function exerciseViewport(browser, baseUrl, viewport) {
   const response = await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 30_000 });
   assert.equal(response.status(), 200);
   await page.locator('#kpiGrid .kpi').first().waitFor({ state: 'visible' });
+  const dualAxisLegendOrder = await page.evaluate(() => Object.values(window.Chart.instances)
+    .filter(chart => new Set(chart.data.datasets.map(dataset => dataset.yAxisID).filter(Boolean)).size > 1)
+    .map(chart => ({
+      id: chart.canvas.id,
+      positions: chart.legend.legendItems.map(item => {
+        const axis = chart.data.datasets[item.datasetIndex].yAxisID;
+        return chart.options.scales[axis]?.position || 'left';
+      }),
+    })));
+  assert.ok(dualAxisLegendOrder.length >= 4, JSON.stringify(dualAxisLegendOrder));
+  assert.equal(dualAxisLegendOrder.every(chart => chart.positions.join(',').match(/^left(?:,left)*,right$/)), true, JSON.stringify(dualAxisLegendOrder));
   assert.equal(await page.locator('#kpiGrid .kpi').count(), 6);
   assert.equal(await page.locator('html').getAttribute('lang'), 'en');
   assert.equal(await page.locator('#languageToggle').getAttribute('aria-label'), 'Switch to Vietnamese');

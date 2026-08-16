@@ -118,6 +118,7 @@ async function run() {
       { type: 'bar', label: 'Revenue', yAxisID: 'y' },
       { type: 'line', label: 'ROAS', yAxisID: 'y1' },
     ]);
+    assert.deepEqual(await page.locator('#trendLegend span').allTextContents(), ['Revenue', 'ROAS']);
     assert.equal(await page.locator('#trendDataBody tr').count(), 28);
     assert.equal(await page.locator('#trendDataBody tr').first().locator('td').count(), 3);
     assert.match(await page.locator('#trendDataCaption').textContent(), /Revenue and ROAS by day/);
@@ -342,6 +343,19 @@ async function run() {
     assert.equal(await invalidUrl.locator('#trendMetricSecondary').inputValue(), 'revenue', 'every supported metric must restore in the line selector');
     assert.equal(await invalidUrl.locator('#errorState').isVisible(), false);
     await invalidUrlContext.close();
+
+    for (const legacyViewport of [{ name: 'desktop', width: 1440, height: 900 }, { name: 'mobile-390', width: 390, height: 844 }]) {
+      const legacyContext = await browser.newContext({ viewport: legacyViewport, colorScheme: 'dark', reducedMotion: 'reduce' });
+      const legacy = await legacyContext.newPage();
+      await legacy.goto(new URL('/glv/', baseUrl).href, { waitUntil: 'networkidle', timeout: 30_000 });
+      await legacy.locator('#trendChart').waitFor({ state: 'visible' });
+      assert.deepEqual(await legacy.evaluate(() => {
+        const chart = window.Chart.getChart('trendChart');
+        return chart.legend.legendItems.map(item => chart.data.datasets[item.datasetIndex].yAxisID);
+      }), ['barAxis', 'lineAxis']);
+      await legacy.screenshot({ path: path.join(evidenceDir, `legacy-${legacyViewport.name}-legend.png`), fullPage: true });
+      await legacyContext.close();
+    }
 
     const slashlessContext = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark', reducedMotion: 'reduce' });
     const slashless = await slashlessContext.newPage();

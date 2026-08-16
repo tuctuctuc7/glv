@@ -137,6 +137,11 @@ function setupRegionBehavior() {
   });
 }
 
+function sortLegendByAxis(a, b, data) {
+  const rank = item => data.datasets[item.datasetIndex]?.yAxisID === 'lineAxis' ? 1 : 0;
+  return rank(a) - rank(b);
+}
+
 function renderChart(rows) {
   const grain = document.getElementById('grain').value;
   const barMetric = document.getElementById('barMetric').value;
@@ -177,7 +182,7 @@ function renderChart(rows) {
       responsive: true,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { labels: { boxWidth: 10, usePointStyle: true } },
+        legend: { labels: { boxWidth: 10, usePointStyle: true, sort: sortLegendByAxis } },
         tooltip: {
           callbacks: {
             label: (item) => `${item.dataset.label}: ${formatMetric(
