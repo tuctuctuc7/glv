@@ -1,0 +1,378 @@
+{
+  "schema_version": 1,
+  "status": "static historical snapshot",
+  "currency": "USD",
+  "coverage": {
+    "start": "2025-01-01",
+    "end": "2025-12-31",
+    "source_grain": "month",
+    "compatible_grains": [
+      "month",
+      "year"
+    ],
+    "market_scope": "company-wide / All markets only"
+  },
+  "source": {
+    "workbook_name": "GELAVIS KPIs 2025.xlsx",
+    "workbook_sha256": "8cd62dbdda301fa5fabdce63e3c8b61d8826c9235c4b7545a79ba1c3fcf958c7",
+    "sheet": "Weekly KPIs Tracker",
+    "source_currency": "CZK",
+    "monetary_scale": 1000,
+    "cell_mapping": {
+      "revenue": "row 14 monthly totals",
+      "purchases": "row 15 monthly totals",
+      "spend": "row 16 monthly totals",
+      "new_customer_rate": "purchase-weighted weekly row 25 rates using weekly row 15 purchases"
+    }
+  },
+  "normalization": {
+    "currency": "USD",
+    "fx_source": "European Central Bank monthly reference exchange rates",
+    "fx_method": "USD = kCZK × 1000 × (USD per EUR) / (CZK per EUR)",
+    "fx_series": [
+      "EXR.M.CZK.EUR.SP00.A",
+      "EXR.M.USD.EUR.SP00.A"
+    ],
+    "available_metrics": [
+      "revenue",
+      "spend",
+      "purchases",
+      "roas",
+      "cpa",
+      "aov",
+      "new_customer_rate"
+    ],
+    "unavailable_metrics": {
+      "unique_visitors": "Monthly totals are inconsistent and absent for multiple months.",
+      "cvr": "Unique visitors are not reliable enough to derive CVR.",
+      "new_customer_revenue": "Not present in the workbook."
+    },
+    "display_rule": "Use only for month and year grains; exclude from day and week grains."
+  },
+  "rows": [
+    {
+      "date": "2025-01-31",
+      "period_start": "2025-01-01",
+      "period_end": "2025-01-31",
+      "source_grain": "month",
+      "region": "historical_all",
+      "historical": true,
+      "revenue": 23601.82,
+      "spend": 8525.89,
+      "purchases": 197,
+      "unique_visitors": null,
+      "new_customers": 115.9974,
+      "returning_customers": 81.0026,
+      "new_customer_revenue": null,
+      "source_values": {
+        "revenue_kczk": 573.61,
+        "spend_kczk": 207.21,
+        "purchases": 197,
+        "recorded_month_new_customer_rate": 0.5838,
+        "weighted_weekly_new_customer_rate": 0.58881929
+      },
+      "fx": {
+        "czk_per_eur": 25.163318181818,
+        "usd_per_eur": 1.035372727273,
+        "usd_per_czk": 0.041146112758
+      }
+    },
+    {
+      "date": "2025-02-28",
+      "period_start": "2025-02-01",
+      "period_end": "2025-02-28",
+      "source_grain": "month",
+      "region": "historical_all",
+      "historical": true,
+      "revenue": 22121.21,
+      "spend": 7306.75,
+      "purchases": 212,
+      "unique_visitors": null,
+      "new_customers": 94.9997,
+      "returning_customers": 117.0003,
+      "new_customer_revenue": null,
+      "source_values": {
+        "revenue_kczk": 532.75,
+        "spend_kczk": 175.97,
+        "purchases": 212,
+        "recorded_month_new_customer_rate": 0.4481,
+        "weighted_weekly_new_customer_rate": 0.44811179
+      },
+      "fx": {
+        "czk_per_eur": 25.07665,
+        "usd_per_eur": 1.04125,
+        "usd_per_czk": 0.041522691428
+      }
+    },
+    {
+      "date": "2025-03-31",
+      "period_start": "2025-03-01",
+      "period_end": "2025-03-31",
+      "source_grain": "month",
+      "region": "historical_all",
+      "historical": true,
+      "revenue": 26783.13,
+      "spend": 8889.67,
+      "purchases": 200,
+      "unique_visitors": null,
+      "new_customers": 80.0032,
+      "returning_customers": 119.9968,
+      "new_customer_revenue": null,
+      "source_values": {
+        "revenue_kczk": 619.62,
+        "spend_kczk": 205.66,
+        "purchases": 200,
+        "recorded_month_new_customer_rate": 0.4,
+        "weighted_weekly_new_customer_rate": 0.400016
+      },
+      "fx": {
+        "czk_per_eur": 25.001238095238,
+        "usd_per_eur": 1.080680952381,
+        "usd_per_czk": 0.043225097424
+      }
+    },
+    {
+      "date": "2025-04-30",
+      "period_start": "2025-04-01",
+      "period_end": "2025-04-30",
+      "source_grain": "month",
+      "region": "historical_all",
+      "historical": true,
+      "revenue": 17436.09,
+      "spend": 6994.68,
+      "purchases": 136,
+      "unique_visitors": null,
+      "new_customers": 63.0027,
+      "returning_customers": 72.9973,
+      "new_customer_revenue": null,
+      "source_values": {
+        "revenue_kczk": 389.32,
+        "spend_kczk": 156.18,
+        "purchases": 136,
+        "recorded_month_new_customer_rate": 0.4632,
+        "weighted_weekly_new_customer_rate": 0.46325515
+      },
+      "fx": {
+        "czk_per_eur": 25.03895,
+        "usd_per_eur": 1.121395,
+        "usd_per_czk": 0.044786023376
+      }
+    },
+    {
+      "date": "2025-05-31",
+      "period_start": "2025-05-01",
+      "period_end": "2025-05-31",
+      "source_grain": "month",
+      "region": "historical_all",
+      "historical": true,
+      "revenue": 58471.69,
+      "spend": 25116.57,
+      "purchases": 493,
+      "unique_visitors": null,
+      "new_customers": 282.0122,
+      "returning_customers": 210.9878,
+      "new_customer_revenue": null,
+      "source_values": {
+        "revenue_kczk": 1292.14,
+        "spend_kczk": 555.04,
+        "purchases": 493,
+        "recorded_month_new_customer_rate": 0.5729,
+        "weighted_weekly_new_customer_rate": 0.57203286
+      },
+      "fx": {
+        "czk_per_eur": 24.922857142857,
+        "usd_per_eur": 1.127804761905,
+        "usd_per_czk": 0.045251824678
+      }
+    },
+    {
+      "date": "2025-06-30",
+      "period_start": "2025-06-01",
+      "period_end": "2025-06-30",
+      "source_grain": "month",
+      "region": "historical_all",
+      "historical": true,
+      "revenue": 43654.14,
+      "spend": 13416.37,
+      "purchases": 360,
+      "unique_visitors": null,
+      "new_customers": 238.0079,
+      "returning_customers": 121.9921,
+      "new_customer_revenue": null,
+      "source_values": {
+        "revenue_kczk": 940.25,
+        "spend_kczk": 288.97,
+        "purchases": 360,
+        "recorded_month_new_customer_rate": 0.5155,
+        "weighted_weekly_new_customer_rate": 0.66113306
+      },
+      "fx": {
+        "czk_per_eur": 24.804285714286,
+        "usd_per_eur": 1.151619047619,
+        "usd_per_czk": 0.046428228609
+      }
+    },
+    {
+      "date": "2025-07-31",
+      "period_start": "2025-07-01",
+      "period_end": "2025-07-31",
+      "source_grain": "month",
+      "region": "historical_all",
+      "historical": true,
+      "revenue": 44068.85,
+      "spend": 12627.34,
+      "purchases": 376,
+      "unique_visitors": null,
+      "new_customers": 218.9897,
+      "returning_customers": 157.0103,
+      "new_customer_revenue": null,
+      "source_values": {
+        "revenue_kczk": 929.34,
+        "spend_kczk": 266.29,
+        "purchases": 376,
+        "recorded_month_new_customer_rate": 0.5825,
+        "weighted_weekly_new_customer_rate": 0.58241941
+      },
+      "fx": {
+        "czk_per_eur": 24.624608695652,
+        "usd_per_eur": 1.167686956522,
+        "usd_per_czk": 0.047419513177
+      }
+    },
+    {
+      "date": "2025-08-31",
+      "period_start": "2025-08-01",
+      "period_end": "2025-08-31",
+      "source_grain": "month",
+      "region": "historical_all",
+      "historical": true,
+      "revenue": 56632.28,
+      "spend": 16075.41,
+      "purchases": 455,
+      "unique_visitors": null,
+      "new_customers": 170.0171,
+      "returning_customers": 284.9829,
+      "new_customer_revenue": null,
+      "source_values": {
+        "revenue_kczk": 1193.69,
+        "spend_kczk": 338.836,
+        "purchases": 455,
+        "recorded_month_new_customer_rate": 0.3736,
+        "weighted_weekly_new_customer_rate": 0.37366396
+      },
+      "fx": {
+        "czk_per_eur": 24.516619047619,
+        "usd_per_eur": 1.163142857143,
+        "usd_per_czk": 0.047443036696
+      }
+    },
+    {
+      "date": "2025-09-30",
+      "period_start": "2025-09-01",
+      "period_end": "2025-09-30",
+      "source_grain": "month",
+      "region": "historical_all",
+      "historical": true,
+      "revenue": 43369.7,
+      "spend": 13496.98,
+      "purchases": 339,
+      "unique_visitors": null,
+      "new_customers": 201.0024,
+      "returning_customers": 137.9976,
+      "new_customer_revenue": null,
+      "source_values": {
+        "revenue_kczk": 900.01,
+        "spend_kczk": 280.09,
+        "purchases": 339,
+        "recorded_month_new_customer_rate": 0.5912,
+        "weighted_weekly_new_customer_rate": 0.59292743
+      },
+      "fx": {
+        "czk_per_eur": 24.346772727273,
+        "usd_per_eur": 1.173222727273,
+        "usd_per_czk": 0.048188018199
+      }
+    },
+    {
+      "date": "2025-10-31",
+      "period_start": "2025-10-01",
+      "period_end": "2025-10-31",
+      "source_grain": "month",
+      "region": "historical_all",
+      "historical": true,
+      "revenue": 46649.66,
+      "spend": 13402.31,
+      "purchases": 386,
+      "unique_visitors": null,
+      "new_customers": 183.5418,
+      "returning_customers": 202.4582,
+      "new_customer_revenue": null,
+      "source_values": {
+        "revenue_kczk": 975.29,
+        "spend_kczk": 280.198,
+        "purchases": 386,
+        "recorded_month_new_customer_rate": 0.4753,
+        "weighted_weekly_new_customer_rate": 0.47549689
+      },
+      "fx": {
+        "czk_per_eur": 24.315391304348,
+        "usd_per_eur": 1.163043478261,
+        "usd_per_czk": 0.047831575635
+      }
+    },
+    {
+      "date": "2025-11-30",
+      "period_start": "2025-11-01",
+      "period_end": "2025-11-30",
+      "source_grain": "month",
+      "region": "historical_all",
+      "historical": true,
+      "revenue": 143918.56,
+      "spend": 35258.2,
+      "purchases": 1047,
+      "unique_visitors": null,
+      "new_customers": 385.933,
+      "returning_customers": 661.067,
+      "new_customer_revenue": null,
+      "source_values": {
+        "revenue_kczk": 3017.015,
+        "spend_kczk": 739.13,
+        "purchases": 1047,
+        "recorded_month_new_customer_rate": 0.3639,
+        "weighted_weekly_new_customer_rate": 0.3686084
+      },
+      "fx": {
+        "czk_per_eur": 24.23405,
+        "usd_per_eur": 1.15602,
+        "usd_per_czk": 0.047702303164
+      }
+    },
+    {
+      "date": "2025-12-31",
+      "period_start": "2025-12-01",
+      "period_end": "2025-12-31",
+      "source_grain": "month",
+      "region": "historical_all",
+      "historical": true,
+      "revenue": 29904.92,
+      "spend": 17510.5,
+      "purchases": 246,
+      "unique_visitors": null,
+      "new_customers": 135.5656,
+      "returning_customers": 110.4344,
+      "new_customer_revenue": null,
+      "source_values": {
+        "revenue_kczk": 619.6,
+        "spend_kczk": 362.8,
+        "purchases": 246,
+        "recorded_month_new_customer_rate": 0.5488,
+        "weighted_weekly_new_customer_rate": 0.55107967
+      },
+      "fx": {
+        "czk_per_eur": 24.259285714286,
+        "usd_per_eur": 1.170871428571,
+        "usd_per_czk": 0.048264876483
+      }
+    }
+  ]
+}

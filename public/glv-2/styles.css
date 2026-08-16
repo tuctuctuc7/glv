@@ -1003,6 +1003,17 @@ html[data-theme="light"] .region-card {
   position: relative;
 }
 
+.historical-scope-note {
+  background: color-mix(in srgb, var(--cyan) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cyan) 28%, var(--border));
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 14px 0 0;
+  padding: 9px 11px;
+}
+
 .chart-legend {
   color: var(--text-tertiary);
   font-size: 10px;
@@ -1380,6 +1391,10 @@ html[data-theme="light"] .region-card {
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+}
+
+.audit-toolbar + .historical-scope-note {
+  margin-top: 10px;
 }
 
 .audit-grain-field {

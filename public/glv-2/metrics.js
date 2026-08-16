@@ -16,6 +16,18 @@
     return denominator ? numerator / denominator : null;
   }
 
+  function hasFiniteMetric(row, key) {
+    return row?.[key] !== null && row?.[key] !== undefined && Number.isFinite(Number(row[key]));
+  }
+
+  function ratioFromRows(rows, numeratorKey, denominatorKey) {
+    const eligible = (rows || []).filter((row) => hasFiniteMetric(row, numeratorKey) && hasFiniteMetric(row, denominatorKey));
+    if (!eligible.length) return null;
+    const numerator = eligible.reduce((sum, row) => sum + Number(row[numeratorKey]), 0);
+    const denominator = eligible.reduce((sum, row) => sum + Number(row[denominatorKey]), 0);
+    return ratio(numerator, denominator);
+  }
+
   function aggregateRows(rows) {
     const totals = {
       spend: 0,
@@ -27,24 +39,36 @@
       new_customer_revenue: 0,
     };
 
-    (rows || []).forEach((row) => {
+    const sourceRows = rows || [];
+    sourceRows.forEach((row) => {
       ABSOLUTE_METRICS.forEach((key) => {
-        totals[key] += finiteNumber(row?.[key]);
+        if (hasFiniteMetric(row, key)) totals[key] += Number(row[key]);
       });
     });
 
+    if (sourceRows.length) {
+      ABSOLUTE_METRICS.forEach((key) => {
+        if (!sourceRows.some((row) => hasFiniteMetric(row, key))) totals[key] = null;
+      });
+    }
+
+    const customerRows = sourceRows.filter((row) => hasFiniteMetric(row, 'new_customers') && hasFiniteMetric(row, 'returning_customers'));
+    const newCustomers = customerRows.reduce((sum, row) => sum + Number(row.new_customers), 0);
+    const returningCustomers = customerRows.reduce((sum, row) => sum + Number(row.returning_customers), 0);
+
     return {
       ...totals,
-      roas: ratio(totals.revenue, totals.spend),
-      cpa: ratio(totals.spend, totals.purchases),
-      aov: ratio(totals.revenue, totals.purchases),
-      cvr: ratio(totals.purchases, totals.unique_visitors),
-      new_customer_rate: ratio(totals.new_customers, totals.new_customers + totals.returning_customers),
+      roas: ratioFromRows(sourceRows, 'revenue', 'spend'),
+      cpa: ratioFromRows(sourceRows, 'spend', 'purchases'),
+      aov: ratioFromRows(sourceRows, 'revenue', 'purchases'),
+      cvr: ratioFromRows(sourceRows, 'purchases', 'unique_visitors'),
+      new_customer_rate: customerRows.length ? ratio(newCustomers, newCustomers + returningCustomers) : null,
     };
   }
 
   function metricValue(row, key) {
     if (!row) return null;
+    if (!hasFiniteMetric(row, key) && !['roas', 'cpa', 'aov', 'cvr', 'new_customer_rate'].includes(key)) return null;
     if (key === 'roas') return ratio(finiteNumber(row.revenue), finiteNumber(row.spend));
     if (key === 'cpa') return ratio(finiteNumber(row.spend), finiteNumber(row.purchases));
     if (key === 'aov') return ratio(finiteNumber(row.revenue), finiteNumber(row.purchases));
@@ -91,6 +115,7 @@
   }
 
   function grainLabel(dateString, grain) {
+    if (grain === 'year') return String(dateString).slice(0, 4);
     if (grain === 'month') return String(dateString).slice(0, 7);
     if (grain === 'week') return isoWeekLabel(dateString);
     return dateString;

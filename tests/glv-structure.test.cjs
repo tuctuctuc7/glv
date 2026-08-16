@@ -116,10 +116,21 @@ test('detail table exposes the approved audit metrics and no row-limit control',
   has(/id="auditTableWrap"/, 'audit table needs a dedicated two-axis scroll container');
 });
 
-test('audit trail has an independent day, week, and month grain filter', () => {
-  has(/<select id="auditGrain">[\s\S]*?value="day" selected[\s\S]*?value="week"[\s\S]*?value="month"/, 'audit grain options are incomplete');
-  assert.match(app, /const grain = \$\('auditGrain'\)\.value;[\s\S]*?metrics\.groupRows\(view\.currentRows, grain\)/, 'audit table must group by its own grain');
-  assert.match(app, /\$\('auditGrain'\)\.addEventListener\('change'/, 'audit grain must update interactively');
+test('audit trail has an independent day, week, month, and year grain filter', () => {
+  has(/<select id="auditGrain">[\s\S]*?value="day" selected[\s\S]*?value="week"[\s\S]*?value="month"[\s\S]*?value="year"/, 'audit grain options are incomplete');
+  assert.match(app, /const grain = \$\('auditGrain'\)\.value;[\s\S]*?const combined = rowsForGrain\(view, grain\);[\s\S]*?metrics\.groupRows\(combined\.rows, grain\)/, 'audit table must use its independent grain-aware source boundary');
+  assert.match(app, /\[[^\]]*'grain', 'auditGrain'[^\]]*\]\.forEach\(\(id\) => \$\(id\)\.addEventListener\('change', render\)\)/, 'audit grain must update through the full render lifecycle');
+});
+
+test('2025 history is a static month/year-only All-markets source', () => {
+  has(/<select id="grain">[\s\S]*?value="day" selected[\s\S]*?value="week"[\s\S]*?value="month"[\s\S]*?value="year"/, 'chart grain options are incomplete');
+  has(/id="chartHistoryNote"[^>]*role="note"[^>]*hidden/, 'chart needs a historical source disclosure');
+  has(/id="auditHistoryNote"[^>]*role="note"[^>]*hidden/, 'audit table needs a historical source disclosure');
+  assert.match(app, /const eligibleGrain = \['month', 'year'\]\.includes\(grain\)/, 'history must be gated to month and year');
+  assert.match(app, /const allMarkets = state\.selectedRegions\.length === 3/, 'history must be limited to All markets');
+  assert.match(app, /row\.period_start >= view\.filters\.from[\s\S]*?row\.period_end <= view\.filters\.to/, 'only complete historical months may be included');
+  assert.match(app, /fetch\('\/glv-2\/glv_2025_monthly\.json'/, 'static history must load from a route-local snapshot');
+  assert.match(app, /fetch\('\/glv-2\/glv_dashboard\.json'/, 'working source must remain independently loaded');
 });
 
 test('dashboard copy uses the approved CVR and ROAS names throughout', () => {

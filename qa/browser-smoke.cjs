@@ -10,6 +10,8 @@ const chromePath = '/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/
 const browserLibRoot = '/home/tom/.cache/hermes-browser-libs/root';
 const evidenceDir = path.resolve(process.env.GLV_QA_EVIDENCE_DIR || path.join(projectRoot, 'qa', 'screenshots'));
 const dashboardData = JSON.parse(fs.readFileSync(path.join(publicRoot, 'glv-2', 'glv_dashboard.json'), 'utf8'));
+const historicalData = JSON.parse(fs.readFileSync(path.join(publicRoot, 'glv-2', 'glv_2025_monthly.json'), 'utf8'));
+const dashboardMetrics = require(path.join(publicRoot, 'glv-2', 'metrics.js'));
 const latestDataDate = dashboardData.date_range.end;
 const latestDate = new Date(`${latestDataDate}T00:00:00Z`);
 const defaultStartDate = new Date(latestDate.getTime() - (27 * 86_400_000));
@@ -195,6 +197,87 @@ async function run() {
     assert.equal(await page.locator('#metricsTableBody tr').count(), 3, 'monthly audit grain should show summary plus two month rows');
     assert.equal((await page.locator('#auditPeriodHeader').textContent()).trim(), 'Month');
     assert.match(await page.locator('#metricsTableCaption').textContent(), /by month/);
+
+    assert.equal(await page.locator('#dateFrom').getAttribute('min'), historicalData.coverage.start, 'date controls must expose 2025 history');
+    await page.locator('#dateFrom').fill(historicalData.coverage.start);
+    await page.locator('#dateFrom').dispatchEvent('change');
+    await page.locator('#dateTo').fill(latestDataDate);
+    await page.locator('#dateTo').dispatchEvent('change');
+    assert.match(await page.locator('#comparisonLabel').textContent(), /Scorecards use the working source/);
+    await page.locator('#grain').selectOption('day');
+    await page.locator('#auditGrain').selectOption('day');
+    const dailyChartLabels = await page.evaluate(() => window.Chart.getChart('trendChart').data.labels);
+    assert.ok(dailyChartLabels.every((label) => !String(label).startsWith('2025')), 'Day chart must exclude the monthly historical snapshot');
+    assert.ok((await page.locator('#metricsTableBody tr:not(.summary-row) td:first-child').allTextContents()).every((label) => !label.startsWith('2025')), 'Day audit must exclude the monthly historical snapshot');
+    assert.match(await page.locator('#chartHistoryNote').textContent(), /excluded at Day and Week grain/);
+    assert.match(await page.locator('#auditHistoryNote').textContent(), /excluded at Day and Week grain/);
+
+    await page.locator('#grain').selectOption('month');
+    const workingMonths = [...new Set(dashboardData.rows.map((row) => row.date.slice(0, 7)))];
+    const expectedMonthLabels = [...historicalData.rows.map((row) => row.date.slice(0, 7)), ...workingMonths];
+    const monthChart = await page.evaluate(() => {
+      const chart = window.Chart.getChart('trendChart');
+      return { labels: chart.data.labels, revenue: chart.data.datasets[0].data, roas: chart.data.datasets[1].data };
+    });
+    assert.deepEqual(monthChart.labels, expectedMonthLabels, 'Month chart must combine the twelve static months with working-source months');
+    assert.equal(monthChart.revenue[0], historicalData.rows[0].revenue, 'January 2025 revenue must come from the static snapshot');
+    assert.ok(Math.abs(monthChart.roas[0] - (historicalData.rows[0].revenue / historicalData.rows[0].spend)) < 1e-12, 'January 2025 ROAS must be derived from normalized sums');
+    assert.match(await page.locator('#chartHistoryNote').textContent(), /static 2025 All-markets monthly snapshot/);
+
+    await page.locator('#auditGrain').selectOption('month');
+    assert.equal(await page.locator('#metricsTableBody tr').count(), expectedMonthLabels.length + 1, 'Month audit must show summary plus historical and working months');
+    const january2025 = page.locator('#metricsTableBody tr').filter({ has: page.locator('td:first-child', { hasText: '2025-01' }) });
+    assert.equal(await january2025.count(), 1, 'January 2025 audit row must be present once');
+    const januaryCells = await january2025.locator('td').allTextContents();
+    assert.equal(januaryCells[7], '—', '2025 CVR must remain unavailable');
+    assert.equal(januaryCells[8], '—', '2025 Visitors must remain unavailable');
+    assert.equal(januaryCells[9], '—', '2025 New customer revenue must remain unavailable');
+    const workingSummary = dashboardMetrics.aggregateRows(dashboardData.rows);
+    const expectedWorkingCvr = `${(workingSummary.cvr * 100).toFixed(2)}%`;
+    assert.equal((await page.locator('#metricsTableBody .summary-row td').nth(7).textContent()).trim(), expectedWorkingCvr, 'mixed-period CVR must use only rows with visitor data');
+
+    await page.locator('#grain').selectOption('year');
+    assert.deepEqual(await page.evaluate(() => window.Chart.getChart('trendChart').data.labels), ['2025', '2026'], 'Year chart must expose 2025 and the working-source year');
+    await page.locator('#auditGrain').selectOption('year');
+    assert.equal(await page.locator('#metricsTableBody tr').count(), 3, 'Year audit must show summary plus 2025 and 2026');
+    assert.equal((await page.locator('#auditPeriodHeader').textContent()).trim(), 'Year');
+    assert.match(await page.locator('#metricsTableCaption').textContent(), /by year/);
+    assert.equal(new URL(page.url()).searchParams.get('auditGrain'), 'year', 'Audit Year grain must persist in the shareable URL');
+    await page.screenshot({ path: path.join(evidenceDir, 'desktop-history-year.png'), fullPage: true });
+
+    await page.locator('[data-region="czsk"]').click();
+    await page.locator('#grain').selectOption('month');
+    assert.ok((await page.evaluate(() => window.Chart.getChart('trendChart').data.labels)).every((label) => !String(label).startsWith('2025')), 'market-specific chart must exclude company-level 2025 history');
+    assert.match(await page.locator('#chartHistoryNote').textContent(), /Choose All markets/);
+    await page.locator('[data-region="all"]').click();
+
+    await page.locator('#dateTo').fill(historicalData.coverage.end);
+    await page.locator('#dateTo').dispatchEvent('change');
+    await page.locator('#grain').selectOption('month');
+    await page.locator('#auditGrain').selectOption('year');
+    assert.equal(await page.locator('#dashboardContent').isVisible(), true, 'historical-only month/year views must remain usable');
+    assert.equal(await page.locator('#trendDataBody tr').count(), 12, 'historical-only month chart must show all twelve months');
+    assert.equal(await page.locator('#metricsTableBody tr').count(), 2, 'historical-only year audit must show summary plus 2025');
+    assert.equal(await page.locator('#marketComparison').isVisible(), false, 'market comparison must hide when the working source has no rows');
+    assert.ok((await page.locator('#executiveKpis .kpi-value').allTextContents()).every((value) => value.trim() === '—'), 'working-source scorecards must not absorb historical rows');
+
+    await page.locator('#grain').selectOption('day');
+    await page.locator('#auditGrain').selectOption('day');
+    assert.equal(await page.locator('#errorState').isVisible(), true, 'historical-only Day/Day transition must enter the global empty state');
+    assert.equal(await page.locator('#dashboardContent').isVisible(), false, 'historical-only Day/Day transition must not leave a zero-valued table visible');
+    await page.evaluate(() => {
+      const auditGrain = document.querySelector('#auditGrain');
+      auditGrain.value = 'year';
+      auditGrain.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    assert.equal(await page.locator('#errorState').isVisible(), false, 'switching the audit grain back to Year must clear the empty state');
+    assert.equal(await page.locator('#dashboardContent').isVisible(), true, 'switching the audit grain back to Year must restore the historical dashboard');
+    assert.equal(await page.locator('#metricsTableBody tr').count(), 2, 'restored historical Year audit must show summary plus 2025');
+
+    await page.locator('#dateFrom').fill(defaultStartDate.toISOString().slice(0, 10));
+    await page.locator('#dateFrom').dispatchEvent('change');
+    await page.locator('#dateTo').fill(latestDataDate);
+    await page.locator('#dateTo').dispatchEvent('change');
     await page.locator('#auditGrain').selectOption('day');
     await page.locator('#grain').selectOption('day');
     await page.evaluate(() => {
@@ -267,6 +350,17 @@ async function run() {
     assert.equal(await slashless.locator('#errorState').isVisible(), false, 'slashless /glv-2 must load all route assets and data');
     await slashlessContext.close();
 
+    const historyFailureContext = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark', reducedMotion: 'reduce' });
+    const historyFailure = await historyFailureContext.newPage();
+    historyFailure.on('pageerror', (error) => consoleErrors.push(`history fallback pageerror: ${error.message}`));
+    await historyFailure.route('**/glv_2025_monthly.json', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+    await historyFailure.goto(baseUrl, { waitUntil: 'networkidle', timeout: 30_000 });
+    await historyFailure.locator('#dashboardContent').waitFor({ state: 'visible' });
+    assert.equal(await historyFailure.locator('#errorState').isVisible(), false, 'historical snapshot failure must not break the working-source dashboard');
+    assert.equal(await historyFailure.locator('#executiveKpis .kpi-card').count(), 8, 'working-source KPIs must survive historical snapshot failure');
+    assert.equal(await historyFailure.locator('#dateFrom').getAttribute('min'), dashboardData.date_range.start, 'failed history must fall back to working-source coverage');
+    await historyFailureContext.close();
+
     const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, colorScheme: 'dark', reducedMotion: 'reduce' });
     const mobile = await mobileContext.newPage();
     mobile.on('console', (message) => {
@@ -318,6 +412,32 @@ async function run() {
     await mobile.locator('#auditGrain').selectOption('week');
     assert.equal(await mobile.locator('#metricsTableBody tr').count(), 6, 'mobile weekly audit grain should show summary plus five week rows');
     assert.equal((await mobile.locator('#auditPeriodHeader').textContent()).trim(), 'Week');
+    await mobile.locator('#auditGrain').selectOption('day');
+    await mobile.locator('#filtersToggle').click();
+    await mobile.locator('#dateFrom').fill(historicalData.coverage.start);
+    await mobile.locator('#dateFrom').dispatchEvent('change');
+    await mobile.locator('#dateTo').fill(latestDataDate);
+    await mobile.locator('#dateTo').dispatchEvent('change');
+    await mobile.locator('#filtersToggle').click();
+    await mobile.locator('#grain').selectOption('year');
+    await mobile.locator('#auditGrain').selectOption('year');
+    assert.match(await mobile.locator('#chartHistoryNote').textContent(), /static 2025 All-markets monthly snapshot/);
+    assert.match(await mobile.locator('#auditHistoryNote').textContent(), /static 2025 All-markets monthly snapshot/);
+    assert.deepEqual(await mobile.evaluate(() => window.Chart.getChart('trendChart').data.labels), ['2025', '2026']);
+    const mobileHistoryGeometry = await mobile.locator('.historical-scope-note:visible').evaluateAll((notes) => notes.map((note) => {
+      const rect = note.getBoundingClientRect();
+      const panel = note.closest('.panel').getBoundingClientRect();
+      return { left: rect.left, right: rect.right, panelLeft: panel.left, panelRight: panel.right };
+    }));
+    assert.ok(mobileHistoryGeometry.every(({ left, right, panelLeft, panelRight }) => left >= panelLeft && right <= panelRight), `mobile historical notes must stay within their panels: ${JSON.stringify(mobileHistoryGeometry)}`);
+    await mobile.screenshot({ path: path.join(evidenceDir, 'mobile-history-year.png'), fullPage: true });
+    await mobile.locator('#filtersToggle').click();
+    await mobile.locator('#dateFrom').fill(defaultStartDate.toISOString().slice(0, 10));
+    await mobile.locator('#dateFrom').dispatchEvent('change');
+    await mobile.locator('#dateTo').fill(latestDataDate);
+    await mobile.locator('#dateTo').dispatchEvent('change');
+    await mobile.locator('#filtersToggle').click();
+    await mobile.locator('#grain').selectOption('day');
     await mobile.locator('#auditGrain').selectOption('day');
     assert.equal(await mobile.locator('body').evaluate((node) => getComputedStyle(node).minHeight), '0px', 'mobile page height should follow its content');
     const mobileOverflow = await mobile.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -491,8 +611,10 @@ async function run() {
       baseUrl,
       screenshots: [
         path.join(evidenceDir, 'desktop-dark.png'),
+        path.join(evidenceDir, 'desktop-history-year.png'),
         path.join(evidenceDir, 'desktop-light-us.png'),
         path.join(evidenceDir, 'mobile-dark-filters.png'),
+        path.join(evidenceDir, 'mobile-history-year.png'),
         path.join(evidenceDir, 'mobile-320-dark-filters.png'),
       ],
       consoleErrors,

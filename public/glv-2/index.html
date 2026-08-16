@@ -183,11 +183,13 @@
                   <option value="day" selected>Day</option>
                   <option value="week">Week</option>
                   <option value="month">Month</option>
+                  <option value="year">Year</option>
                 </select>
               </label>
             </div>
           </div>
           <div id="trendContent" class="section-content">
+          <p id="chartHistoryNote" class="historical-scope-note" role="note" hidden></p>
           <div class="chart-legend" id="trendLegend" aria-hidden="true"></div>
           <div class="chart-wrap">
             <canvas id="trendChart" role="img" aria-label="Performance trend chart" aria-describedby="trendDataTable"></canvas>
@@ -213,9 +215,11 @@
               <option value="day" selected>Day</option>
               <option value="week">Week</option>
               <option value="month">Month</option>
+              <option value="year">Year</option>
             </select>
           </label>
         </div>
+        <p id="auditHistoryNote" class="historical-scope-note" role="note" hidden></p>
         <p class="table-scroll-hint">Swipe horizontally to inspect every metric →</p>
         <div class="table-wrap audit-table-wrap" id="auditTableWrap" tabindex="0" aria-label="Scrollable performance detail table">
           <table id="metricsTable">

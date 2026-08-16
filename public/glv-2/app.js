@@ -20,6 +20,7 @@ const REGION_CONFIG = {
 
 const state = {
   data: null,
+  historicalData: null,
   chart: null,
   selectedRegions: ['czsk', 'us', 'row'],
   loadAttempts: 0,
@@ -92,6 +93,46 @@ function currentFilters() {
   };
 }
 
+function historicalContext(view, grain) {
+  const coverage = state.historicalData?.coverage;
+  const intersects = Boolean(coverage && view.filters.from <= coverage.end && view.filters.to >= coverage.start);
+  const eligibleGrain = ['month', 'year'].includes(grain);
+  const allMarkets = state.selectedRegions.length === 3;
+  if (!intersects || !eligibleGrain || !allMarkets) return { rows: [], intersects, eligibleGrain, allMarkets };
+
+  const workingMonths = new Set(view.currentRows.map((row) => row.date.slice(0, 7)));
+  const rows = state.historicalData.rows.filter((row) => (
+    row.period_start >= view.filters.from
+    && row.period_end <= view.filters.to
+    && !workingMonths.has(row.period_start.slice(0, 7))
+  ));
+  return { rows, intersects, eligibleGrain, allMarkets };
+}
+
+function rowsForGrain(view, grain) {
+  const history = historicalContext(view, grain);
+  return { history, rows: [...history.rows, ...view.currentRows] };
+}
+
+function renderHistoricalNote(id, context) {
+  const note = $(id);
+  if (!context.intersects) {
+    note.hidden = true;
+    note.textContent = '';
+    return;
+  }
+  note.hidden = false;
+  if (!context.eligibleGrain) {
+    note.textContent = '2025 history is monthly and is excluded at Day and Week grain; this view uses only the working source.';
+  } else if (!context.allMarkets) {
+    note.textContent = '2025 history has no defensible market split and is excluded from market-specific views. Choose All markets to include it.';
+  } else if (!context.rows.length) {
+    note.textContent = 'No complete 2025 month is contained by the selected date range.';
+  } else {
+    note.textContent = 'Includes the static 2025 All-markets monthly snapshot. Revenue and spend are converted from kCZK to USD with ECB monthly reference rates; Visitors, CVR, and New customer revenue are unavailable for 2025.';
+  }
+}
+
 function getViewData() {
   const filters = currentFilters();
   const currentRows = metrics.filterRows(state.data.rows, filters);
@@ -124,6 +165,7 @@ function syncUrl() {
   params.set('metric', $('trendMetric').value);
   params.set('metric2', $('trendMetricSecondary').value);
   params.set('grain', $('grain').value);
+  params.set('auditGrain', $('auditGrain').value);
   const query = params.toString();
   try {
     window.history.replaceState(null, '', `${window.location.pathname}?${query}${window.location.hash}`);
@@ -157,7 +199,9 @@ function restoreUrlState() {
   const secondaryMetric = params.get('metric2');
   if (secondaryMetric && [...$('trendMetricSecondary').options].some((option) => option.value === secondaryMetric)) $('trendMetricSecondary').value = secondaryMetric;
   const grain = params.get('grain');
-  if (['day', 'week', 'month'].includes(grain)) $('grain').value = grain;
+  if (['day', 'week', 'month', 'year'].includes(grain)) $('grain').value = grain;
+  const auditGrain = params.get('auditGrain');
+  if (['day', 'week', 'month', 'year'].includes(auditGrain)) $('auditGrain').value = auditGrain;
   refreshRegionButtons();
 }
 
@@ -202,9 +246,10 @@ function createSparkline(rows, key, color) {
 
 function renderKpiCard(key, view) {
   const config = METRIC_CONFIG[key];
-  const value = view.comparison.current[key];
-  const previous = view.comparison.previous?.[key];
-  const change = view.comparison.changes[key];
+  const hasWorkingRows = view.currentRows.length > 0;
+  const value = hasWorkingRows ? view.comparison.current[key] : null;
+  const previous = hasWorkingRows ? view.comparison.previous?.[key] : null;
+  const change = hasWorkingRows ? view.comparison.changes[key] : null;
   const card = element('article', 'kpi-card');
   card.dataset.metric = key;
   card.style.setProperty('--metric-color', config.color);
@@ -239,9 +284,14 @@ function renderKpis(view) {
   clear(container);
   ['revenue', 'spend', 'purchases', 'new_customer_rate', 'cvr', 'aov', 'cpa', 'roas']
     .forEach((key) => container.appendChild(renderKpiCard(key, view)));
-  $('comparisonLabel').textContent = view.comparison.previous
-    ? `${formatDate(view.previousBounds.from)} – ${formatDate(view.previousBounds.to)} · historical comparison`
-    : 'No valid previous-period baseline';
+  const intersectsHistory = Boolean(state.historicalData
+    && view.filters.from <= state.historicalData.coverage.end
+    && view.filters.to >= state.historicalData.coverage.start);
+  $('comparisonLabel').textContent = intersectsHistory
+    ? 'Scorecards use the working source; 2025 static history appears only in Month/Year chart and Audit Trail'
+    : view.comparison.previous
+      ? `${formatDate(view.previousBounds.from)} – ${formatDate(view.previousBounds.to)} · historical comparison`
+      : view.currentRows.length ? 'No valid previous-period baseline' : 'Working source has no rows for this period';
 }
 
 function renderExecutiveStrip(view, regions, actions) {
@@ -688,7 +738,8 @@ function renderChart(view) {
   const key = $('trendMetric').value;
   const secondaryKey = $('trendMetricSecondary').value;
   const grain = $('grain').value;
-  const current = metrics.groupRows(view.currentRows, grain);
+  const combined = rowsForGrain(view, grain);
+  const current = metrics.groupRows(combined.rows, grain);
   const colors = chartColors();
   const canvas = $('trendChart');
   const fallback = $('chartFallback');
@@ -720,7 +771,9 @@ function renderChart(view) {
       .forEach((value) => tr.appendChild(element('td', '', value)));
     trendDataBody.appendChild(tr);
   });
-  $('chartSubtitle').textContent = `${selectedMetrics.map((metric) => METRIC_CONFIG[metric].label).join(' + ') || 'No metrics selected'} by ${grain} · ${selectedRegionLabel()}`;
+  const historyLabel = combined.history.rows.length ? ' · 2025 static monthly included' : '';
+  $('chartSubtitle').textContent = `${selectedMetrics.map((metric) => METRIC_CONFIG[metric].label).join(' + ') || 'No metrics selected'} by ${grain} · ${selectedRegionLabel()}${historyLabel}`;
+  renderHistoricalNote('chartHistoryNote', combined.history);
   const legend = $('trendLegend');
   clear(legend);
   if (key !== 'none') {
@@ -829,11 +882,12 @@ function formatAuditMetric(key, value) {
 
 function renderTable(view) {
   const grain = $('auditGrain').value;
-  const rows = metrics.groupRows(view.currentRows, grain).reverse();
-  const grainLabel = { day: 'day', week: 'week', month: 'month' }[grain];
+  const combined = rowsForGrain(view, grain);
+  const rows = metrics.groupRows(combined.rows, grain).reverse();
+  const grainLabel = { day: 'day', week: 'week', month: 'month', year: 'year' }[grain];
   const body = $('metricsTableBody');
   clear(body);
-  const summary = view.comparison.current;
+  const summary = metrics.aggregateRows(combined.rows);
   const summaryRow = document.createElement('tr');
   summaryRow.className = 'summary-row';
   [
@@ -868,9 +922,11 @@ function renderTable(view) {
     values.forEach((value) => tr.appendChild(element('td', '', value)));
     body.appendChild(tr);
   });
-  $('auditPeriodHeader').textContent = grain === 'day' ? 'Date' : grain === 'week' ? 'Week' : 'Month';
+  $('auditPeriodHeader').textContent = grain === 'day' ? 'Date' : grain === 'week' ? 'Week' : grain === 'month' ? 'Month' : 'Year';
   $('metricsTableCaption').textContent = `GLV business performance by ${grainLabel}`;
-  $('tableSubtitle').textContent = `Summary + ${rows.length} ${grainLabel} ${rows.length === 1 ? 'row' : 'rows'} · selected date range · newest first`;
+  const historyLabel = combined.history.rows.length ? ' · 2025 static monthly included' : '';
+  $('tableSubtitle').textContent = `Summary + ${rows.length} ${grainLabel} ${rows.length === 1 ? 'row' : 'rows'} · selected date range · newest first${historyLabel}`;
+  renderHistoricalNote('auditHistoryNote', combined.history);
 }
 
 function renderScope(view) {
@@ -885,8 +941,13 @@ function renderScope(view) {
 
 function renderTrust() {
   const source = state.data.source || {};
-  $('dataSource').textContent = `${source.tab || 'Daily'} sheet · ${source.mode || 'read-only'}`;
-  $('dataCoverage').textContent = `${formatDate(state.data.date_range.start)} – ${formatDate(state.data.date_range.end)} · ${state.data.rows.length.toLocaleString('en-US')} market-days`;
+  const history = state.historicalData;
+  $('dataSource').textContent = history
+    ? `${source.tab || 'Daily'} sheet · ${source.mode || 'read-only'} + static 2025 monthly snapshot`
+    : `${source.tab || 'Daily'} sheet · ${source.mode || 'read-only'}`;
+  $('dataCoverage').textContent = history
+    ? `${formatDate(history.coverage.start)} – ${formatDate(state.data.date_range.end)} · ${history.rows.length} historical months + ${state.data.rows.length.toLocaleString('en-US')} market-days`
+    : `${formatDate(state.data.date_range.start)} – ${formatDate(state.data.date_range.end)} · ${state.data.rows.length.toLocaleString('en-US')} market-days`;
 }
 
 function showEmpty(message) {
@@ -905,7 +966,9 @@ function render() {
     return;
   }
   const view = getViewData();
-  if (!view.currentRows.length) {
+  const hasHistoricalRows = [historicalContext(view, $('grain').value), historicalContext(view, $('auditGrain').value)]
+    .some((context) => context.rows.length);
+  if (!view.currentRows.length && !hasHistoricalRows) {
     showEmpty('No rows match this date and market selection. Reset to the last 28 days.');
     return;
   }
@@ -917,7 +980,8 @@ function render() {
   renderKpis(view);
   const regions = regionComparisons(view);
   renderChart(view);
-  renderMarketComparison(regions);
+  $('marketComparison').hidden = !view.currentRows.length;
+  if (view.currentRows.length) renderMarketComparison(regions);
   renderTable(view);
   syncUrl();
 }
@@ -976,10 +1040,7 @@ function setupEvents() {
     $('periodPreset').value = 'custom';
     render();
   }));
-  ['comparisonToggle', 'trendMetric', 'trendMetricSecondary', 'grain'].forEach((id) => $(id).addEventListener('change', render));
-  $('auditGrain').addEventListener('change', () => {
-    if (state.data) renderTable(getViewData());
-  });
+  ['comparisonToggle', 'trendMetric', 'trendMetricSecondary', 'grain', 'auditGrain'].forEach((id) => $(id).addEventListener('change', render));
 
   document.querySelectorAll('.section-toggle').forEach((button) => {
     button.addEventListener('click', () => {
@@ -1117,6 +1178,23 @@ function validateData(data) {
   metrics.validateRows(data.rows);
 }
 
+function validateHistoricalData(data) {
+  if (!data || data.schema_version !== 1 || data.currency !== 'USD' || !Array.isArray(data.rows) || data.rows.length !== 12) throw new Error('Historical data has an invalid structure.');
+  if (data.coverage?.start !== '2025-01-01' || data.coverage?.end !== '2025-12-31') throw new Error('Historical coverage must be calendar year 2025.');
+  const seen = new Set();
+  data.rows.forEach((row, index) => {
+    if (row.region !== 'historical_all' || row.source_grain !== 'month' || !/^2025-\d{2}-\d{2}$/.test(row.date)) throw new Error(`Invalid historical row ${index}.`);
+    if (seen.has(row.date)) throw new Error(`Duplicate historical month ${row.date}.`);
+    seen.add(row.date);
+    ['revenue', 'spend', 'purchases', 'new_customers', 'returning_customers'].forEach((key) => {
+      if (typeof row[key] !== 'number' || !Number.isFinite(row[key]) || row[key] < 0) throw new Error(`Invalid historical ${key} at row ${index}.`);
+    });
+    ['unique_visitors', 'new_customer_revenue'].forEach((key) => {
+      if (row[key] !== null) throw new Error(`Unavailable historical ${key} must be null.`);
+    });
+  });
+}
+
 function updateFreshness() {
   const updated = String(state.data.updated_at || '').replace(' UTC', 'Z').replace(' ', 'T');
   const date = new Date(updated);
@@ -1132,13 +1210,27 @@ async function loadData({ preserveContent = false } = {}) {
   $('errorState').hidden = true;
   $('dashboardContent').hidden = !preserveContent;
   try {
-    const response = await fetch('/glv-2/glv_dashboard.json', { cache: 'no-store' });
+    const historyRequest = state.historicalData
+      ? Promise.resolve(state.historicalData)
+      : fetch('/glv-2/glv_2025_monthly.json', { cache: 'force-cache' })
+        .then((historyResponse) => historyResponse.ok ? historyResponse.json() : null)
+        .then((historyData) => {
+          if (historyData) validateHistoricalData(historyData);
+          return historyData;
+        })
+        .catch(() => null);
+    const [response, historicalData] = await Promise.all([
+      fetch('/glv-2/glv_dashboard.json', { cache: 'no-store' }),
+      historyRequest,
+    ]);
     if (!response.ok) throw new Error(`Data request failed (${response.status}).`);
     const data = await response.json();
     validateData(data);
     state.data = data;
+    state.historicalData = historicalData;
+    const minimumDate = historicalData?.coverage?.start || data.date_range.start;
     ['dateFrom', 'dateTo'].forEach((id) => {
-      $(id).min = data.date_range.start;
+      $(id).min = minimumDate;
       $(id).max = data.date_range.end;
     });
     restoreUrlState();
