@@ -145,6 +145,8 @@ Standard cached presets:
 
 Cron prewarms the standard presets into Upstash/Vercel KV. Custom ranges and cache misses can hit Meta live.
 
+The `CZSK Triage` tab provides seven independent daily chart presets for funnel diagnosis. Each chart has its own primary metric, secondary metric, and day/week/month grain controls. A single metric registry assigns one stable, unique color to every selectable metric across the chart controls. The aggregate and daily Meta insight producers include campaign-level `reach`; Triage labels impressions divided by summed campaign reach as `Frequency proxy`. Reach is non-additive, so this proxy is not Meta's deduplicated frequency for the selected period.
+
 Meta Ads currency is CZK. Always label it as CZK in reports, Slack summaries, and paid-media decision logic.
 
 ## Media Buyer OS

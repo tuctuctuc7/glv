@@ -53,7 +53,7 @@ test('the canonical Meta dashboard exposes its home-screen icon and retires the 
 
 test('the canonical Meta dashboard preserves the approved feature surface and shared API', () => {
   const v2 = read('public/glv-meta-ads/index.html');
-  for (const tab of ['czsk', 'czsk-promo', 'czsk-leadgen', 'us']) assert.match(v2, new RegExp(`data-tab="${tab}"`));
+  for (const tab of ['czsk', 'czsk-triage', 'czsk-promo', 'czsk-leadgen', 'us']) assert.match(v2, new RegExp(`data-tab="${tab}"`));
   for (const id of requiredIds) assert.match(v2, new RegExp(`id="${id}"`), `missing V1 control #${id}`);
   assert.match(v2, /\/api\/glv-meta-ads\/fb-data/);
   assert.match(v2, /last_7d/);
@@ -93,6 +93,126 @@ test('shared Meta API exposes lead actions to the canonical dashboard', () => {
   const v2 = read('public/glv-meta-ads/index.html');
   assert.match(v2, /lp:parseNum\(r\['actions:landing_page_view'\]\)/);
   assert.match(v2, /getPromoSegmentRows/);
+});
+
+test('CZSK Triage defines seven independent presets and one unique color per selectable metric', () => {
+  const dashboard = read('public/glv-meta-ads/index.html');
+  assert.match(dashboard, /id="panel-czsk-triage"/);
+  assert.match(dashboard, /id="triage-grid"/);
+  assert.match(dashboard, /const METRIC_REGISTRY = \[/);
+  assert.match(dashboard, /const TRIAGE_PRESETS = \[/);
+
+  const registry = dashboard.match(/const METRIC_REGISTRY = \[([\s\S]*?)\n\];/);
+  assert.ok(registry, 'missing selectable metric registry');
+  const keys = [...registry[1].matchAll(/key:'([^']+)'/g)].map(match => match[1]);
+  const colors = [...registry[1].matchAll(/color:'(#[0-9A-Fa-f]{6})'/g)].map(match => match[1].toLowerCase());
+  assert.equal(keys.length, 18, 'all dashboard and triage metrics must be registered');
+  assert.equal(new Set(keys).size, keys.length, 'metric keys must be unique');
+  assert.equal(colors.length, keys.length, 'every metric needs an explicit color');
+  assert.equal(new Set(colors).size, colors.length, 'different metrics must never share a color');
+
+  const presets = dashboard.match(/const TRIAGE_PRESETS = \[([\s\S]*?)\n\];/);
+  assert.ok(presets, 'missing triage presets');
+  const presetIds = [...presets[1].matchAll(/id:'([^']+)'/g)].map(match => match[1]);
+  assert.deepEqual(presetIds, ['efficiency', 'lp-checkout', 'checkout-purchase', 'lp-purchase', 'value-aov', 'delivery-response', 'cost-frequency']);
+  for (const contract of [
+    /primary:'spend'.*secondary:'roas'/,
+    /primary:'lp'.*secondary:'lp2co'/,
+    /primary:'checkouts'.*secondary:'co2pur'/,
+    /primary:'purchases'.*secondary:'lp2pur'/,
+    /primary:'revenue'.*secondary:'aov'/,
+    /primary:'impressions'.*secondary:'outboundCtr'/,
+    /primary:'cpm'.*secondary:'frequency'.*primaryType:'line'.*secondaryType:'line'/,
+  ]) assert.match(presets[1], contract);
+  assert.match(dashboard, /function initTriageCards\(/);
+  assert.match(dashboard, /function refreshTriageChart\(/);
+  assert.match(dashboard, /charts\[chartKey\]\.destroy\(\)/);
+  assert.match(dashboard, /class="sr-only triage-data-table"/);
+  assert.match(dashboard, /label:'Frequency proxy'/);
+  assert.doesNotMatch(dashboard, /label:'Frequency'/);
+  assert.match(dashboard, /class="triage-primary-header"/);
+  assert.match(dashboard, /class="triage-secondary-header"/);
+  assert.match(dashboard, /tableCaption\.textContent/);
+  assert.match(dashboard, /role="tablist"/);
+  assert.match(dashboard, /aria-selected="true"/);
+  assert.match(dashboard, /setAttribute\('aria-selected'/);
+});
+
+test('Meta live and cached producers expose reach for the triage frequency metric', () => {
+  for (const file of ['api/glv-meta-ads/fb-data.js', 'api/glv-meta-ads/cron.js']) {
+    const api = read(file);
+    assert.match(api, /spend,impressions,reach,actions,action_values/);
+    assert.match(api, /reach:\s+row\.reach \|\| '0'/);
+    const producer = require(path.join(root, file));
+    assert.equal(producer._test.normalizeCampaign({ reach: '450' }).reach, '450');
+  }
+  const dashboard = read('public/glv-meta-ads/index.html');
+  assert.match(dashboard, /reach:parseNum\(r\.reach\)/);
+  assert.match(dashboard, /const frequency=a\.reach>0\?a\.impressions\/a\.reach:0/);
+  assert.match(dashboard, /const outboundCtr=a\.impressions>0\?a\.outboundClicks\/a\.impressions\*100:0/);
+});
+
+test('Meta cache rejects legacy aggregate and daily rows without reach', () => {
+  const api = require('../api/glv-meta-ads/fb-data.js');
+  assert.equal(api._test.cachedPayloadUsable('daily', { rows: [{ impressions: '100' }] }), false);
+  assert.equal(api._test.cachedPayloadUsable('aggregate', { rows: [{ impressions: '100', reach: '60' }] }), true);
+  assert.equal(api._test.cachedPayloadUsable('daily', { rows: [{ reach: 0 }] }), true);
+  assert.equal(api._test.cachedPayloadUsable('daily', { rows: [{ reach: '0' }] }), true);
+  assert.equal(api._test.cachedPayloadUsable('daily', { rows: [{ impressions: '100', reach: 'not-a-number' }] }), false);
+  for (const reach of ['', '   ', null, false, []]) {
+    assert.equal(api._test.cachedPayloadUsable('daily', { rows: [{ reach }] }), false, `reach ${JSON.stringify(reach)} must be rejected`);
+  }
+  assert.equal(api._test.cachedPayloadUsable('ads', { rows: [{ impressions: '100' }] }), true);
+});
+
+test('Meta Redis configuration selects one complete credential family atomically', () => {
+  for (const file of ['../api/glv-meta-ads/fb-data.js', '../api/glv-meta-ads/cron.js']) {
+    const api = require(file);
+    assert.deepEqual(api._test.resolveRedisConfig({ KV_REST_API_URL: 'https://kv.example', KV_REST_API_TOKEN: 'kv-token' }), { url: 'https://kv.example', token: 'kv-token' });
+    assert.deepEqual(api._test.resolveRedisConfig({ UPSTASH_REDIS_REST_URL: 'https://upstash.example', UPSTASH_REDIS_REST_TOKEN: 'upstash-token' }), { url: 'https://upstash.example', token: 'upstash-token' });
+    assert.equal(api._test.resolveRedisConfig({ KV_REST_API_URL: 'https://kv.example', UPSTASH_REDIS_REST_TOKEN: 'mixed-token' }), null);
+    assert.equal(api._test.resolveRedisConfig({ KV_REST_API_URL: 'https://kv.example', UPSTASH_REDIS_REST_URL: 'https://upstash.example', UPSTASH_REDIS_REST_TOKEN: 'upstash-token' }), null);
+  }
+});
+
+test('Meta API handler rejects partial mixed-family Redis configuration', async () => {
+  const api = require('../api/glv-meta-ads/fb-data.js');
+  const envNames = ['GLV_META_FB_ACCESS_TOKEN', 'FB_ACCESS_TOKEN', 'KV_REST_API_URL', 'KV_REST_API_TOKEN', 'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'];
+  const originalEnv = Object.fromEntries(envNames.map(name => [name, process.env[name]]));
+  const originalFetch = global.fetch;
+  for (const name of envNames) delete process.env[name];
+  Object.assign(process.env, {
+    FB_ACCESS_TOKEN: 'test-meta-token',
+    KV_REST_API_URL: 'https://kv.example',
+    UPSTASH_REDIS_REST_TOKEN: 'mixed-token',
+  });
+  try {
+    global.fetch = async () => { throw new Error('handler must reject before network access'); };
+    const response = {
+      statusCode: 200,
+      body: null,
+      setHeader() {},
+      status(code) { this.statusCode = code; return this; },
+      json(body) { this.body = body; return body; },
+    };
+    await api({ method: 'GET', query: { type: 'daily', date_preset: 'last_30d' } }, response);
+    assert.equal(response.statusCode, 500);
+    assert.match(response.body.error, /not configured/);
+  } finally {
+    global.fetch = originalFetch;
+    for (const name of envNames) {
+      if (originalEnv[name] === undefined) delete process.env[name]; else process.env[name] = originalEnv[name];
+    }
+  }
+});
+
+test('Meta date presets are semantic keyboard controls with disclosed popover state', () => {
+  const dashboard = read('public/glv-meta-ads/index.html');
+  assert.match(dashboard, /id="date-btn"[^>]*aria-expanded="false"[^>]*aria-controls="date-menu"/);
+  assert.equal((dashboard.match(/<button type="button" class="date-preset-item/g) || []).length, 6);
+  assert.doesNotMatch(dashboard, /<div class="date-preset-item"/);
+  assert.match(dashboard, /function setDateMenuOpen\(/);
+  assert.match(dashboard, /function handleDateMenuKeydown\(/);
 });
 
 test('manual Meta cron can include the current partial day without changing the scheduled yesterday cutoff', () => {
@@ -166,6 +286,28 @@ test('Meta cron returns HTTP 500 when cache writes fail', async () => {
   } finally {
     global.fetch = originalFetch;
     console.log = originalLog;
+    for (const name of envNames) {
+      if (originalEnv[name] === undefined) delete process.env[name]; else process.env[name] = originalEnv[name];
+    }
+  }
+});
+
+test('Meta cron returns HTTP 500 when runtime configuration is missing', async () => {
+  const cron = require('../api/glv-meta-ads/cron.js');
+  const envNames = ['CRON_SECRET', 'GLV_META_FB_ACCESS_TOKEN', 'FB_ACCESS_TOKEN', 'KV_REST_API_URL', 'UPSTASH_REDIS_REST_URL', 'KV_REST_API_TOKEN', 'UPSTASH_REDIS_REST_TOKEN'];
+  const originalEnv = Object.fromEntries(envNames.map(name => [name, process.env[name]]));
+  for (const name of envNames) delete process.env[name];
+  try {
+    const response = {
+      statusCode: 200,
+      body: null,
+      status(code) { this.statusCode = code; return this; },
+      json(body) { this.body = body; return body; },
+    };
+    await cron({ headers: {}, query: {} }, response);
+    assert.equal(response.statusCode, 500);
+    assert.equal(response.body.ok, false);
+  } finally {
     for (const name of envNames) {
       if (originalEnv[name] === undefined) delete process.env[name]; else process.env[name] = originalEnv[name];
     }

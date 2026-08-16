@@ -6,18 +6,44 @@ const FB_API = 'https://graph.facebook.com/v21.0';
 // Presets the cron pre-warms; everything else hits Meta live
 const CACHED_PRESETS = new Set(['last_7d', 'last_14d', 'last_30d', 'last_90d', 'this_month', 'last_month']);
 
+function resolveRedisConfig(env = process.env) {
+  const kvUrl = env.KV_REST_API_URL;
+  const kvToken = env.KV_REST_API_TOKEN;
+  const upstashUrl = env.UPSTASH_REDIS_REST_URL;
+  const upstashToken = env.UPSTASH_REDIS_REST_TOKEN;
+  const kvPresent = Boolean(kvUrl || kvToken);
+  const upstashPresent = Boolean(upstashUrl || upstashToken);
+  if (kvPresent && !(kvUrl && kvToken)) return null;
+  if (upstashPresent && !(upstashUrl && upstashToken)) return null;
+  if (kvUrl && kvToken) return { url: kvUrl, token: kvToken };
+  if (upstashUrl && upstashToken) return { url: upstashUrl, token: upstashToken };
+  return null;
+}
+
 async function redisGet(key) {
   try {
-    const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-    const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-    const r = await fetch(`${redisUrl}/get/${encodeURIComponent(key)}`, {
-      headers: { Authorization: `Bearer ${redisToken}` },
+    const redis = resolveRedisConfig();
+    if (!redis) return null;
+    const r = await fetch(`${redis.url}/get/${encodeURIComponent(key)}`, {
+      headers: { Authorization: `Bearer ${redis.token}` },
     });
     const { result } = await r.json();
     return result ? JSON.parse(result) : null;
   } catch {
     return null;
   }
+}
+
+function cachedPayloadUsable(type, payload) {
+  if (!payload || !Array.isArray(payload.rows)) return false;
+  if (type !== 'aggregate' && type !== 'daily') return true;
+  return payload.rows.every(row => {
+    if (!Object.prototype.hasOwnProperty.call(row, 'reach')) return false;
+    if (typeof row.reach !== 'number' && typeof row.reach !== 'string') return false;
+    if (typeof row.reach === 'string' && row.reach.trim() === '') return false;
+    const reach = Number(row.reach);
+    return Number.isFinite(reach) && reach >= 0;
+  });
 }
 
 function getAction(actions, type) {
@@ -53,6 +79,7 @@ function normalizeCampaign(row) {
     name: row.campaign_name || '',
     amount_spent:                  row.spend || '0',
     impressions:                   row.impressions || '0',
+    reach:                         row.reach || '0',
     'actions:link_click':          getAction(row.actions, 'link_click'),
     'actions:landing_page_view':   getAction(row.actions, 'landing_page_view'),
     'actions:omni_purchase':       getAction(row.actions, 'omni_purchase'),
@@ -106,9 +133,8 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
   const token = process.env.GLV_META_FB_ACCESS_TOKEN || process.env.FB_ACCESS_TOKEN;
-  const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!token || !redisUrl || !redisToken) {
+  const redis = resolveRedisConfig();
+  if (!token || !redis) {
     return res.status(500).json({
       error: 'GLV Meta Ads API is not configured. Add FB_ACCESS_TOKEN plus KV_REST_API_URL and KV_REST_API_TOKEN to agenthic-lab.',
     });
@@ -120,7 +146,7 @@ module.exports = async (req, res) => {
   // Serve from cache for standard presets (no time_range = custom date)
   if (!time_range && CACHED_PRESETS.has(preset)) {
     const cached = await redisGet(`glv:${type}:${preset}`);
-    if (cached) {
+    if (cachedPayloadUsable(type, cached)) {
       res.setHeader('X-Cache', 'HIT');
       return res.json(cached);
     }
@@ -135,13 +161,13 @@ module.exports = async (req, res) => {
 
   try {
     if (type === 'aggregate') {
-      const fields = 'campaign_id,campaign_name,spend,impressions,actions,action_values';
+      const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&limit=500&${auth}`;
       const raw = await paginate(url);
       res.json({ rows: raw.map(normalizeCampaign) });
 
     } else if (type === 'daily') {
-      const fields = 'campaign_id,campaign_name,spend,impressions,actions,action_values';
+      const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&time_increment=1&limit=500&${auth}`;
       const raw = await paginate(url);
       res.json({ rows: raw.map(normalizeCampaign) });
@@ -176,3 +202,4 @@ module.exports = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+module.exports._test = { normalizeCampaign, cachedPayloadUsable, resolveRedisConfig };

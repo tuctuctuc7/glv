@@ -35,13 +35,27 @@ function monthRange(preset, includeToday = false, now = new Date()) {
   return { since: sinceDate(preset, includeToday, now), until: cutoffDate(includeToday, now) };
 }
 
+function resolveRedisConfig(env = process.env) {
+  const kvUrl = env.KV_REST_API_URL;
+  const kvToken = env.KV_REST_API_TOKEN;
+  const upstashUrl = env.UPSTASH_REDIS_REST_URL;
+  const upstashToken = env.UPSTASH_REDIS_REST_TOKEN;
+  const kvPresent = Boolean(kvUrl || kvToken);
+  const upstashPresent = Boolean(upstashUrl || upstashToken);
+  if (kvPresent && !(kvUrl && kvToken)) return null;
+  if (upstashPresent && !(upstashUrl && upstashToken)) return null;
+  if (kvUrl && kvToken) return { url: kvUrl, token: kvToken };
+  if (upstashUrl && upstashToken) return { url: upstashUrl, token: upstashToken };
+  return null;
+}
+
 async function redisCmd(...args) {
-  const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-  const r = await fetch(redisUrl, {
+  const redis = resolveRedisConfig();
+  if (!redis) throw new Error('Redis is not configured with one complete credential pair');
+  const r = await fetch(redis.url, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${redisToken}`,
+      Authorization: `Bearer ${redis.token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(args),
@@ -94,6 +108,7 @@ function normalizeCampaign(row) {
     name: row.campaign_name || '',
     amount_spent: row.spend || '0',
     impressions: row.impressions || '0',
+    reach: row.reach || '0',
     'actions:link_click': getAction(row.actions, 'link_click'),
     'actions:landing_page_view': getAction(row.actions, 'landing_page_view'),
     'actions:omni_purchase': getAction(row.actions, 'omni_purchase'),
@@ -150,7 +165,7 @@ async function fetchAndCache(token, preset, includeToday = false) {
 
   // aggregate
   try {
-    const fields = 'campaign_id,campaign_name,spend,impressions,actions,action_values';
+    const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&limit=500&${auth}`;
     const raw = await paginate(url);
     const rows = raw.map(normalizeCampaign);
@@ -162,7 +177,7 @@ async function fetchAndCache(token, preset, includeToday = false) {
 
   // daily
   try {
-    const fields = 'campaign_id,campaign_name,spend,impressions,actions,action_values';
+    const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&time_increment=1&limit=500&${auth}`;
     const raw = await paginate(url);
     const rows = raw.map(normalizeCampaign);
@@ -204,10 +219,9 @@ async function handler(req, res) {
   // Vercel cron passes this header; block unauthorised calls
   const cronSecret = process.env.CRON_SECRET || process.env.GLV_META_CRON_SECRET;
   const token = process.env.GLV_META_FB_ACCESS_TOKEN || process.env.FB_ACCESS_TOKEN;
-  const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!cronSecret || !token || !redisUrl || !redisToken) {
-    return res.status(202).json({
+  const redis = resolveRedisConfig();
+  if (!cronSecret || !token || !redis) {
+    return res.status(500).json({
       ok: false,
       message: 'GLV Meta Ads cron is not configured in agenthic-lab yet. Add GLV_META_CRON_SECRET, GLV_META_FB_ACCESS_TOKEN, KV_REST_API_URL, and KV_REST_API_TOKEN.',
     });
@@ -238,4 +252,4 @@ async function handler(req, res) {
 }
 
 module.exports = handler;
-module.exports._test = { cutoffDate, sinceDate, monthRange, redisCmd, summarizeRows };
+module.exports._test = { cutoffDate, sinceDate, monthRange, redisCmd, summarizeRows, normalizeCampaign, resolveRedisConfig };

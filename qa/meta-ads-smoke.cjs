@@ -12,8 +12,9 @@ const evidenceDir = path.resolve(process.env.GLV_META_QA_EVIDENCE_DIR || '/tmp/g
 fs.rmSync(evidenceDir, { recursive: true, force: true });
 fs.mkdirSync(evidenceDir, { recursive: true });
 
-const campaign = (id, name, spend, revenue, purchases, checkouts, clicks, impressions, date, leads = 0, landingViews = clicks) => ({
+const campaign = (id, name, spend, revenue, purchases, checkouts, clicks, impressions, date, leads = 0, landingViews = clicks, reach = Math.round(impressions / 1.7)) => ({
   id, name, amount_spent: String(spend), impressions: String(impressions),
+  reach: String(reach),
   'actions:link_click': String(clicks), 'actions:omni_purchase': String(purchases),
   'actions:initiate_checkout': String(checkouts), 'actions:outbound_click': String(clicks),
   'actions:lead': String(leads), 'actions:landing_page_view': String(landingViews),
@@ -90,6 +91,31 @@ async function run() {
       const homeIconResponse = await page.request.get(new URL(homeIconHref, base).href);
       assert.equal(homeIconResponse.status(), 200);
       assert.match(homeIconResponse.headers()['content-type'] || '', /^image\/png/);
+      if (viewport.name === 'desktop') {
+        const dateTrigger = page.locator('#date-btn');
+        await dateTrigger.focus();
+        await page.keyboard.press('Enter');
+        assert.equal(await dateTrigger.getAttribute('aria-expanded'), 'true');
+        assert.equal(await page.locator('.date-preset-item.active').evaluate(el => el === document.activeElement), true);
+        await page.keyboard.press('ArrowUp');
+        assert.equal(await page.locator('.date-preset-item[data-p="last_14d"]').evaluate(el => el === document.activeElement), true);
+        await page.keyboard.press('Enter');
+        await page.locator('#kpi-czsk .kpi-card').first().waitFor();
+        assert.equal(await dateTrigger.getAttribute('aria-expanded'), 'false');
+        assert.equal(await dateTrigger.evaluate(el => el === document.activeElement), true);
+        await page.keyboard.press('ArrowDown');
+        assert.equal(await dateTrigger.getAttribute('aria-expanded'), 'true');
+        await page.keyboard.press('End');
+        assert.equal(await page.locator('.date-preset-item[data-p="last_month"]').evaluate(el => el === document.activeElement), true);
+        await page.keyboard.press('Home');
+        assert.equal(await page.locator('.date-preset-item[data-p="last_7d"]').evaluate(el => el === document.activeElement), true);
+        await page.keyboard.press('Escape');
+        assert.equal(await dateTrigger.getAttribute('aria-expanded'), 'false');
+        assert.equal(await dateTrigger.evaluate(el => el === document.activeElement), true);
+        await dateTrigger.click();
+        await page.locator('.date-preset-item[data-p="last_30d"]').click();
+        await page.locator('#kpi-czsk .kpi-card').first().waitFor();
+      }
       if (viewport.width <= 720) {
         assert.equal(await page.locator('#mobile-controls-toggle').getAttribute('aria-expanded'), 'false');
         assert.equal(await page.locator('.header-right').evaluate(el => el.classList.contains('controls-collapsed')), true);
@@ -246,6 +272,161 @@ async function run() {
       assert.doesNotMatch(leadCreativeText, /16|250|20\.00%/);
       for (const metric of ['leads', 'cpl', 'lp2lead']) assert.equal(await page.locator(`#chart-left-czsk option[value="${metric}"]`).count(), 0);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), 0);
+
+      await page.locator('[data-tab="czsk-triage"]').click();
+      assert.equal(await page.locator('#include-leadgen').isVisible(), false);
+      assert.equal(await page.locator('#panel-czsk-triage .triage-card').count(), 7);
+      assert.equal(await page.locator('#panel-czsk-triage .triage-card--hero').count(), 1);
+      assert.equal(await page.locator('#panel-czsk-triage .triage-controls').count(), 7);
+      assert.equal(await page.locator('#panel-czsk-triage .triage-controls select').count(), 21);
+      assert.equal(await page.locator('#panel-czsk-triage .triage-data-table').count(), 7);
+      const triageCharts = await page.evaluate(() => [...document.querySelectorAll('#panel-czsk-triage canvas')].map(canvas => {
+        const chart = window.Chart.getChart(canvas);
+        return {
+          id: canvas.id,
+          labels: chart.data.labels.length,
+          datasets: chart.data.datasets.map(dataset => ({ type: dataset.type, metricKey: dataset.metricKey, color: dataset.borderColor, values: dataset.data })),
+          tableRows: canvas.closest('.triage-card').querySelectorAll('.triage-data-table tbody tr').length,
+        };
+      }));
+      assert.deepEqual(triageCharts.map(chart => chart.datasets.map(dataset => [dataset.type, dataset.metricKey])), [
+        [['bar', 'spend'], ['line', 'roas']],
+        [['bar', 'lp'], ['line', 'lp2co']],
+        [['bar', 'checkouts'], ['line', 'co2pur']],
+        [['bar', 'purchases'], ['line', 'lp2pur']],
+        [['bar', 'revenue'], ['line', 'aov']],
+        [['bar', 'impressions'], ['line', 'outboundCtr']],
+        [['line', 'cpm'], ['line', 'frequency']],
+      ]);
+      const defaultColors = triageCharts.flatMap(chart => chart.datasets.map(dataset => dataset.color));
+      assert.equal(new Set(defaultColors).size, 14);
+      assert.equal(triageCharts.every(chart => chart.labels > 0 && chart.tableRows === chart.labels), true);
+      assert.equal(triageCharts.at(-1).datasets[1].values.some(value => value > 1), true);
+      assert.equal(Math.round(triageCharts[0].datasets[0].values.reduce((sum, value) => sum + value, 0)), 99909, 'triage excludes Lead-gen even when main CZSK includes its spend');
+      const layout = await page.locator('#triage-grid').evaluate(grid => {
+        const cards = [...grid.querySelectorAll('.triage-card')].map(card => card.getBoundingClientRect());
+        return {
+          columns: getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+          heroWidth: cards[0].width,
+          gridWidth: grid.getBoundingClientRect().width,
+          sameSecondRow: Math.abs(cards[1].top - cards[2].top) <= 1,
+        };
+      });
+      if (viewport.width <= 1000) {
+        assert.equal(layout.columns, 1);
+        assert.equal(layout.sameSecondRow, false);
+        if (viewport.width <= 720) assert.equal(await page.locator('#panel-czsk-triage .triage-controls').evaluateAll(controls => controls.every(control => {
+            const boxes = [...control.querySelectorAll('select')].map(select => select.getBoundingClientRect());
+            return boxes.every(box => box.height === 44)
+              && Math.max(...boxes.map(box => box.top)) - Math.min(...boxes.map(box => box.top)) <= 1;
+          })), true);
+      } else {
+        assert.equal(layout.columns, 2);
+        assert.equal(layout.sameSecondRow, true);
+        assert.ok(Math.abs(layout.heroWidth - layout.gridWidth) <= 1);
+      }
+      const efficiencyBefore = triageCharts[0].datasets[0].values;
+      const lpDayCount = triageCharts[1].labels;
+      await page.locator('#triage-primary-lp-checkout').selectOption('purchases');
+      assert.deepEqual(await page.evaluate(() => window.Chart.getChart('triage-chart-lp-checkout').data.datasets.map(dataset => dataset.metricKey)), ['purchases', 'lp2co']);
+      assert.equal(await page.evaluate(() => window.Chart.getChart('triage-chart-lp-checkout').data.datasets[0].borderColor === window.Chart.getChart('triage-chart-lp-purchase').data.datasets[0].borderColor), true);
+      assert.deepEqual(await page.evaluate(() => window.Chart.getChart('triage-chart-efficiency').data.datasets[0].data), efficiencyBefore);
+      await page.locator('#triage-grain-lp-checkout').selectOption('week');
+      assert.ok(await page.evaluate(() => window.Chart.getChart('triage-chart-lp-checkout').data.labels.length) < lpDayCount);
+      assert.equal(await page.evaluate(() => window.Chart.getChart('triage-chart-efficiency').data.labels.length), triageCharts[0].labels);
+      await page.locator('#triage-primary-lp-checkout').selectOption('lp');
+      await page.locator('#triage-grain-lp-checkout').selectOption('day');
+      assert.equal(await page.locator('[data-tab="czsk-triage"]').getAttribute('aria-selected'), 'true');
+      assert.equal(await page.locator('[data-tab="czsk"]').getAttribute('aria-selected'), 'false');
+      if (viewport.name === 'desktop') {
+        const matrixResult = await page.evaluate(() => {
+          const chartCountBefore = Object.keys(window.Chart.instances).length;
+          const metricColors = new Map();
+          const presets = [...document.querySelectorAll('[data-triage-chart]')].map(card => {
+            const id = card.dataset.triageChart;
+            return {
+              id,
+              primary: document.getElementById(`triage-primary-${id}`).value,
+              secondary: document.getElementById(`triage-secondary-${id}`).value,
+              grain: document.getElementById(`triage-grain-${id}`).value,
+            };
+          });
+          const verify = (id, role) => {
+            const card = document.querySelector(`[data-triage-chart="${id}"]`);
+            const chart = window.Chart.getChart(`triage-chart-${id}`);
+            const primary = document.getElementById(`triage-primary-${id}`).value;
+            const secondary = document.getElementById(`triage-secondary-${id}`).value;
+            const grain = document.getElementById(`triage-grain-${id}`).value;
+            if (!chart || chart.data.datasets.length !== 2) throw new Error(`${id}/${role}: missing two-dataset chart`);
+            if (chart.data.datasets[0].metricKey !== primary || chart.data.datasets[1].metricKey !== secondary) throw new Error(`${id}/${role}: dataset keys are stale`);
+            chart.data.datasets.forEach(dataset => {
+              const known = metricColors.get(dataset.metricKey);
+              if (known && known !== dataset.borderColor) throw new Error(`${dataset.metricKey}: unstable runtime color`);
+              metricColors.set(dataset.metricKey, dataset.borderColor);
+            });
+            const table = card.querySelector('.triage-data-table');
+            const primaryLabel = chart.data.datasets[0].label;
+            const secondaryLabel = chart.data.datasets[1].label;
+            if (table.querySelector('.triage-primary-header').textContent !== primaryLabel) throw new Error(`${id}/${role}: primary table heading is stale`);
+            if (table.querySelector('.triage-secondary-header').textContent !== secondaryLabel) throw new Error(`${id}/${role}: secondary table heading is stale`);
+            const caption = table.querySelector('caption').textContent;
+            if (!caption.includes(primaryLabel) || !caption.includes(secondaryLabel) || !caption.includes(grain)) throw new Error(`${id}/${role}: table caption is stale`);
+            const rows = [...table.querySelectorAll('tbody tr')];
+            if (rows.length !== chart.data.labels.length) throw new Error(`${id}/${role}: table/chart row mismatch`);
+            rows.forEach((row, index) => {
+              const cells = row.querySelectorAll('td');
+              const expectedPrimary = formatChartVal(primary, chart.data.datasets[0].data[index]);
+              const expectedSecondary = formatChartVal(secondary, chart.data.datasets[1].data[index]);
+              if (cells[0].textContent !== expectedPrimary || cells[1].textContent !== expectedSecondary) throw new Error(`${id}/${role}: table/chart value mismatch at ${index}`);
+            });
+            if (Object.keys(window.Chart.instances).length !== chartCountBefore) throw new Error(`${id}/${role}: Chart.js instance count leaked`);
+          };
+          for (const preset of presets) {
+            for (const role of ['primary', 'secondary']) {
+              const select = document.getElementById(`triage-${role}-${preset.id}`);
+              for (const option of [...select.options]) {
+                select.value = option.value;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                verify(preset.id, `${role}:${option.value}`);
+              }
+            }
+            const grainSelect = document.getElementById(`triage-grain-${preset.id}`);
+            for (const grain of ['day', 'week', 'month']) {
+              grainSelect.value = grain;
+              grainSelect.dispatchEvent(new Event('change', { bubbles: true }));
+              verify(preset.id, `grain:${grain}`);
+            }
+            const primarySelect = document.getElementById(`triage-primary-${preset.id}`);
+            const secondarySelect = document.getElementById(`triage-secondary-${preset.id}`);
+            secondarySelect.value = primarySelect.value;
+            secondarySelect.dispatchEvent(new Event('change', { bubbles: true }));
+            verify(preset.id, 'duplicate-selection');
+            primarySelect.value = preset.primary;
+            primarySelect.dispatchEvent(new Event('change', { bubbles: true }));
+            secondarySelect.value = preset.secondary;
+            secondarySelect.dispatchEvent(new Event('change', { bubbles: true }));
+            grainSelect.value = 'day';
+            grainSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            if (grainSelect.value !== 'day') throw new Error(`${preset.id}: default grain was not restored`);
+            verify(preset.id, 'restored-default');
+          }
+          if (metricColors.size !== 15) throw new Error(`expected 15 triage metric colors, got ${metricColors.size}`);
+          if (new Set(metricColors.values()).size !== metricColors.size) throw new Error('different runtime metrics share a color');
+          return { charts: presets.length, metrics: metricColors.size, chartCount: chartCountBefore };
+        });
+        assert.deepEqual(matrixResult.charts, 7);
+        assert.deepEqual(matrixResult.metrics, 15);
+      }
+      const triageOverflow = await page.evaluate(() => ({
+        viewport: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        offenders: [...document.querySelectorAll('#panel-czsk-triage *')].filter(element => {
+          const box = element.getBoundingClientRect();
+          return box.right > window.innerWidth + 1 || box.left < -1;
+        }).slice(0, 10).map(element => ({ tag: element.tagName, id: element.id, className: element.className, box: element.getBoundingClientRect().toJSON() })),
+      }));
+      assert.ok(triageOverflow.documentWidth <= triageOverflow.viewport, JSON.stringify(triageOverflow));
+      await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-triage.png`), fullPage: true });
 
       await page.locator('[data-tab="czsk-promo"]').click();
       assert.equal(await page.locator('#kpi-czsk-promo .kpi-card').count(), 3);
