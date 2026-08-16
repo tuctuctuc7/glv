@@ -80,6 +80,8 @@ if (!metaHtml.includes('/glv-meta-ads/agenthic-logo.svg') || !fs.existsSync(meta
 }
 const config = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
 const approvedKursaRewrites = [
+  { source: '/krs-meta-ads/', destination: 'https://kursa-cyan.vercel.app/krs-meta-ads/' },
+  { source: '/krs-meta-ads/login/', destination: 'https://kursa-cyan.vercel.app/krs-meta-ads/login/' },
   { source: '/krs-meta-ads/:path*', destination: 'https://kursa-cyan.vercel.app/krs-meta-ads/:path*' },
   { source: '/api/krs-meta-ads/:path*', destination: 'https://kursa-cyan.vercel.app/api/krs-meta-ads/:path*' },
 ];
