@@ -12,11 +12,11 @@ const evidenceDir = path.resolve(process.env.GLV_META_QA_EVIDENCE_DIR || '/tmp/g
 fs.rmSync(evidenceDir, { recursive: true, force: true });
 fs.mkdirSync(evidenceDir, { recursive: true });
 
-const campaign = (id, name, spend, revenue, purchases, checkouts, clicks, impressions, date, leads = 0, landingViews = clicks, reach = Math.round(impressions / 1.7)) => ({
+const campaign = (id, name, spend, revenue, purchases, checkouts, clicks, impressions, date, leads = 0, landingViews = Math.round(clicks * 0.8), reach = Math.round(impressions / 1.7)) => ({
   id, name, amount_spent: String(spend), impressions: String(impressions),
   reach: String(reach),
   'actions:link_click': String(clicks), 'actions:omni_purchase': String(purchases),
-  'actions:initiate_checkout': String(checkouts), 'actions:outbound_click': String(clicks),
+  'actions:initiate_checkout': String(checkouts), 'actions:outbound_click': String(Math.round(clicks * 0.6)),
   'actions:lead': String(leads), 'actions:landing_page_view': String(landingViews),
   'action_values:omni_purchase': String(revenue), date_start: date, date_stop: date,
 });
@@ -273,8 +273,12 @@ async function run() {
       for (const metric of ['leads', 'cpl', 'lp2lead']) assert.equal(await page.locator(`#chart-left-czsk option[value="${metric}"]`).count(), 0);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), 0);
 
+      await page.locator('#include-leadgen').uncheck();
       await page.locator('[data-tab="czsk-triage"]').click();
-      assert.equal(await page.locator('#include-leadgen').isVisible(), false);
+      if (viewport.width <= 720) await page.locator('#mobile-controls-toggle').click();
+      assert.equal(await page.locator('#include-leadgen').isVisible(), true);
+      assert.equal(await page.locator('#include-leadgen').isChecked(), false);
+      assert.equal(await page.locator('#panel-czsk-triage .triage-intro').count(), 0);
       assert.equal(await page.locator('#panel-czsk-triage .triage-card').count(), 7);
       assert.equal(await page.locator('#panel-czsk-triage .triage-card--hero').count(), 1);
       assert.equal(await page.locator('#panel-czsk-triage .triage-controls').count(), 7);
@@ -295,14 +299,32 @@ async function run() {
         [['bar', 'checkouts'], ['line', 'co2pur']],
         [['bar', 'purchases'], ['line', 'lp2pur']],
         [['bar', 'revenue'], ['line', 'aov']],
-        [['bar', 'impressions'], ['line', 'outboundCtr']],
+        [['bar', 'impressions'], ['line', 'ctr']],
         [['line', 'cpm'], ['line', 'frequency']],
       ]);
       const defaultColors = triageCharts.flatMap(chart => chart.datasets.map(dataset => dataset.color));
       assert.equal(new Set(defaultColors).size, 14);
       assert.equal(triageCharts.every(chart => chart.labels > 0 && chart.tableRows === chart.labels), true);
-      assert.equal(triageCharts.at(-1).datasets[1].values.some(value => value > 1), true);
-      assert.equal(Math.round(triageCharts[0].datasets[0].values.reduce((sum, value) => sum + value, 0)), 99909, 'triage excludes Lead-gen even when main CZSK includes its spend');
+      const expectedCtr = daily
+        .filter(row => ['c1', 'c2', 'c3'].includes(row.id) && row.date_start === '2026-08-10')
+        .reduce((totals, row) => ({ clicks: totals.clicks + Number(row['actions:link_click']), impressions: totals.impressions + Number(row.impressions) }), { clicks: 0, impressions: 0 });
+      assert.ok(Math.abs(triageCharts[5].datasets[1].values[0] - expectedCtr.clicks / expectedCtr.impressions * 100) < 1e-9);
+      const salesOnlySpend = triageCharts[0].datasets[0].values;
+      const salesOnlyRoas = triageCharts[0].datasets[1].values;
+      const salesOnlyCtr = triageCharts[5].datasets[1].values;
+      await page.locator('#include-leadgen').check({ force: true });
+      const withLeadGen = await page.evaluate(() => ({
+        spend: window.Chart.getChart('triage-chart-efficiency').data.datasets[0].data,
+        roas: window.Chart.getChart('triage-chart-efficiency').data.datasets[1].data,
+        ctr: window.Chart.getChart('triage-chart-delivery-response').data.datasets[1].data,
+      }));
+      assert.ok(withLeadGen.spend.every((value, index) => value > salesOnlySpend[index]));
+      assert.ok(withLeadGen.roas.every((value, index) => value < salesOnlyRoas[index]));
+      assert.deepEqual(withLeadGen.ctr, salesOnlyCtr, 'Lead-gen remains spend-only when included in Triage');
+      assert.equal(await page.evaluate(() => window.Chart.getChart('triage-chart-delivery-response').data.datasets[1].metricKey), 'ctr');
+      await page.locator('#include-leadgen').uncheck({ force: true });
+      assert.deepEqual(await page.evaluate(() => window.Chart.getChart('triage-chart-efficiency').data.datasets[0].data), salesOnlySpend);
+      assert.equal(Math.round(triageCharts[0].datasets[0].values.reduce((sum, value) => sum + value, 0)), 99909, 'triage excludes Lead-gen by default');
       const layout = await page.locator('#triage-grid').evaluate(grid => {
         const cards = [...grid.querySelectorAll('.triage-card')].map(card => card.getBoundingClientRect());
         return {

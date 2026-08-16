@@ -97,9 +97,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .promo-note{font-size:12px;color:var(--gray600);line-height:1.45;margin-bottom:14px;}
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;}
 .triage-data-table.sr-only{display:block!important;table-layout:fixed;}
-.triage-intro{margin-bottom:16px;}
-.triage-intro .section-title{margin-bottom:7px;}
-.triage-intro .promo-note{margin-bottom:0;}
 .triage-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
 .triage-card{min-width:0;margin-bottom:0;}
 .triage-card--hero{grid-column:1/-1;}
@@ -412,10 +409,6 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 
 <!-- ═══ CZSK TRIAGE PANEL ═══ -->
 <div class="panel" id="panel-czsk-triage" role="tabpanel" aria-labelledby="tab-czsk-triage">
-  <div class="section triage-intro">
-    <div class="section-title">CZSK Triage</div>
-    <div class="promo-note">Seven daily presets for fast funnel diagnosis. Every chart has independent metric and grain controls. Frequency proxy divides impressions by summed campaign-level reach and is not Meta's deduplicated period frequency.</div>
-  </div>
   <div class="triage-grid" id="triage-grid"></div>
 </div>
 
@@ -624,7 +617,7 @@ const METRIC_REGISTRY = [
   {key:'lp2pur',label:'LP → Purchase',color:'#D946EF'},
   {key:'aov',label:'AOV (CZK)',color:'#F59E0B'},
   {key:'impressions',label:'Impressions',color:'#6366F1'},
-  {key:'outboundCtr',label:'Outbound CTR',color:'#84CC16'},
+  {key:'ctr',label:'CTR',color:'#84CC16'},
   {key:'frequency',label:'Frequency proxy',color:'#EF4444'},
 ];
 const METRIC_BY_KEY = Object.fromEntries(METRIC_REGISTRY.map(metric=>[metric.key,metric]));
@@ -637,7 +630,7 @@ const TRIAGE_PRESETS = [
   {id:'checkout-purchase',title:'Checkout to purchase',primary:'checkouts',secondary:'co2pur',primaryType:'bar',secondaryType:'line'},
   {id:'lp-purchase',title:'Landing page to purchase',primary:'purchases',secondary:'lp2pur',primaryType:'bar',secondaryType:'line'},
   {id:'value-aov',title:'Purchase value and AOV',primary:'revenue',secondary:'aov',primaryType:'bar',secondaryType:'line'},
-  {id:'delivery-response',title:'Delivery and outbound response',primary:'impressions',secondary:'outboundCtr',primaryType:'bar',secondaryType:'line'},
+  {id:'delivery-response',title:'Delivery and click response',primary:'impressions',secondary:'ctr',primaryType:'bar',secondaryType:'line'},
   {id:'cost-frequency',title:'Cost and frequency proxy',primary:'cpm',secondary:'frequency',primaryType:'line',secondaryType:'line'},
 ];
 const CAMPAIGN_COLORS = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#6366f1','#ec4899','#14b8a6','#f97316','#0ea5e9'];
@@ -726,11 +719,11 @@ function aggregate(rows){
     spend:rows.reduce((s,r)=>s+r.spend,0),lp:rows.reduce((s,r)=>s+r.lp,0),
     purchases:rows.reduce((s,r)=>s+r.purchases,0),checkouts:rows.reduce((s,r)=>s+r.checkouts,0),leads:rows.reduce((s,r)=>s+r.leads,0),
     revenue:rows.reduce((s,r)=>s+r.revenue,0),impressions:rows.reduce((s,r)=>s+r.impressions,0),reach:rows.reduce((s,r)=>s+(r.reach||0),0),
-    outboundClicks:rows.reduce((s,r)=>s+r.outboundClicks,0),
+    linkClicks:rows.reduce((s,r)=>s+r.linkClicks,0),
   };
 }
 function emptyAgg(date=null,group=null){
-  return {date,group,spend:0,lp:0,purchases:0,checkouts:0,leads:0,outboundClicks:0,revenue:0,impressions:0,reach:0};
+  return {date,group,spend:0,lp:0,purchases:0,checkouts:0,leads:0,linkClicks:0,revenue:0,impressions:0,reach:0};
 }
 
 function calcMetrics(a){
@@ -743,13 +736,12 @@ function calcMetrics(a){
   const lp2pur=a.lp>0?a.purchases/a.lp*100:0;
   const costChk=a.checkouts>0?a.spend/a.checkouts:0;
   const costLp=a.lp>0?a.spend/a.lp:0;
-  const ctr=a.impressions>0?a.lp/a.impressions*100:0;
-  const outboundCtr=a.impressions>0?a.outboundClicks/a.impressions*100:0;
+  const ctr=a.impressions>0?a.linkClicks/a.impressions*100:0;
   const cpm=a.impressions>0?a.spend/a.impressions*1000:0;
   const frequency=a.reach>0?a.impressions/a.reach:0;
   const cpl=a.leads>0?a.spend/a.leads:0;
   const lp2lead=a.lp>0?a.leads/a.lp*100:0;
-  return{roas,cpa,aov,cvr,lp2co,co2pur,lp2pur,costChk,costLp,ctr,outboundCtr,cpm,frequency,cpl,lp2lead};
+  return{roas,cpa,aov,cvr,lp2co,co2pur,lp2pur,costChk,costLp,ctr,cpm,frequency,cpl,lp2lead};
 }
 
 function computeChartMetric(key,a,m){
@@ -759,7 +751,7 @@ function computeChartMetric(key,a,m){
   if(key==='leads')return a.leads;if(key==='cpl')return m.cpl;if(key==='lp2lead')return m.lp2lead;
   if(key==='cpa')return m.cpa;if(key==='cpm')return m.cpm;if(key==='aov')return m.aov;
   if(key==='lp2co')return m.lp2co;if(key==='co2pur')return m.co2pur;if(key==='lp2pur')return m.lp2pur;
-  if(key==='outboundCtr')return m.outboundCtr;if(key==='frequency')return m.frequency;return 0;
+  if(key==='ctr')return m.ctr;if(key==='frequency')return m.frequency;return 0;
 }
 
 function metricForSort(row,key){
@@ -910,7 +902,7 @@ function processRow(r){
     spend:parseAmt(r.amount_spent),lp:parseNum(r['actions:landing_page_view']),
     purchases:parseNum(r['actions:omni_purchase']),checkouts:parseNum(r['actions:initiate_checkout']),
     leads:parseNum(r['actions:lead']),
-    outboundClicks:parseNum(r['actions:outbound_click']),revenue:parseAmt(r['action_values:omni_purchase']),
+    linkClicks:parseNum(r['actions:link_click']),revenue:parseAmt(r['action_values:omni_purchase']),
     impressions:parseNum(r.impressions),reach:parseNum(r.reach),
   };
 }
@@ -942,14 +934,14 @@ function processCreatives(rawRows){
     const spend=parseAmt(r.amount_spent),lp=parseNum(r['actions:landing_page_view']);
     const purchases=parseNum(r['actions:omni_purchase']),checkouts=parseNum(r['actions:initiate_checkout']);
     const leads=parseNum(r['actions:lead']);
-    const outboundClicks=parseNum(r['actions:outbound_click']),revenue=parseAmt(r['action_values:omni_purchase']);
+    const linkClicks=parseNum(r['actions:link_click']),revenue=parseAmt(r['action_values:omni_purchase']);
     const impressions=parseNum(r.impressions),thruplay=parseNum(r.video_thruplay_watched_actions);
     const v3sec=parseNum(r.video_3_sec_watched_actions);
     const campInfo=campaignMeta[r.campaign_id]||{};
     const isVideo=thruplay>0||v3sec>0;
     const campaignName=campInfo.name||'';
     return{id:r.id,name:r.name,status:r.status,campaignId:r.campaign_id,campaignName,campaignCode:campaignCode(campaignName),type:isVideo?'Video':'Static',
-      segment:campInfo.segment||null,spend,lp,purchases,checkouts,leads,outboundClicks,revenue,impressions,isVideo,
+      segment:campInfo.segment||null,spend,lp,purchases,checkouts,leads,linkClicks,revenue,impressions,isVideo,
       hookRate:impressions>0?v3sec/impressions*100:0,holdRate:impressions>0?thruplay/impressions*100:0};
   }).filter(c=>campaignMeta[c.campaignId]&&c.spend>0);
 }
@@ -957,12 +949,15 @@ function getSegmentRows(seg,source='daily'){
   return(source==='daily'?dailyCampaigns:aggregateCampaigns).filter(r=>r.segment===seg);
 }
 function spendOnlyRow(row){
-  return{...row,lp:0,purchases:0,checkouts:0,leads:0,outboundClicks:0,revenue:0,impressions:0,reach:0};
+  return{...row,lp:0,purchases:0,checkouts:0,leads:0,linkClicks:0,revenue:0,impressions:0,reach:0};
 }
 function getMainSegmentRows(seg,source='daily'){
   const rows=getSegmentRows(seg,source);
   if(seg!=='czsk')return rows;
   return includeLeadGen?rows.map(r=>isLeadGen(r.name)?spendOnlyRow(r):r):rows.filter(r=>!isLeadGen(r.name));
+}
+function getTriageSegmentRows(source='daily'){
+  return getMainSegmentRows('czsk',source);
 }
 function getLeadgenRows(source='daily'){
   const rows=getSegmentRows('czsk',source);
@@ -992,7 +987,7 @@ function byPromoGroup(rows){
     const key=r.group||promoGroupKey(r.name);
     const d=map[key]||(map[key]=emptyAgg(null,key));
     d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
-    d.outboundClicks+=r.outboundClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
+    d.linkClicks+=r.linkClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
   }
   return PROMO_GROUPS.map(g=>map[g.key]);
 }
@@ -1009,7 +1004,7 @@ function byDateGroupFiltered(rows,selectedIds){
     if(!map[mapKey])map[mapKey]=emptyAgg(r.date,key);
     const d=map[mapKey];
     d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
-    d.outboundClicks+=r.outboundClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
+    d.linkClicks+=r.linkClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
   }
   return Object.values(map).sort((a,b)=>a.date===b.date?PROMO_GROUPS.findIndex(g=>g.key===a.group)-PROMO_GROUPS.findIndex(g=>g.key===b.group):a.date<b.date?-1:1);
 }
@@ -1018,10 +1013,10 @@ function byDate(rows,selectedIds){
   const map={};
   for(const r of filtered){
     if(!r.date)continue;
-    if(!map[r.date])map[r.date]={date:r.date,spend:0,lp:0,purchases:0,checkouts:0,leads:0,outboundClicks:0,revenue:0,impressions:0,reach:0};
+    if(!map[r.date])map[r.date]={date:r.date,spend:0,lp:0,purchases:0,checkouts:0,leads:0,linkClicks:0,revenue:0,impressions:0,reach:0};
     const d=map[r.date];
     d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
-    d.outboundClicks+=r.outboundClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
+    d.linkClicks+=r.linkClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
   }
   return Object.values(map).sort((a,b)=>a.date<b.date?-1:1);
 }
@@ -1038,10 +1033,10 @@ function byPeriod(rows,selectedIds,grain='day'){
   const map={};
   for(const r of daily){
     const key=grain==='week'?startOfWeek(r.date):monthKey(r.date);
-    if(!map[key])map[key]={date:key,spend:0,lp:0,purchases:0,checkouts:0,leads:0,outboundClicks:0,revenue:0,impressions:0,reach:0};
+    if(!map[key])map[key]={date:key,spend:0,lp:0,purchases:0,checkouts:0,leads:0,linkClicks:0,revenue:0,impressions:0,reach:0};
     const d=map[key];
     d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
-    d.outboundClicks+=r.outboundClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
+    d.linkClicks+=r.linkClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
   }
   return Object.values(map).sort((a,b)=>a.date<b.date?-1:1);
 }
@@ -1134,7 +1129,7 @@ function setTriageControl(presetId,role,value){
 function refreshTriageCharts(){TRIAGE_PRESETS.forEach(preset=>refreshTriageChart(preset.id));}
 function refreshTriageChart(presetId){
   const preset=TRIAGE_PRESETS.find(item=>item.id===presetId);const state=triageState[presetId];if(!preset||!state)return;
-  const rows=byPeriod(getPromoSegmentRows('daily'),null,state.grain);
+  const rows=byPeriod(getTriageSegmentRows('daily'),null,state.grain);
   const labels=rows.map(row=>fmtChartDate(row.date,state.grain));
   const primary=triageMetricDefinition(state.primary);const secondary=triageMetricDefinition(state.secondary);
   const primaryValues=rows.map(row=>computeChartMetric(state.primary,row,calcMetrics(row)));
@@ -1167,14 +1162,14 @@ function refreshTriageChart(presetId){
 }
 function formatChartVal(key,v){
   if(key==='roas'||key==='frequency')return v.toFixed(2)+'x';
-  if(['lp2lead','lp2co','co2pur','lp2pur','outboundCtr'].includes(key))return v.toFixed(2)+'%';
+  if(['lp2lead','lp2co','co2pur','lp2pur','ctr'].includes(key))return v.toFixed(2)+'%';
   if(['cpm','cpa','cpl','aov','spend','revenue'].includes(key))return Math.round(v).toLocaleString('en-US')+' CZK';
   return Math.round(v).toLocaleString('en-US');
 }
 function formatChartTick(key,v){
   if(window.matchMedia('(max-width:720px)').matches){
     if(key==='roas'||key==='frequency')return Number(v).toFixed(2)+'x';
-    if(['lp2lead','lp2co','co2pur','lp2pur','outboundCtr'].includes(key))return Number(v).toFixed(1)+'%';
+    if(['lp2lead','lp2co','co2pur','lp2pur','ctr'].includes(key))return Number(v).toFixed(1)+'%';
     if(['cpm','cpa','cpl','aov','spend','revenue'].includes(key))return Math.abs(v)>=1000?`${Math.round(v/1000)}K`:Math.round(v).toLocaleString('en-US');
     return Math.abs(v)>=1000?`${Math.round(v/1000)}K`:Math.round(v).toLocaleString('en-US');
   }
@@ -1296,7 +1291,7 @@ function refreshPromoCharts(){
 
 function addToAgg(target,row){
   target.spend+=row.spend;target.lp+=row.lp;target.purchases+=row.purchases;target.checkouts+=row.checkouts;target.leads+=row.leads;
-  target.outboundClicks+=row.outboundClicks;target.revenue+=row.revenue;target.impressions+=row.impressions;target.reach+=row.reach||0;
+  target.linkClicks+=row.linkClicks;target.revenue+=row.revenue;target.impressions+=row.impressions;target.reach+=row.reach||0;
 }
 function byLeadgenGroup(rows){
   const map={};
@@ -1469,7 +1464,7 @@ function setPromoActiveDaysOnly(checked){
 }
 function syncPromoFilterVisibility(activeTab){
   document.getElementById('promo-active-days-wrap')?.classList.toggle('hidden',activeTab!=='czsk-promo');
-  document.getElementById('include-leadgen-wrap')?.classList.toggle('hidden',activeTab!=='czsk');
+  document.getElementById('include-leadgen-wrap')?.classList.toggle('hidden',activeTab!=='czsk'&&activeTab!=='czsk-triage');
   document.getElementById('leadgen-only-wrap')?.classList.toggle('hidden',activeTab!=='czsk-leadgen');
 }
 function setIncludeLeadGen(checked){
@@ -1477,7 +1472,7 @@ function setIncludeLeadGen(checked){
   document.getElementById('include-leadgen').checked=checked;
   filterState.czsk=null;filterState['czsk-creative']=null;
   initSelects();initSortControls();buildAllFilters();
-  renderKPIs('czsk');refreshChart('czsk');renderDailyTable('czsk');renderCreatives('czsk');
+  renderKPIs('czsk');refreshChart('czsk');renderDailyTable('czsk');renderCreatives('czsk');refreshTriageCharts();
 }
 function setLeadgenOnly(checked){
   leadgenOnly=checked;
@@ -1500,7 +1495,7 @@ function sumPromoRows(rows,date=null,group=null){
   const total=emptyAgg(date,group);
   for(const r of rows){
     total.spend+=r.spend;total.lp+=r.lp;total.purchases+=r.purchases;total.checkouts+=r.checkouts;total.leads+=r.leads;
-    total.outboundClicks+=r.outboundClicks;total.revenue+=r.revenue;total.impressions+=r.impressions;total.reach+=r.reach||0;
+    total.linkClicks+=r.linkClicks;total.revenue+=r.revenue;total.impressions+=r.impressions;total.reach+=r.reach||0;
   }
   return total;
 }
@@ -1622,8 +1617,8 @@ function renderTrendsTable(){
   if(!allDates.length){container.innerHTML='<div class="empty">No data.</div>';return;}
   if(grids['trends']){try{grids['trends'].destroy();}catch(e){}}
   const data=allDates.map(date=>{
-    const c=czskMap[date]||{spend:0,lp:0,purchases:0,checkouts:0,outboundClicks:0,revenue:0,impressions:0};
-    const u=usMap[date]||{spend:0,lp:0,purchases:0,checkouts:0,outboundClicks:0,revenue:0,impressions:0};
+    const c=czskMap[date]||{spend:0,lp:0,purchases:0,checkouts:0,linkClicks:0,revenue:0,impressions:0};
+    const u=usMap[date]||{spend:0,lp:0,purchases:0,checkouts:0,linkClicks:0,revenue:0,impressions:0};
     const cm=calcMetrics(c);const um=calcMetrics(u);
     return[date,c.spend,c.revenue,cm.roas,c.purchases,cm.cpa,u.spend,u.revenue,um.roas,u.purchases,um.cpa];
   });

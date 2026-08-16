@@ -99,6 +99,8 @@ test('CZSK Triage defines seven independent presets and one unique color per sel
   const dashboard = read('public/glv-meta-ads/index.html');
   assert.match(dashboard, /id="panel-czsk-triage"/);
   assert.match(dashboard, /id="triage-grid"/);
+  assert.doesNotMatch(dashboard, /class="section triage-intro"/);
+  assert.doesNotMatch(dashboard, /Seven daily presets for fast funnel diagnosis/);
   assert.match(dashboard, /const METRIC_REGISTRY = \[/);
   assert.match(dashboard, /const TRIAGE_PRESETS = \[/);
 
@@ -121,7 +123,7 @@ test('CZSK Triage defines seven independent presets and one unique color per sel
     /primary:'checkouts'.*secondary:'co2pur'/,
     /primary:'purchases'.*secondary:'lp2pur'/,
     /primary:'revenue'.*secondary:'aov'/,
-    /primary:'impressions'.*secondary:'outboundCtr'/,
+    /primary:'impressions'.*secondary:'ctr'/,
     /primary:'cpm'.*secondary:'frequency'.*primaryType:'line'.*secondaryType:'line'/,
   ]) assert.match(presets[1], contract);
   assert.match(dashboard, /function initTriageCards\(/);
@@ -130,6 +132,13 @@ test('CZSK Triage defines seven independent presets and one unique color per sel
   assert.match(dashboard, /class="sr-only triage-data-table"/);
   assert.match(dashboard, /label:'Frequency proxy'/);
   assert.doesNotMatch(dashboard, /label:'Frequency'/);
+  assert.match(dashboard, /key:'ctr',label:'CTR'/);
+  assert.doesNotMatch(dashboard, /Outbound CTR|outboundCtr/);
+  assert.match(dashboard, /function getTriageSegmentRows\(source='daily'\)/);
+  assert.match(dashboard, /getMainSegmentRows\('czsk',source\)/);
+  assert.match(dashboard, /byPeriod\(getTriageSegmentRows\('daily'\),null,state\.grain\)/);
+  assert.match(dashboard, /activeTab!==['"]czsk['"]&&activeTab!==['"]czsk-triage['"]/);
+  assert.match(dashboard, /renderKPIs\('czsk'\);refreshChart\('czsk'\);renderDailyTable\('czsk'\);renderCreatives\('czsk'\);refreshTriageCharts\(\)/);
   assert.match(dashboard, /class="triage-primary-header"/);
   assert.match(dashboard, /class="triage-secondary-header"/);
   assert.match(dashboard, /tableCaption\.textContent/);
@@ -149,7 +158,9 @@ test('Meta live and cached producers expose reach for the triage frequency metri
   const dashboard = read('public/glv-meta-ads/index.html');
   assert.match(dashboard, /reach:parseNum\(r\.reach\)/);
   assert.match(dashboard, /const frequency=a\.reach>0\?a\.impressions\/a\.reach:0/);
-  assert.match(dashboard, /const outboundCtr=a\.impressions>0\?a\.outboundClicks\/a\.impressions\*100:0/);
+  assert.match(dashboard, /linkClicks:parseNum\(r\['actions:link_click'\]\)/);
+  assert.match(dashboard, /const ctr=a\.impressions>0\?a\.linkClicks\/a\.impressions\*100:0/);
+  assert.doesNotMatch(dashboard, /const ctr=a\.impressions>0\?a\.lp\/a\.impressions\*100:0/);
 });
 
 test('Meta cache rejects legacy aggregate and daily rows without reach', () => {
