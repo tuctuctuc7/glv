@@ -39,12 +39,19 @@ const ads = [
   { id: 'a3', name: 'PAC502 · US proof video', status: 'ACTIVE', campaign_id: 'u1', amount_spent: '18000', impressions: '44000', 'actions:link_click': '390', 'actions:landing_page_view': '340', 'actions:omni_purchase': '12', 'actions:initiate_checkout': '33', 'actions:outbound_click': '390', 'actions:lead': '0', 'action_values:omni_purchase': '15000', video_thruplay_watched_actions: '5100', video_3_sec_watched_actions: '12000', video_p100_watched_actions: '1600' },
   { id: 'a4', name: 'PAC503 · Lead form static', status: 'ACTIVE', campaign_id: 'c4', amount_spent: '4000', impressions: '9000', 'actions:link_click': '120', 'actions:landing_page_view': '80', 'actions:omni_purchase': '0', 'actions:initiate_checkout': '0', 'actions:outbound_click': '120', 'actions:lead': '16', 'action_values:omni_purchase': '0', video_thruplay_watched_actions: '0', video_3_sec_watched_actions: '0', video_p100_watched_actions: '0' },
 ];
+let omittedCampaignId = null;
 
 function server() {
   return http.createServer((req, res) => {
     const url = new URL(req.url, 'http://127.0.0.1');
+    if (url.pathname === '/__qa/omit-campaign') {
+      omittedCampaignId = url.searchParams.get('id') || null;
+      res.writeHead(204).end();
+      return;
+    }
     if (url.pathname === '/api/glv-meta-ads/fb-data') {
-      const rows = url.searchParams.get('type') === 'aggregate' ? aggregate : url.searchParams.get('type') === 'daily' ? daily : ads;
+      const source = url.searchParams.get('type') === 'aggregate' ? aggregate : url.searchParams.get('type') === 'daily' ? daily : ads;
+      const rows = omittedCampaignId ? source.filter(row => row.id !== omittedCampaignId && row.campaign_id !== omittedCampaignId) : source;
       res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ rows }));
       return;
     }
@@ -300,6 +307,8 @@ async function run() {
       assert.deepEqual(await page.locator('#filter-options-triage-group input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['bau', true], ['promo', true], ['wl', true]]);
       assert.equal(await page.locator('#filter-label-triage-campaign').textContent(), 'All campaigns');
       assert.equal(await page.locator('#filter-label-triage-group').textContent(), 'All campaign groups');
+      assert.equal(await page.getByRole('button', { name: 'Campaign name All campaigns' }).count(), 1);
+      assert.equal(await page.getByRole('button', { name: 'Campaign group All campaign groups' }).count(), 1);
       assert.equal(await page.locator('#panel-czsk-triage .triage-card').count(), 7);
       assert.equal(await page.locator('#panel-czsk-triage .triage-card--hero').count(), 1);
       assert.equal(await page.locator('#panel-czsk-triage .triage-card-heading h3.triage-preset').count(), 7);
@@ -381,6 +390,15 @@ async function run() {
       await page.locator('#triage-grain-lp-checkout').selectOption('week');
       assert.deepEqual(await page.locator('#filter-options-triage-campaign input:checked').evaluateAll(inputs => inputs.map(input => input.value)), ['c2']);
       await page.locator('#triage-grain-lp-checkout').selectOption('day');
+      if (viewport.name === 'desktop') {
+        await page.request.get(new URL('/__qa/omit-campaign?id=c2', base).href);
+        await page.evaluate(() => loadData());
+        assert.equal(await page.locator('#filter-label-triage-campaign').textContent(), 'All campaigns');
+        assert.deepEqual(await page.locator('#filter-options-triage-campaign input:checked').evaluateAll(inputs => inputs.map(input => input.value)), ['c1', 'c3']);
+        assert.equal(Math.round(await page.evaluate(() => window.Chart.getChart('triage-chart-efficiency').data.datasets[0].data.reduce((sum, value) => sum + value, 0))), 73606, 'stale campaign selection reconciles before all charts refresh');
+        await page.request.get(new URL('/__qa/omit-campaign', base).href);
+        await page.evaluate(() => loadData());
+      }
       await page.evaluate(() => selectAll('triage-campaign'));
       const layout = await page.locator('#triage-grid').evaluate(grid => {
         const cards = [...grid.querySelectorAll('.triage-card')].map(card => card.getBoundingClientRect());

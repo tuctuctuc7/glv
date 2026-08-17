@@ -100,7 +100,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .triage-filter-section{position:relative;z-index:3;}
 .triage-filter-controls{display:grid;grid-template-columns:repeat(2,minmax(0,320px));gap:12px;}
 .triage-filter-controls .filter-wrap{display:grid;grid-template-rows:auto 44px;gap:5px;margin:0;min-width:0;}
-.triage-filter-controls .filter-wrap::before{content:attr(data-filter-label);font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+.triage-filter-label{font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
 .triage-filter-controls .filter-toggle{width:100%;height:44px;min-width:0;max-width:none;}
 .triage-filter-controls .filter-toggle>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .triage-filter-controls .filter-dropdown{width:100%;min-width:0;}
@@ -422,7 +422,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
     <div class="section-title">Filters</div>
     <div class="triage-filter-controls">
       <div class="filter-wrap" id="filter-wrap-triage-campaign" data-filter-label="Campaign name">
-        <button type="button" class="filter-toggle" id="filter-toggle-triage-campaign" aria-expanded="false" aria-controls="filter-dropdown-triage-campaign" onclick="toggleFilter('triage-campaign')"><span id="filter-label-triage-campaign">All campaigns</span><span style="color:var(--gray400)">▾</span></button>
+        <span class="triage-filter-label" id="triage-filter-label-campaign">Campaign name</span>
+        <button type="button" class="filter-toggle" id="filter-toggle-triage-campaign" aria-labelledby="triage-filter-label-campaign filter-label-triage-campaign" aria-expanded="false" aria-controls="filter-dropdown-triage-campaign" onclick="toggleFilter('triage-campaign')"><span id="filter-label-triage-campaign">All campaigns</span><span style="color:var(--gray400)">▾</span></button>
         <div class="filter-dropdown" id="filter-dropdown-triage-campaign">
           <input class="filter-search" placeholder="Search campaigns…" aria-label="Search Triage campaigns" oninput="filterSearch('triage-campaign', this.value)">
           <div class="filter-options-list" id="filter-options-triage-campaign"></div>
@@ -430,7 +431,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
         </div>
       </div>
       <div class="filter-wrap" id="filter-wrap-triage-group" data-filter-label="Campaign group">
-        <button type="button" class="filter-toggle" id="filter-toggle-triage-group" aria-expanded="false" aria-controls="filter-dropdown-triage-group" onclick="toggleFilter('triage-group')"><span id="filter-label-triage-group">All campaign groups</span><span style="color:var(--gray400)">▾</span></button>
+        <span class="triage-filter-label" id="triage-filter-label-group">Campaign group</span>
+        <button type="button" class="filter-toggle" id="filter-toggle-triage-group" aria-labelledby="triage-filter-label-group filter-label-triage-group" aria-expanded="false" aria-controls="filter-dropdown-triage-group" onclick="toggleFilter('triage-group')"><span id="filter-label-triage-group">All campaign groups</span><span style="color:var(--gray400)">▾</span></button>
         <div class="filter-dropdown" id="filter-dropdown-triage-group">
           <div class="filter-options-list" id="filter-options-triage-group"></div>
           <div class="filter-actions"><button class="filter-action-btn" onclick="selectAll('triage-group')">Select all</button><button class="filter-action-btn" onclick="clearAll('triage-group')">Clear</button></div>
@@ -1778,12 +1780,14 @@ async function loadData(){
     try{
       const d=await apiFetch('daily');
       dailyCampaigns=processDaily(d.rows);
+      buildTriageFilters();
       ['czsk','us'].forEach(seg=>{refreshChart(seg);renderDailyTable(seg);});
       refreshTriageCharts();
       renderPromoKPIs();refreshPromoCharts();renderPromoTable();
       renderLeadgenKPIs();refreshLeadgenCharts();renderLeadgenTable();
     }catch(err){
       errors.push('Daily: '+err.message);
+      buildTriageFilters();
       ['czsk','us'].forEach(seg=>{const el=document.getElementById('daily-table-'+seg);if(el)el.innerHTML=`<div class="empty" style="color:var(--red)">Daily data unavailable: ${err.message}</div>`;});
       const el=document.getElementById('promo-table');if(el)el.innerHTML=`<div class="empty" style="color:var(--red)">Daily data unavailable: ${err.message}</div>`;
       const leadEl=document.getElementById('leadgen-table');if(leadEl)leadEl.innerHTML=`<div class="empty" style="color:var(--red)">Daily data unavailable: ${err.message}</div>`;

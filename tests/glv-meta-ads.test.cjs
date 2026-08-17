@@ -138,6 +138,10 @@ test('CZSK Triage defines seven independent presets and one unique color per sel
   assert.match(dashboard, /function getTriageSegmentRows\(source='daily'\)/);
   assert.match(dashboard, /getMainSegmentRows\('czsk',source\)/);
   assert.match(dashboard, /id="triage-filter-section"[\s\S]*id="filter-wrap-triage-campaign"[\s\S]*id="filter-wrap-triage-group"[\s\S]*id="triage-grid"/);
+  assert.match(dashboard, /id="triage-filter-label-campaign"[^>]*>Campaign name<\/span>/);
+  assert.match(dashboard, /id="filter-toggle-triage-campaign"[^>]*aria-labelledby="triage-filter-label-campaign filter-label-triage-campaign"/);
+  assert.match(dashboard, /id="triage-filter-label-group"[^>]*>Campaign group<\/span>/);
+  assert.match(dashboard, /id="filter-toggle-triage-group"[^>]*aria-labelledby="triage-filter-label-group filter-label-triage-group"/);
   assert.match(dashboard, /'triage-campaign': null, 'triage-group': null/);
   assert.match(dashboard, /filterState\['triage-campaign'\]/);
   assert.match(dashboard, /filterState\['triage-group'\]/);
@@ -147,6 +151,8 @@ test('CZSK Triage defines seven independent presets and one unique color per sel
   assert.match(dashboard, /byPeriod\(getTriageSegmentRows\('daily'\),null,state\.grain\)/);
   assert.match(dashboard, /activeTab!==['"]czsk['"]&&activeTab!==['"]czsk-triage['"]/);
   assert.match(dashboard, /renderKPIs\('czsk'\);refreshChart\('czsk'\);renderDailyTable\('czsk'\);renderCreatives\('czsk'\);refreshTriageCharts\(\)/);
+  const loadDataBody = dashboard.slice(dashboard.indexOf('async function loadData(){'), dashboard.indexOf("document.querySelectorAll('.tab-btn')"));
+  assert.ok(loadDataBody.indexOf('buildTriageFilters();') < loadDataBody.indexOf('refreshTriageCharts();'), 'Triage selections must reconcile before charts refresh after data reload');
   assert.match(dashboard, /class="triage-primary-header"/);
   assert.match(dashboard, /class="triage-secondary-header"/);
   assert.match(dashboard, /tableCaption\.textContent/);
