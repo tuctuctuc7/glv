@@ -177,17 +177,19 @@ function syncUrl() {
 function restoreUrlState() {
   const params = new URLSearchParams(window.location.search);
   const preset = params.get('period');
-  if (preset && [...$('periodPreset').options].some((option) => option.value === preset)) {
+  const presetIsValid = Boolean(preset && [...$('periodPreset').options].some((option) => option.value === preset));
+  if (presetIsValid) {
     $('periodPreset').value = preset;
   }
-  applyPreset($('periodPreset').value);
+  const activePreset = $('periodPreset').value;
+  applyPreset(activePreset);
 
   const from = params.get('from');
   const to = params.get('to');
-  if (from && to) {
+  if (from && to && (activePreset === 'custom' || !presetIsValid)) {
     $('dateFrom').value = from;
     $('dateTo').value = to;
-    if (!preset) $('periodPreset').value = 'custom';
+    $('periodPreset').value = 'custom';
   }
 
   const markets = (params.get('markets') || '').split(',').filter((region) => REGION_CONFIG[region]);

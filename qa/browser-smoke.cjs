@@ -16,6 +16,12 @@ const latestDataDate = dashboardData.date_range.end;
 const latestDate = new Date(`${latestDataDate}T00:00:00Z`);
 const defaultStartDate = new Date(latestDate.getTime() - (27 * 86_400_000));
 const previousDataDate = new Date(latestDate.getTime() - 86_400_000).toISOString().slice(0, 10);
+const stalePresetStartDate = new Date(defaultStartDate.getTime() - 86_400_000).toISOString().slice(0, 10);
+const defaultWeekCount = dashboardMetrics.groupRows(dashboardMetrics.filterRows(dashboardData.rows, {
+  from: defaultStartDate.toISOString().slice(0, 10),
+  to: latestDataDate,
+  regions: ['czsk', 'us', 'row'],
+}), 'week').length;
 const displayDate = (date) => new Intl.DateTimeFormat('en-US', {
   month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
 }).format(date);
@@ -183,15 +189,15 @@ async function run() {
     });
     assert.equal(visibleAuditRows, 14, `audit viewport should show exactly 14 complete body rows, got ${visibleAuditRows}`);
     await page.locator('#grain').selectOption('week');
-    assert.equal(await page.locator('#trendDataBody tr').count(), 5, 'accessible chart table must follow weekly chart grain');
+    assert.equal(await page.locator('#trendDataBody tr').count(), defaultWeekCount, 'accessible chart table must follow weekly chart grain');
     assert.match(await page.locator('#trendDataCaption').textContent(), /Revenue and ROAS by week/);
     assert.equal(await page.locator('#metricsTableBody tr').count(), 29, 'chart grain must not reduce selected-date detail rows');
     assert.match(await page.locator('#tableSubtitle').textContent(), /Summary \+ 28 day rows/);
     assert.equal(await page.locator('#auditGrain').isVisible(), true, 'audit grain must be available on desktop');
     await page.locator('#auditGrain').selectOption('week');
-    assert.equal(await page.locator('#metricsTableBody tr').count(), 6, 'weekly audit grain should show summary plus five week rows');
+    assert.equal(await page.locator('#metricsTableBody tr').count(), defaultWeekCount + 1, 'weekly audit grain should show summary plus the current preset week rows');
     assert.equal((await page.locator('#auditPeriodHeader').textContent()).trim(), 'Week');
-    assert.match(await page.locator('#tableSubtitle').textContent(), /Summary \+ 5 week rows/);
+    assert.ok((await page.locator('#tableSubtitle').textContent()).trim().startsWith(`Summary + ${defaultWeekCount} week rows`));
     assert.ok((await page.locator('#metricsTableBody tr:not(.summary-row) td:first-child').allTextContents()).every((label) => /^\d{4}-W\d{2}$/.test(label)), 'weekly audit labels must use ISO week labels');
     assert.equal(await page.locator('#grain').inputValue(), 'week', 'audit grain must not change the chart grain');
     await page.locator('#auditGrain').selectOption('month');
@@ -344,6 +350,28 @@ async function run() {
     assert.equal(await invalidUrl.locator('#errorState').isVisible(), false);
     await invalidUrlContext.close();
 
+    const presetRefreshContext = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark', reducedMotion: 'reduce' });
+    const presetRefresh = await presetRefreshContext.newPage();
+    await presetRefresh.goto(`${baseUrl}?period=28d&from=${stalePresetStartDate}&to=${previousDataDate}`, { waitUntil: 'networkidle', timeout: 30_000 });
+    await presetRefresh.locator('#dashboardContent').waitFor({ state: 'visible' });
+    assert.equal(await presetRefresh.locator('#periodPreset').inputValue(), '28d');
+    assert.equal(await presetRefresh.locator('#dateFrom').inputValue(), defaultStartDate.toISOString().slice(0, 10), 'relative preset start must advance when refreshed data has a newer end date');
+    assert.equal(await presetRefresh.locator('#dateTo').inputValue(), latestDataDate, 'relative preset end must advance to the refreshed data-through date');
+    assert.equal(new URL(presetRefresh.url()).searchParams.get('from'), defaultStartDate.toISOString().slice(0, 10), 'shareable URL must replace the stale relative start date');
+    assert.equal(new URL(presetRefresh.url()).searchParams.get('to'), latestDataDate, 'shareable URL must replace the stale relative end date');
+
+    const customFrom = dashboardData.date_range.start;
+    const customTo = previousDataDate;
+    await presetRefresh.locator('#dateFrom').fill(customFrom);
+    await presetRefresh.locator('#dateFrom').dispatchEvent('change');
+    await presetRefresh.locator('#dateTo').fill(customTo);
+    await presetRefresh.locator('#dateTo').dispatchEvent('change');
+    assert.equal(await presetRefresh.locator('#periodPreset').inputValue(), 'custom');
+    assert.equal(await presetRefresh.evaluate(() => loadData({ preserveContent: true })), true);
+    assert.equal(await presetRefresh.locator('#dateFrom').inputValue(), customFrom, 'custom start date must remain unchanged across refresh');
+    assert.equal(await presetRefresh.locator('#dateTo').inputValue(), customTo, 'custom end date must remain unchanged across refresh');
+    await presetRefreshContext.close();
+
     for (const legacyViewport of [{ name: 'desktop', width: 1440, height: 900 }, { name: 'mobile-390', width: 390, height: 844 }]) {
       const legacyContext = await browser.newContext({ viewport: legacyViewport, colorScheme: 'dark', reducedMotion: 'reduce' });
       const legacy = await legacyContext.newPage();
@@ -424,7 +452,7 @@ async function run() {
     assert.equal(mobileAuditGrain.visible, true, 'audit grain must be available on mobile');
     assert.ok(mobileAuditGrain.height >= 44, `mobile audit grain must keep a 44px touch target: ${JSON.stringify(mobileAuditGrain)}`);
     await mobile.locator('#auditGrain').selectOption('week');
-    assert.equal(await mobile.locator('#metricsTableBody tr').count(), 6, 'mobile weekly audit grain should show summary plus five week rows');
+    assert.equal(await mobile.locator('#metricsTableBody tr').count(), defaultWeekCount + 1, 'mobile weekly audit grain should show summary plus the current preset week rows');
     assert.equal((await mobile.locator('#auditPeriodHeader').textContent()).trim(), 'Week');
     await mobile.locator('#auditGrain').selectOption('day');
     await mobile.locator('#filtersToggle').click();
