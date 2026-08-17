@@ -89,6 +89,20 @@ const VI_TRANSLATIONS = {
   'Top inferred category scopes by account': 'Các phạm vi ngành hàng suy luận hàng đầu theo tài khoản',
   'Category scope': 'Phạm vi ngành hàng',
   'Spend share in account': 'Tỷ trọng chi tiêu trong tài khoản',
+  '04C / Campaign longevity': '04C / Tuổi thọ chiến dịch',
+  'Campaigns run in short flights': 'Chiến dịch chạy theo các đợt ngắn',
+  'Fixed 24-month audit · both accounts': 'Kiểm toán cố định 24 tháng · cả hai tài khoản',
+  'Average active campaign days for both accounts combined and separately': 'Số ngày chiến dịch hoạt động trung bình cho cả hai tài khoản gộp và riêng từng tài khoản',
+  'Evidence read': 'Kết luận từ bằng chứng',
+  'Short-flight operation: supported': 'Vận hành theo đợt ngắn: có bằng chứng',
+  'Campaign longevity evidence': 'Bằng chứng về tuổi thọ chiến dịch',
+  'Method: a campaign is active on a day with positive spend or impressions. The primary observational sample includes 1,148 campaigns with a known start inside the audit window. Campaigns marked active or delivering in the final 14 days were excluded. It is not a proven permanent-closure cohort: paused campaigns may resume later. This supports short-flight operation, not that promotions caused the stops or that stopping caused weaker performance.': 'Phương pháp: chiến dịch được tính là hoạt động trong ngày có chi tiêu hoặc lượt hiển thị dương. Mẫu quan sát chính gồm 1.148 chiến dịch có ngày bắt đầu xác định trong kỳ kiểm toán. Các chiến dịch được đánh dấu đang hoạt động hoặc có phân phối trong 14 ngày cuối kỳ đã bị loại trừ. Đây không phải nhóm được chứng minh đã đóng vĩnh viễn: chiến dịch tạm dừng có thể hoạt động lại sau đó. Điều này củng cố nhận định vận hành theo đợt ngắn, không chứng minh khuyến mãi khiến chiến dịch dừng hoặc việc dừng làm hiệu quả yếu đi.',
+  'View longevity data and methodology': 'Xem dữ liệu tuổi thọ và phương pháp',
+  'Campaign observed active days · 2024-07-01 to 2026-07-12': 'Số ngày hoạt động quan sát được của chiến dịch · 2024-07-01 đến 2026-07-12',
+  'Account scope': 'Phạm vi tài khoản',
+  'Campaigns': 'Chiến dịch',
+  'Average active days': 'Số ngày hoạt động trung bình',
+  'Median active days': 'Trung vị số ngày hoạt động',
   '05 / Intra-month dynamics': '05 / Biến động trong tháng',
   'Analyze each month in silo': 'Phân tích riêng từng tháng',
   'Month': 'Tháng',
@@ -168,6 +182,7 @@ const VI_TRANSLATIONS = {
   'What still needs backend proof': 'Những gì vẫn cần bằng chứng từ backend',
   'PowerBI monthly and daily revenue/order reconciliation.': 'Đối soát doanh thu/đơn hàng theo tháng và ngày trong PowerBI.',
   'Campaign-day extraction to attribute intra-month spikes.': 'Trích xuất chiến dịch-ngày để phân bổ các đỉnh biến động trong tháng.',
+  'Promotion calendar aligned to campaign starts and stops.': 'Lịch khuyến mãi đối chiếu với ngày bắt đầu và kết thúc chiến dịch.',
   'Creative thumbnails/video assets for a real visual review.': 'Ảnh thu nhỏ/tài sản video để đánh giá trực quan nội dung thực tế.',
   'Margin, cancellations, refunds and South operational constraints.': 'Biên lợi nhuận, hủy đơn, hoàn tiền và các ràng buộc vận hành tại miền Nam.',
   'Source: cached Meta API v22.0 audit export · VND': 'Nguồn: bản xuất kiểm toán Meta API v22.0 lưu đệm · VND',
@@ -214,6 +229,20 @@ let COLORS = { ...CHART_THEMES.dark };
 let PALETTE = [COLORS.blue, COLORS.orange, COLORS.green, COLORS.violet, COLORS.cyan, COLORS.red, COLORS.pink, '#c4d3e6'];
 let REGION_COLORS = { South: COLORS.blue, North: COLORS.orange, Mid: COLORS.green };
 const state = { data: null, charts: {} };
+const CAMPAIGN_LONGEVITY = {
+  window: { since: '2024-07-01', until: '2026-07-12' },
+  combined: { label: 'Both accounts', campaigns: 1148, meanActiveDays: 17.38850174216028, medianActiveDays: 5 },
+  accounts: [
+    { label: 'Gia Dụng', campaigns: 547, meanActiveDays: 18.97074954296161, medianActiveDays: 6 },
+    { label: 'Điện gia dụng', campaigns: 601, meanActiveDays: 15.948419301164725, medianActiveDays: 5 },
+  ],
+  shareWithin7Days: 0.6010452961672473,
+  shareWithin14Days: 0.7447735191637631,
+  shareWithin30Days: 0.8527874564459931,
+  startFirstWeek: 0.2691637630662021,
+  endLastWeek: 0.18292682926829268,
+  uniformCalendarBaseline: 0.22947950620059196,
+};
 
 const locale = () => currentLanguage === 'vi' ? 'vi-VN' : 'en-US';
 const compact = { format: (value) => new Intl.NumberFormat(locale(), { notation: 'compact', maximumFractionDigits: 2 }).format(value) };
@@ -751,6 +780,43 @@ function renderCategoryScope(filters) {
   );
 }
 
+function renderCampaignLongevity() {
+  const rows = [CAMPAIGN_LONGEVITY.combined, ...CAMPAIGN_LONGEVITY.accounts];
+  const chartOptions = options(
+    (item) => `${item.label}: ${decimal(item.raw, 1)} ${localized('active days', 'ngày hoạt động')}`,
+    {
+      x: { beginAtZero: true, grid: { color: COLORS.grid }, ticks: { color: COLORS.muted, callback: (value) => decimal(value, 0) }, title: { display: true, text: localized('Average active days', 'Số ngày hoạt động trung bình'), color: COLORS.muted } },
+      y: { grid: { display: false }, ticks: { color: COLORS.muted } },
+    },
+    'nearest',
+  );
+  chartOptions.indexAxis = 'y';
+  chartOptions.plugins.legend.display = false;
+  replaceChart('campaignLongevity', document.getElementById('campaignLongevityChart'), {
+    type: 'bar',
+    data: {
+      labels: rows.map((row) => row.label === 'Both accounts' ? tr('Both accounts') : row.label),
+      datasets: [{ label: localized('Average active days', 'Số ngày hoạt động trung bình'), data: rows.map((row) => row.meanActiveDays), backgroundColor: [`${COLORS.blue}cc`, `${COLORS.green}cc`, `${COLORS.violet}cc`], borderRadius: 7 }],
+    },
+    options: chartOptions,
+  });
+  const evidence = [
+    [localized('≤ 7 active days', '≤ 7 ngày hoạt động'), CAMPAIGN_LONGEVITY.shareWithin7Days],
+    [localized('≤ 14 active days', '≤ 14 ngày hoạt động'), CAMPAIGN_LONGEVITY.shareWithin14Days],
+    [localized('≤ 30 active days', '≤ 30 ngày hoạt động'), CAMPAIGN_LONGEVITY.shareWithin30Days],
+  ];
+  document.getElementById('campaignLongevityEvidence').innerHTML = evidence.map(([label, value]) => `<article><span>${escapeHtml(label)}</span><strong>${escapeHtml(percent(value))}</strong><p>${localized('of the observational sample', 'trong mẫu quan sát')}</p></article>`).join('');
+  document.getElementById('campaignLongevityVerdict').textContent = localized(
+    `The observational sample has a median of ${CAMPAIGN_LONGEVITY.combined.medianActiveDays} active days. ${percent(CAMPAIGN_LONGEVITY.shareWithin30Days)} had no more than 30 observed active days.`,
+    `Mẫu quan sát có trung vị ${CAMPAIGN_LONGEVITY.combined.medianActiveDays} ngày hoạt động. ${percent(CAMPAIGN_LONGEVITY.shareWithin30Days)} có không quá 30 ngày hoạt động quan sát được.`,
+  );
+  document.getElementById('campaignLongevityTiming').textContent = localized(
+    `Month-boundary check: ${percent(CAMPAIGN_LONGEVITY.startFirstWeek)} started in days 1–7 versus a ${percent(CAMPAIGN_LONGEVITY.uniformCalendarBaseline)} uniform-calendar baseline, while ${percent(CAMPAIGN_LONGEVITY.endLastWeek)} had their last observed delivery in the final seven days. Promotion-expiry timing is unproven.`,
+    `Kiểm tra ranh giới tháng: ${percent(CAMPAIGN_LONGEVITY.startFirstWeek)} bắt đầu trong ngày 1–7 so với mức cơ sở lịch đồng đều ${percent(CAMPAIGN_LONGEVITY.uniformCalendarBaseline)}, trong khi ${percent(CAMPAIGN_LONGEVITY.endLastWeek)} có lần phân phối quan sát cuối cùng trong bảy ngày cuối tháng. Chưa có bằng chứng về việc dừng theo hạn khuyến mãi.`,
+  );
+  document.getElementById('campaignLongevityTable').innerHTML = rows.map((row) => `<tr><td>${escapeHtml(row.label === 'Both accounts' ? tr('Both accounts') : row.label)}</td><td>${escapeHtml(count(row.campaigns))}</td><td>${escapeHtml(decimal(row.meanActiveDays, 1))}</td><td>${escapeHtml(count(row.medianActiveDays))}</td></tr>`).join('');
+}
+
 function renderSeasonality(filters) {
   const rows = (state.data.seasonality_cells || []).filter((row) => !filters.accounts.length || filters.accounts.includes(row.account));
   document.getElementById('seasonalityTable').innerHTML = rows.slice(0, 10).map((row) => `<tr><td>${escapeHtml(row.account)}</td><td>${escapeHtml(row.cell)}</td><td>${escapeHtml(money(row.q4_spend))}</td><td>${escapeHtml(count(row.q4_purchases))}</td><td>${escapeHtml(money(row.q4_cost_per_purchase))}</td><td>${escapeHtml(money(row.non_q4_cost_per_purchase))}</td><td>${escapeHtml(signedPercent(row.cpa_lift_in_q4))}</td><td>${escapeHtml(signedPercent(row.purchase_month_lift_in_q4))}</td></tr>`).join('');
@@ -833,6 +899,7 @@ function render() {
   renderAccounts(rows, filters);
   renderDayOfMonth(rows);
   renderCategoryScope(filters);
+  renderCampaignLongevity();
   renderSeasonality(filters);
   renderLeverBoard(filters);
   renderCampaigns(filters);

@@ -153,6 +153,57 @@ class ElmMetaExportTest(unittest.TestCase):
         self.assertIn("Xuất CSV theo bộ lọc", app)
         self.assertIn("ROAS định hướng", app)
 
+    def test_dashboard_exposes_privacy_safe_campaign_longevity_evidence(self):
+        route = ROOT / "public" / "elm-meta-ads"
+        html = (route / "index.html").read_text(encoding="utf-8")
+        app = (route / "app.js").read_text(encoding="utf-8")
+
+        self.assertIn('id="campaignLongevityChart"', html)
+        self.assertIn('id="campaignLongevityEvidence"', html)
+        self.assertIn('id="campaignLongevityTable"', html)
+        self.assertIn("04C / Campaign longevity", html)
+        self.assertIn("Campaigns run in short flights", html)
+        self.assertIn("const CAMPAIGN_LONGEVITY =", app)
+        self.assertIn("campaigns: 1148", app)
+        self.assertIn("meanActiveDays: 17.38850174216028", app)
+        self.assertIn("medianActiveDays: 5", app)
+        self.assertIn("campaigns: 547, meanActiveDays: 18.97074954296161, medianActiveDays: 6", app)
+        self.assertIn("campaigns: 601, meanActiveDays: 15.948419301164725, medianActiveDays: 5", app)
+        self.assertIn("shareWithin7Days: 0.6010452961672473", app)
+        self.assertIn("shareWithin14Days: 0.7447735191637631", app)
+        self.assertIn("shareWithin30Days: 0.8527874564459931", app)
+        self.assertIn("startFirstWeek: 0.2691637630662021", app)
+        self.assertIn("endLastWeek: 0.18292682926829268", app)
+        self.assertIn("uniformCalendarBaseline: 0.22947950620059196", app)
+        longevity_block = re.search(r"const CAMPAIGN_LONGEVITY = (\{.*?\n\});", app, re.DOTALL)
+        self.assertIsNotNone(longevity_block)
+        longevity_source = longevity_block.group(1) if longevity_block else ""
+        self.assertEqual(
+            sorted(re.findall(r"(?:\{|,)\s*([A-Za-z]\w*):", longevity_source)),
+            sorted([
+                "window", "since", "until", "combined", "accounts",
+                "label", "label", "label",
+                "campaigns", "campaigns", "campaigns",
+                "meanActiveDays", "meanActiveDays", "meanActiveDays",
+                "medianActiveDays", "medianActiveDays", "medianActiveDays",
+                "shareWithin7Days", "shareWithin14Days", "shareWithin30Days",
+                "startFirstWeek", "endLastWeek", "uniformCalendarBaseline",
+            ]),
+        )
+        self.assertIn("function renderCampaignLongevity", app)
+        self.assertIn("Campaigns marked active or delivering in the final 14 days were excluded.", html)
+        self.assertIn("It is not a proven permanent-closure cohort: paused campaigns may resume later.", html)
+        self.assertIn("of the observational sample", app)
+        self.assertIn("had no more than 30 observed active days", app)
+        self.assertNotIn("of completed campaigns", app)
+        self.assertNotIn("ended within 30 active days", app)
+        self.assertIn("had their last observed delivery in the final seven days", app)
+        self.assertIn("có lần phân phối quan sát cuối cùng trong bảy ngày cuối tháng", app)
+        self.assertNotIn("ended in the final seven days", app)
+        self.assertNotIn("kết thúc trong bảy ngày cuối tháng", app)
+        self.assertIn("Promotion calendar aligned to campaign starts and stops.", html)
+        self.assertNotIn("Campaign-day extraction to attribute intra-month spikes.", html)
+
 
 if __name__ == "__main__":
     unittest.main()
