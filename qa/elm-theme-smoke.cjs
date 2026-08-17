@@ -78,6 +78,8 @@ async function exerciseViewport(browser, baseUrl, viewport) {
   assert.ok(dualAxisLegendOrder.length >= 4, JSON.stringify(dualAxisLegendOrder));
   assert.equal(dualAxisLegendOrder.every(chart => chart.positions.join(',').match(/^left(?:,left)*,right$/)), true, JSON.stringify(dualAxisLegendOrder));
   assert.equal(await page.locator('#kpiGrid .kpi').count(), 6);
+  assert.ok(await page.locator('#categoryScopeTable tr').count() > 0);
+  assert.doesNotMatch(await page.locator('#categoryScopeInsight').textContent(), /\(\s*\)/);
   assert.ok(await page.locator('#campaignLongevityChart').isVisible());
   assert.equal(await page.evaluate(() => window.Chart.getChart('campaignLongevityChart').data.datasets[0].data.map(value => Number(value.toFixed(1))).join(',')), '17.4,19,15.9');
   assert.equal((await page.locator('#campaignLongevityEvidence strong').allTextContents()).join(','), '60.1%,74.5%,85.3%');
