@@ -145,6 +145,22 @@
       <div class="table-wrap"><table><caption>Top inferred category scopes by account</caption><thead><tr><th>Account</th><th>Category scope</th><th>Spend</th><th>Spend share in account</th><th>Purchases</th><th>Cost / purchase</th><th>Purchase CVR</th></tr></thead><tbody id="categoryScopeTable"></tbody></table></div>
     </section>
 
+    <section class="section" aria-labelledby="campaignLongevityTitle">
+      <div class="section-heading"><div><p class="kicker">04C / Campaign longevity</p><h2 id="campaignLongevityTitle">Campaigns run in short flights</h2></div><p>Fixed 24-month audit · both accounts</p></div>
+      <div class="campaign-longevity-grid">
+        <div class="chart-card campaign-longevity-chart"><canvas id="campaignLongevityChart" role="img" aria-label="Average active campaign days for both accounts combined and separately"></canvas></div>
+        <aside class="longevity-verdict" aria-labelledby="longevityVerdictTitle">
+          <p class="kicker" id="longevityVerdictTitle">Evidence read</p>
+          <strong>Short-flight operation: supported</strong>
+          <p id="campaignLongevityVerdict"></p>
+        </aside>
+      </div>
+      <div id="campaignLongevityEvidence" class="campaign-longevity-evidence" aria-label="Campaign longevity evidence"></div>
+      <p class="chart-note" id="campaignLongevityTiming"></p>
+      <p class="longevity-method-note">Method: a campaign is active on a day with positive spend or impressions. The primary observational sample includes 1,148 campaigns with a known start inside the audit window. Campaigns marked active or delivering in the final 14 days were excluded. It is not a proven permanent-closure cohort: paused campaigns may resume later. This supports short-flight operation, not that promotions caused the stops or that stopping caused weaker performance.</p>
+      <details class="data-details"><summary>View longevity data and methodology</summary><div class="table-wrap campaign-longevity-table"><table><caption>Campaign observed active days · 2024-07-01 to 2026-07-12</caption><thead><tr><th>Account scope</th><th>Campaigns</th><th>Average active days</th><th>Median active days</th></tr></thead><tbody id="campaignLongevityTable"></tbody></table></div></details>
+    </section>
+
     <section class="section" aria-labelledby="intramonthTitle">
       <div class="section-heading"><div><p class="kicker">05 / Intra-month dynamics</p><h2 id="intramonthTitle">Analyze each month in silo</h2></div><div class="control-row"><label class="metric-select">Month
         <select id="intramonthMonth"></select>
@@ -235,7 +251,7 @@
 
     <section class="section proof-pack" aria-labelledby="proofTitle">
       <div><p class="kicker">11 / Decision gate</p><h2 id="proofTitle">What still needs backend proof</h2></div>
-      <ol><li><span>01</span>PowerBI monthly and daily revenue/order reconciliation.</li><li><span>02</span>Campaign-day extraction to attribute intra-month spikes.</li><li><span>03</span>Creative thumbnails/video assets for a real visual review.</li><li><span>04</span>Margin, cancellations, refunds and South operational constraints.</li></ol>
+      <ol><li><span>01</span>PowerBI monthly and daily revenue/order reconciliation.</li><li><span>02</span>Promotion calendar aligned to campaign starts and stops.</li><li><span>03</span>Creative thumbnails/video assets for a real visual review.</li><li><span>04</span>Margin, cancellations, refunds and South operational constraints.</li></ol>
     </section>
   </main>
 

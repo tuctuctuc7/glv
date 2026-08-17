@@ -78,6 +78,20 @@ async function exerciseViewport(browser, baseUrl, viewport) {
   assert.ok(dualAxisLegendOrder.length >= 4, JSON.stringify(dualAxisLegendOrder));
   assert.equal(dualAxisLegendOrder.every(chart => chart.positions.join(',').match(/^left(?:,left)*,right$/)), true, JSON.stringify(dualAxisLegendOrder));
   assert.equal(await page.locator('#kpiGrid .kpi').count(), 6);
+  assert.ok(await page.locator('#campaignLongevityChart').isVisible());
+  assert.equal(await page.evaluate(() => window.Chart.getChart('campaignLongevityChart').data.datasets[0].data.map(value => Number(value.toFixed(1))).join(',')), '17.4,19,15.9');
+  assert.equal((await page.locator('#campaignLongevityEvidence strong').allTextContents()).join(','), '60.1%,74.5%,85.3%');
+  assert.equal(await page.locator('#campaignLongevityTable tr').count(), 3);
+  assert.deepEqual(await page.locator('#campaignLongevityTable tr').allTextContents(), [
+    'Both accounts1,14817.45',
+    'Gia Dụng54719.06',
+    'Điện gia dụng60115.95',
+  ]);
+  assert.equal(
+    await page.locator('#campaignLongevityTiming').textContent(),
+    'Month-boundary check: 26.9% started in days 1–7 versus a 22.9% uniform-calendar baseline, while 18.3% had their last observed delivery in the final seven days. Promotion-expiry timing is unproven.',
+  );
+  assert.match(await page.locator('.longevity-method-note').textContent(), /Campaigns marked active or delivering in the final 14 days were excluded\./);
   assert.equal(await page.locator('html').getAttribute('lang'), 'en');
   assert.equal(await page.locator('#languageToggle').getAttribute('aria-label'), 'Switch to Vietnamese');
   assert.equal((await page.locator('#languageToggle').textContent()).trim(), '🇻🇳');
@@ -105,6 +119,7 @@ async function exerciseViewport(browser, baseUrl, viewport) {
     'ROAS, chi phí, chuyển đổi và giá trị đơn hàng',
     'Hai tài khoản, hai đường xu hướng',
     'Phân tách theo ngành hàng, không phải vai trò tài khoản',
+    'Chiến dịch chạy theo các đợt ngắn',
     'Phân tích riêng từng tháng',
     'Sức kéo nhu cầu Q4 theo ô',
     'Những gì tạo thành kế hoạch vận hành miền Nam',
@@ -114,6 +129,20 @@ async function exerciseViewport(browser, baseUrl, viewport) {
     'Phân tích bất thường được chuyển xuống phụ lục',
     'Những gì vẫn cần bằng chứng từ backend',
   ].forEach(heading => assert.ok(vietnameseHeadings.includes(heading), `Missing Vietnamese heading: ${heading}`));
+  assert.equal((await page.locator('#campaignLongevityEvidence strong').allTextContents()).join(','), '60,1%,74,5%,85,3%');
+  assert.deepEqual(await page.locator('#campaignLongevityTable tr').allTextContents(), [
+    'Cả hai tài khoản1.14817,45',
+    'Gia Dụng54719,06',
+    'Điện gia dụng60115,95',
+  ]);
+  assert.equal(
+    await page.locator('#campaignLongevityTiming').textContent(),
+    'Kiểm tra ranh giới tháng: 26,9% bắt đầu trong ngày 1–7 so với mức cơ sở lịch đồng đều 22,9%, trong khi 18,3% có lần phân phối quan sát cuối cùng trong bảy ngày cuối tháng. Chưa có bằng chứng về việc dừng theo hạn khuyến mãi.',
+  );
+  assert.match(await page.locator('.longevity-method-note').textContent(), /Các chiến dịch được đánh dấu đang hoạt động hoặc có phân phối trong 14 ngày cuối kỳ đã bị loại trừ\./);
+  await page.locator('[aria-labelledby="campaignLongevityTitle"]').scrollIntoViewIfNeeded();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.locator('[aria-labelledby="campaignLongevityTitle"]').screenshot({ path: path.join(evidenceDir, `${viewport.name}-vi-dark-longevity.png`) });
   assert.equal(await page.evaluate(() => localStorage.getItem('elm-meta-language')), 'vi');
   await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-vi-dark.png`) });
   await page.reload({ waitUntil: 'networkidle' });
@@ -205,6 +234,9 @@ async function exerciseViewport(browser, baseUrl, viewport) {
   await page.locator('#languageToggle').click();
   assert.equal(await page.locator('html').getAttribute('lang'), 'en');
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'light');
+  await page.locator('[aria-labelledby="campaignLongevityTitle"]').scrollIntoViewIfNeeded();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.locator('[aria-labelledby="campaignLongevityTitle"]').screenshot({ path: path.join(evidenceDir, `${viewport.name}-light-longevity.png`) });
 
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('#kpiGrid .kpi').first().waitFor({ state: 'visible' });

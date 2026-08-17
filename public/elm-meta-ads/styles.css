@@ -360,6 +360,18 @@ tbody tr:hover { background: var(--row-hover); }
 .reconciliation-grid span { color: var(--muted); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
 .reconciliation-grid strong { display: block; font-size: 28px; margin: 12px 0; }
 .reconciliation-grid p { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 0; }
+.campaign-longevity-grid { align-items: stretch; display: grid; gap: 14px; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); }
+.campaign-longevity-chart { height: 340px; }
+.longevity-verdict { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; }
+.longevity-verdict > strong { display: block; font-size: 25px; letter-spacing: -.03em; line-height: 1.15; margin: 22px 0 16px; }
+.longevity-verdict > p:last-child { color: var(--muted); font-size: 14px; line-height: 1.55; margin: 0; }
+.campaign-longevity-evidence { display: grid; gap: 10px; grid-template-columns: repeat(3, 1fr); margin-top: 14px; }
+.campaign-longevity-evidence article { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+.campaign-longevity-evidence span { color: var(--muted); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.campaign-longevity-evidence strong { display: block; font-size: 30px; margin: 12px 0 7px; }
+.campaign-longevity-evidence p { color: var(--muted); font-size: 12px; margin: 0; }
+.longevity-method-note { color: var(--muted); font-size: 12px; line-height: 1.55; margin: 12px 4px 0; max-width: 980px; }
+.campaign-longevity-table table { min-width: 660px; }
 
 .proof-pack { align-items: start; display: grid; gap: 60px; grid-template-columns: .7fr 1.3fr; }
 .proof-pack ol { list-style: none; margin: 0; padding: 0; }
@@ -387,7 +399,7 @@ th,
   .filter-dock { align-items: stretch; flex-wrap: wrap; margin-inline: 12px; }
   .filter-fields { order: 3; width: 100%; }
   .kpi-grid { grid-template-columns: repeat(3, 1fr); }
-  .measurement-grid, .regional-grid, .campaign-grid, .creative-grid { grid-template-columns: 1fr; }
+  .measurement-grid, .regional-grid, .campaign-grid, .creative-grid, .campaign-longevity-grid { grid-template-columns: 1fr; }
   .chart-card.tall { height: 410px; }
 }
 
@@ -405,9 +417,10 @@ th,
   .section-heading { align-items: flex-start; flex-direction: column; }
   .control-row, .metric-select, .metric-select select { width: 100%; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
-  .decision-strip, .bridge, .reconciliation-grid, .lever-card-grid { grid-template-columns: 1fr; }
+  .decision-strip, .bridge, .reconciliation-grid, .lever-card-grid, .campaign-longevity-evidence { grid-template-columns: 1fr; }
   .decision-strip > div { min-height: 0; }
   .chart-card.tall, .chart-card.medium { height: 350px; padding: 12px; }
+  .campaign-longevity-chart { height: 300px; padding: 12px; }
   .method-card { padding: 18px; }
   .proof-pack { gap: 28px; grid-template-columns: 1fr; }
   .small-multiple-grid, .account-trend-grid { grid-template-columns: 1fr; }
