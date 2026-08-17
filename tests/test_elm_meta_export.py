@@ -101,6 +101,25 @@ class ElmMetaExportTest(unittest.TestCase):
             for key, spend in detail_months.items():
                 self.assertAlmostEqual(spend, account_months[key], places=6, msg=f"{detail_key} {key}")
 
+    def test_account_category_scope_preserves_month_grain_for_date_filtering(self):
+        scope_rows = self.payload["account_category_scope"]
+        self.assertTrue(scope_rows)
+        self.assertTrue(all(re.fullmatch(r"\d{4}-\d{2}", row["month"]) for row in scope_rows))
+
+        scope_months = {}
+        for row in scope_rows:
+            key = (row["month"], row["account"])
+            scope_months[key] = scope_months.get(key, 0) + row["spend"]
+
+        cell_months = {}
+        for row in self.payload["campaign_cells"]:
+            key = (row["month"], row["account"])
+            cell_months[key] = cell_months.get(key, 0) + row["spend"]
+
+        self.assertEqual(set(scope_months), set(cell_months))
+        for key, spend in scope_months.items():
+            self.assertAlmostEqual(spend, cell_months[key], places=6, msg=f"account_category_scope {key}")
+
     def test_monthly_sections_expose_metric_selectors(self):
         html = (ROOT / "public" / "elm-meta-ads" / "index.html").read_text(encoding="utf-8")
         for selector_id in ("growthMetric", "growthMetricRight", "accountMetric", "intramonthMetric", "intramonthMetricRight", "regionMetric"):

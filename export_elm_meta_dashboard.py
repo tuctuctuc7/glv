@@ -367,21 +367,20 @@ def aggregate_named_months(rows: list[dict], classifier, flag_months: set[tuple[
 
 
 def aggregate_account_category_scope(cells: list[dict]) -> list[dict]:
-    grouped: dict[tuple[str, str], dict[str, float]] = defaultdict(lambda: defaultdict(float))
-    active_months: dict[tuple[str, str], set[str]] = defaultdict(set)
+    grouped: dict[tuple[str, str, str], dict[str, float]] = defaultdict(lambda: defaultdict(float))
     for row in cells:
-        key = (row["account"], product_scope_from_cell(row["cell"]))
+        key = (row["account"], row["month"], product_scope_from_cell(row["cell"]))
         for metric in ("spend", "purchases", "landing_page_views", "checkouts", "raw_purchase_value"):
             grouped[key][metric] += float(row.get(metric, 0) or 0)
-        active_months[key].add(row["month"])
     return [
         add_efficiency({
             "account": account,
+            "month": month,
             "category_scope": category,
-            "months_active": len(active_months[(account, category)]),
+            "months_active": 1,
             **metrics,
         })
-        for (account, category), metrics in sorted(grouped.items())
+        for (account, month, category), metrics in sorted(grouped.items())
         if metrics.get("spend", 0) > 0
     ]
 
