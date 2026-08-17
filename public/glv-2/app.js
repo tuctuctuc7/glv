@@ -861,7 +861,7 @@ function renderChart(view) {
         },
         y1: {
           display: secondaryKey !== 'none',
-          beginAtZero: ['cpa', 'aov'].includes(secondaryKey),
+          beginAtZero: true,
           position: 'right',
           grid: { drawOnChartArea: false },
           ticks: { color: colors.rolling, font: { size: 9 }, callback: (value) => formatMetric(secondaryKey, value, true) },

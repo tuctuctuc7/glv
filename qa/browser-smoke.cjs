@@ -124,6 +124,20 @@ async function run() {
       { type: 'bar', label: 'Revenue', yAxisID: 'y' },
       { type: 'line', label: 'ROAS', yAxisID: 'y1' },
     ]);
+    assert.deepEqual(await page.evaluate(() => {
+      const chart = window.Chart.getChart('trendChart');
+      return {
+        leftConfigured: chart.options.scales.y.beginAtZero,
+        leftRenderedMin: chart.scales.y.min,
+        rightConfigured: chart.options.scales.y1.beginAtZero,
+        rightRenderedMin: chart.scales.y1.min,
+      };
+    }), {
+      leftConfigured: true,
+      leftRenderedMin: 0,
+      rightConfigured: true,
+      rightRenderedMin: 0,
+    }, 'both rendered chart axes must start at zero');
     assert.deepEqual(await page.locator('#trendLegend span').allTextContents(), ['Revenue', 'ROAS']);
     assert.equal(await page.locator('#trendDataBody tr').count(), 28);
     assert.equal(await page.locator('#trendDataBody tr').first().locator('td').count(), 3);

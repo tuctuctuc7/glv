@@ -70,6 +70,11 @@ test('trend visual has an accessible text fallback and chart controls', () => {
   assert.match(app, /fill:\s*false/, 'line dataset must not use an area fill');
 });
 
+test('both primary trend axes always use an explicit zero baseline', () => {
+  assert.match(app, /y:\s*\{[\s\S]*?beginAtZero:\s*true[\s\S]*?\},\s*y1:/, 'left bar axis must begin at zero');
+  assert.match(app, /y1:\s*\{[\s\S]*?beginAtZero:\s*true/, 'right line axis must begin at zero for every selected metric');
+});
+
 test('latest executive branding and KPI copy are present', () => {
   has(/GELAVIS · Business intelligence by AGENTHIC/, 'missing approved header copy');
   has(/<img[^>]*src="\/glv-2\/agenthic-logo\.svg"/, 'missing slash-safe route-local AGENTHIC logo');
