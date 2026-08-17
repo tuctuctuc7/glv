@@ -90,13 +90,19 @@ const VI_TRANSLATIONS = {
   'Category scope': 'Phạm vi ngành hàng',
   'Spend share in account': 'Tỷ trọng chi tiêu trong tài khoản',
   '04C / Campaign longevity': '04C / Tuổi thọ chiến dịch',
-  'Campaigns run in short flights': 'Chiến dịch chạy theo các đợt ngắn',
+  'Many campaign objects are short; material campaigns run longer': 'Nhiều chiến dịch có thời gian ngắn; chiến dịch có chi tiêu đáng kể chạy lâu hơn',
   'Fixed 24-month audit · both accounts': 'Kiểm toán cố định 24 tháng · cả hai tài khoản',
   'Average active campaign days for both accounts combined and separately': 'Số ngày chiến dịch hoạt động trung bình cho cả hai tài khoản gộp và riêng từng tài khoản',
   'Evidence read': 'Kết luận từ bằng chứng',
-  'Short-flight operation: supported': 'Vận hành theo đợt ngắn: có bằng chứng',
+  'Material campaigns run longer': 'Chiến dịch có chi tiêu đáng kể chạy lâu hơn',
   'Campaign longevity evidence': 'Bằng chứng về tuổi thọ chiến dịch',
-  'Method: a campaign is active on a day with positive spend or impressions. The primary observational sample includes 1,148 campaigns with a known start inside the audit window. Campaigns marked active or delivering in the final 14 days were excluded. It is not a proven permanent-closure cohort: paused campaigns may resume later. This supports short-flight operation, not that promotions caused the stops or that stopping caused weaker performance.': 'Phương pháp: chiến dịch được tính là hoạt động trong ngày có chi tiêu hoặc lượt hiển thị dương. Mẫu quan sát chính gồm 1.148 chiến dịch có ngày bắt đầu xác định trong kỳ kiểm toán. Các chiến dịch được đánh dấu đang hoạt động hoặc có phân phối trong 14 ngày cuối kỳ đã bị loại trừ. Đây không phải nhóm được chứng minh đã đóng vĩnh viễn: chiến dịch tạm dừng có thể hoạt động lại sau đó. Điều này củng cố nhận định vận hành theo đợt ngắn, không chứng minh khuyến mãi khiến chiến dịch dừng hoặc việc dừng làm hiệu quả yếu đi.',
+  'Spend materiality · all observed campaigns': 'Mức độ trọng yếu theo chi tiêu · tất cả chiến dịch quan sát được',
+  'No campaign-status filter · both accounts · 2024-07-01 to 2026-07-12': 'Không lọc theo trạng thái chiến dịch · cả hai tài khoản · 2024-07-01 đến 2026-07-12',
+  'Swipe table to see spend and share →': 'Vuốt bảng để xem chi tiêu và tỷ trọng →',
+  'Campaign spend bands for all observed campaigns with no campaign-status filter': 'Nhóm chi tiêu chiến dịch cho tất cả chiến dịch quan sát được, không lọc theo trạng thái',
+  'Aggregated spend': 'Chi tiêu tổng hợp',
+  'Share of grand total': 'Tỷ trọng trong tổng chi tiêu',
+  'Method: a campaign is active on a day with positive spend or impressions. The primary observational sample includes 1,148 campaigns with a known start inside the audit window. Campaigns marked active or delivering in the final 14 days were excluded. It is not a proven permanent-closure cohort: paused campaigns may resume later. The spend table removes the status and censoring filters: it includes all 2,067 campaigns with observed delivery. This supports a two-part conclusion: many campaign objects are short, while material campaigns run longer. It does not prove that promotions caused stops or that stopping caused weaker performance.': 'Phương pháp: chiến dịch được tính là hoạt động trong ngày có chi tiêu hoặc lượt hiển thị dương. Mẫu quan sát chính gồm 1.148 chiến dịch có ngày bắt đầu xác định trong kỳ kiểm toán. Các chiến dịch được đánh dấu đang hoạt động hoặc có phân phối trong 14 ngày cuối kỳ đã bị loại trừ. Đây không phải nhóm được chứng minh đã đóng vĩnh viễn: chiến dịch tạm dừng có thể hoạt động lại sau đó. Bảng chi tiêu loại bỏ bộ lọc trạng thái và kiểm duyệt: bảng bao gồm toàn bộ 2.067 chiến dịch có phân phối quan sát được. Kết luận phù hợp gồm hai phần: nhiều chiến dịch có thời gian ngắn, trong khi các chiến dịch có chi tiêu đáng kể chạy lâu hơn. Dữ liệu không chứng minh khuyến mãi gây ra việc dừng chiến dịch hoặc việc dừng làm hiệu quả yếu đi.',
   'View longevity data and methodology': 'Xem dữ liệu tuổi thọ và phương pháp',
   'Campaign observed active days · 2024-07-01 to 2026-07-12': 'Số ngày hoạt động quan sát được của chiến dịch · 2024-07-01 đến 2026-07-12',
   'Account scope': 'Phạm vi tài khoản',
@@ -242,6 +248,14 @@ const CAMPAIGN_LONGEVITY = {
   startFirstWeek: 0.2691637630662021,
   endLastWeek: 0.18292682926829268,
   uniformCalendarBaseline: 0.22947950620059196,
+};
+const CAMPAIGN_SPEND_BANDS = {
+  window: { since: '2024-07-01', until: '2026-07-12' },
+  threshold: 50000000,
+  statusFilter: null,
+  atOrBelow: { campaigns: 1928, spend: 14606170826, share: 0.4750950445055156 },
+  over: { campaigns: 139, spend: 16137510875, share: 0.5249049554944845, averageActiveDays: 108.61151079136691, medianActiveDays: 94 },
+  grandTotal: { campaigns: 2067, spend: 30743681701, share: 1 },
 };
 
 const locale = () => currentLanguage === 'vi' ? 'vi-VN' : 'en-US';
@@ -807,14 +821,24 @@ function renderCampaignLongevity() {
   ];
   document.getElementById('campaignLongevityEvidence').innerHTML = evidence.map(([label, value]) => `<article><span>${escapeHtml(label)}</span><strong>${escapeHtml(percent(value))}</strong><p>${localized('of the observational sample', 'trong mẫu quan sát')}</p></article>`).join('');
   document.getElementById('campaignLongevityVerdict').textContent = localized(
-    `The observational sample has a median of ${CAMPAIGN_LONGEVITY.combined.medianActiveDays} active days. ${percent(CAMPAIGN_LONGEVITY.shareWithin30Days)} had no more than 30 observed active days.`,
-    `Mẫu quan sát có trung vị ${CAMPAIGN_LONGEVITY.combined.medianActiveDays} ngày hoạt động. ${percent(CAMPAIGN_LONGEVITY.shareWithin30Days)} có không quá 30 ngày hoạt động quan sát được.`,
+    `${count(CAMPAIGN_SPEND_BANDS.over.campaigns)} campaigns over ${money(CAMPAIGN_SPEND_BANDS.threshold)} account for ${percent(CAMPAIGN_SPEND_BANDS.over.share)} of all observed campaign spend. They average ${decimal(CAMPAIGN_SPEND_BANDS.over.averageActiveDays, 1)} active days with a ${count(CAMPAIGN_SPEND_BANDS.over.medianActiveDays)}-day median.`,
+    `${count(CAMPAIGN_SPEND_BANDS.over.campaigns)} chiến dịch trên ${money(CAMPAIGN_SPEND_BANDS.threshold)} chiếm ${percent(CAMPAIGN_SPEND_BANDS.over.share)} tổng chi tiêu của tất cả chiến dịch quan sát được. Các chiến dịch này có trung bình ${decimal(CAMPAIGN_SPEND_BANDS.over.averageActiveDays, 1)} ngày hoạt động và trung vị ${count(CAMPAIGN_SPEND_BANDS.over.medianActiveDays)} ngày.`,
   );
   document.getElementById('campaignLongevityTiming').textContent = localized(
     `Month-boundary check: ${percent(CAMPAIGN_LONGEVITY.startFirstWeek)} started in days 1–7 versus a ${percent(CAMPAIGN_LONGEVITY.uniformCalendarBaseline)} uniform-calendar baseline, while ${percent(CAMPAIGN_LONGEVITY.endLastWeek)} had their last observed delivery in the final seven days. Promotion-expiry timing is unproven.`,
     `Kiểm tra ranh giới tháng: ${percent(CAMPAIGN_LONGEVITY.startFirstWeek)} bắt đầu trong ngày 1–7 so với mức cơ sở lịch đồng đều ${percent(CAMPAIGN_LONGEVITY.uniformCalendarBaseline)}, trong khi ${percent(CAMPAIGN_LONGEVITY.endLastWeek)} có lần phân phối quan sát cuối cùng trong bảy ngày cuối tháng. Chưa có bằng chứng về việc dừng theo hạn khuyến mãi.`,
   );
   document.getElementById('campaignLongevityTable').innerHTML = rows.map((row) => `<tr><td>${escapeHtml(row.label === 'Both accounts' ? tr('Both accounts') : row.label)}</td><td>${escapeHtml(count(row.campaigns))}</td><td>${escapeHtml(decimal(row.meanActiveDays, 1))}</td><td>${escapeHtml(count(row.medianActiveDays))}</td></tr>`).join('');
+  renderCampaignSpendBands();
+}
+
+function renderCampaignSpendBands() {
+  const rows = [
+    [localized('At or below 50M VND', 'Tối đa 50 triệu VND'), CAMPAIGN_SPEND_BANDS.atOrBelow],
+    [localized('Over 50M VND', 'Trên 50 triệu VND'), CAMPAIGN_SPEND_BANDS.over],
+    [localized('Grand total', 'Tổng cộng'), CAMPAIGN_SPEND_BANDS.grandTotal],
+  ];
+  document.getElementById('campaignSpendBandTable').innerHTML = rows.map(([label, row]) => `<tr><td>${escapeHtml(label)}</td><td>${escapeHtml(count(row.campaigns))}</td><td>${escapeHtml(fullMoney(row.spend))}</td><td>${escapeHtml(percentWithDigits(row.share, row.share === 1 ? 0 : 2))}</td></tr>`).join('');
 }
 
 function renderSeasonality(filters) {
