@@ -97,6 +97,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .promo-note{font-size:12px;color:var(--gray600);line-height:1.45;margin-bottom:14px;}
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;}
 .triage-data-table.sr-only{display:block!important;table-layout:fixed;}
+.triage-filter-section{position:relative;z-index:3;}
+.triage-filter-controls{display:grid;grid-template-columns:repeat(2,minmax(0,320px));gap:12px;}
+.triage-filter-controls .filter-wrap{display:grid;grid-template-rows:auto 44px;gap:5px;margin:0;min-width:0;}
+.triage-filter-controls .filter-wrap::before{content:attr(data-filter-label);font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+.triage-filter-controls .filter-toggle{width:100%;height:44px;min-width:0;max-width:none;}
+.triage-filter-controls .filter-toggle>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.triage-filter-controls .filter-dropdown{width:100%;min-width:0;}
+.triage-filter-controls .filter-option,.triage-filter-controls .filter-action-btn,.triage-filter-controls .filter-search{min-height:44px;}
 .triage-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
 .triage-card{min-width:0;margin-bottom:0;}
 .triage-card--hero{grid-column:1/-1;}
@@ -254,6 +262,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   .date-menu{top:122px}.filter-dropdown{left:10px;right:10px;top:80px}
 }
 @media(max-width:720px){
+  .triage-filter-controls{grid-template-columns:1fr;}
+  .triage-filter-controls .filter-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:auto;width:100%;min-width:0;max-height:60vh;overflow:auto;}
   .compact-table-controls>.filter-wrap::before,.compact-creative-controls>.filter-wrap::before,.compact-table-controls>.sort-controls>.metric-label,.compact-creative-controls>.sort-controls>.metric-label,.compact-grouped-table-controls>.toggle-row>.metric-label{color:var(--muted)}
   .compact-grouped-table-controls{grid-template-rows:auto 44px auto 44px}
   .compact-grouped-table-controls>.toggle-row{display:grid;grid-template-rows:auto 44px;grid-column:1/-1;grid-row:3/5;gap:5px;min-width:0}
@@ -408,6 +418,26 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 
 <!-- ═══ CZSK TRIAGE PANEL ═══ -->
 <div class="panel" id="panel-czsk-triage" role="tabpanel" aria-labelledby="tab-czsk-triage">
+  <div class="section triage-filter-section" id="triage-filter-section">
+    <div class="section-title">Filters</div>
+    <div class="triage-filter-controls">
+      <div class="filter-wrap" id="filter-wrap-triage-campaign" data-filter-label="Campaign name">
+        <button type="button" class="filter-toggle" id="filter-toggle-triage-campaign" aria-expanded="false" aria-controls="filter-dropdown-triage-campaign" onclick="toggleFilter('triage-campaign')"><span id="filter-label-triage-campaign">All campaigns</span><span style="color:var(--gray400)">▾</span></button>
+        <div class="filter-dropdown" id="filter-dropdown-triage-campaign">
+          <input class="filter-search" placeholder="Search campaigns…" aria-label="Search Triage campaigns" oninput="filterSearch('triage-campaign', this.value)">
+          <div class="filter-options-list" id="filter-options-triage-campaign"></div>
+          <div class="filter-actions"><button class="filter-action-btn" onclick="selectAll('triage-campaign')">Select all</button><button class="filter-action-btn" onclick="clearAll('triage-campaign')">Clear</button></div>
+        </div>
+      </div>
+      <div class="filter-wrap" id="filter-wrap-triage-group" data-filter-label="Campaign group">
+        <button type="button" class="filter-toggle" id="filter-toggle-triage-group" aria-expanded="false" aria-controls="filter-dropdown-triage-group" onclick="toggleFilter('triage-group')"><span id="filter-label-triage-group">All campaign groups</span><span style="color:var(--gray400)">▾</span></button>
+        <div class="filter-dropdown" id="filter-dropdown-triage-group">
+          <div class="filter-options-list" id="filter-options-triage-group"></div>
+          <div class="filter-actions"><button class="filter-action-btn" onclick="selectAll('triage-group')">Select all</button><button class="filter-action-btn" onclick="clearAll('triage-group')">Clear</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="triage-grid" id="triage-grid"></div>
 </div>
 
@@ -660,7 +690,7 @@ let aggregateCampaigns = [];
 let dailyCampaigns     = [];
 let adCreatives        = [];
 let campaignMeta       = {};
-let filterState        = { czsk: null, us: null, 'czsk-promo': null, 'czsk-leadgen': null, 'czsk-creative': null, 'us-creative': null };
+let filterState        = { czsk: null, us: null, 'czsk-promo': null, 'czsk-leadgen': null, 'czsk-creative': null, 'us-creative': null, 'triage-campaign': null, 'triage-group': null };
 let creativeTypeFilter = { czsk: 'all', us: 'all' };
 let chartGranularity   = { czsk: 'day', us: 'day' };
 let triageState        = Object.fromEntries(TRIAGE_PRESETS.map(preset=>[preset.id,{grain:'day',primary:preset.primary,secondary:preset.secondary}]));
@@ -956,7 +986,10 @@ function getMainSegmentRows(seg,source='daily'){
   return includeLeadGen?rows.map(r=>isLeadGen(r.name)?spendOnlyRow(r):r):rows.filter(r=>!isLeadGen(r.name));
 }
 function getTriageSegmentRows(source='daily'){
-  return getMainSegmentRows('czsk',source);
+  const rows=getMainSegmentRows('czsk',source);
+  const campaignSelection=filterState['triage-campaign'];
+  const groupSelection=filterState['triage-group'];
+  return rows.filter(r=>(!campaignSelection||campaignSelection.has(r.id))&&(!groupSelection||groupSelection.has(r.group||promoGroupKey(r.name))));
 }
 function getLeadgenRows(source='daily'){
   const rows=getSegmentRows('czsk',source);
@@ -1365,6 +1398,25 @@ function buildFilterOptions(filterKey,campaignIds){
     return`<label class="filter-option" title="${name}"><input type="checkbox" value="${id}" checked onchange="onFilterChange('${filterKey}')"><span class="camp-dot" style="background:${color}"></span><span class="camp-name">${name}</span></label>`;
   }).join('');
 }
+function compareFilterOptions(a,b){
+  const labelOrder=a.label.localeCompare(b.label,undefined,{numeric:true,sensitivity:'base'});if(labelOrder)return labelOrder;
+  const keyOrder=a.value.localeCompare(b.value,undefined,{numeric:true,sensitivity:'base'});if(keyOrder)return keyOrder;
+  return a.value===b.value?0:a.value<b.value?-1:1;
+}
+function buildTriageFilterOptions(key,options){
+  const container=document.getElementById('filter-options-'+key);if(!container)return;
+  const sorted=[...options].sort(compareFilterOptions);const available=new Set(sorted.map(option=>option.value));const previous=filterState[key];
+  if(previous){const valid=new Set([...previous].filter(value=>available.has(value)));filterState[key]=previous.size>0&&valid.size===0?null:valid;}
+  const selected=filterState[key];
+  container.innerHTML=sorted.map(option=>`<label class="filter-option" title="${escapeHtml(option.label)}"><input type="checkbox" value="${escapeHtml(option.value)}"${!selected||selected.has(option.value)?' checked':''} onchange="onFilterChange('${key}')"><span class="camp-name">${escapeHtml(option.label)}</span></label>`).join('');
+  updateFilterLabel(key);
+}
+function buildTriageFilters(){
+  const rows=getMainSegmentRows('czsk','daily');const campaigns=new Map();const groups=new Map();
+  rows.forEach(row=>{campaigns.set(row.id,{value:String(row.id),label:campaignMeta[row.id]?.name||row.name||String(row.id)});const group=promoGroup(row.group||promoGroupKey(row.name));groups.set(group.key,{value:group.key,label:group.label});});
+  buildTriageFilterOptions('triage-campaign',[...campaigns.values()]);
+  buildTriageFilterOptions('triage-group',[...groups.values()]);
+}
 function toggleFilter(key){
   const dropdown=document.getElementById('filter-dropdown-'+key);if(!dropdown)return;
   const toggle=document.getElementById('filter-toggle-'+key)||document.getElementById('creative-filter-toggle-'+key.replace('-creative',''));
@@ -1385,6 +1437,7 @@ function onFilterChange(key){
   filterState[key]=checked.length===all.length?null:new Set(checked);
   updateFilterLabel(key);
   if(key==='czsk'||key==='us'){renderDailyTable(key);}
+  else if(key==='triage-campaign'||key==='triage-group')refreshTriageCharts();
   else if(key==='czsk-promo')renderPromoTable();
   else if(key==='czsk-leadgen')renderLeadgenTable();
   else if(key==='czsk-creative'||key==='us-creative')renderCreatives(key.replace('-creative',''));
@@ -1392,7 +1445,8 @@ function onFilterChange(key){
 function updateFilterLabel(key){
   const all=document.querySelectorAll(`#filter-options-${key} input`).length;
   const checked=document.querySelectorAll(`#filter-options-${key} input:checked`).length;
-  const text=checked===all?'All campaigns':`${checked} of ${all} campaigns`;
+  const groupFilter=key==='triage-group';const noun=groupFilter?'campaign groups':'campaigns';
+  const text=checked===all?`All ${noun}`:`${checked} of ${all} ${noun}`;
   const labelId=(key==='czsk-creative'||key==='us-creative')?'creative-filter-label-'+key.replace('-creative',''):'filter-label-'+key;
   const el=document.getElementById(labelId);if(el)el.textContent=text;
 }
@@ -1407,6 +1461,7 @@ function buildAllFilters(){
   updateFilterLabel('czsk-promo');
   buildFilterOptions('czsk-leadgen',[...new Set(getLeadgenRows('daily').map(r=>r.id))]);
   updateFilterLabel('czsk-leadgen');
+  buildTriageFilters();
 }
 
 function escapeHtml(value){
@@ -1701,6 +1756,7 @@ async function apiFetch(type){
 function setStatus(msg){const el=document.getElementById('loading-msg');if(el)el.textContent=msg;}
 async function loadData(){
   const loadEl=document.getElementById('loading');const errEl=document.getElementById('error');
+  const triageCampaignSelection=filterState['triage-campaign'];const triageGroupSelection=filterState['triage-group'];
   try{
     loadEl.style.display='block';
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
@@ -1713,7 +1769,7 @@ async function loadData(){
     try{
       const d=await apiFetch('aggregate');
       campaignMeta={};aggregateCampaigns=processAggregateRows(d.rows);
-      filterState={czsk:null,us:null,'czsk-promo':null,'czsk-leadgen':null,'czsk-creative':null,'us-creative':null};
+      filterState={czsk:null,us:null,'czsk-promo':null,'czsk-leadgen':null,'czsk-creative':null,'us-creative':null,'triage-campaign':triageCampaignSelection,'triage-group':triageGroupSelection};
       ['czsk','us'].forEach(seg=>{renderKPIs(seg);});
       renderPromoKPIs();
       renderLeadgenKPIs();
@@ -1765,6 +1821,8 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');mobileControlsToggle.textContent='Filters';window.scrollTo({top:0,behavior:'auto'});requestAnimationFrame(()=>{if(seg==='czsk'||seg==='us')charts[seg]?.resize();if(seg==='czsk-triage')TRIAGE_PRESETS.forEach(preset=>charts[`triage-${preset.id}`]?.resize());if(seg==='czsk-promo')['promo-spend','promo-roas','promo-pie'].forEach(k=>charts[k]?.resize());if(seg==='czsk-leadgen')['leadgen-metric','leadgen-pie'].forEach(k=>charts[k]?.resize());});}
   });
 });
+document.addEventListener('click',event=>document.querySelectorAll('.filter-dropdown.open').forEach(dropdown=>{if(dropdown.closest('.filter-wrap')?.contains(event.target))return;dropdown.classList.remove('open');const toggle=document.querySelector(`[aria-controls="${dropdown.id}"]`);toggle?.setAttribute('aria-expanded','false');}));
+document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;document.querySelectorAll('.filter-dropdown.open').forEach(dropdown=>{dropdown.classList.remove('open');const toggle=document.querySelector(`[aria-controls="${dropdown.id}"]`);toggle?.setAttribute('aria-expanded','false');toggle?.focus();});});
 function formatUtcTimestamp(date){
   const pad=n=>String(n).padStart(2,'0');
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth()+1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())} UTC`;

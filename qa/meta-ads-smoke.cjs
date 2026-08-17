@@ -295,6 +295,11 @@ async function run() {
       assert.equal(await page.locator('#include-leadgen').isVisible(), true);
       assert.equal(await page.locator('#include-leadgen').isChecked(), false);
       assert.equal(await page.locator('#panel-czsk-triage .triage-intro').count(), 0);
+      assert.equal(await page.locator('#triage-filter-section').evaluate(section => Boolean(section.compareDocumentPosition(document.querySelector('#triage-grid')) & window.Node.DOCUMENT_POSITION_FOLLOWING)), true);
+      assert.deepEqual(await page.locator('#filter-options-triage-campaign input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['c1', true], ['c2', true], ['c3', true]]);
+      assert.deepEqual(await page.locator('#filter-options-triage-group input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['bau', true], ['promo', true], ['wl', true]]);
+      assert.equal(await page.locator('#filter-label-triage-campaign').textContent(), 'All campaigns');
+      assert.equal(await page.locator('#filter-label-triage-group').textContent(), 'All campaign groups');
       assert.equal(await page.locator('#panel-czsk-triage .triage-card').count(), 7);
       assert.equal(await page.locator('#panel-czsk-triage .triage-card--hero').count(), 1);
       assert.equal(await page.locator('#panel-czsk-triage .triage-card-heading h3.triage-preset').count(), 7);
@@ -346,6 +351,37 @@ async function run() {
       await page.locator('#include-leadgen').uncheck({ force: true });
       assert.deepEqual(await page.evaluate(() => window.Chart.getChart('triage-chart-efficiency').data.datasets[0].data), salesOnlySpend);
       assert.equal(Math.round(triageCharts[0].datasets[0].values.reduce((sum, value) => sum + value, 0)), 99909, 'triage excludes Lead-gen by default');
+      const chartValues = () => page.evaluate(() => [...document.querySelectorAll('#panel-czsk-triage canvas')].map(canvas => window.Chart.getChart(canvas).data.datasets.map(dataset => dataset.data)));
+      const allCampaignValues = await chartValues();
+      await page.locator('#filter-toggle-triage-group').evaluate(element => element.scrollIntoView({ block: 'center' }));
+      await page.locator('#filter-toggle-triage-group').click({ force: true });
+      const triageGroupMenuGeometry=await page.locator('#filter-dropdown-triage-group').evaluate(dropdown => {
+        const box=dropdown.getBoundingClientRect();return{left:box.left,right:box.right,top:box.top,bottom:box.bottom,width:innerWidth,height:innerHeight,inside:box.left>=0&&box.right<=innerWidth&&box.top>=0&&box.bottom<=innerHeight};
+      });
+      assert.ok(triageGroupMenuGeometry.inside, JSON.stringify({viewport,triageGroupMenuGeometry}));
+      assert.equal(await page.locator('#filter-dropdown-triage-group .filter-option').first().evaluate(option => option.getBoundingClientRect().height >= 44), true);
+      if (viewport.name === 'desktop' || viewport.name === 'mobile-390') await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-triage-filter-open.png`) });
+      await page.locator('#filter-options-triage-group input[value="bau"]').uncheck();
+      await page.locator('#filter-options-triage-group input[value="wl"]').uncheck();
+      await page.keyboard.press('Escape');
+      const promoOnlyValues = await chartValues();
+      assert.equal(promoOnlyValues.every((values, index) => JSON.stringify(values) !== JSON.stringify(allCampaignValues[index])), true, 'campaign group filter refreshes all seven charts');
+      assert.equal(await page.locator('#filter-label-triage-group').textContent(), '1 of 3 campaign groups');
+      await page.evaluate(() => selectAll('triage-group'));
+      await page.locator('#filter-toggle-triage-campaign').evaluate(element => element.scrollIntoView({ block: 'center' }));
+      await page.evaluate(() => toggleFilter('triage-campaign'));
+      assert.equal(await page.locator('#filter-toggle-triage-campaign').getAttribute('aria-expanded'), 'true');
+      await page.locator('#filter-dropdown-triage-campaign .filter-action-btn', { hasText: 'Clear' }).click();
+      await page.locator('#filter-options-triage-campaign input[value="c2"]').check();
+      await page.keyboard.press('Escape');
+      const campaignOnlyValues = await chartValues();
+      assert.equal(campaignOnlyValues.every((values, index) => JSON.stringify(values) !== JSON.stringify(allCampaignValues[index])), true, 'campaign name filter refreshes all seven charts');
+      assert.equal(Math.round(campaignOnlyValues[0][0].reduce((sum, value) => sum + value, 0)), 26303);
+      assert.equal(await page.locator('#filter-label-triage-campaign').textContent(), '1 of 3 campaigns');
+      await page.locator('#triage-grain-lp-checkout').selectOption('week');
+      assert.deepEqual(await page.locator('#filter-options-triage-campaign input:checked').evaluateAll(inputs => inputs.map(input => input.value)), ['c2']);
+      await page.locator('#triage-grain-lp-checkout').selectOption('day');
+      await page.evaluate(() => selectAll('triage-campaign'));
       const layout = await page.locator('#triage-grid').evaluate(grid => {
         const cards = [...grid.querySelectorAll('.triage-card')].map(card => card.getBoundingClientRect());
         return {
@@ -471,6 +507,13 @@ async function run() {
         }).slice(0, 10).map(element => ({ tag: element.tagName, id: element.id, className: element.className, box: element.getBoundingClientRect().toJSON() })),
       }));
       assert.ok(triageOverflow.documentWidth <= triageOverflow.viewport, JSON.stringify(triageOverflow));
+      assert.equal(await page.locator('#triage-filter-section').evaluate(section => {
+        const controls=[...section.querySelectorAll('.filter-toggle')].map(control=>control.getBoundingClientRect());const grid=document.querySelector('#triage-grid').getBoundingClientRect();
+        return controls.every(control=>control.height>=44&&control.left>=0&&control.right<=innerWidth)&&section.getBoundingClientRect().bottom<=grid.top;
+      }), true);
+      if (viewport.width <= 720 && await page.locator('#mobile-controls-toggle').getAttribute('aria-expanded') === 'true') await page.locator('#mobile-controls-toggle').click();
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+      await page.evaluate(() => Object.values(charts).forEach(chart => chart?.update('none')));
       await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-triage.png`), fullPage: true });
 
       await page.locator('[data-tab="czsk-promo"]').click();

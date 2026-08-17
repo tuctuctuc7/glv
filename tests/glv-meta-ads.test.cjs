@@ -137,6 +137,13 @@ test('CZSK Triage defines seven independent presets and one unique color per sel
   assert.doesNotMatch(dashboard, /Outbound CTR|outboundCtr/);
   assert.match(dashboard, /function getTriageSegmentRows\(source='daily'\)/);
   assert.match(dashboard, /getMainSegmentRows\('czsk',source\)/);
+  assert.match(dashboard, /id="triage-filter-section"[\s\S]*id="filter-wrap-triage-campaign"[\s\S]*id="filter-wrap-triage-group"[\s\S]*id="triage-grid"/);
+  assert.match(dashboard, /'triage-campaign': null, 'triage-group': null/);
+  assert.match(dashboard, /filterState\['triage-campaign'\]/);
+  assert.match(dashboard, /filterState\['triage-group'\]/);
+  assert.match(dashboard, /campaignSelection\.has\(r\.id\)/);
+  assert.match(dashboard, /groupSelection\.has\(r\.group\|\|promoGroupKey\(r\.name\)\)/);
+  assert.match(dashboard, /key==='triage-campaign'\|\|key==='triage-group'\)refreshTriageCharts\(\)/);
   assert.match(dashboard, /byPeriod\(getTriageSegmentRows\('daily'\),null,state\.grain\)/);
   assert.match(dashboard, /activeTab!==['"]czsk['"]&&activeTab!==['"]czsk-triage['"]/);
   assert.match(dashboard, /renderKPIs\('czsk'\);refreshChart\('czsk'\);renderDailyTable\('czsk'\);renderCreatives\('czsk'\);refreshTriageCharts\(\)/);
