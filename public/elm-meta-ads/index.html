@@ -146,18 +146,26 @@
     </section>
 
     <section class="section" aria-labelledby="campaignLongevityTitle">
-      <div class="section-heading"><div><p class="kicker">04C / Campaign longevity</p><h2 id="campaignLongevityTitle">Campaigns run in short flights</h2></div><p>Fixed 24-month audit · both accounts</p></div>
+      <div class="section-heading"><div><p class="kicker">04C / Campaign longevity</p><h2 id="campaignLongevityTitle">Many campaign objects are short; material campaigns run longer</h2></div><p>Fixed 24-month audit · both accounts</p></div>
       <div class="campaign-longevity-grid">
         <div class="chart-card campaign-longevity-chart"><canvas id="campaignLongevityChart" role="img" aria-label="Average active campaign days for both accounts combined and separately"></canvas></div>
         <aside class="longevity-verdict" aria-labelledby="longevityVerdictTitle">
           <p class="kicker" id="longevityVerdictTitle">Evidence read</p>
-          <strong>Short-flight operation: supported</strong>
+          <strong>Material campaigns run longer</strong>
           <p id="campaignLongevityVerdict"></p>
         </aside>
       </div>
       <div id="campaignLongevityEvidence" class="campaign-longevity-evidence" aria-label="Campaign longevity evidence"></div>
+      <div class="campaign-spend-band-block">
+        <div class="campaign-spend-band-heading">
+          <h3>Spend materiality · all observed campaigns</h3>
+          <p>No campaign-status filter · both accounts · 2024-07-01 to 2026-07-12</p>
+        </div>
+        <p class="campaign-spend-band-cue">Swipe table to see spend and share →</p>
+        <div class="table-wrap campaign-spend-band-table"><table><caption class="visually-hidden">Campaign spend bands for all observed campaigns with no campaign-status filter</caption><thead><tr><th>Group</th><th>Campaigns</th><th>Aggregated spend</th><th>Share of grand total</th></tr></thead><tbody id="campaignSpendBandTable"></tbody></table></div>
+      </div>
       <p class="chart-note" id="campaignLongevityTiming"></p>
-      <p class="longevity-method-note">Method: a campaign is active on a day with positive spend or impressions. The primary observational sample includes 1,148 campaigns with a known start inside the audit window. Campaigns marked active or delivering in the final 14 days were excluded. It is not a proven permanent-closure cohort: paused campaigns may resume later. This supports short-flight operation, not that promotions caused the stops or that stopping caused weaker performance.</p>
+      <p class="longevity-method-note">Method: a campaign is active on a day with positive spend or impressions. The primary observational sample includes 1,148 campaigns with a known start inside the audit window. Campaigns marked active or delivering in the final 14 days were excluded. It is not a proven permanent-closure cohort: paused campaigns may resume later. The spend table removes the status and censoring filters: it includes all 2,067 campaigns with observed delivery. This supports a two-part conclusion: many campaign objects are short, while material campaigns run longer. It does not prove that promotions caused stops or that stopping caused weaker performance.</p>
       <details class="data-details"><summary>View longevity data and methodology</summary><div class="table-wrap campaign-longevity-table"><table><caption>Campaign observed active days · 2024-07-01 to 2026-07-12</caption><thead><tr><th>Account scope</th><th>Campaigns</th><th>Average active days</th><th>Median active days</th></tr></thead><tbody id="campaignLongevityTable"></tbody></table></div></details>
     </section>
 

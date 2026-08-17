@@ -370,6 +370,17 @@ tbody tr:hover { background: var(--row-hover); }
 .campaign-longevity-evidence span { color: var(--muted); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
 .campaign-longevity-evidence strong { display: block; font-size: 30px; margin: 12px 0 7px; }
 .campaign-longevity-evidence p { color: var(--muted); font-size: 12px; margin: 0; }
+.campaign-spend-band-block { margin-top: 22px; }
+.campaign-spend-band-heading { align-items: end; display: flex; gap: 18px; justify-content: space-between; }
+.campaign-spend-band-heading h3 { font-size: 18px; margin: 0; }
+.campaign-spend-band-heading p { color: var(--muted); font-size: 12px; margin: 0; text-align: right; }
+.campaign-spend-band-cue { color: var(--blue); display: none; font-size: 11px; font-weight: 750; margin: 10px 0 -6px; }
+.campaign-spend-band-table { max-height: none; }
+.campaign-spend-band-table table { font-size: 15px; min-width: 680px; }
+.campaign-spend-band-table th { font-size: 11px; font-weight: 650; letter-spacing: 0; text-transform: none; }
+.campaign-spend-band-table td { border-bottom: 0; font-weight: 760; padding-block: 15px; }
+.campaign-spend-band-table tbody tr:last-child td { border-top: 1px solid var(--line-soft); }
+.visually-hidden { clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; white-space: nowrap; width: 1px; }
 .longevity-method-note { color: var(--muted); font-size: 12px; line-height: 1.55; margin: 12px 4px 0; max-width: 980px; }
 .campaign-longevity-table table { min-width: 660px; }
 
@@ -415,6 +426,9 @@ th,
   .export-button { order: 4; width: 100%; }
   .section { padding: 46px 18px; }
   .section-heading { align-items: flex-start; flex-direction: column; }
+  .campaign-spend-band-heading { align-items: flex-start; flex-direction: column; gap: 6px; }
+  .campaign-spend-band-heading p { text-align: left; }
+  .campaign-spend-band-cue { display: block; }
   .control-row, .metric-select, .metric-select select { width: 100%; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
   .decision-strip, .bridge, .reconciliation-grid, .lever-card-grid, .campaign-longevity-evidence { grid-template-columns: 1fr; }

@@ -89,6 +89,13 @@ async function exerciseViewport(browser, baseUrl, viewport) {
     'Gia Dụng54719.06',
     'Điện gia dụng60115.95',
   ]);
+  assert.deepEqual(await page.locator('#campaignSpendBandTable tr').allTextContents(), [
+    'At or below 50M VND1,92814,606,170,826 VND47.51%',
+    'Over 50M VND13916,137,510,875 VND52.49%',
+    'Grand total2,06730,743,681,701 VND100%',
+  ]);
+  assert.equal(await page.locator('.campaign-spend-band-cue').isVisible(), viewport.width <= 720);
+  assert.match(await page.locator('#campaignLongevityVerdict').textContent(), /139 campaigns over 50M VND account for 52\.5%/);
   assert.equal(
     await page.locator('#campaignLongevityTiming').textContent(),
     'Month-boundary check: 26.9% started in days 1–7 versus a 22.9% uniform-calendar baseline, while 18.3% had their last observed delivery in the final seven days. Promotion-expiry timing is unproven.',
@@ -121,7 +128,7 @@ async function exerciseViewport(browser, baseUrl, viewport) {
     'ROAS, chi phí, chuyển đổi và giá trị đơn hàng',
     'Hai tài khoản, hai đường xu hướng',
     'Phân tách theo ngành hàng, không phải vai trò tài khoản',
-    'Chiến dịch chạy theo các đợt ngắn',
+    'Nhiều chiến dịch có thời gian ngắn; chiến dịch có chi tiêu đáng kể chạy lâu hơn',
     'Phân tích riêng từng tháng',
     'Sức kéo nhu cầu Q4 theo ô',
     'Những gì tạo thành kế hoạch vận hành miền Nam',
@@ -137,6 +144,12 @@ async function exerciseViewport(browser, baseUrl, viewport) {
     'Gia Dụng54719,06',
     'Điện gia dụng60115,95',
   ]);
+  assert.deepEqual(await page.locator('#campaignSpendBandTable tr').allTextContents(), [
+    'Tối đa 50 triệu VND1.92814.606.170.826 VND47,51%',
+    'Trên 50 triệu VND13916.137.510.875 VND52,49%',
+    'Tổng cộng2.06730.743.681.701 VND100%',
+  ]);
+  if (viewport.width <= 720) assert.equal((await page.locator('.campaign-spend-band-cue').textContent()).trim(), 'Vuốt bảng để xem chi tiêu và tỷ trọng →');
   assert.equal(
     await page.locator('#campaignLongevityTiming').textContent(),
     'Kiểm tra ranh giới tháng: 26,9% bắt đầu trong ngày 1–7 so với mức cơ sở lịch đồng đều 22,9%, trong khi 18,3% có lần phân phối quan sát cuối cùng trong bảy ngày cuối tháng. Chưa có bằng chứng về việc dừng theo hạn khuyến mãi.',
