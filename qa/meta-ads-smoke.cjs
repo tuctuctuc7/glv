@@ -77,7 +77,16 @@ async function run() {
   const browser = await chromium.launch({ executablePath: chromePath, headless: true, args: ['--no-sandbox'], env: { ...process.env, LD_LIBRARY_PATH: `${browserLibRoot}/usr/lib/x86_64-linux-gnu:${browserLibRoot}/usr/lib`, FONTCONFIG_PATH: `${browserLibRoot}/etc/fonts` } });
   const errors = [];
   try {
-    for (const viewport of [{ name: 'desktop', width: 1440, height: 1100 }, { name: 'desktop-800', width: 800, height: 1000 }, { name: 'mobile-390', width: 390, height: 844 }, { name: 'mobile-320', width: 320, height: 780 }]) {
+    for (const viewport of [
+      { name: 'desktop', width: 1440, height: 1100 },
+      { name: 'desktop-1001', width: 1001, height: 1000 },
+      { name: 'tablet-1000', width: 1000, height: 1000 },
+      { name: 'desktop-800', width: 800, height: 1000 },
+      { name: 'desktop-721', width: 721, height: 900 },
+      { name: 'mobile-720', width: 720, height: 900 },
+      { name: 'mobile-390', width: 390, height: 844 },
+      { name: 'mobile-320', width: 320, height: 780 },
+    ]) {
       const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
       const page = await context.newPage();
       page.on('console', message => { if (message.type() === 'error') errors.push(`${viewport.name}: ${message.text()}`); });
@@ -536,6 +545,12 @@ async function run() {
 
       await page.locator('[data-tab="czsk-promo"]').click();
       assert.equal(await page.locator('#kpi-czsk-promo .kpi-card').count(), 3);
+      for (const selector of ['#chart-metric-promo-spend', '#chart-metric-promo-roas', '#chart-metric-promo-pie']) {
+        assert.equal(await page.locator(`${selector} option[value="lp2pur"]`).count(), 1);
+      }
+      for (const selector of ['#chart-left-czsk', '#chart-right-czsk', '#chart-left-us', '#chart-right-us', '#chart-metric-leadgen', '#chart-left-leadgen', '#chart-right-leadgen']) {
+        assert.equal(await page.locator(`${selector} option[value="lp2pur"]`).count(), 1, `${selector} must expose LP → Purchase`);
+      }
       if (viewport.width <= 720) assert.equal(await page.locator('#panel-czsk-promo .compact-grouped-table-controls').evaluate(controls => {
         const campaign = controls.querySelector('.filter-toggle').getBoundingClientRect();
         const sort = controls.querySelector('.metric-select').getBoundingClientRect();
@@ -553,10 +568,129 @@ async function run() {
       assert.deepEqual(await page.locator('#kpi-czsk-promo .kpi-val').allTextContents(), ['42,000', '26,000', '31,000']);
       assert.ok(await page.locator('#promo-table tbody tr').count() >= 6);
       assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-promo-spend')) && Boolean(window.Chart.getChart('chart-promo-pie'))));
+      assert.deepEqual(await page.evaluate(() => [
+        window.Chart.getChart('chart-promo-spend').data.datasets[0].metricKey,
+        window.Chart.getChart('chart-promo-roas').data.datasets[0].metricKey,
+        window.Chart.getChart('chart-promo-pie').data.datasets[0].metricKey,
+      ]), ['spend', 'roas', 'spend']);
+      const promoChartCount = await page.evaluate(() => Object.keys(window.Chart.instances).length);
+      await page.locator('#chart-metric-promo-spend').selectOption('lp2pur');
+      assert.equal(await page.locator('#promo-chart-title-spend').textContent(), 'LP → Purchase By Group');
+      assert.deepEqual(await page.evaluate(() => {
+        const chart = window.Chart.getChart('chart-promo-spend');
+        return chart.data.datasets.map(dataset => ({ label: dataset.label, metricKey: dataset.metricKey }));
+      }), [
+        { label: 'Promo', metricKey: 'lp2pur' },
+        { label: 'WL', metricKey: 'lp2pur' },
+        { label: 'BAU', metricKey: 'lp2pur' },
+      ]);
+      await page.locator('#chart-metric-promo-roas').selectOption('revenue');
+      assert.equal(await page.locator('#promo-chart-title-roas').textContent(), 'Revenue (CZK) By Group');
+      await page.locator('#chart-metric-promo-pie').selectOption('lp2pur');
+      assert.equal(await page.locator('#promo-chart-title-pie').textContent(), 'LP → Purchase Mix');
+      const expectedPromoPieValues = await page.evaluate(() => byPromoGroup(getPromoKpiRows()).map(row => computeChartMetric('lp2pur', row, calcMetrics(row))));
+      assert.deepEqual(await page.evaluate(() => {
+        const chart = window.Chart.getChart('chart-promo-pie');
+        return { labels: chart.data.labels, metricKey: chart.data.datasets[0].metricKey, values: chart.data.datasets[0].data };
+      }), { labels: ['Promo', 'WL', 'BAU'], metricKey: 'lp2pur', values: expectedPromoPieValues });
+      assert.deepEqual(await page.evaluate(() => {
+        const line = window.Chart.getChart('chart-promo-spend');
+        const lineTable = document.querySelector('#promo-chart-table-spend');
+        const pie = window.Chart.getChart('chart-promo-pie');
+        const pieTable = document.querySelector('#promo-chart-table-pie');
+        return {
+          lineCaption: lineTable.querySelector('caption').textContent,
+          lineRows: lineTable.querySelectorAll('tbody tr').length,
+          lineCells: lineTable.querySelectorAll('tbody tr:first-child td').length,
+          linePoints: line.data.labels.length,
+          pieCaption: pieTable.querySelector('caption').textContent,
+          pieHeading: pieTable.querySelector('thead th:nth-child(2)').textContent,
+          pieRows: pieTable.querySelectorAll('tbody tr').length,
+          pieSlices: pie.data.labels.length,
+        };
+      }), {
+        lineCaption: 'LP → Purchase by Promo campaign group and day', lineRows: 3, lineCells: 3, linePoints: 3,
+        pieCaption: 'LP → Purchase mix by Promo campaign group', pieHeading: 'LP → Purchase', pieRows: 3, pieSlices: 3,
+      });
+      assert.equal(await page.evaluate(count => Object.keys(window.Chart.instances).length === count, promoChartCount), true, 'Promo metric changes must replace charts without leaking Chart.js instances');
+      assert.equal(await page.locator('#chart-metric-promo-spend').inputValue(), 'lp2pur');
+      if ([1001, 1000, 721, 720].includes(viewport.width)) {
+        const promoBoundary = await page.evaluate(width => {
+          const grid = document.querySelector('#panel-czsk-promo .chart-grid');
+          if (!grid) return { missing: true, width };
+          const cards = [...grid.querySelectorAll(':scope > .chart-card')];
+          const lefts = [...new Set(cards.map(card => Math.round(card.getBoundingClientRect().left)))];
+          const heading = cards[0].querySelector('.promo-chart-heading');
+          const select = heading.querySelector('select');
+          return {
+            columns: lefts.length,
+            headingDisplay: getComputedStyle(heading).display,
+            selectWithinCard: select.getBoundingClientRect().right <= cards[0].getBoundingClientRect().right + 1,
+            documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+            width,
+          };
+        }, viewport.width);
+        assert.equal(promoBoundary.missing, undefined, JSON.stringify(promoBoundary));
+        assert.equal(promoBoundary.columns, 1);
+        assert.equal(promoBoundary.headingDisplay, viewport.width === 720 ? 'grid' : 'flex');
+        assert.equal(promoBoundary.selectWithinCard, true);
+        assert.ok(promoBoundary.documentOverflow <= 1);
+      }
+      if (viewport.width <= 720) assert.equal(await page.locator('#panel-czsk-promo .promo-metric-control select').evaluateAll(selects => selects.every(select => {
+        const box = select.getBoundingClientRect();
+        return box.height >= 44 && box.left >= 0 && box.right <= innerWidth;
+      })), true);
       if (viewport.width <= 720) await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-promo.png`), fullPage: true });
       if (viewport.width <= 720) await page.locator('#mobile-controls-toggle').click();
       await page.locator('#promo-active-days-only').check();
       assert.ok(await page.locator('#promo-table tbody tr').count() >= 6);
+      assert.deepEqual(await page.locator('#panel-czsk-promo .promo-metric-control select').evaluateAll(selects => selects.map(select => select.value)), ['lp2pur', 'revenue', 'lp2pur']);
+      if (viewport.name === 'desktop') {
+        const promoMetricMatrix = await page.evaluate(() => {
+          const chartCount = Object.keys(window.Chart.instances).length;
+          const configs = [
+            { selectId: 'chart-metric-promo-spend', chartId: 'chart-promo-spend', tableId: 'promo-chart-table-spend', titleId: 'promo-chart-title-spend', fallback: 'spend', pie: false },
+            { selectId: 'chart-metric-promo-roas', chartId: 'chart-promo-roas', tableId: 'promo-chart-table-roas', titleId: 'promo-chart-title-roas', fallback: 'roas', pie: false },
+            { selectId: 'chart-metric-promo-pie', chartId: 'chart-promo-pie', tableId: 'promo-chart-table-pie', titleId: 'promo-chart-title-pie', fallback: 'spend', pie: true },
+          ];
+          const failures = [];
+          let states = 0;
+          for (const config of configs) {
+            const select = document.getElementById(config.selectId);
+            for (const option of [...select.options]) {
+              select.value = option.value;
+              select.dispatchEvent(new Event('change', { bubbles: true }));
+              states += 1;
+              const chart = window.Chart.getChart(config.chartId);
+              const table = document.getElementById(config.tableId);
+              const title = document.getElementById(config.titleId).textContent;
+              const expectedTitle = `${option.textContent} ${config.pie ? 'Mix' : 'By Group'}`;
+              if (!chart || title !== expectedTitle) failures.push(`${config.chartId}/${option.value}: stale title or chart`);
+              if (chart?.data.datasets.some(dataset => dataset.metricKey !== option.value)) failures.push(`${config.chartId}/${option.value}: stale metric key`);
+              if (config.pie) {
+                if (chart.data.labels.join('|') !== 'Promo|WL|BAU' || table.querySelectorAll('tbody tr').length !== 3) failures.push(`${config.chartId}/${option.value}: group/table mismatch`);
+                const cells = [...table.querySelectorAll('tbody tr')].map(row => row.querySelectorAll('td')[0].textContent);
+                const expected = chart.data.datasets[0].data.map(value => formatChartVal(option.value, value));
+                if (JSON.stringify(cells) !== JSON.stringify(expected)) failures.push(`${config.chartId}/${option.value}: accessible values differ`);
+              } else {
+                if (chart.data.datasets.map(dataset => dataset.label).join('|') !== 'Promo|WL|BAU') failures.push(`${config.chartId}/${option.value}: not grouped by campaign group`);
+                const rows = [...table.querySelectorAll('tbody tr')];
+                if (rows.length !== chart.data.labels.length) failures.push(`${config.chartId}/${option.value}: row count mismatch`);
+                rows.forEach((row, index) => {
+                  const cells = [...row.querySelectorAll('td')].map(cell => cell.textContent);
+                  const expected = chart.data.datasets.map(dataset => formatChartVal(option.value, dataset.data[index]));
+                  if (JSON.stringify(cells) !== JSON.stringify(expected)) failures.push(`${config.chartId}/${option.value}: accessible values differ at ${index}`);
+                });
+              }
+              if (Object.keys(window.Chart.instances).length !== chartCount) failures.push(`${config.chartId}/${option.value}: Chart.js instance leak`);
+            }
+            select.value = config.fallback;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          return { states, failures, values: configs.map(config => document.getElementById(config.selectId).value) };
+        });
+        assert.deepEqual(promoMetricMatrix, { states: 27, failures: [], values: ['spend', 'roas', 'spend'] });
+      }
 
       await page.locator('[data-tab="czsk-leadgen"]').click();
       assert.equal(await page.locator('#include-leadgen').isVisible(), false);

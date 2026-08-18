@@ -94,6 +94,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .mobile-axis-label{display:none;}
 .chart-card{min-width:0;}
 .chart-card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray600);margin-bottom:10px;}
+.promo-chart-heading{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:10px;}
+.promo-chart-heading .chart-card-title{margin-bottom:0;}
+.promo-metric-control{display:grid;grid-template-rows:auto 38px;gap:4px;min-width:0;width:min(190px,58%);}
+.promo-metric-control .metric-label{font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+.promo-metric-control .metric-select{width:100%;min-width:0;height:38px;padding:0 8px;}
 .promo-note{font-size:12px;color:var(--gray600);line-height:1.45;margin-bottom:14px;}
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;}
 .triage-data-table.sr-only{display:block!important;table-layout:fixed;}
@@ -252,6 +257,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   .section{padding:13px 10px;margin-bottom:10px;border-radius:14px}.section-title{margin-bottom:11px}.promo-note{font-size:11px;margin-bottom:10px}
   .triage-grid{grid-template-columns:1fr;gap:10px}.triage-card--hero{grid-column:auto}.triage-card--hero .chart-wrap{height:240px}.triage-card-heading{margin-bottom:10px}.triage-controls{gap:8px}.triage-field{grid-template-rows:auto 44px}.triage-field .metric-select{height:44px}.triage-card .chart-wrap{height:220px}
   .chart-controls{display:grid;gap:8px 10px;align-items:center;margin-bottom:10px}.mobile-axis-label{display:inline}.desktop-axis-label{display:none}.axis-controls{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto 44px;gap:5px 8px;align-items:end}.axis-controls .metric-label{grid-row:1;font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em}.axis-controls .metric-select{grid-row:2;width:100%;min-width:0;height:44px;padding:0 8px}.axis-controls .axis-bars{grid-column:1}.axis-controls .axis-line{grid-column:2}.axis-controls .axis-grain{grid-column:3}.axis-controls .axis-metric{grid-column:1/3}.leadgen-axis-controls .leadgen-single-metric:not(.hidden),.leadgen-axis-controls .leadgen-dual-controls:not(.hidden){display:contents}.leadgen-dual-controls.hidden,.leadgen-single-metric.hidden{display:none}.chart-wrap{height:220px;margin-left:0}.chart-card-title{margin-bottom:7px}
+  .promo-chart-heading{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,52%);align-items:end;margin-bottom:8px}.promo-chart-heading .chart-card-title{margin-bottom:0;padding-bottom:14px}.promo-metric-control{width:100%;grid-template-rows:auto 44px}.promo-metric-control .metric-select{height:44px}
   .section-controls,.creative-controls{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px}.section-controls .filter-wrap,.creative-controls .filter-wrap{width:100%;margin:0}.sort-controls{display:grid;grid-template-columns:auto minmax(0,1fr) 44px;gap:8px;width:100%;align-items:center}.creative-controls .sort-controls{grid-template-columns:54px minmax(0,1fr) 44px}.creative-controls .sort-controls>:nth-child(2){grid-column:2/4}.creative-controls .sort-controls>:nth-child(3){grid-column:1}.creative-controls .sort-controls>:nth-child(4){grid-column:2}.creative-controls .sort-controls>:nth-child(5){grid-column:3}.metric-select,.filter-toggle{height:44px;min-height:44px;padding:0 12px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:500;line-height:1.2}.sort-dir-btn{width:44px;height:44px;min-height:44px}.filter-toggle{max-width:none!important}.filter-dropdown{top:78px}
   .compact-table-controls{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) 44px;grid-template-rows:auto 44px;gap:5px 8px;align-items:end}.compact-creative-controls{grid-template-columns:minmax(0,1.35fr) minmax(50px,.72fr) minmax(60px,1fr) 44px;grid-template-rows:auto 44px;gap:5px 8px;align-items:end}.compact-table-controls>.filter-wrap,.compact-creative-controls>.filter-wrap{display:grid;grid-template-rows:auto 44px;gap:5px;grid-column:1;grid-row:1/3;min-width:0}.compact-table-controls>.filter-wrap::before,.compact-creative-controls>.filter-wrap::before{content:attr(data-mobile-label);font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em;color:var(--gray600)}.compact-table-controls>.sort-controls,.compact-creative-controls>.sort-controls{display:contents}.compact-table-controls>.sort-controls>.metric-label,.compact-creative-controls>.sort-controls>.metric-label{grid-row:1;font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em}.compact-table-controls>.sort-controls>.metric-label{grid-column:2}.compact-table-controls>.sort-controls>.metric-select{grid-column:2;grid-row:2;min-width:0;width:100%}.compact-table-controls>.sort-controls>.sort-dir-btn{grid-column:3;grid-row:2}.compact-creative-controls>.sort-controls>:nth-child(1){grid-column:2;grid-row:1}.compact-creative-controls>.sort-controls>:nth-child(2){grid-column:2;grid-row:2;min-width:0;width:100%;padding-inline:8px}.compact-creative-controls>.sort-controls>:nth-child(3){grid-column:3;grid-row:1}.compact-creative-controls>.sort-controls>:nth-child(4){grid-column:3;grid-row:2;min-width:0;width:100%;padding-inline:8px}.compact-creative-controls>.sort-controls>:nth-child(5){grid-column:4;grid-row:2}.compact-table-controls .filter-toggle>span:first-child,.compact-creative-controls .filter-toggle>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.compact-table-controls .filter-dropdown,.compact-creative-controls .filter-dropdown{left:20px;right:auto;top:66px;width:calc(100vw - 40px)}
   .filter-search,.filter-option,.filter-action-btn{min-height:44px}.filter-search{padding:10px 12px}.filter-option{padding:9px 10px}.filter-action-btn{display:inline-flex;align-items:center;justify-content:center;padding:9px 12px}
@@ -454,16 +460,19 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
     <div class="section-title">Promo Group Charts</div>
     <div class="chart-grid">
       <div class="chart-card">
-        <div class="chart-card-title">Spend By Group</div>
+        <div class="promo-chart-heading"><div class="chart-card-title" id="promo-chart-title-spend">Spend By Group</div><label class="promo-metric-control"><span class="metric-label">Metric</span><select class="metric-select" id="chart-metric-promo-spend" aria-label="First Promo group line chart metric" onchange="refreshPromoCharts()"></select></label></div>
         <div class="chart-wrap"><canvas id="chart-promo-spend"></canvas></div>
+        <table class="sr-only promo-chart-data-table" id="promo-chart-table-spend"><caption>Spend by Promo campaign group</caption><thead><tr><th scope="col">Period</th><th scope="col">Promo</th><th scope="col">WL</th><th scope="col">BAU</th></tr></thead><tbody></tbody></table>
       </div>
       <div class="chart-card">
-        <div class="chart-card-title">ROAS By Group</div>
+        <div class="promo-chart-heading"><div class="chart-card-title" id="promo-chart-title-roas">ROAS By Group</div><label class="promo-metric-control"><span class="metric-label">Metric</span><select class="metric-select" id="chart-metric-promo-roas" aria-label="Second Promo group line chart metric" onchange="refreshPromoCharts()"></select></label></div>
         <div class="chart-wrap"><canvas id="chart-promo-roas"></canvas></div>
+        <table class="sr-only promo-chart-data-table" id="promo-chart-table-roas"><caption>ROAS by Promo campaign group</caption><thead><tr><th scope="col">Period</th><th scope="col">Promo</th><th scope="col">WL</th><th scope="col">BAU</th></tr></thead><tbody></tbody></table>
       </div>
       <div class="chart-card">
-        <div class="chart-card-title">Spend Mix</div>
+        <div class="promo-chart-heading"><div class="chart-card-title" id="promo-chart-title-pie">Spend Mix</div><label class="promo-metric-control"><span class="metric-label">Metric</span><select class="metric-select" id="chart-metric-promo-pie" aria-label="Promo group pie chart metric" onchange="refreshPromoCharts()"></select></label></div>
         <div class="chart-wrap"><canvas id="chart-promo-pie"></canvas></div>
+        <table class="sr-only promo-chart-data-table" id="promo-chart-table-pie"><caption>Spend mix by Promo campaign group</caption><thead><tr><th scope="col">Campaign group</th><th scope="col">Spend (CZK)</th><th scope="col">Share</th></tr></thead><tbody></tbody></table>
       </div>
     </div>
   </div>
@@ -652,7 +661,7 @@ const METRIC_REGISTRY = [
   {key:'frequency',label:'Frequency proxy',color:'#EF4444'},
 ];
 const METRIC_BY_KEY = Object.fromEntries(METRIC_REGISTRY.map(metric=>[metric.key,metric]));
-const CHART_METRIC_OPTIONS = ['spend','revenue','roas','lp','purchases','checkouts','cpa','cpm'].map(key=>METRIC_BY_KEY[key]);
+const CHART_METRIC_OPTIONS = ['spend','revenue','roas','lp','purchases','checkouts','cpa','cpm','lp2pur'].map(key=>METRIC_BY_KEY[key]);
 const LEAD_CHART_METRIC_OPTIONS = ['leads','cpl','lp2lead'].map(key=>METRIC_BY_KEY[key]);
 const TRIAGE_METRIC_OPTIONS = METRIC_REGISTRY.filter(metric=>!['leads','cpl','lp2lead'].includes(metric.key));
 const TRIAGE_PRESETS = [
@@ -1119,6 +1128,11 @@ function initSelects(){
   });
   const te=document.getElementById('chart-trends-metric');
   if(te){te.innerHTML=CHART_METRIC_OPTIONS.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');te.value='spend';}
+  [['chart-metric-promo-spend','spend'],['chart-metric-promo-roas','roas'],['chart-metric-promo-pie','spend']].forEach(([id,fallback])=>{
+    const el=document.getElementById(id);if(!el)return;const previous=el.value;
+    el.innerHTML=CHART_METRIC_OPTIONS.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');
+    el.value=CHART_METRIC_OPTIONS.some(m=>m.key===previous)?previous:fallback;
+  });
   const le=document.getElementById('chart-metric-leadgen');
   const leadOptions=[...CHART_METRIC_OPTIONS,...LEAD_CHART_METRIC_OPTIONS];
   if(le){const previous=le.value;le.innerHTML=leadOptions.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');le.value=leadOptions.some(m=>m.key===previous)?previous:'spend';}
@@ -1261,38 +1275,56 @@ function refreshPromoCharts(){
   const daily=byDateGroup(getPromoDailyRows());
   const dates=[...new Set(daily.map(r=>r.date))].sort();
   const byKey=Object.fromEntries(daily.map(r=>[`${r.date}|${r.group}`,r]));
-  const makeLine=(chartKey,canvasId,metricKey,titleFormatter)=> {
+  const lineConfigs=[
+    {chartKey:'promo-spend',canvasId:'chart-promo-spend',selectId:'chart-metric-promo-spend',titleId:'promo-chart-title-spend',fallback:'spend'},
+    {chartKey:'promo-roas',canvasId:'chart-promo-roas',selectId:'chart-metric-promo-roas',titleId:'promo-chart-title-roas',fallback:'roas'},
+  ];
+  const makeLine=({chartKey,canvasId,selectId,titleId,fallback})=> {
+    const metricKey=document.getElementById(selectId)?.value||fallback;const metric=metricDefinition(metricKey);
+    const title=document.getElementById(titleId);if(title)title.textContent=`${metric.label} By Group`;
     if(charts[chartKey]){charts[chartKey].destroy();delete charts[chartKey];}
-    const ctx=document.getElementById(canvasId)?.getContext('2d');if(!ctx)return;
+    const canvas=document.getElementById(canvasId);canvas?.setAttribute('aria-label',`${metric.label} by Promo campaign group`);
+    const ctx=canvas?.getContext('2d');if(!ctx)return;
+    const datasets=PROMO_GROUPS.map(g=>({
+      label:g.label,metricKey,
+      data:dates.map(date=>{const r=byKey[`${date}|${g.key}`]||emptyAgg(date,g.key);return computeChartMetric(metricKey,r,calcMetrics(r));}),
+      borderColor:g.color,backgroundColor:g.color+'22',borderWidth:2,tension:.3,pointRadius:3,fill:false,
+    }));
+    const table=document.getElementById(`promo-chart-table-${chartKey.replace('promo-','')}`);
+    if(table){
+      table.querySelector('caption').textContent=`${metric.label} by Promo campaign group and day`;
+      table.querySelector('tbody').innerHTML=dates.map((date,index)=>`<tr><th scope="row">${escapeHtml(fmtDate(date))}</th>${datasets.map(dataset=>`<td>${escapeHtml(formatChartVal(metricKey,dataset.data[index]))}</td>`).join('')}</tr>`).join('');
+    }
     charts[chartKey]=new Chart(ctx,{
       type:'line',
-      data:{labels:dates.map(fmtDate),datasets:PROMO_GROUPS.map(g=>({
-        label:g.label,
-        data:dates.map(date=>{
-          const r=byKey[`${date}|${g.key}`]||emptyAgg(date,g.key);
-          const m=calcMetrics(r);
-          return metricKey==='roas'?m.roas:r[metricKey]||0;
-        }),
-        borderColor:g.color,backgroundColor:g.color+'22',borderWidth:2,tension:.3,pointRadius:3,fill:false,
-      }))},
+      data:{labels:dates.map(fmtDate),datasets},
       options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
         plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
-          tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${titleFormatter(ctx.raw)}`}}},
+          tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${formatChartVal(metricKey,ctx.raw)}`}}},
         scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
-          y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},callback:v=>formatChartTick(metricKey,v)}}}}
+          y:{grid:{color:'rgba(0,0,0,.05)'},title:{display:true,text:metric.label},ticks:{font:{size:11},callback:v=>formatChartTick(metricKey,v)}}}}
     });
   };
-  makeLine('promo-spend','chart-promo-spend','spend',v=>formatChartVal('spend',v));
-  makeLine('promo-roas','chart-promo-roas','roas',v=>formatChartVal('roas',v));
+  lineConfigs.forEach(makeLine);
   const totals=byPromoGroup(getPromoKpiRows());
-  const totalSpend=totals.reduce((sum,row)=>sum+(row.spend||0),0);
+  const pieMetricKey=document.getElementById('chart-metric-promo-pie')?.value||'spend';const pieMetric=metricDefinition(pieMetricKey);
+  const pieValues=PROMO_GROUPS.map(group=>{const row=totals.find(item=>item.group===group.key)||emptyAgg(null,group.key);return computeChartMetric(pieMetricKey,row,calcMetrics(row));});
+  const pieTotal=pieValues.reduce((sum,value)=>sum+value,0);
+  const pieTitle=document.getElementById('promo-chart-title-pie');if(pieTitle)pieTitle.textContent=`${pieMetric.label} Mix`;
   if(charts['promo-pie']){charts['promo-pie'].destroy();delete charts['promo-pie'];}
-  const pieCtx=document.getElementById('chart-promo-pie')?.getContext('2d');
+  const pieCanvas=document.getElementById('chart-promo-pie');pieCanvas?.setAttribute('aria-label',`${pieMetric.label} mix by Promo campaign group`);
+  const pieTable=document.getElementById('promo-chart-table-pie');
+  if(pieTable){
+    pieTable.querySelector('caption').textContent=`${pieMetric.label} mix by Promo campaign group`;
+    pieTable.querySelector('thead th:nth-child(2)').textContent=pieMetric.label;
+    pieTable.querySelector('tbody').innerHTML=PROMO_GROUPS.map((group,index)=>`<tr><th scope="row">${escapeHtml(group.label)}</th><td>${escapeHtml(formatChartVal(pieMetricKey,pieValues[index]))}</td><td>${escapeHtml((pieTotal?pieValues[index]/pieTotal*100:0).toFixed(1)+'%')}</td></tr>`).join('');
+  }
+  const pieCtx=pieCanvas?.getContext('2d');
   if(pieCtx){
     const percentLabelPlugin={
-      id:'promoSpendPercentLabels',
+      id:'promoMetricPercentLabels',
       afterDatasetsDraw(chart){
-        if(chart.canvas.id!=='chart-promo-pie'||!totalSpend)return;
+        if(chart.canvas.id!=='chart-promo-pie'||!pieTotal)return;
         const {ctx}=chart;
         const meta=chart.getDatasetMeta(0);
         ctx.save();
@@ -1301,7 +1333,7 @@ function refreshPromoCharts(){
         ctx.textBaseline='middle';
         meta.data.forEach((arc,i)=>{
           const value=chart.data.datasets[0].data[i]||0;
-          const pct=value/totalSpend*100;
+          const pct=value/pieTotal*100;
           if(pct<4)return;
           const pos=arc.tooltipPosition();
           ctx.fillStyle='#fff';
@@ -1314,11 +1346,11 @@ function refreshPromoCharts(){
     };
     charts['promo-pie']=new Chart(pieCtx,{
       type:'doughnut',
-      data:{labels:PROMO_GROUPS.map(g=>g.label),datasets:[{data:PROMO_GROUPS.map(g=>totals.find(r=>r.group===g.key)?.spend||0),backgroundColor:PROMO_GROUPS.map(g=>g.color),borderWidth:0}]},
+      data:{labels:PROMO_GROUPS.map(g=>g.label),datasets:[{metricKey:pieMetricKey,label:pieMetric.label,data:pieValues,backgroundColor:PROMO_GROUPS.map(g=>g.color),borderWidth:0}]},
       plugins:[percentLabelPlugin],
       options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:ctx=>{
-        const pct=totalSpend?ctx.raw/totalSpend*100:0;
-        return`${ctx.label}: ${formatChartVal('spend',ctx.raw)} (${pct.toFixed(1)}%)`;
+        const pct=pieTotal?ctx.raw/pieTotal*100:0;
+        return`${ctx.label}: ${formatChartVal(pieMetricKey,ctx.raw)} (${pct.toFixed(1)}%)`;
       }}}}}
     });
   }

@@ -12,7 +12,10 @@ const requiredIds = [
   'date-btn', 'date-from', 'date-to', 'promo-active-days-only', 'include-leadgen',
   'kpi-czsk', 'chart-grain-czsk', 'chart-left-czsk', 'chart-right-czsk', 'chart-czsk',
   'daily-table-czsk', 'creative-type-czsk', 'creative-sort-czsk', 'creative-czsk',
-  'kpi-czsk-promo', 'chart-promo-spend', 'chart-promo-roas', 'chart-promo-pie', 'promo-table',
+  'kpi-czsk-promo', 'chart-metric-promo-spend', 'chart-metric-promo-roas', 'chart-metric-promo-pie',
+  'promo-chart-title-spend', 'promo-chart-title-roas', 'promo-chart-title-pie',
+  'promo-chart-table-spend', 'promo-chart-table-roas', 'promo-chart-table-pie',
+  'chart-promo-spend', 'chart-promo-roas', 'chart-promo-pie', 'promo-table',
   'kpi-czsk-leadgen', 'chart-metric-leadgen', 'chart-grain-leadgen', 'chart-leadgen-metric', 'chart-leadgen-pie', 'leadgen-table',
   'kpi-us', 'chart-grain-us', 'chart-left-us', 'chart-right-us', 'chart-us',
   'daily-table-us', 'creative-type-us', 'creative-sort-us', 'creative-us',
@@ -81,6 +84,28 @@ test('the canonical Meta dashboard defines the Lead-gen inclusion and metric con
   assert.match(v2, /id="chart-right-leadgen"/);
   assert.match(v2, /id="leadgen-pie-card"/);
   assert.match(v2, /setLeadgenChartGranularity/);
+});
+
+test('Promo group charts have independent metric controls and LP to Purchase is available dashboard-wide', () => {
+  const dashboard = read('public/glv-meta-ads/index.html');
+  for (const id of ['chart-metric-promo-spend', 'chart-metric-promo-roas', 'chart-metric-promo-pie']) {
+    assert.match(dashboard, new RegExp(`id="${id}"[^>]*onchange="refreshPromoCharts\\(\\)"`));
+  }
+  assert.match(dashboard, /const CHART_METRIC_OPTIONS = \[[^\]]*'lp2pur'/);
+  assert.match(dashboard, /computeChartMetric\(metricKey,r,calcMetrics\(r\)\)/);
+  assert.match(dashboard, /computeChartMetric\(pieMetricKey,row,calcMetrics\(row\)\)/);
+  for (const titleId of ['promo-chart-title-spend', 'promo-chart-title-roas', 'promo-chart-title-pie']) {
+    assert.match(dashboard, new RegExp(`id="${titleId}"`));
+  }
+  assert.equal((dashboard.match(/class="sr-only promo-chart-data-table"/g) || []).length, 3);
+  assert.match(dashboard, /table\.querySelector\('caption'\)\.textContent=`\$\{metric\.label\} by Promo campaign group and day`/);
+  assert.match(dashboard, /pieTable\.querySelector\('thead th:nth-child\(2\)'\)\.textContent=pieMetric\.label/);
+  for (const surface of [
+    /<div class="kpi-label">LP → Purchase<\/div>/,
+    /\{key:'lp2pur',label:'LP→Purchase'\}/,
+    /\{label:'LP→Purchase',text:r=>fmtPct\(r\.m\.lp2pur\)\}/,
+    /'LP→Purchase'/,
+  ]) assert.match(dashboard, surface);
 });
 
 test('shared Meta API exposes lead actions to the canonical dashboard', () => {
