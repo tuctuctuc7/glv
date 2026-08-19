@@ -97,31 +97,6 @@ Derived metrics are calculated after date and region aggregation:
 
 Currency for the business KPI dashboard JSON is USD.
 
-### GLV V2 Phases view
-
-`/glv-2/` includes Home and Phases views. Home keeps the existing business-dashboard behavior. Phases is CZSK-only, starts on `2026-02-01`, and derives every unscheduled CZSK day as BAU.
-
-The canonical source workbook contains a Phases tab with one row per scheduled window:
-
-```text
-Start date | End date | Phase | Label | Influencer | Notes
-```
-
-`Label` and `Influencer` are approved display fields. `Notes` stays private in the source workbook and is never exported to the public dashboard JSON. The public source metadata also omits the private workbook identifier.
-
-Only `Promo` and `Influ` are scheduled. Multiple Influ windows may overlap, but Promo and Influ must never overlap; overlapping Promo windows are also rejected. The exporter validates the schedule and fails before writing either public snapshot when the contract is invalid.
-
-The local exporter reads both `Daily` and `Phases` with read-only Google Sheets scope. Schedule maintenance therefore stays in the private source workbook through an authorized editor; private Sheet credentials are not moved into Vercel. The exported public snapshot contains only the sanitized schedule plus daily absolute values needed for browser-side filtering:
-
-- `influ_revenue` from `Revenue INFLU ($)`
-- `influ_commission` from `Ad spend Influ ($)`
-
-Phase calculations add commission to normal spend once for Influ, preserve code revenue from the canonical daily source for every phase classification, derive no-code revenue as total revenue minus code revenue, and recalculate shares, averages, and adjusted ROAS after filtering and aggregation.
-
-#### Independent manual-sheet reconciliation
-
-The Phases implementation was independently recalculated from the canonical `Daily` source and compared with the supplied manual-sheet structure. It does not copy or force-match manual values. The current canonical monthly totals are lower for February through May 2026: Feb `$89,286` vs manual `$91,550` (-2.5%); Mar `$138,348` vs `$142,722` (-3.1%); Apr `$144,026` vs `$148,900` (-3.3%); May `$192,927` vs `$197,872` (-2.5%). February phase values also differ (canonical Promo `$54,392`, Influ `$13,762`, BAU `$21,132`; manual Promo `$55,241`, Influ `$14,099`, full price `$22,210`). These are documented as source-driven discrepancies: the canonical source currently has zero Influ commission/code attribution for February and March while the manual sheet contains historical attribution values.
-
 ## Meta Ads Dashboard
 
 Route: `/glv-meta-ads/`
