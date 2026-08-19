@@ -43,15 +43,15 @@ test('the canonical Meta dashboard exposes its home-screen icon and retires the 
   assert.match(middleware, /PUBLIC_ASSET_PATHS\.has\(pathname\)/);
   const { default: authorize } = await import(`data:text/javascript;base64,${Buffer.from(middleware).toString('base64')}`);
   const request = pathname => ({ url: `https://lab.agenthic.com${pathname}`, headers: new Headers() });
-  assert.equal(authorize(request('/glv-meta-ads/agenthic-logo.svg')), undefined);
-  assert.equal(authorize(request('/glv-meta-ads/apple-touch-icon.png')), undefined);
-  assert.equal(authorize(request('/glv-meta-ads/')).status, 302);
+  assert.equal(await authorize(request('/glv-meta-ads/agenthic-logo.svg')), undefined);
+  assert.equal(await authorize(request('/glv-meta-ads/apple-touch-icon.png')), undefined);
+  assert.equal((await authorize(request('/glv-meta-ads/'))).status, 302);
   for (const oldPath of ['/glv-meta-ads-2', '/glv-meta-ads-2/', '/glv-meta-ads-2/apple-touch-icon.png?install=1']) {
-    const response = authorize(request(oldPath));
+    const response = await authorize(request(oldPath));
     assert.equal(response.status, 308);
     assert.equal(response.headers.get('location'), `https://lab.agenthic.com${oldPath.replace('/glv-meta-ads-2', '/glv-meta-ads')}`);
   }
-  assert.equal(authorize(request('/api/glv-meta-ads/fb-data')).status, 401);
+  assert.equal((await authorize(request('/api/glv-meta-ads/fb-data'))).status, 401);
 });
 
 test('the canonical Meta dashboard preserves the approved feature surface and shared API', () => {
