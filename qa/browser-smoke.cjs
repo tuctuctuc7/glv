@@ -12,7 +12,6 @@ const evidenceDir = path.resolve(process.env.GLV_QA_EVIDENCE_DIR || path.join(pr
 const dashboardData = JSON.parse(fs.readFileSync(path.join(publicRoot, 'glv-2', 'glv_dashboard.json'), 'utf8'));
 const historicalData = JSON.parse(fs.readFileSync(path.join(publicRoot, 'glv-2', 'glv_2025_monthly.json'), 'utf8'));
 const dashboardMetrics = require(path.join(publicRoot, 'glv-2', 'metrics.js'));
-const dashboardPhases = require(path.join(publicRoot, 'glv-2', 'phases.js'));
 const latestDataDate = dashboardData.date_range.end;
 const latestDate = new Date(`${latestDataDate}T00:00:00Z`);
 const defaultStartDate = new Date(latestDate.getTime() - (27 * 86_400_000));
@@ -23,18 +22,6 @@ const defaultWeekCount = dashboardMetrics.groupRows(dashboardMetrics.filterRows(
   to: latestDataDate,
   regions: ['czsk', 'us', 'row'],
 }), 'week').length;
-const expectedInfluencerGroups = dashboardPhases.aggregatePhaseGroups(
-  dashboardPhases.buildPhaseDays(dashboardData.rows, dashboardData.phases),
-  'influencer',
-);
-const expectedMonthPhaseGroups = dashboardPhases.aggregatePhaseGroups(
-  dashboardPhases.buildPhaseDays(dashboardData.rows, dashboardData.phases),
-  'month-phase',
-);
-const expectedInfluencerDatasets = [
-  { label: 'Code revenue', data: expectedInfluencerGroups.map((group) => group.code_revenue) },
-  { label: 'Influ commission', data: expectedInfluencerGroups.map((group) => group.influ_commission) },
-];
 const displayDate = (date) => new Intl.DateTimeFormat('en-US', {
   month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
 }).format(date);
@@ -430,83 +417,6 @@ async function run() {
     assert.equal(await historyFailure.locator('#dateFrom').getAttribute('min'), dashboardData.date_range.start, 'failed history must fall back to working-source coverage');
     await historyFailureContext.close();
 
-    const phaseContext = await browser.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true, colorScheme: 'dark', reducedMotion: 'reduce' });
-    const phasePage = await phaseContext.newPage();
-    phasePage.on('console', (message) => {
-      if (message.type() === 'error') consoleErrors.push(`phases: ${message.text()}`);
-    });
-    phasePage.on('pageerror', (error) => consoleErrors.push(`phases pageerror: ${error.message}`));
-    await phasePage.goto(`${baseUrl}?view=phases&period=custom&from=2026-02-01&to=${latestDataDate}`, { waitUntil: 'networkidle', timeout: 30_000 });
-    await phasePage.locator('#phasesView').waitFor({ state: 'visible' });
-    assert.equal(await phasePage.locator('#homeView').isVisible(), false, 'Home should be hidden when the Phases tab is active');
-    assert.equal(await phasePage.locator('button[data-dashboard-view="phases"]').getAttribute('aria-selected'), 'true');
-    assert.equal(
-      await phasePage.locator('#phaseTableBody tr').count(),
-      expectedMonthPhaseGroups.length,
-      'month-phase rows should follow the current synchronized source coverage',
-    );
-    assert.match(await phasePage.locator('#phaseTableBody tr').first().textContent(), /2026-02 · BAU/);
-    const aprilInfluCells = await phasePage.locator('#phaseTableBody tr').filter({ hasText: '2026-04 · Influ' }).locator('td').allTextContents();
-    assert.equal(aprilInfluCells[7], '$3,084.00', 'Influ commission must render from aggregated source data');
-    assert.equal(aprilInfluCells[11], '$2,201.43', 'code average daily revenue must render from aggregated source data');
-    assert.equal(aprilInfluCells[12], '$2,020.00', 'no-code average daily revenue must render from aggregated source data');
-    assert.equal(await phasePage.locator('.phase-chart-panel canvas:visible').count(), 4, 'all four phase charts should render');
-    assert.equal(await phasePage.evaluate(() => ['phasePerformanceChart', 'phaseMixChart', 'phaseCodeChart', 'phaseInfluencerChart'].every((id) => Boolean(window.Chart.getChart(id)))), true);
-    assert.equal(await phasePage.evaluate(() => Boolean(window.Chart.getChart('trendChart'))), false, 'entering Phases must destroy the hidden Home trend chart');
-    assert.equal(await phasePage.evaluate(() => Object.keys(window.Chart.instances).length), 4, 'Phases should retain only its four visible chart instances');
-    assert.deepEqual(await phasePage.evaluate(() => {
-      const chart = window.Chart.getChart('phaseInfluencerChart');
-      return chart.data.datasets.map((dataset) => ({ label: dataset.label, data: dataset.data }));
-    }), expectedInfluencerDatasets, 'influencer comparison must use attributable code revenue rather than total window revenue');
-    assert.ok(await phasePage.locator('#phasePerformanceDataBody tr').count() > 0, 'phase charts must expose accessible data tables');
-    await phasePage.locator('#phaseGrouping').selectOption('phase-time');
-    assert.equal(await phasePage.locator('#phaseTableBody tr').count(), 3, 'phase-across-time grouping should show BAU, Influ, and Promo');
-    assert.equal(new URL(phasePage.url()).searchParams.get('phaseGrouping'), 'phase-time');
-    const phaseDownloadPromise = phasePage.waitForEvent('download');
-    await phasePage.locator('#phaseExportCsv').click();
-    const phaseDownload = await phaseDownloadPromise;
-    assert.match(phaseDownload.suggestedFilename(), /^glv-phases-phase-time-.*\.csv$/);
-    await phasePage.screenshot({ path: path.join(evidenceDir, 'desktop-phases-dark.png'), fullPage: true });
-    await phasePage.locator('button[data-dashboard-view="home"]').press('End');
-    assert.equal(await phasePage.locator('button[data-dashboard-view="phases"]').getAttribute('aria-selected'), 'true', 'End should select the last dashboard tab');
-    await phasePage.locator('button[data-dashboard-view="phases"]').press('Home');
-    assert.equal(await phasePage.locator('button[data-dashboard-view="home"]').getAttribute('aria-selected'), 'true', 'Home should select the first dashboard tab');
-    assert.equal(await phasePage.evaluate(() => ['phasePerformanceChart', 'phaseMixChart', 'phaseCodeChart', 'phaseInfluencerChart'].every((id) => !window.Chart.getChart(id))), true, 'leaving Phases must destroy hidden phase charts');
-    assert.equal(await phasePage.evaluate(() => Object.keys(window.Chart.instances).length), 1, 'returning Home should retain only the Home trend chart');
-    await phaseContext.close();
-
-    const phaseErrorContext = await browser.newContext({ viewport: { width: 1000, height: 800 }, colorScheme: 'dark', reducedMotion: 'reduce' });
-    const phaseError = await phaseErrorContext.newPage();
-    await phaseError.route('**/glv_dashboard.json', async (route) => {
-      const invalid = structuredClone(dashboardData);
-      invalid.phases.push({ start_date: '2026-02-10', end_date: '2026-02-10', phase: 'Influ', label: 'Overlap test', influencer: 'QA', notes: '' });
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(invalid) });
-    });
-    await phaseError.goto(`${baseUrl}?view=phases`, { waitUntil: 'networkidle', timeout: 30_000 });
-    assert.equal(await phaseError.locator('#errorState').isVisible(), true, 'invalid phase schedules must block rendering');
-    assert.match(await phaseError.locator('#errorMessage').textContent(), /overlap/i);
-    await phaseErrorContext.close();
-
-    const mobilePhaseContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, colorScheme: 'dark', reducedMotion: 'reduce' });
-    const mobilePhase = await mobilePhaseContext.newPage();
-    mobilePhase.on('console', (message) => {
-      if (message.type() === 'error') consoleErrors.push(`mobile phases: ${message.text()}`);
-    });
-    mobilePhase.on('pageerror', (error) => consoleErrors.push(`mobile phases pageerror: ${error.message}`));
-    await mobilePhase.goto(`${baseUrl}?view=phases&period=custom&from=2026-02-01&to=${latestDataDate}`, { waitUntil: 'networkidle', timeout: 30_000 });
-    await mobilePhase.locator('#phasesView').waitFor({ state: 'visible' });
-    assert.equal(await mobilePhase.locator('.phase-chart-panel').count(), 4);
-    const mobilePhaseColumns = await mobilePhase.locator('.phase-chart-panel').evaluateAll((panels) => [...new Set(panels.map((panel) => Math.round(panel.getBoundingClientRect().left)))]);
-    assert.equal(mobilePhaseColumns.length, 1, 'phase charts must stack in one column on mobile');
-    const mobilePhaseOverflow = await mobilePhase.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    assert.ok(mobilePhaseOverflow <= 1, `mobile Phases page overflow: ${mobilePhaseOverflow}px`);
-    const mobilePhaseTabHeights = await mobilePhase.locator('.dashboard-view-nav button').evaluateAll((buttons) => buttons.map((button) => Math.round(button.getBoundingClientRect().height)));
-    assert.ok(mobilePhaseTabHeights.every((height) => height >= 44), `mobile view tabs must keep 44px targets: ${mobilePhaseTabHeights}`);
-    const mobilePhaseExportHeight = await mobilePhase.locator('#phaseExportCsv').evaluate((button) => Math.round(button.getBoundingClientRect().height));
-    assert.ok(mobilePhaseExportHeight >= 44, `mobile phase export must keep a 44px touch target: ${mobilePhaseExportHeight}`);
-    await mobilePhase.screenshot({ path: path.join(evidenceDir, 'mobile-phases-dark.png'), fullPage: true });
-    await mobilePhaseContext.close();
-
     const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, colorScheme: 'dark', reducedMotion: 'reduce' });
     const mobile = await mobileContext.newPage();
     mobile.on('console', (message) => {
@@ -519,7 +429,7 @@ async function run() {
     assert.equal(await mobile.locator('#dashboardFilters').isVisible(), false);
     assert.equal((await mobile.locator('#controlSummary').textContent()).trim(), `28d (${compactDate(defaultStartDate)} – ${compactDate(latestDate)}) · All markets`);
     assert.equal(await mobile.locator('#activeRange').isVisible(), false, 'mobile pulse heading should not repeat the selected dates');
-    assert.equal(await mobile.locator('#homeView .scope-summary').isVisible(), false, 'mobile pulse heading should not repeat market, currency, or duration');
+    assert.equal(await mobile.locator('.scope-summary').isVisible(), false, 'mobile pulse heading should not repeat market, currency, or duration');
     const mobileKpiGeometry = await mobile.locator('#executiveKpis').evaluate((grid) => {
       const gridRect = grid.getBoundingClientRect();
       const cards = [...grid.children].map((card) => {
@@ -759,10 +669,8 @@ async function run() {
         path.join(evidenceDir, 'desktop-dark.png'),
         path.join(evidenceDir, 'desktop-history-year.png'),
         path.join(evidenceDir, 'desktop-light-us.png'),
-        path.join(evidenceDir, 'desktop-phases-dark.png'),
         path.join(evidenceDir, 'mobile-dark-filters.png'),
         path.join(evidenceDir, 'mobile-history-year.png'),
-        path.join(evidenceDir, 'mobile-phases-dark.png'),
         path.join(evidenceDir, 'mobile-320-dark-filters.png'),
       ],
       consoleErrors,
