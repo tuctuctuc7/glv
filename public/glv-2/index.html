@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="/glv-2/styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f" crossorigin="anonymous" defer></script>
   <script src="/glv-2/metrics.js" defer></script>
+  <script src="/glv-2/phases.js" defer></script>
   <script src="/glv-2/app.js" defer></script>
 </head>
 <body>
@@ -35,6 +36,11 @@
         <p class="product-name">Executive Pulse</p>
       </div>
     </div>
+
+    <nav class="dashboard-view-nav" aria-label="Dashboard views" role="tablist">
+      <button id="homeViewTab" type="button" role="tab" data-dashboard-view="home" aria-selected="true" aria-controls="homeView">Home</button>
+      <button id="phasesViewTab" type="button" role="tab" data-dashboard-view="phases" aria-selected="false" aria-controls="phasesView">Phases</button>
+    </nav>
 
     <div class="header-actions">
       <div class="freshness" id="freshnessBadge" data-status="loading">
@@ -83,7 +89,7 @@
           </label>
         </div>
 
-        <fieldset class="region-filter">
+        <fieldset class="region-filter home-only-control">
           <legend>Markets</legend>
           <div class="region-buttons">
             <button type="button" data-region="all" aria-pressed="true">All</button>
@@ -93,13 +99,13 @@
           </div>
         </fieldset>
 
-        <label class="comparison-control" for="comparisonToggle">
+        <label class="comparison-control home-only-control" for="comparisonToggle">
           <input id="comparisonToggle" type="checkbox" checked />
           <span class="switch" aria-hidden="true"></span>
           <span>Compare previous period</span>
         </label>
 
-        <button class="secondary-button" id="exportCsv" type="button">
+        <button class="secondary-button home-only-control" id="exportCsv" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3"/></svg>
           Export CSV
         </button>
@@ -120,6 +126,7 @@
     <p id="screenReaderStatus" class="sr-only" aria-live="polite"></p>
 
     <div id="dashboardContent" hidden>
+      <div id="homeView" role="tabpanel" aria-labelledby="homeViewTab">
       <section id="overview" class="overview-heading" aria-labelledby="overviewTitle">
         <div>
           <p class="eyebrow">Executive control room</p>
@@ -253,6 +260,70 @@
         </tr></thead><tbody id="marketComparisonBody"></tbody></table></div></div>
       </section>
 
+      </section>
+      </div>
+
+      <section id="phasesView" class="phases-view" role="tabpanel" aria-labelledby="phasesViewTab" hidden>
+        <section class="overview-heading phase-overview" aria-labelledby="phasesTitle">
+          <div>
+            <p class="eyebrow">Commercial calendar analysis</p>
+            <h1 id="phasesTitle">Phase performance</h1>
+            <p id="phaseRange" class="range-label">CZSK only · USD · from Feb 1, 2026</p>
+          </div>
+          <div class="scope-summary" aria-label="Phases scope"><span>CZSK only</span><span aria-hidden="true">·</span><span>USD</span></div>
+        </section>
+
+        <div id="phaseErrorState" class="state-banner state-error" role="alert" hidden></div>
+        <div id="phaseEmptyState" class="state-banner" role="status" hidden>No CZSK phase data matches the selected dates.</div>
+
+        <section class="phase-toolbar panel" aria-label="Phase table controls">
+          <label class="field field-compact">
+            <span>Grouping</span>
+            <select id="phaseGrouping">
+              <option value="month-phase" selected>Month with phase</option>
+              <option value="phase-time">Phase across time</option>
+              <option value="influencer">Influencer</option>
+              <option value="promo-subtype">Promo subtype</option>
+            </select>
+          </label>
+          <button class="secondary-button" id="phaseExportCsv" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3"/></svg>
+            Export phase CSV
+          </button>
+        </section>
+
+        <section class="phase-chart-grid" aria-label="Phase charts">
+          <section class="panel phase-chart-panel" aria-labelledby="phasePerformanceTitle">
+            <div class="panel-heading"><div><span class="eyebrow">Phase trajectory</span><span class="section-title" id="phasePerformanceTitle">Average daily revenue · adjusted ROAS</span></div></div>
+            <div class="phase-chart-wrap"><canvas id="phasePerformanceChart" role="img" aria-label="Phase average daily revenue and adjusted ROAS chart" aria-describedby="phasePerformanceDataTable"></canvas></div>
+            <table id="phasePerformanceDataTable" class="sr-only"><caption>Average daily revenue and adjusted ROAS by month and phase</caption><thead><tr><th>Month and phase</th><th>Average daily revenue</th><th>Adjusted ROAS</th></tr></thead><tbody id="phasePerformanceDataBody"></tbody></table>
+          </section>
+          <section class="panel phase-chart-panel" aria-labelledby="phaseMixTitle">
+            <div class="panel-heading"><div><span class="eyebrow">Revenue mix</span><span class="section-title" id="phaseMixTitle">Monthly BAU · Influ · Promo</span></div></div>
+            <div class="phase-chart-wrap"><canvas id="phaseMixChart" role="img" aria-label="Monthly phase revenue mix chart" aria-describedby="phaseMixDataTable"></canvas></div>
+            <table id="phaseMixDataTable" class="sr-only"><caption>Monthly revenue by phase</caption><thead><tr><th>Month</th><th>BAU</th><th>Influ</th><th>Promo</th></tr></thead><tbody id="phaseMixDataBody"></tbody></table>
+          </section>
+          <section class="panel phase-chart-panel" aria-labelledby="phaseCodeTitle">
+            <div class="panel-heading"><div><span class="eyebrow">Influ decomposition</span><span class="section-title" id="phaseCodeTitle">Code · no-code revenue</span></div></div>
+            <div class="phase-chart-wrap"><canvas id="phaseCodeChart" role="img" aria-label="Influ code and no-code revenue chart" aria-describedby="phaseCodeDataTable"></canvas></div>
+            <table id="phaseCodeDataTable" class="sr-only"><caption>Influ code and no-code revenue by month</caption><thead><tr><th>Month</th><th>Code revenue</th><th>No-code revenue</th></tr></thead><tbody id="phaseCodeDataBody"></tbody></table>
+          </section>
+          <section id="phaseInfluencerPanel" class="panel phase-chart-panel" aria-labelledby="phaseInfluencerTitle">
+            <div class="panel-heading"><div><span class="eyebrow">Attribution drill-down</span><span class="section-title" id="phaseInfluencerTitle">Influencer comparison</span><span class="panel-subtitle">Only code revenue is attributed to a named influencer; no-code revenue remains unattributed.</span></div></div>
+            <div class="phase-chart-wrap"><canvas id="phaseInfluencerChart" role="img" aria-label="Influencer code revenue and commission chart" aria-describedby="phaseInfluencerDataTable"></canvas></div>
+            <table id="phaseInfluencerDataTable" class="sr-only"><caption>Influencer attributable performance comparison</caption><thead><tr><th>Influencer</th><th>Code revenue</th><th>Commission</th><th>Adjusted ROAS</th></tr></thead><tbody id="phaseInfluencerDataBody"></tbody></table>
+          </section>
+        </section>
+
+        <section class="panel phase-table-panel" aria-labelledby="phaseTableTitle">
+          <div class="panel-heading"><div><span class="eyebrow">Recalculated from canonical daily data</span><span class="section-title" id="phaseTableTitle">Phase detail</span><span id="phaseTableSubtitle" class="panel-subtitle"></span></div></div>
+          <p class="table-scroll-hint">Swipe horizontally to inspect every metric →</p>
+          <div class="table-wrap phase-table-wrap" tabindex="0" aria-label="Scrollable phase performance table">
+            <table id="phaseTable"><caption class="sr-only">CZSK phase performance in USD</caption><thead><tr>
+              <th>Group</th><th>Revenue</th><th>Share</th><th>Days</th><th>Avg daily revenue</th><th>Ad spend</th><th>Adjusted ROAS</th><th>Influ commission</th><th>Code revenue</th><th>No-code revenue</th><th>Code share</th><th>Code avg daily</th><th>No-code avg daily</th>
+            </tr></thead><tbody id="phaseTableBody"></tbody></table>
+          </div>
+        </section>
       </section>
     </div>
   </main>

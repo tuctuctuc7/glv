@@ -22,12 +22,15 @@ const state = {
   data: null,
   historicalData: null,
   chart: null,
+  phaseCharts: [],
+  activeView: 'home',
   selectedRegions: ['czsk', 'us', 'row'],
   loadAttempts: 0,
 };
 
 const $ = (id) => document.getElementById(id);
 const metrics = window.GlvMetrics;
+const phases = window.GlvPhases;
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -157,6 +160,7 @@ function applyPreset(preset) {
 
 function syncUrl() {
   const params = new URLSearchParams();
+  params.set('view', state.activeView);
   params.set('period', $('periodPreset').value);
   params.set('from', $('dateFrom').value);
   params.set('to', $('dateTo').value);
@@ -166,6 +170,7 @@ function syncUrl() {
   params.set('metric2', $('trendMetricSecondary').value);
   params.set('grain', $('grain').value);
   params.set('auditGrain', $('auditGrain').value);
+  params.set('phaseGrouping', $('phaseGrouping').value);
   const query = params.toString();
   try {
     window.history.replaceState(null, '', `${window.location.pathname}?${query}${window.location.hash}`);
@@ -176,6 +181,7 @@ function syncUrl() {
 
 function restoreUrlState() {
   const params = new URLSearchParams(window.location.search);
+  state.activeView = params.get('view') === 'phases' ? 'phases' : 'home';
   const preset = params.get('period');
   const presetIsValid = Boolean(preset && [...$('periodPreset').options].some((option) => option.value === preset));
   if (presetIsValid) {
@@ -204,7 +210,22 @@ function restoreUrlState() {
   if (['day', 'week', 'month', 'year'].includes(grain)) $('grain').value = grain;
   const auditGrain = params.get('auditGrain');
   if (['day', 'week', 'month', 'year'].includes(auditGrain)) $('auditGrain').value = auditGrain;
+  const phaseGrouping = params.get('phaseGrouping');
+  if (['month-phase', 'phase-time', 'influencer', 'promo-subtype'].includes(phaseGrouping)) $('phaseGrouping').value = phaseGrouping;
   refreshRegionButtons();
+  applyViewState();
+}
+
+function applyViewState() {
+  const isPhases = state.activeView === 'phases';
+  $('homeView').hidden = isPhases;
+  $('phasesView').hidden = !isPhases;
+  document.body.dataset.dashboardView = state.activeView;
+  document.querySelectorAll('[data-dashboard-view]').forEach((button) => {
+    const selected = button.dataset.dashboardView === state.activeView;
+    button.setAttribute('aria-selected', String(selected));
+    button.tabIndex = selected ? 0 : -1;
+  });
 }
 
 function refreshRegionButtons() {
@@ -952,6 +973,189 @@ function renderTrust() {
     : `${formatDate(state.data.date_range.start)} – ${formatDate(state.data.date_range.end)} · ${state.data.rows.length.toLocaleString('en-US')} market-days`;
 }
 
+function phaseDaysForSelection() {
+  const from = $('dateFrom').value < phases.HISTORICAL_START ? phases.HISTORICAL_START : $('dateFrom').value;
+  const to = $('dateTo').value;
+  return phases.buildPhaseDays(state.data.rows, state.data.phases)
+    .filter((day) => day.date >= from && day.date <= to);
+}
+
+function phaseMoney(value, compact = false) {
+  return formatMetric('revenue', value, compact);
+}
+
+function phaseRatio(value) {
+  return value === null || value === undefined ? '—' : `${Number(value).toFixed(2)}x`;
+}
+
+function phasePercent(value) {
+  return value === null || value === undefined ? '—' : `${(Number(value) * 100).toFixed(1)}%`;
+}
+
+function fillDataTable(bodyId, rows) {
+  const body = $(bodyId);
+  clear(body);
+  rows.forEach((values) => {
+    const row = document.createElement('tr');
+    values.forEach((value) => row.appendChild(element('td', '', value)));
+    body.appendChild(row);
+  });
+}
+
+function destroyPhaseCharts() {
+  state.phaseCharts.forEach((chart) => chart.destroy());
+  state.phaseCharts = [];
+}
+
+function phaseChart(canvasId, configuration) {
+  const canvas = $(canvasId);
+  if (!window.Chart) {
+    canvas.hidden = true;
+    return null;
+  }
+  canvas.hidden = false;
+  const chart = new window.Chart(canvas, configuration);
+  state.phaseCharts.push(chart);
+  return chart;
+}
+
+function phaseChartOptions({ stacked = false, ratioAxis = false } = {}) {
+  const colors = chartColors();
+  return {
+    animation: false,
+    maintainAspectRatio: false,
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { labels: { color: colors.text, boxWidth: 10, usePointStyle: true, pointStyle: 'rectRounded' } },
+      tooltip: {
+        backgroundColor: colors.surface,
+        borderColor: colors.grid,
+        borderWidth: 1,
+        titleColor: getComputedStyle(document.documentElement).getPropertyValue('--text').trim(),
+        bodyColor: colors.text,
+        callbacks: { label: (item) => `${item.dataset.label}: ${item.dataset.yAxisID === 'ratio' ? phaseRatio(item.raw) : phaseMoney(item.raw)}` },
+      },
+    },
+    scales: {
+      x: { stacked, grid: { display: false }, ticks: { color: colors.text, font: { size: 9 }, maxRotation: 0 }, border: { color: colors.grid } },
+      y: { stacked, beginAtZero: true, grid: { color: colors.grid }, ticks: { color: colors.text, font: { size: 9 }, callback: (value) => phaseMoney(value, true) }, border: { display: false } },
+      ratio: { display: ratioAxis, beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: colors.rolling, callback: (value) => `${value}x` }, border: { display: false } },
+    },
+  };
+}
+
+function renderPhaseTable(groups) {
+  const body = $('phaseTableBody');
+  clear(body);
+  groups.forEach((group) => {
+    const row = document.createElement('tr');
+    row.dataset.phase = group.phase.toLowerCase();
+    [
+      group.label,
+      phaseMoney(group.revenue),
+      phasePercent(group.revenue_share),
+      group.days.toLocaleString('en-US'),
+      phaseMoney(group.average_daily_revenue),
+      phaseMoney(group.spend),
+      phaseRatio(group.adjusted_roas),
+      phaseMoney(group.influ_commission),
+      phaseMoney(group.code_revenue),
+      phaseMoney(group.no_code_revenue),
+      phasePercent(group.code_share),
+      phaseMoney(group.code_average_daily),
+      phaseMoney(group.no_code_average_daily),
+    ].forEach((value) => row.appendChild(element('td', '', value)));
+    body.appendChild(row);
+  });
+  $('phaseTableSubtitle').textContent = `${groups.length} recalculated ${groups.length === 1 ? 'group' : 'groups'} · ratios derived after aggregation`;
+}
+
+function renderPhaseCharts(days) {
+  destroyPhaseCharts();
+  const colors = chartColors();
+  const rootStyle = getComputedStyle(document.documentElement);
+  const accent = rootStyle.getPropertyValue('--accent').trim();
+  const purple = rootStyle.getPropertyValue('--purple').trim();
+  const warning = rootStyle.getPropertyValue('--warning').trim();
+  const monthPhase = phases.aggregatePhaseGroups(days, 'month-phase');
+
+  fillDataTable('phasePerformanceDataBody', monthPhase.map((group) => [group.label, phaseMoney(group.average_daily_revenue), phaseRatio(group.adjusted_roas)]));
+  phaseChart('phasePerformanceChart', {
+    type: 'bar',
+    data: { labels: monthPhase.map((group) => group.label), datasets: [
+      { label: 'Avg daily revenue', data: monthPhase.map((group) => group.average_daily_revenue), backgroundColor: `${accent}88`, borderColor: accent, borderWidth: 1, yAxisID: 'y' },
+      { type: 'line', label: 'Adjusted ROAS', data: monthPhase.map((group) => group.adjusted_roas), borderColor: colors.rolling, backgroundColor: `${colors.rolling}22`, borderWidth: 2, pointRadius: 2, tension: 0.25, spanGaps: true, yAxisID: 'ratio' },
+    ] },
+    options: phaseChartOptions({ ratioAxis: true }),
+  });
+
+  const months = [...new Set(days.map((day) => day.date.slice(0, 7)))];
+  const phaseOrder = ['BAU', 'Influ', 'Promo'];
+  const mix = Object.fromEntries(months.map((month) => [month, Object.fromEntries(phaseOrder.map((phase) => [phase, 0]))]));
+  days.forEach((day) => { mix[day.date.slice(0, 7)][day.phase] += day.revenue; });
+  fillDataTable('phaseMixDataBody', months.map((month) => [month, ...phaseOrder.map((phase) => phaseMoney(mix[month][phase]))]));
+  phaseChart('phaseMixChart', {
+    type: 'bar',
+    data: { labels: months, datasets: [
+      { label: 'BAU', data: months.map((month) => mix[month].BAU), backgroundColor: `${colors.text}77` },
+      { label: 'Influ', data: months.map((month) => mix[month].Influ), backgroundColor: `${purple}aa` },
+      { label: 'Promo', data: months.map((month) => mix[month].Promo), backgroundColor: `${accent}aa` },
+    ] },
+    options: phaseChartOptions({ stacked: true }),
+  });
+
+  const influMonth = monthPhase.filter((group) => group.phase === 'Influ');
+  fillDataTable('phaseCodeDataBody', influMonth.map((group) => [group.label.slice(0, 7), phaseMoney(group.code_revenue), phaseMoney(group.no_code_revenue)]));
+  phaseChart('phaseCodeChart', {
+    type: 'bar',
+    data: { labels: influMonth.map((group) => group.label.slice(0, 7)), datasets: [
+      { label: 'Code revenue', data: influMonth.map((group) => group.code_revenue), backgroundColor: `${purple}aa` },
+      { label: 'No-code revenue', data: influMonth.map((group) => group.no_code_revenue), backgroundColor: `${warning}aa` },
+    ] },
+    options: phaseChartOptions({ stacked: true }),
+  });
+
+  const influencers = phases.aggregatePhaseGroups(days, 'influencer');
+  fillDataTable('phaseInfluencerDataBody', influencers.map((group) => [group.label, phaseMoney(group.code_revenue), phaseMoney(group.influ_commission), phaseRatio(group.adjusted_roas)]));
+  phaseChart('phaseInfluencerChart', {
+    type: 'bar',
+    data: { labels: influencers.map((group) => group.label), datasets: [
+      { label: 'Code revenue', data: influencers.map((group) => group.code_revenue), backgroundColor: `${purple}aa`, borderColor: purple, borderWidth: 1 },
+      { label: 'Influ commission', data: influencers.map((group) => group.influ_commission), backgroundColor: `${warning}88`, borderColor: warning, borderWidth: 1 },
+    ] },
+    options: phaseChartOptions(),
+  });
+}
+
+function renderPhases() {
+  $('phaseErrorState').hidden = true;
+  try {
+    const days = phaseDaysForSelection();
+    const grouping = $('phaseGrouping').value;
+    const groups = phases.aggregatePhaseGroups(days, grouping);
+    $('phaseEmptyState').hidden = Boolean(days.length);
+    $('phaseTable').hidden = !days.length;
+    document.querySelector('.phase-chart-grid').hidden = !days.length;
+    const phaseFrom = $('dateFrom').value < phases.HISTORICAL_START ? phases.HISTORICAL_START : $('dateFrom').value;
+    $('phaseRange').textContent = `CZSK only · USD · ${formatDate(phaseFrom)} – ${formatDate($('dateTo').value)}`;
+    if (days.length) {
+      renderPhaseTable(groups);
+      renderPhaseCharts(days);
+    } else {
+      destroyPhaseCharts();
+    }
+    $('screenReaderStatus').textContent = `Phase performance updated with ${days.length} CZSK days and ${groups.length} groups.`;
+  } catch (error) {
+    destroyPhaseCharts();
+    $('phaseErrorState').hidden = false;
+    $('phaseErrorState').textContent = error instanceof Error ? error.message : 'Phase schedule validation failed.';
+    $('phaseEmptyState').hidden = true;
+    $('phaseTable').hidden = true;
+    document.querySelector('.phase-chart-grid').hidden = true;
+  }
+}
+
 function showEmpty(message) {
   $('loadingState').hidden = true;
   $('dashboardContent').hidden = true;
@@ -967,6 +1171,20 @@ function render() {
     showEmpty('Choose a valid date range where From is on or before To.');
     return;
   }
+  if (state.activeView === 'phases') {
+    if (state.chart) {
+      state.chart.destroy();
+      state.chart = null;
+    }
+    $('errorState').hidden = true;
+    $('loadingState').hidden = true;
+    $('dashboardContent').hidden = false;
+    applyViewState();
+    renderPhases();
+    syncUrl();
+    return;
+  }
+  destroyPhaseCharts();
   const view = getViewData();
   const hasHistoricalRows = [historicalContext(view, $('grain').value), historicalContext(view, $('auditGrain').value)]
     .some((context) => context.rows.length);
@@ -978,6 +1196,7 @@ function render() {
   $('errorState').hidden = true;
   $('loadingState').hidden = true;
   $('dashboardContent').hidden = false;
+  applyViewState();
   renderScope(view);
   renderKpis(view);
   const regions = regionComparisons(view);
@@ -1018,11 +1237,47 @@ async function exportCsv() {
   URL.revokeObjectURL(url);
 }
 
+async function exportPhaseCsv() {
+  const days = phaseDaysForSelection();
+  const grouping = $('phaseGrouping').value;
+  const groups = phases.aggregatePhaseGroups(days, grouping);
+  const sourcePayload = new TextEncoder().encode(JSON.stringify({ rows: state.data.rows, phases: state.data.phases }));
+  const digest = await crypto.subtle.digest('SHA-256', sourcePayload);
+  const checksum = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  const headers = ['group', 'phase', 'revenue_usd', 'revenue_share', 'days', 'average_daily_revenue_usd', 'ad_spend_usd', 'adjusted_roas', 'influ_commission_usd', 'code_revenue_usd', 'no_code_revenue_usd', 'code_share', 'code_average_daily_usd', 'no_code_average_daily_usd'];
+  const lines = [
+    `# source_updated_at=${state.data.updated_at || 'unknown'}`,
+    `# exported_at=${new Date().toISOString()}`,
+    `# selected_from=${$('dateFrom').value}`,
+    `# selected_to=${$('dateTo').value}`,
+    '# selected_region=czsk',
+    `# grouping=${grouping}`,
+    '# aggregation_version=glv-phases-v1-post-aggregation-ratios',
+    `# dataset_sha256=${checksum}`,
+    headers.join(','),
+  ];
+  groups.forEach((group) => lines.push([
+    group.label, group.phase, group.revenue, group.revenue_share, group.days,
+    group.average_daily_revenue, group.spend, group.adjusted_roas, group.influ_commission,
+    group.code_revenue, group.no_code_revenue, group.code_share, group.code_average_daily,
+    group.no_code_average_daily,
+  ].map(phases.csvCell).join(',')));
+  const blob = new Blob([`${lines.join('\n')}\n`], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `glv-phases-${grouping}-${$('dateFrom').value}-to-${$('dateTo').value}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function setTheme(theme) {
   document.documentElement.dataset.theme = theme;
   $('themeToggle').setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`);
   try { localStorage.setItem('glv-theme', theme); } catch (error) { /* storage can be disabled */ }
-  if (state.data) renderChart(getViewData());
+  if (state.data) render();
 }
 
 function setupTheme() {
@@ -1042,7 +1297,25 @@ function setupEvents() {
     $('periodPreset').value = 'custom';
     render();
   }));
-  ['comparisonToggle', 'trendMetric', 'trendMetricSecondary', 'grain', 'auditGrain'].forEach((id) => $(id).addEventListener('change', render));
+  ['comparisonToggle', 'trendMetric', 'trendMetricSecondary', 'grain', 'auditGrain', 'phaseGrouping'].forEach((id) => $(id).addEventListener('change', render));
+
+  document.querySelectorAll('[data-dashboard-view]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.activeView = button.dataset.dashboardView;
+      applyViewState();
+      render();
+    });
+    button.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const nextView = event.key === 'Home'
+        ? 'home'
+        : event.key === 'End' ? 'phases' : state.activeView === 'home' ? 'phases' : 'home';
+      const nextButton = document.querySelector(`[data-dashboard-view="${nextView}"]`);
+      nextButton.click();
+      nextButton.focus();
+    });
+  });
 
   document.querySelectorAll('.section-toggle').forEach((button) => {
     button.addEventListener('click', () => {
@@ -1075,6 +1348,7 @@ function setupEvents() {
     $('filtersToggle').setAttribute('aria-expanded', String(open));
   });
   $('exportCsv').addEventListener('click', exportCsv);
+  $('phaseExportCsv').addEventListener('click', exportPhaseCsv);
   $('retryLoad').addEventListener('click', () => {
     if (state.data) {
       $('periodPreset').value = '28d';
@@ -1178,6 +1452,12 @@ function validateData(data) {
   if (!data || !Array.isArray(data.rows) || !data.date_range?.start || !data.date_range?.end) throw new Error('Dashboard data has an invalid structure.');
   if (data.currency !== 'USD') throw new Error('Dashboard currency must be USD.');
   metrics.validateRows(data.rows);
+  phases.validateSchedule(data.phases);
+  data.rows.forEach((row, index) => {
+    ['influ_revenue', 'influ_commission'].forEach((key) => {
+      if (typeof row[key] !== 'number' || !Number.isFinite(row[key]) || row[key] < 0) throw new Error(`Invalid ${key} at row ${index}.`);
+    });
+  });
 }
 
 function validateHistoricalData(data) {

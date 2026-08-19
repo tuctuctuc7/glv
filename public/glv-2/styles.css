@@ -208,7 +208,7 @@ svg {
   border-bottom: 1px solid var(--border);
   display: grid;
   gap: 32px;
-  grid-template-columns: minmax(280px, 1fr) auto;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
   height: var(--header-height);
   padding: 0 28px;
   position: sticky;
@@ -270,6 +270,35 @@ svg {
   letter-spacing: -0.01em;
   line-height: 1.1;
   margin: 0;
+}
+
+.dashboard-view-nav {
+  align-items: center;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  display: flex;
+  gap: 3px;
+  justify-self: center;
+  padding: 3px;
+}
+
+.dashboard-view-nav button {
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 650;
+  min-height: 32px;
+  min-width: 72px;
+  padding: 0 14px;
+}
+
+.dashboard-view-nav button[aria-selected="true"] {
+  background: var(--surface-hover);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--text);
 }
 
 .header-actions {
@@ -366,6 +395,15 @@ html[data-theme="light"] .theme-icon-sun {
   display: grid;
   gap: 12px;
   grid-template-columns: 150px minmax(260px, auto) minmax(310px, 1fr) auto auto;
+}
+
+body[data-dashboard-view="phases"] .home-only-control {
+  display: none;
+}
+
+body[data-dashboard-view="phases"] .filter-grid {
+  grid-template-columns: 150px minmax(260px, 420px);
+  justify-content: start;
 }
 
 .date-fields {
@@ -1952,6 +1990,26 @@ tbody tr:last-child td {
 .connection-grid { display: grid; gap: 8px; grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 16px; }
 .connection-grid span { background: var(--surface-soft); border: 1px dashed var(--border-strong); border-radius: 7px; color: var(--text-secondary); font-size: 9px; padding: 9px; }
 
+/* Phases view */
+.phases-view { display: grid; gap: 14px; }
+.phase-overview { margin-bottom: 4px; }
+.phase-toolbar { align-items: end; display: flex; justify-content: space-between; margin: 0; padding: 14px 16px; }
+.phase-toolbar .field { min-width: 220px; }
+.phase-toolbar .secondary-button { min-height: 38px; }
+.phase-chart-grid { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.phase-chart-panel { margin: 0; min-height: 390px; }
+.phase-chart-wrap { height: 300px; margin-top: 16px; min-width: 0; position: relative; }
+.phase-chart-panel table.sr-only { display: block; max-width: 1px; min-width: 0; overflow: hidden; table-layout: fixed; width: 1px; }
+.phase-table-panel { margin: 0; overflow: hidden; padding-bottom: 0; }
+.phase-table-wrap { margin-top: 14px; }
+#phaseTable { min-width: 1760px; }
+#phaseTable td:first-child { color: var(--text); font-weight: 650; }
+#phaseTable tr[data-phase="bau"] td:first-child { border-left: 3px solid var(--text-tertiary); }
+#phaseTable tr[data-phase="influ"] td:first-child { border-left: 3px solid var(--purple); }
+#phaseTable tr[data-phase="promo"] td:first-child { border-left: 3px solid var(--accent); }
+.state-banner { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-secondary); font-size: 12px; padding: 18px; }
+.state-banner.state-error { background: var(--negative-soft); border-color: color-mix(in srgb, var(--negative) 40%, var(--border)); color: var(--negative); }
+
 @media (max-width: 1180px) {
   .kpi-grid-executive { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
@@ -1983,11 +2041,7 @@ tbody tr:last-child td {
 
 @media (max-width: 1180px) {
   .app-header {
-    grid-template-columns: 1fr auto;
-  }
-
-  .app-header nav {
-    display: none;
+    grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
   }
 
   .filter-grid {
@@ -2109,7 +2163,23 @@ tbody tr:last-child td {
 
   .app-header {
     gap: 12px;
+    grid-template-columns: auto 1fr auto;
     padding: 0 16px;
+  }
+
+  .dashboard-view-nav {
+    justify-self: center;
+    padding: 2px;
+  }
+
+  .dashboard-view-nav button {
+    min-height: 44px;
+    min-width: 58px;
+    padding: 0 9px;
+  }
+
+  .header-brand > div {
+    display: none;
   }
 
   .brand-mark {
@@ -2155,6 +2225,10 @@ tbody tr:last-child td {
   .mobile-filter-toggle,
   .comparison-control,
   .secondary-button {
+    min-height: 44px;
+  }
+
+  .phase-toolbar .secondary-button {
     min-height: 44px;
   }
 
@@ -2412,6 +2486,41 @@ tbody tr:last-child td {
     height: 300px;
   }
 
+  .phase-chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .phase-chart-panel {
+    min-height: 350px;
+  }
+
+  .phase-chart-wrap {
+    height: 260px;
+  }
+
+  .phase-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .phase-toolbar .field {
+    min-width: 0;
+  }
+
+  #phaseTable th:first-child,
+  #phaseTable td:first-child {
+    background: var(--surface);
+    left: 0;
+    position: sticky;
+    z-index: 2;
+  }
+
+  #phaseTable th:first-child {
+    background: var(--surface-raised);
+    z-index: 3;
+  }
+
   .regional-grid {
     grid-template-columns: 1fr;
   }
@@ -2456,6 +2565,10 @@ tbody tr:last-child td {
 }
 
 @media (max-width: 500px) {
+  .freshness {
+    display: none;
+  }
+
   .product-name {
     font-size: 14px;
   }
