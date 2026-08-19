@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Elmich Audit · Private Access</title>
+<style>
+:root{color-scheme:light;--blue:#2563eb;--green:#059669;--red:#dc2626;--gray100:#f1f5f9;--gray200:#e2e8f0;--gray600:#475569;--gray800:#1e293b;--gray900:#0f172a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:var(--gray800);display:grid;place-items:center;padding:20px}
+.access{width:min(100%,380px);background:#fff;border:1px solid var(--gray200);border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.12);padding:24px}
+.brand{font-size:16px;font-weight:800;color:var(--gray900);margin-bottom:4px}
+.sub{font-size:13px;line-height:1.45;color:var(--gray600);margin-bottom:18px}
+label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray600);margin-bottom:7px}
+input{width:100%;height:44px;border:1px solid var(--gray200);border-radius:8px;padding:0 12px;font:inherit;color:var(--gray900);outline:none}
+input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.14)}
+button{width:100%;height:44px;margin-top:12px;border:0;border-radius:8px;background:var(--blue);color:#fff;font-size:14px;font-weight:700;cursor:pointer}
+button:disabled{opacity:.65;cursor:wait}
+.msg{min-height:18px;margin-top:12px;font-size:13px;color:var(--red)}
+.msg.ok{color:var(--green)}
+</style>
+</head>
+<body>
+<main class="access">
+  <div class="brand">Elmich Audit Dashboard</div>
+  <div class="sub">Private access · Truy cập riêng tư</div>
+  <form id="access-form">
+    <label for="password">Password · Mật khẩu</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
+    <button id="submit-btn" type="submit">Enter dashboard</button>
+    <div class="msg" id="message" role="status" aria-live="polite"></div>
+  </form>
+</main>
+<script>
+const form=document.getElementById('access-form');
+const input=document.getElementById('password');
+const button=document.getElementById('submit-btn');
+const message=document.getElementById('message');
+
+const DEFAULT_PATH='/elm-meta-ads/';
+const LOGIN_PATHS=new Set(['/elm-meta-ads/login','/elm-meta-ads/login/','/elm-meta-ads/login.html']);
+function nextPath(){
+  const params=new URLSearchParams(window.location.search);
+  const raw=params.get('next')||DEFAULT_PATH;
+  try{
+    if(!raw.startsWith('/'))return DEFAULT_PATH;
+    const candidate=new URL(raw,window.location.origin);
+    const {pathname}=candidate;
+    if(candidate.origin!==window.location.origin)return DEFAULT_PATH;
+    if(!(pathname==='/elm-meta-ads'||pathname.startsWith('/elm-meta-ads/')))return DEFAULT_PATH;
+    if(LOGIN_PATHS.has(pathname))return DEFAULT_PATH;
+    return `${pathname}${candidate.search}${candidate.hash}`;
+  }catch(error){
+    return DEFAULT_PATH;
+  }
+}
+
+form.addEventListener('submit',async event=>{
+  event.preventDefault();
+  message.textContent='';
+  message.classList.remove('ok');
+  button.disabled=true;
+  try{
+    const response=await fetch('/api/elm-meta-ads/auth',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({password:input.value})
+    });
+    if(!response.ok){
+      if(response.status===429){
+        message.textContent='Too many attempts. Please wait 15 minutes. · Vui lòng thử lại sau 15 phút.';
+      }else if(response.status===503){
+        message.textContent='Private access is temporarily unavailable. Please try again.';
+      }else{
+        message.textContent='That password did not work. · Mật khẩu chưa đúng.';
+      }
+      button.disabled=false;
+      input.select();
+      return;
+    }
+    message.textContent='Access granted. · Đã cấp quyền truy cập.';
+    message.classList.add('ok');
+    window.location.assign(nextPath());
+  }catch(error){
+    message.textContent='Could not check the password. Please try again.';
+    button.disabled=false;
+  }
+});
+</script>
+</body>
+</html>

@@ -13,6 +13,7 @@ This repo is the `agenthic-lab` Vercel project that serves the GLV dashboard sur
 - Business KPI dashboard V2 overlap route: `https://lab.agenthic.com/glv-2/`
 - Meta Ads dashboard: `https://lab.agenthic.com/glv-meta-ads/`
 - Media Buyer OS: `https://lab.agenthic.com/glv-mb-os/`
+- Elmich audit dashboard: `https://lab.agenthic.com/elm-meta-ads/`
 - KURSA Meta Ads ingress: `https://lab.agenthic.com/krs-meta-ads/`
 
 Always deploy with the AGENTHIC Vercel scope:
@@ -33,9 +34,11 @@ public/
   glv-2/                     V2 business KPI dashboard, running in parallel
   glv-meta-ads/              password-gated Meta Ads dashboard
   glv-mb-os/                 password-gated Media Buyer OS cockpit
+  elm-meta-ads/              password-gated Elmich audit dashboard
 api/
   glv-meta-ads/              Meta Ads, decision, auth, and summary APIs
   glv-mb-os/                 browser-safe proxy for Media Buyer OS
+  elm-meta-ads/              Elmich route-specific password auth
 middleware.js                Vercel auth middleware for gated surfaces
 export_glv_dashboard.py      exports private Google Sheet to public JSON
 deploy_glv_dashboard.sh      export, commit/push JSON, deploy production
@@ -96,6 +99,12 @@ Derived metrics are calculated after date and region aggregation:
 - New customer rate = new customers / (new customers + returning customers)
 
 Currency for the business KPI dashboard JSON is USD.
+
+## Elmich Audit Dashboard
+
+Route: `/elm-meta-ads/`
+
+The Elmich audit dashboard has a dedicated password gate and does not reuse GLV authentication state. The login flow uses `ELM_AUDIT_PASSWORD`, issues a signed seven-day `elm_audit_session` cookie through `ELM_AUDIT_SESSION_SECRET`, and rate-limits attempts through the existing Redis service with an `elm:auth:ratelimit:*` key namespace. Passwords, signing secrets, session values, and raw client addresses must never be committed or logged.
 
 ## Meta Ads Dashboard
 
