@@ -70,9 +70,11 @@ async function checkRateLimit(req, redis, secret, nowSeconds) {
   });
   if (!response.ok) throw new Error('Rate limiter unavailable');
   const result = await response.json();
-  const attempts = Number(result?.[0]?.result);
-  const expiryApplied = Number(result?.[1]?.result);
-  if (!Number.isFinite(attempts) || expiryApplied !== 1) throw new Error('Invalid rate limiter response');
+  const attempts = result?.[0]?.result;
+  const expiryApplied = result?.[1]?.result;
+  if (!Number.isSafeInteger(attempts) || attempts < 1 || expiryApplied !== 1) {
+    throw new Error('Invalid rate limiter response');
+  }
   return { allowed: attempts <= RATE_LIMIT_MAX_ATTEMPTS, key };
 }
 
@@ -87,7 +89,7 @@ async function clearRateLimit(redis, key) {
   });
   if (!response.ok) throw new Error('Rate limiter unavailable');
   const result = await response.json();
-  if (Number(result?.[0]?.result) !== 1) throw new Error('Rate-limit counter was not cleared');
+  if (result?.[0]?.result !== 1) throw new Error('Rate-limit counter was not cleared');
 }
 
 function issueSession(secret, nowSeconds) {

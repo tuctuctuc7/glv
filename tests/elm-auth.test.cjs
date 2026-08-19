@@ -217,6 +217,34 @@ test('ELM auth confirms rate-limit clearing before issuing a session', async () 
     assert.equal(calls, 1);
     assert.equal(missingExpiry.statusCode, 503);
     assert.equal(missingExpiry.headers['set-cookie'], undefined);
+
+    for (const invalidAttempts of ['1', null, true, [1], 1.5, -1]) {
+      global.fetch = async () => ({ ok: true, json: async () => [{ result: invalidAttempts }, { result: 1 }] });
+      const invalidCounter = responseRecorder();
+      await handler(request('POST', { password: 'test-password' }), invalidCounter);
+      assert.equal(invalidCounter.statusCode, 503);
+      assert.equal(invalidCounter.headers['set-cookie'], undefined);
+    }
+    for (const invalidExpiry of ['1', null, true, [1], 0]) {
+      global.fetch = async () => ({ ok: true, json: async () => [{ result: 1 }, { result: invalidExpiry }] });
+      const invalidExpiryResponse = responseRecorder();
+      await handler(request('POST', { password: 'test-password' }), invalidExpiryResponse);
+      assert.equal(invalidExpiryResponse.statusCode, 503);
+      assert.equal(invalidExpiryResponse.headers['set-cookie'], undefined);
+    }
+    for (const invalidDelete of ['1', null, true, [1], 0]) {
+      calls = 0;
+      global.fetch = async () => {
+        calls += 1;
+        return calls === 1
+          ? redisReply(1)
+          : { ok: true, json: async () => [{ result: invalidDelete }] };
+      };
+      const invalidDeleteResponse = responseRecorder();
+      await handler(request('POST', { password: 'test-password' }), invalidDeleteResponse);
+      assert.equal(invalidDeleteResponse.statusCode, 503);
+      assert.equal(invalidDeleteResponse.headers['set-cookie'], undefined);
+    }
   } finally {
     global.fetch = originalFetch;
     for (const name of names) {
