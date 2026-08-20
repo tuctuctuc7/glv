@@ -121,10 +121,12 @@ test('shared Meta API exposes lead actions to the canonical dashboard', () => {
   assert.match(v2, /getPromoSegmentRows/);
 });
 
-test('CZSK Triage defines seven independent presets and one unique color per selectable metric', () => {
+test('Triage defines seven independent presets, a market filter, and one unique color per selectable metric', () => {
   const dashboard = read('public/glv-meta-ads/index.html');
   assert.match(dashboard, /id="panel-czsk-triage"/);
   assert.match(dashboard, /id="triage-grid"/);
+  assert.match(dashboard, /id="tab-czsk-triage"[\s\S]*?<span class="tab-desktop-label">Triage<\/span>/);
+  assert.doesNotMatch(dashboard, /<span class="tab-desktop-label">CZSK Triage<\/span>/);
   assert.doesNotMatch(dashboard, /class="section triage-intro"/);
   assert.doesNotMatch(dashboard, /Seven daily presets for fast funnel diagnosis/);
   assert.match(dashboard, /const METRIC_REGISTRY = \[/);
@@ -161,8 +163,17 @@ test('CZSK Triage defines seven independent presets and one unique color per sel
   assert.match(dashboard, /key:'ctr',label:'CTR'/);
   assert.doesNotMatch(dashboard, /Outbound CTR|outboundCtr/);
   assert.match(dashboard, /function getTriageSegmentRows\(source='daily'\)/);
-  assert.match(dashboard, /getMainSegmentRows\('czsk',source\)/);
-  assert.match(dashboard, /id="triage-filter-section"[\s\S]*id="filter-wrap-triage-campaign"[\s\S]*id="filter-wrap-triage-group"[\s\S]*id="triage-grid"/);
+  assert.match(dashboard, /let triageMarket\s*=\s*'czsk'/);
+  assert.match(dashboard, /function getTriageMarketRows\(source='daily'\)/);
+  assert.match(dashboard, /triageMarket==='all'\?\['czsk','us'\]:\[triageMarket\]/);
+  assert.match(dashboard, /const rows=getTriageMarketRows\(source\)/);
+  assert.match(dashboard, /function onTriageMarketChange\(market\)/);
+  assert.match(dashboard, /triageMarket=\['czsk','us','all'\]\.includes\(market\)\?market:'czsk'/);
+  assert.match(dashboard, /onTriageMarketChange[\s\S]*buildTriageFilters\(\);[\s\S]*refreshTriageCharts\(\);/);
+  assert.match(dashboard, /id="triage-filter-section"[\s\S]*id="triage-market"[\s\S]*id="filter-wrap-triage-campaign"[\s\S]*id="filter-wrap-triage-group"[\s\S]*id="triage-grid"/);
+  assert.match(dashboard, /id="triage-filter-label-market"[^>]*>Market<\/span>/);
+  assert.match(dashboard, /id="triage-market"[^>]*aria-labelledby="triage-filter-label-market"[^>]*onchange="onTriageMarketChange\(this\.value\)"/);
+  assert.match(dashboard, /<option value="czsk" selected>CZSK<\/option>[\s\S]*<option value="us">US<\/option>[\s\S]*<option value="all">All<\/option>/);
   assert.match(dashboard, /id="triage-filter-label-campaign"[^>]*>Campaign name<\/span>/);
   assert.match(dashboard, /id="filter-toggle-triage-campaign"[^>]*aria-labelledby="triage-filter-label-campaign filter-label-triage-campaign"/);
   assert.match(dashboard, /id="triage-filter-label-group"[^>]*>Campaign group<\/span>/);

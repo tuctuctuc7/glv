@@ -308,10 +308,19 @@ async function run() {
       await page.locator('#include-leadgen').uncheck();
       await page.locator('[data-tab="czsk-triage"]').click();
       if (viewport.width <= 720) await page.locator('#mobile-controls-toggle').click();
+      const triageTabText = await page.locator('[data-tab="czsk-triage"]').innerText();
+      assert.match(triageTabText, /Triage/);
+      assert.doesNotMatch(triageTabText, /CZSK/);
+      assert.equal(await page.getByRole('tab', { name: /Triage/ }).count(), 1);
       assert.equal(await page.locator('#include-leadgen').isVisible(), true);
       assert.equal(await page.locator('#include-leadgen').isChecked(), false);
       assert.equal(await page.locator('#panel-czsk-triage .triage-intro').count(), 0);
       assert.equal(await page.locator('#triage-filter-section').evaluate(section => Boolean(section.compareDocumentPosition(document.querySelector('#triage-grid')) & window.Node.DOCUMENT_POSITION_FOLLOWING)), true);
+      assert.equal(await page.getByRole('combobox', { name: 'Market' }).count(), 1);
+      assert.equal(await page.locator('#triage-market').inputValue(), 'czsk');
+      assert.deepEqual(await page.locator('#triage-market option').evaluateAll(options => options.map(option => [option.value, option.textContent])), [['czsk', 'CZSK'], ['us', 'US'], ['all', 'All']]);
+      assert.equal(await page.locator('#triage-filter-section .triage-filter-controls').evaluate(controls => getComputedStyle(controls).gridTemplateColumns.split(' ').length), viewport.width <= 720 ? 1 : 3);
+      if (viewport.width <= 720) assert.equal(await page.locator('#triage-market').evaluate(select => select.getBoundingClientRect().height), 44);
       assert.deepEqual(await page.locator('#filter-options-triage-campaign input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['c1', true], ['c2', true], ['c3', true]]);
       assert.deepEqual(await page.locator('#filter-options-triage-group input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['bau', true], ['promo', true], ['wl', true]]);
       assert.equal(await page.locator('#filter-label-triage-campaign').textContent(), 'All campaigns');
@@ -370,7 +379,26 @@ async function run() {
       assert.deepEqual(await page.evaluate(() => window.Chart.getChart('triage-chart-efficiency').data.datasets[0].data), salesOnlySpend);
       assert.equal(Math.round(triageCharts[0].datasets[0].values.reduce((sum, value) => sum + value, 0)), 99909, 'triage excludes Lead-gen by default');
       const chartValues = () => page.evaluate(() => [...document.querySelectorAll('#panel-czsk-triage canvas')].map(canvas => window.Chart.getChart(canvas).data.datasets.map(dataset => dataset.data)));
+      const triageSpend = () => page.evaluate(() => Math.round(window.Chart.getChart('triage-chart-efficiency').data.datasets[0].data.reduce((sum, value) => sum + value, 0)));
       const allCampaignValues = await chartValues();
+      await page.locator('#triage-market').selectOption('us');
+      assert.deepEqual(await page.locator('#filter-options-triage-campaign input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['u1', true]]);
+      assert.deepEqual(await page.locator('#filter-options-triage-group input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['bau', true]]);
+      assert.equal(await triageSpend(), 55312);
+      const usValues = await chartValues();
+      assert.equal(usValues.every((values, index) => JSON.stringify(values) !== JSON.stringify(allCampaignValues[index])), true, 'US market refreshes all seven charts');
+      if (viewport.name === 'desktop') {
+        await page.evaluate(() => loadData());
+        assert.equal(await page.locator('#triage-market').inputValue(), 'us');
+        assert.deepEqual(await page.locator('#filter-options-triage-campaign input').evaluateAll(inputs => inputs.map(input => input.value)), ['u1']);
+      }
+      await page.locator('#triage-market').selectOption('all');
+      assert.deepEqual(await page.locator('#filter-options-triage-campaign input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['c1', true], ['c2', true], ['c3', true], ['u1', true]]);
+      assert.deepEqual(await page.locator('#filter-options-triage-group input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['bau', true], ['promo', true], ['wl', true]]);
+      assert.equal(await triageSpend(), 155221);
+      await page.locator('#triage-market').selectOption('czsk');
+      assert.deepEqual(await page.locator('#filter-options-triage-campaign input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['c1', true], ['c2', true], ['c3', true]]);
+      assert.equal(await triageSpend(), 99909);
       await page.locator('#filter-toggle-triage-group').evaluate(element => element.scrollIntoView({ block: 'center' }));
       await page.locator('#filter-toggle-triage-group').click({ force: true });
       const triageGroupMenuGeometry=await page.locator('#filter-dropdown-triage-group').evaluate(dropdown => {

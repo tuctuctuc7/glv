@@ -103,9 +103,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;}
 .triage-data-table.sr-only{display:block!important;table-layout:fixed;}
 .triage-filter-section{position:relative;z-index:3;}
-.triage-filter-controls{display:grid;grid-template-columns:repeat(2,minmax(0,320px));gap:12px;}
+.triage-filter-controls{display:grid;grid-template-columns:repeat(3,minmax(0,320px));gap:12px;}
 .triage-filter-controls .filter-wrap{display:grid;grid-template-rows:auto 44px;gap:5px;margin:0;min-width:0;}
 .triage-filter-label{font-size:10px;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+.triage-filter-controls .metric-select{width:100%;height:44px;min-width:0;padding:0 10px;}
 .triage-filter-controls .filter-toggle{width:100%;height:44px;min-width:0;max-width:none;}
 .triage-filter-controls .filter-toggle>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .triage-filter-controls .filter-dropdown{width:100%;min-width:0;}
@@ -335,7 +336,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   </div>
   <div class="header-tabs" role="tablist" aria-label="Dashboard views">
     <button class="tab-btn active" id="tab-czsk" data-tab="czsk" role="tab" aria-selected="true" aria-controls="panel-czsk"><span class="tab-desktop-label">🇨🇿 CZSK</span><span class="tab-mobile-label"><span class="tab-mobile-icon">🇨🇿</span>CZSK</span></button>
-    <button class="tab-btn" id="tab-czsk-triage" data-tab="czsk-triage" role="tab" aria-selected="false" aria-controls="panel-czsk-triage"><span class="tab-desktop-label">CZSK Triage</span><span class="tab-mobile-label"><span class="tab-mobile-icon">⌁</span>Triage</span></button>
+    <button class="tab-btn" id="tab-czsk-triage" data-tab="czsk-triage" role="tab" aria-selected="false" aria-controls="panel-czsk-triage"><span class="tab-desktop-label">Triage</span><span class="tab-mobile-label"><span class="tab-mobile-icon">⌁</span>Triage</span></button>
     <button class="tab-btn" id="tab-czsk-promo" data-tab="czsk-promo" role="tab" aria-selected="false" aria-controls="panel-czsk-promo"><span class="tab-desktop-label">CZSK Promo</span><span class="tab-mobile-label"><span class="tab-mobile-icon">◫</span>Promo</span></button>
     <button class="tab-btn" id="tab-czsk-leadgen" data-tab="czsk-leadgen" role="tab" aria-selected="false" aria-controls="panel-czsk-leadgen"><span class="tab-desktop-label">CZSK Lead-gen</span><span class="tab-mobile-label"><span class="tab-mobile-icon">◎</span>Lead-gen</span></button>
     <button class="tab-btn" id="tab-us" data-tab="us" role="tab" aria-selected="false" aria-controls="panel-us"><span class="tab-desktop-label">🇺🇸 US</span><span class="tab-mobile-label"><span class="tab-mobile-icon">🇺🇸</span>US</span></button>
@@ -427,6 +428,14 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   <div class="section triage-filter-section" id="triage-filter-section">
     <div class="section-title">Filters</div>
     <div class="triage-filter-controls">
+      <label class="filter-wrap" for="triage-market">
+        <span class="triage-filter-label" id="triage-filter-label-market">Market</span>
+        <select class="metric-select" id="triage-market" aria-labelledby="triage-filter-label-market" onchange="onTriageMarketChange(this.value)">
+          <option value="czsk" selected>CZSK</option>
+          <option value="us">US</option>
+          <option value="all">All</option>
+        </select>
+      </label>
       <div class="filter-wrap" id="filter-wrap-triage-campaign" data-filter-label="Campaign name">
         <span class="triage-filter-label" id="triage-filter-label-campaign">Campaign name</span>
         <button type="button" class="filter-toggle" id="filter-toggle-triage-campaign" aria-labelledby="triage-filter-label-campaign filter-label-triage-campaign" aria-expanded="false" aria-controls="filter-dropdown-triage-campaign" onclick="toggleFilter('triage-campaign')"><span id="filter-label-triage-campaign">All campaigns</span><span style="color:var(--gray400)">▾</span></button>
@@ -705,6 +714,7 @@ let filterState        = { czsk: null, us: null, 'czsk-promo': null, 'czsk-leadg
 let creativeTypeFilter = { czsk: 'all', us: 'all' };
 let chartGranularity   = { czsk: 'day', us: 'day' };
 let triageState        = Object.fromEntries(TRIAGE_PRESETS.map(preset=>[preset.id,{grain:'day',primary:preset.primary,secondary:preset.secondary}]));
+let triageMarket       = 'czsk';
 let promoTableMode     = 'groups';
 let leadgenTableMode   = 'groups';
 let promoActiveDaysOnly = false;
@@ -996,8 +1006,12 @@ function getMainSegmentRows(seg,source='daily'){
   if(seg!=='czsk')return rows;
   return includeLeadGen?rows.map(r=>isLeadGen(r.name)?spendOnlyRow(r):r):rows.filter(r=>!isLeadGen(r.name));
 }
+function getTriageMarketRows(source='daily'){
+  const segments=triageMarket==='all'?['czsk','us']:[triageMarket];
+  return segments.flatMap(segment=>getMainSegmentRows(segment,source));
+}
 function getTriageSegmentRows(source='daily'){
-  const rows=getMainSegmentRows('czsk',source);
+  const rows=getTriageMarketRows(source);
   const campaignSelection=filterState['triage-campaign'];
   const groupSelection=filterState['triage-group'];
   return rows.filter(r=>(!campaignSelection||campaignSelection.has(r.id))&&(!groupSelection||groupSelection.has(r.group||promoGroupKey(r.name))));
@@ -1446,10 +1460,16 @@ function buildTriageFilterOptions(key,options){
   updateFilterLabel(key);
 }
 function buildTriageFilters(){
-  const rows=getMainSegmentRows('czsk','daily');const campaigns=new Map();const groups=new Map();
+  const rows=getTriageMarketRows('daily');const campaigns=new Map();const groups=new Map();
   rows.forEach(row=>{campaigns.set(row.id,{value:String(row.id),label:campaignMeta[row.id]?.name||row.name||String(row.id)});const group=promoGroup(row.group||promoGroupKey(row.name));groups.set(group.key,{value:group.key,label:group.label});});
   buildTriageFilterOptions('triage-campaign',[...campaigns.values()]);
   buildTriageFilterOptions('triage-group',[...groups.values()]);
+}
+function onTriageMarketChange(market){
+  triageMarket=['czsk','us','all'].includes(market)?market:'czsk';
+  const select=document.getElementById('triage-market');if(select)select.value=triageMarket;
+  buildTriageFilters();
+  refreshTriageCharts();
 }
 function toggleFilter(key){
   const dropdown=document.getElementById('filter-dropdown-'+key);if(!dropdown)return;
