@@ -170,10 +170,15 @@ test('Triage defines seven independent presets, a market filter, and one unique 
   assert.match(dashboard, /function onTriageMarketChange\(market\)/);
   assert.match(dashboard, /triageMarket=\['czsk','us','all'\]\.includes\(market\)\?market:'czsk'/);
   assert.match(dashboard, /onTriageMarketChange[\s\S]*buildTriageFilters\(\);[\s\S]*refreshTriageCharts\(\);/);
-  assert.match(dashboard, /id="triage-filter-section"[\s\S]*id="triage-market"[\s\S]*id="filter-wrap-triage-campaign"[\s\S]*id="filter-wrap-triage-group"[\s\S]*id="triage-grid"/);
+  assert.match(dashboard, /id="triage-filter-section"[\s\S]*id="triage-market"[\s\S]*id="triage-grain"[\s\S]*id="filter-wrap-triage-campaign"[\s\S]*id="filter-wrap-triage-group"[\s\S]*id="triage-grid"/);
   assert.match(dashboard, /id="triage-filter-label-market"[^>]*>Market<\/span>/);
   assert.match(dashboard, /id="triage-market"[^>]*aria-labelledby="triage-filter-label-market"[^>]*onchange="onTriageMarketChange\(this\.value\)"/);
   assert.match(dashboard, /<option value="czsk" selected>CZSK<\/option>[\s\S]*<option value="us">US<\/option>[\s\S]*<option value="all">All<\/option>/);
+  assert.match(dashboard, /id="triage-filter-label-grain"[^>]*>Grain<\/span>/);
+  assert.match(dashboard, /id="triage-grain"[^>]*aria-label="All chart grain"[^>]*onchange="setAllTriageGrains\(this\.value\)"/);
+  assert.match(dashboard, /id="triage-grain"[\s\S]*?<option value="day" selected>Day<\/option>[\s\S]*?<option value="week">Week<\/option>[\s\S]*?<option value="month">Month<\/option>[\s\S]*?<option value="mixed" disabled>Mixed<\/option>[\s\S]*?<\/select>/);
+  assert.match(dashboard, /function setAllTriageGrains\(grain\)[\s\S]*TRIAGE_PRESETS\.forEach\(preset=>\{[\s\S]*triageState\[preset\.id\]\.grain=grain;[\s\S]*document\.getElementById\(`triage-grain-\$\{preset\.id\}`\)[\s\S]*refreshTriageCharts\(\);/);
+  assert.match(dashboard, /function syncTriageGrainControl\(\)[\s\S]*grains\.size===1\?\[\.\.\.grains\]\[0\]:'mixed'/);
   assert.match(dashboard, /id="triage-filter-label-campaign"[^>]*>Campaign name<\/span>/);
   assert.match(dashboard, /id="filter-toggle-triage-campaign"[^>]*aria-labelledby="triage-filter-label-campaign filter-label-triage-campaign"/);
   assert.match(dashboard, /id="triage-filter-label-group"[^>]*>Campaign group<\/span>/);

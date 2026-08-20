@@ -319,8 +319,11 @@ async function run() {
       assert.equal(await page.getByRole('combobox', { name: 'Market' }).count(), 1);
       assert.equal(await page.locator('#triage-market').inputValue(), 'czsk');
       assert.deepEqual(await page.locator('#triage-market option').evaluateAll(options => options.map(option => [option.value, option.textContent])), [['czsk', 'CZSK'], ['us', 'US'], ['all', 'All']]);
-      assert.equal(await page.locator('#triage-filter-section .triage-filter-controls').evaluate(controls => getComputedStyle(controls).gridTemplateColumns.split(' ').length), viewport.width <= 720 ? 1 : 3);
-      if (viewport.width <= 720) assert.equal(await page.locator('#triage-market').evaluate(select => select.getBoundingClientRect().height), 44);
+      assert.equal(await page.getByRole('combobox', { name: 'All chart grain', exact: true }).count(), 1);
+      assert.equal(await page.locator('#triage-grain').inputValue(), 'day');
+      assert.deepEqual(await page.locator('#triage-grain option').evaluateAll(options => options.map(option => [option.value, option.textContent, option.disabled])), [['day', 'Day', false], ['week', 'Week', false], ['month', 'Month', false], ['mixed', 'Mixed', true]]);
+      assert.equal(await page.locator('#triage-filter-section .triage-filter-controls').evaluate(controls => getComputedStyle(controls).gridTemplateColumns.split(' ').length), viewport.width <= 720 ? 1 : 4);
+      if (viewport.width <= 720) assert.equal(await page.locator('#triage-filter-section .metric-select').evaluateAll(selects => selects.every(select => select.getBoundingClientRect().height === 44)), true);
       assert.deepEqual(await page.locator('#filter-options-triage-campaign input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['c1', true], ['c2', true], ['c3', true]]);
       assert.deepEqual(await page.locator('#filter-options-triage-group input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['bau', true], ['promo', true], ['wl', true]]);
       assert.equal(await page.locator('#filter-label-triage-campaign').textContent(), 'All campaigns');
@@ -358,6 +361,25 @@ async function run() {
       assert.equal(new Set(defaultColors).size, 14);
       assert.equal(triageCharts.every(chart => chart.labels > 0 && chart.tableRows === chart.labels), true);
       assert.equal(triageCharts.every(chart => chart.legendAxes.join(',') === 'y,y1'), true);
+      const triageChartCount = await page.evaluate(() => Object.keys(window.Chart.instances).length);
+      await page.locator('#triage-grain').selectOption('week');
+      assert.deepEqual(await page.locator('[id^="triage-grain-"]').evaluateAll(selects => selects.map(select => select.value)), Array(7).fill('week'));
+      assert.equal(await page.locator('#panel-czsk-triage .triage-preset').evaluateAll(headings => headings.every(heading => heading.textContent.endsWith('· week'))), true);
+      assert.equal(await page.locator('#panel-czsk-triage .triage-data-table caption').evaluateAll(captions => captions.every(caption => caption.textContent.endsWith('by week'))), true);
+      assert.equal(await page.evaluate(dayCounts => [...document.querySelectorAll('#panel-czsk-triage canvas')].every((canvas, index) => window.Chart.getChart(canvas).data.labels.length < dayCounts[index]), triageCharts.map(chart => chart.labels)), true);
+      assert.equal(await page.evaluate(() => Object.keys(window.Chart.instances).length), triageChartCount);
+      if (viewport.name === 'desktop') {
+        await page.evaluate(() => loadData());
+        assert.equal(await page.locator('#triage-grain').inputValue(), 'week');
+        assert.deepEqual(await page.locator('[id^="triage-grain-"]').evaluateAll(selects => selects.map(select => select.value)), Array(7).fill('week'));
+      }
+      await page.locator('#triage-grain').selectOption('day');
+      assert.deepEqual(await page.locator('[id^="triage-grain-"]').evaluateAll(selects => selects.map(select => select.value)), Array(7).fill('day'));
+      assert.equal(await page.evaluate(() => Object.keys(window.Chart.instances).length), triageChartCount);
+      await page.locator('#triage-grain-lp-checkout').selectOption('week');
+      assert.equal(await page.locator('#triage-grain').inputValue(), 'mixed');
+      await page.locator('#triage-grain').selectOption('day');
+      assert.deepEqual(await page.locator('[id^="triage-grain-"]').evaluateAll(selects => selects.map(select => select.value)), Array(7).fill('day'));
       const expectedCtr = daily
         .filter(row => ['c1', 'c2', 'c3'].includes(row.id) && row.date_start === '2026-08-10')
         .reduce((totals, row) => ({ clicks: totals.clicks + Number(row['actions:link_click']), impressions: totals.impressions + Number(row.impressions) }), { clicks: 0, impressions: 0 });
