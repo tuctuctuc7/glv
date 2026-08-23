@@ -46,8 +46,8 @@ function segmentFor(name) {
 
 function summarize(rows, date) {
   const totals = {
-    czsk: { spend: 0, revenue: 0, rows: 0 },
-    us: { spend: 0, revenue: 0, rows: 0 },
+    czsk: { spend: 0, revenue: 0, rows: 0, landing_page_views: 0, checkouts: 0, purchases: 0, clicks: 0, impressions: 0 },
+    us: { spend: 0, revenue: 0, rows: 0, landing_page_views: 0, checkouts: 0, purchases: 0, clicks: 0, impressions: 0 },
   };
   const campaigns = {
     czsk: [],
@@ -66,6 +66,11 @@ function summarize(rows, date) {
     const revenue = num(row['action_values:omni_purchase']) || actionValue(row.action_values, 'omni_purchase');
     totals[segment].spend += spend;
     totals[segment].revenue += revenue;
+    totals[segment].landing_page_views += num(row['actions:landing_page_view']) || actionValue(row.actions, 'landing_page_view');
+    totals[segment].checkouts += num(row['actions:initiate_checkout']) || actionValue(row.actions, 'initiate_checkout');
+    totals[segment].purchases += num(row['actions:omni_purchase']) || actionValue(row.actions, 'omni_purchase');
+    totals[segment].clicks += num(row['actions:link_click']) || actionValue(row.actions, 'link_click');
+    totals[segment].impressions += num(row.impressions);
     totals[segment].rows += 1;
     campaigns[segment].push({
       id: row.id || row.campaign_id || '',
@@ -120,3 +125,4 @@ module.exports = async (req, res) => {
     });
   }
 };
+module.exports._test = { summarize };

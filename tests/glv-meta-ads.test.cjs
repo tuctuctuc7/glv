@@ -324,6 +324,57 @@ test('Meta cron reports aggregate lead and landing-page-view totals for verifica
   ]), { rows: 2, leads: 5, landingPageViews: 20 });
 });
 
+test('Meta post-cron summary aggregates internal Slack report funnel metrics', () => {
+  const summary = require('../api/glv-meta-ads/post-cron-summary.js');
+  const result = summary._test.summarize([
+    {
+      date_start: '2026-08-22',
+      campaign_name: 'GLV_CZSK_Promo_Test',
+      amount_spent: '100.50',
+      impressions: '10000',
+      'actions:link_click': '300',
+      'actions:landing_page_view': '200',
+      'actions:initiate_checkout': '40',
+      'actions:omni_purchase': '20',
+      'action_values:omni_purchase': '350.75',
+    },
+    {
+      date_start: '2026-08-22',
+      campaign_name: 'GLV_US_Test',
+      amount_spent: '25',
+      impressions: '5000',
+      actions: [
+        { action_type: 'link_click', value: '125' },
+        { action_type: 'landing_page_view', value: '80' },
+        { action_type: 'initiate_checkout', value: '8' },
+        { action_type: 'omni_purchase', value: '2' },
+      ],
+      action_values: [{ action_type: 'omni_purchase', value: '44' }],
+    },
+    {
+      date_start: '2026-08-22',
+      campaign_name: 'GLV_US_Advertorial_Test',
+      amount_spent: '999',
+      impressions: '999',
+    },
+  ], '2026-08-22');
+
+  assert.equal(result.totals.czsk.spend, 100.5);
+  assert.equal(result.totals.czsk.revenue, 350.75);
+  assert.equal(result.totals.czsk.landing_page_views, 200);
+  assert.equal(result.totals.czsk.checkouts, 40);
+  assert.equal(result.totals.czsk.purchases, 20);
+  assert.equal(result.totals.czsk.clicks, 300);
+  assert.equal(result.totals.czsk.impressions, 10000);
+  assert.equal(result.totals.us.spend, 25);
+  assert.equal(result.totals.us.revenue, 44);
+  assert.equal(result.totals.us.landing_page_views, 80);
+  assert.equal(result.totals.us.checkouts, 8);
+  assert.equal(result.totals.us.purchases, 2);
+  assert.equal(result.totals.us.clicks, 125);
+  assert.equal(result.totals.us.impressions, 5000);
+});
+
 test('Meta cron returns HTTP 500 when cache writes fail', async () => {
   const cron = require('../api/glv-meta-ads/cron.js');
   const originalFetch = global.fetch;
