@@ -97,16 +97,18 @@ function historicalContext(view, grain) {
   const coverage = state.historicalData?.coverage;
   const intersects = Boolean(coverage && view.filters.from <= coverage.end && view.filters.to >= coverage.start);
   const eligibleGrain = ['month', 'year'].includes(grain);
-  const allMarkets = state.selectedRegions.length === 3;
-  if (!intersects || !eligibleGrain || !allMarkets) return { rows: [], intersects, eligibleGrain, allMarkets };
+  const includesCzsk = state.selectedRegions.includes('czsk');
+  if (!intersects || !eligibleGrain || !includesCzsk) return { rows: [], intersects, eligibleGrain, includesCzsk };
 
-  const workingMonths = new Set(view.currentRows.map((row) => row.date.slice(0, 7)));
+  const workingMonths = new Set(view.currentRows
+    .filter((row) => row.region === 'czsk')
+    .map((row) => row.date.slice(0, 7)));
   const rows = state.historicalData.rows.filter((row) => (
     row.period_start >= view.filters.from
     && row.period_end <= view.filters.to
     && !workingMonths.has(row.period_start.slice(0, 7))
   ));
-  return { rows, intersects, eligibleGrain, allMarkets };
+  return { rows, intersects, eligibleGrain, includesCzsk };
 }
 
 function rowsForGrain(view, grain) {
@@ -124,12 +126,12 @@ function renderHistoricalNote(id, context) {
   note.hidden = false;
   if (!context.eligibleGrain) {
     note.textContent = '2025 history is monthly and is excluded at Day and Week grain; this view uses only the working source.';
-  } else if (!context.allMarkets) {
-    note.textContent = '2025 history has no defensible market split and is excluded from market-specific views. Choose All markets to include it.';
+  } else if (!context.includesCzsk) {
+    note.textContent = '2025 history contains CZSK only and is excluded because selected markets do not include CZSK. Choose CZSK or All markets to include it.';
   } else if (!context.rows.length) {
     note.textContent = 'No complete 2025 month is contained by the selected date range.';
   } else {
-    note.textContent = 'Includes the static 2025 All-markets monthly snapshot. Revenue and spend are converted from kCZK to USD with ECB monthly reference rates; Visitors, CVR, and New customer revenue are unavailable for 2025.';
+    note.textContent = 'Includes the static 2025 CZSK monthly snapshot; US and ROW had no activity in 2025. Revenue and spend are converted from kCZK to USD with ECB monthly reference rates; Visitors, CVR, and New customer revenue are unavailable for 2025.';
   }
 }
 
@@ -1185,7 +1187,7 @@ function validateHistoricalData(data) {
   if (data.coverage?.start !== '2025-01-01' || data.coverage?.end !== '2025-12-31') throw new Error('Historical coverage must be calendar year 2025.');
   const seen = new Set();
   data.rows.forEach((row, index) => {
-    if (row.region !== 'historical_all' || row.source_grain !== 'month' || !/^2025-\d{2}-\d{2}$/.test(row.date)) throw new Error(`Invalid historical row ${index}.`);
+    if (row.region !== 'czsk' || row.source_grain !== 'month' || !/^2025-\d{2}-\d{2}$/.test(row.date)) throw new Error(`Invalid historical row ${index}.`);
     if (seen.has(row.date)) throw new Error(`Duplicate historical month ${row.date}.`);
     seen.add(row.date);
     ['revenue', 'spend', 'purchases', 'new_customers', 'returning_customers'].forEach((key) => {

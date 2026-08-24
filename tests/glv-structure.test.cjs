@@ -127,12 +127,14 @@ test('audit trail has an independent day, week, month, and year grain filter', (
   assert.match(app, /\[[^\]]*'grain', 'auditGrain'[^\]]*\]\.forEach\(\(id\) => \$\(id\)\.addEventListener\('change', render\)\)/, 'audit grain must update through the full render lifecycle');
 });
 
-test('2025 history is a static month/year-only All-markets source', () => {
+test('2025 history is a static month/year-only CZSK source', () => {
   has(/<select id="grain">[\s\S]*?value="day" selected[\s\S]*?value="week"[\s\S]*?value="month"[\s\S]*?value="year"/, 'chart grain options are incomplete');
   has(/id="chartHistoryNote"[^>]*role="note"[^>]*hidden/, 'chart needs a historical source disclosure');
   has(/id="auditHistoryNote"[^>]*role="note"[^>]*hidden/, 'audit table needs a historical source disclosure');
   assert.match(app, /const eligibleGrain = \['month', 'year'\]\.includes\(grain\)/, 'history must be gated to month and year');
-  assert.match(app, /const allMarkets = state\.selectedRegions\.length === 3/, 'history must be limited to All markets');
+  assert.match(app, /const includesCzsk = state\.selectedRegions\.includes\('czsk'\)/, 'history must be available whenever CZSK is in scope');
+  assert.doesNotMatch(app, /const allMarkets = state\.selectedRegions\.length === 3/, 'history must not be limited to All markets');
+  assert.match(app, /view\.currentRows[\s\S]*?\.filter\(\(row\) => row\.region === 'czsk'\)[\s\S]*?workingMonths\.has/, 'only working CZSK months may supersede CZSK history');
   assert.match(app, /row\.period_start >= view\.filters\.from[\s\S]*?row\.period_end <= view\.filters\.to/, 'only complete historical months may be included');
   assert.match(app, /fetch\('\/glv-2\/glv_2025_monthly\.json'/, 'static history must load from a route-local snapshot');
   assert.match(app, /fetch\('\/glv-2\/glv_dashboard\.json'/, 'working source must remain independently loaded');

@@ -243,7 +243,7 @@ async function run() {
     assert.deepEqual(monthChart.labels, expectedMonthLabels, 'Month chart must combine the twelve static months with working-source months');
     assert.equal(monthChart.revenue[0], historicalData.rows[0].revenue, 'January 2025 revenue must come from the static snapshot');
     assert.ok(Math.abs(monthChart.roas[0] - (historicalData.rows[0].revenue / historicalData.rows[0].spend)) < 1e-12, 'January 2025 ROAS must be derived from normalized sums');
-    assert.match(await page.locator('#chartHistoryNote').textContent(), /static 2025 All-markets monthly snapshot/);
+    assert.match(await page.locator('#chartHistoryNote').textContent(), /static 2025 CZSK monthly snapshot/);
 
     await page.locator('#auditGrain').selectOption('month');
     assert.equal(await page.locator('#metricsTableBody tr').count(), expectedMonthLabels.length + 1, 'Month audit must show summary plus historical and working months');
@@ -268,8 +268,19 @@ async function run() {
 
     await page.locator('[data-region="czsk"]').click();
     await page.locator('#grain').selectOption('month');
-    assert.ok((await page.evaluate(() => window.Chart.getChart('trendChart').data.labels)).every((label) => !String(label).startsWith('2025')), 'market-specific chart must exclude company-level 2025 history');
-    assert.match(await page.locator('#chartHistoryNote').textContent(), /Choose All markets/);
+    assert.equal((await page.evaluate(() => window.Chart.getChart('trendChart').data.labels)).filter((label) => String(label).startsWith('2025')).length, 12, 'CZSK chart must include all twelve 2025 months');
+    assert.equal(await page.locator('#metricsTableBody tr').filter({ has: page.locator('td:first-child', { hasText: '2025' }) }).count(), 1, 'CZSK Year audit must include 2025');
+    assert.match(await page.locator('#chartHistoryNote').textContent(), /2025 CZSK monthly snapshot/);
+    await page.screenshot({ path: path.join(evidenceDir, 'desktop-history-czsk-month.png'), fullPage: true });
+    await page.locator('[data-region="all"]').click();
+    await page.locator('[data-region="us"]').click();
+    assert.ok((await page.evaluate(() => window.Chart.getChart('trendChart').data.labels)).every((label) => !String(label).startsWith('2025')), 'US-only chart must exclude CZSK 2025 history');
+    assert.equal(await page.locator('#metricsTableBody tr').filter({ has: page.locator('td:first-child', { hasText: '2025' }) }).count(), 0, 'US-only audit must exclude CZSK 2025 history');
+    assert.match(await page.locator('#chartHistoryNote').textContent(), /selected markets do not include CZSK/);
+    await page.locator('[data-region="all"]').click();
+    await page.locator('[data-region="row"]').click();
+    assert.ok((await page.evaluate(() => window.Chart.getChart('trendChart').data.labels)).every((label) => !String(label).startsWith('2025')), 'ROW-only chart must exclude CZSK 2025 history');
+    assert.match(await page.locator('#chartHistoryNote').textContent(), /selected markets do not include CZSK/);
     await page.locator('[data-region="all"]').click();
 
     await page.locator('#dateTo').fill(historicalData.coverage.end);
@@ -477,8 +488,8 @@ async function run() {
     await mobile.locator('#filtersToggle').click();
     await mobile.locator('#grain').selectOption('year');
     await mobile.locator('#auditGrain').selectOption('year');
-    assert.match(await mobile.locator('#chartHistoryNote').textContent(), /static 2025 All-markets monthly snapshot/);
-    assert.match(await mobile.locator('#auditHistoryNote').textContent(), /static 2025 All-markets monthly snapshot/);
+    assert.match(await mobile.locator('#chartHistoryNote').textContent(), /static 2025 CZSK monthly snapshot/);
+    assert.match(await mobile.locator('#auditHistoryNote').textContent(), /static 2025 CZSK monthly snapshot/);
     assert.deepEqual(await mobile.evaluate(() => window.Chart.getChart('trendChart').data.labels), ['2025', '2026']);
     const mobileHistoryGeometry = await mobile.locator('.historical-scope-note:visible').evaluateAll((notes) => notes.map((note) => {
       const rect = note.getBoundingClientRect();
@@ -668,6 +679,7 @@ async function run() {
       screenshots: [
         path.join(evidenceDir, 'desktop-dark.png'),
         path.join(evidenceDir, 'desktop-history-year.png'),
+        path.join(evidenceDir, 'desktop-history-czsk-month.png'),
         path.join(evidenceDir, 'desktop-light-us.png'),
         path.join(evidenceDir, 'mobile-dark-filters.png'),
         path.join(evidenceDir, 'mobile-history-year.png'),

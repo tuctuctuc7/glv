@@ -12,12 +12,13 @@ test('static 2025 snapshot preserves provenance and twelve complete months', () 
     end: '2025-12-31',
     source_grain: 'month',
     compatible_grains: ['month', 'year'],
-    market_scope: 'company-wide / All markets only',
+    market_scope: 'CZSK only',
   });
+  assert.equal(history.source.market_scope_note, 'All 2025 values are CZSK; US and ROW had no activity in 2025.');
   assert.equal(history.source.workbook_sha256, '8cd62dbdda301fa5fabdce63e3c8b61d8826c9235c4b7545a79ba1c3fcf958c7');
   assert.equal(history.rows.length, 12);
   assert.equal(new Set(history.rows.map((row) => row.date.slice(0, 7))).size, 12);
-  assert.ok(history.rows.every((row) => row.period_start.endsWith('-01') && row.region === 'historical_all' && row.source_grain === 'month'));
+  assert.ok(history.rows.every((row) => row.period_start.endsWith('-01') && row.region === 'czsk' && row.source_grain === 'month'));
 });
 
 test('snapshot matches workbook totals and reproduces every FX conversion', () => {
