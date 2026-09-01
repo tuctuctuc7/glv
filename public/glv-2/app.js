@@ -119,8 +119,11 @@ function rowsForGrain(view, grain) {
 function renderHistoricalNote(id, context) {
   const note = $(id);
   if (!context.intersects) {
-    note.hidden = true;
-    note.textContent = '';
+    const historyIsAvailable = Boolean(state.historicalData && context.eligibleGrain && context.includesCzsk);
+    note.hidden = !historyIsAvailable;
+    note.textContent = historyIsAvailable
+      ? '2025 CZSK history is outside the selected dates. Choose All available data to include it.'
+      : '';
     return;
   }
   note.hidden = false;
@@ -152,6 +155,11 @@ function getViewData() {
 
 function applyPreset(preset) {
   if (!state.data || preset === 'custom') return;
+  if (preset === 'all') {
+    $('dateFrom').value = state.historicalData?.coverage?.start || state.data.date_range.start;
+    $('dateTo').value = state.data.date_range.end;
+    return;
+  }
   const bounds = metrics.presetBounds(preset, state.data.date_range.end);
   $('dateFrom').value = bounds.from;
   $('dateTo').value = bounds.to;

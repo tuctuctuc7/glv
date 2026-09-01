@@ -33,6 +33,12 @@ test('command bar exposes period, dates, comparison, regions, theme, and export 
   has(/data-region="row"/, 'missing ROW filter');
 });
 
+test('period controls expose all available history without manual date entry', () => {
+  has(/<option value="all">All available data<\/option>/, 'period selector must expose all available data');
+  assert.match(app, /if \(preset === 'all'\)[\s\S]*?state\.historicalData\?\.coverage\?\.start \|\| state\.data\.date_range\.start[\s\S]*?state\.data\.date_range\.end/, 'All available data must span the earliest loaded source through the latest working date');
+  assert.match(app, /2025 CZSK history is outside the selected dates\. Choose All available data to include it\./, 'month/year views must explain how to restore out-of-range history');
+});
+
 test('executive hierarchy is data-first with open analysis and secondary action detail', () => {
   for (const id of [
     'executiveKpis',

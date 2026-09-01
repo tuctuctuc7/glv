@@ -22,6 +22,11 @@ const defaultWeekCount = dashboardMetrics.groupRows(dashboardMetrics.filterRows(
   to: latestDataDate,
   regions: ['czsk', 'us', 'row'],
 }), 'week').length;
+const defaultMonthCount = dashboardMetrics.groupRows(dashboardMetrics.filterRows(dashboardData.rows, {
+  from: defaultStartDate.toISOString().slice(0, 10),
+  to: latestDataDate,
+  regions: ['czsk', 'us', 'row'],
+}), 'month').length;
 const displayDate = (date) => new Intl.DateTimeFormat('en-US', {
   month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
 }).format(date);
@@ -215,9 +220,10 @@ async function run() {
     assert.ok((await page.locator('#metricsTableBody tr:not(.summary-row) td:first-child').allTextContents()).every((label) => /^\d{4}-W\d{2}$/.test(label)), 'weekly audit labels must use ISO week labels');
     assert.equal(await page.locator('#grain').inputValue(), 'week', 'audit grain must not change the chart grain');
     await page.locator('#auditGrain').selectOption('month');
-    assert.equal(await page.locator('#metricsTableBody tr').count(), 3, 'monthly audit grain should show summary plus two month rows');
+    assert.equal(await page.locator('#metricsTableBody tr').count(), defaultMonthCount + 1, 'monthly audit grain should show summary plus the current preset month rows');
     assert.equal((await page.locator('#auditPeriodHeader').textContent()).trim(), 'Month');
     assert.match(await page.locator('#metricsTableCaption').textContent(), /by month/);
+    assert.match(await page.locator('#auditHistoryNote').textContent(), /2025 CZSK history is outside the selected dates.*All available data/);
 
     assert.equal(await page.locator('#dateFrom').getAttribute('min'), historicalData.coverage.start, 'date controls must expose 2025 history');
     await page.locator('#dateFrom').fill(historicalData.coverage.start);
@@ -385,6 +391,17 @@ async function run() {
     assert.equal(new URL(presetRefresh.url()).searchParams.get('from'), defaultStartDate.toISOString().slice(0, 10), 'shareable URL must replace the stale relative start date');
     assert.equal(new URL(presetRefresh.url()).searchParams.get('to'), latestDataDate, 'shareable URL must replace the stale relative end date');
 
+    await presetRefresh.goto(`${baseUrl}?period=all&from=${defaultStartDate.toISOString().slice(0, 10)}&to=${previousDataDate}`, { waitUntil: 'networkidle', timeout: 30_000 });
+    await presetRefresh.locator('#dashboardContent').waitFor({ state: 'visible' });
+    assert.equal(await presetRefresh.locator('#periodPreset').inputValue(), 'all');
+    assert.equal(await presetRefresh.locator('#dateFrom').inputValue(), historicalData.coverage.start, 'All available data must begin at the static history boundary');
+    assert.equal(await presetRefresh.locator('#dateTo').inputValue(), latestDataDate, 'All available data must end at the latest loaded date');
+    assert.equal(new URL(presetRefresh.url()).searchParams.get('from'), historicalData.coverage.start, 'All available URL must canonicalize its historical start');
+    assert.equal(new URL(presetRefresh.url()).searchParams.get('to'), latestDataDate, 'All available URL must canonicalize its latest end');
+    await presetRefresh.locator('#grain').selectOption('month');
+    assert.equal((await presetRefresh.evaluate(() => Chart.getChart('trendChart').data.labels)).filter((label) => String(label).startsWith('2025')).length, 12, 'All available data must restore every 2025 historical month');
+    await presetRefresh.screenshot({ path: path.join(evidenceDir, 'desktop-all-available.png'), fullPage: true });
+
     const customFrom = dashboardData.date_range.start;
     const customTo = previousDataDate;
     await presetRefresh.locator('#dateFrom').fill(customFrom);
@@ -481,10 +498,9 @@ async function run() {
     assert.equal((await mobile.locator('#auditPeriodHeader').textContent()).trim(), 'Week');
     await mobile.locator('#auditGrain').selectOption('day');
     await mobile.locator('#filtersToggle').click();
-    await mobile.locator('#dateFrom').fill(historicalData.coverage.start);
-    await mobile.locator('#dateFrom').dispatchEvent('change');
-    await mobile.locator('#dateTo').fill(latestDataDate);
-    await mobile.locator('#dateTo').dispatchEvent('change');
+    await mobile.locator('#periodPreset').selectOption('all');
+    assert.equal(await mobile.locator('#dateFrom').inputValue(), historicalData.coverage.start, 'mobile All available data must begin at the historical boundary');
+    assert.equal(await mobile.locator('#dateTo').inputValue(), latestDataDate, 'mobile All available data must end at the latest loaded date');
     await mobile.locator('#filtersToggle').click();
     await mobile.locator('#grain').selectOption('year');
     await mobile.locator('#auditGrain').selectOption('year');
@@ -678,6 +694,7 @@ async function run() {
       baseUrl,
       screenshots: [
         path.join(evidenceDir, 'desktop-dark.png'),
+        path.join(evidenceDir, 'desktop-all-available.png'),
         path.join(evidenceDir, 'desktop-history-year.png'),
         path.join(evidenceDir, 'desktop-history-czsk-month.png'),
         path.join(evidenceDir, 'desktop-light-us.png'),
