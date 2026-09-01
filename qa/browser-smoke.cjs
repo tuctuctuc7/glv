@@ -391,15 +391,17 @@ async function run() {
     assert.equal(new URL(presetRefresh.url()).searchParams.get('from'), defaultStartDate.toISOString().slice(0, 10), 'shareable URL must replace the stale relative start date');
     assert.equal(new URL(presetRefresh.url()).searchParams.get('to'), latestDataDate, 'shareable URL must replace the stale relative end date');
 
-    await presetRefresh.goto(`${baseUrl}?period=all&from=${defaultStartDate.toISOString().slice(0, 10)}&to=${previousDataDate}`, { waitUntil: 'networkidle', timeout: 30_000 });
+    await presetRefresh.goto(`${baseUrl}?period=all&from=${defaultStartDate.toISOString().slice(0, 10)}&to=${previousDataDate}&grain=day&auditGrain=day`, { waitUntil: 'networkidle', timeout: 30_000 });
     await presetRefresh.locator('#dashboardContent').waitFor({ state: 'visible' });
     assert.equal(await presetRefresh.locator('#periodPreset').inputValue(), 'all');
     assert.equal(await presetRefresh.locator('#dateFrom').inputValue(), historicalData.coverage.start, 'All available data must begin at the static history boundary');
     assert.equal(await presetRefresh.locator('#dateTo').inputValue(), latestDataDate, 'All available data must end at the latest loaded date');
+    assert.equal(await presetRefresh.locator('#grain').inputValue(), 'month', 'All available data must select a history-compatible chart grain');
+    assert.equal(await presetRefresh.locator('#auditGrain').inputValue(), 'month', 'All available data must select a history-compatible Audit Trail grain');
     assert.equal(new URL(presetRefresh.url()).searchParams.get('from'), historicalData.coverage.start, 'All available URL must canonicalize its historical start');
     assert.equal(new URL(presetRefresh.url()).searchParams.get('to'), latestDataDate, 'All available URL must canonicalize its latest end');
-    await presetRefresh.locator('#grain').selectOption('month');
     assert.equal((await presetRefresh.evaluate(() => Chart.getChart('trendChart').data.labels)).filter((label) => String(label).startsWith('2025')).length, 12, 'All available data must restore every 2025 historical month');
+    assert.match(await presetRefresh.locator('script[src*="/glv-2/app.js"]').getAttribute('src'), /app\.js\?v=.+/, 'browser must load release-versioned application JavaScript');
     await presetRefresh.screenshot({ path: path.join(evidenceDir, 'desktop-all-available.png'), fullPage: true });
 
     const customFrom = dashboardData.date_range.start;
@@ -413,6 +415,31 @@ async function run() {
     assert.equal(await presetRefresh.locator('#dateFrom').inputValue(), customFrom, 'custom start date must remain unchanged across refresh');
     assert.equal(await presetRefresh.locator('#dateTo').inputValue(), customTo, 'custom end date must remain unchanged across refresh');
     await presetRefreshContext.close();
+
+    const historyRecoveryContext = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark', reducedMotion: 'reduce' });
+    const historyRecovery = await historyRecoveryContext.newPage();
+    let historicalRequestCount = 0;
+    const historicalRequestUrls = [];
+    await historyRecovery.route('**/glv_2025_monthly.json*', async (route) => {
+      historicalRequestCount += 1;
+      historicalRequestUrls.push(route.request().url());
+      if (historicalRequestCount === 1) {
+        await route.fulfill({ status: 503, contentType: 'application/json', headers: { 'cache-control': 'public, max-age=31536000' }, body: '{"error":"temporary"}' });
+      } else {
+        await route.continue();
+      }
+    });
+    await historyRecovery.goto(baseUrl, { waitUntil: 'networkidle', timeout: 30_000 });
+    await historyRecovery.locator('#dashboardContent').waitFor({ state: 'visible' });
+    assert.equal(await historyRecovery.locator('#dateFrom').getAttribute('min'), dashboardData.date_range.start, 'failed initial history request should leave the working view available');
+    await historyRecovery.locator('#periodPreset').selectOption('all');
+    await historyRecovery.waitForFunction((historyStart) => document.querySelector('#dateFrom').value === historyStart, historicalData.coverage.start);
+    assert.ok(historicalRequestCount >= 2, `selecting All available must retry unavailable history, got ${historicalRequestCount} request(s)`);
+    assert.ok(historicalRequestUrls.every((url) => new URL(url).search.length > 0), `historical requests must use a versioned URL: ${historicalRequestUrls.join(', ')}`);
+    assert.equal(await historyRecovery.locator('#grain').inputValue(), 'month');
+    assert.equal(await historyRecovery.locator('#auditGrain').inputValue(), 'month');
+    assert.equal((await historyRecovery.evaluate(() => Chart.getChart('trendChart').data.labels)).filter((label) => String(label).startsWith('2025')).length, 12, 'recovered All available view must render every 2025 month');
+    await historyRecoveryContext.close();
 
     for (const legacyViewport of [{ name: 'desktop', width: 1440, height: 900 }, { name: 'mobile-390', width: 390, height: 844 }]) {
       const legacyContext = await browser.newContext({ viewport: legacyViewport, colorScheme: 'dark', reducedMotion: 'reduce' });
@@ -437,7 +464,7 @@ async function run() {
     const historyFailureContext = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark', reducedMotion: 'reduce' });
     const historyFailure = await historyFailureContext.newPage();
     historyFailure.on('pageerror', (error) => consoleErrors.push(`history fallback pageerror: ${error.message}`));
-    await historyFailure.route('**/glv_2025_monthly.json', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+    await historyFailure.route('**/glv_2025_monthly.json*', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
     await historyFailure.goto(baseUrl, { waitUntil: 'networkidle', timeout: 30_000 });
     await historyFailure.locator('#dashboardContent').waitFor({ state: 'visible' });
     assert.equal(await historyFailure.locator('#errorState').isVisible(), false, 'historical snapshot failure must not break the working-source dashboard');

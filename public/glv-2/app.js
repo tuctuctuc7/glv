@@ -158,6 +158,8 @@ function applyPreset(preset) {
   if (preset === 'all') {
     $('dateFrom').value = state.historicalData?.coverage?.start || state.data.date_range.start;
     $('dateTo').value = state.data.date_range.end;
+    $('grain').value = 'month';
+    $('auditGrain').value = 'month';
     return;
   }
   const bounds = metrics.presetBounds(preset, state.data.date_range.end);
@@ -214,6 +216,10 @@ function restoreUrlState() {
   if (['day', 'week', 'month', 'year'].includes(grain)) $('grain').value = grain;
   const auditGrain = params.get('auditGrain');
   if (['day', 'week', 'month', 'year'].includes(auditGrain)) $('auditGrain').value = auditGrain;
+  if (activePreset === 'all') {
+    $('grain').value = 'month';
+    $('auditGrain').value = 'month';
+  }
   refreshRegionButtons();
 }
 
@@ -1044,7 +1050,19 @@ function setupTheme() {
 }
 
 function setupEvents() {
-  $('periodPreset').addEventListener('change', (event) => {
+  $('periodPreset').addEventListener('change', async (event) => {
+    if (event.target.value === 'all' && !state.historicalData) {
+      const historicalData = await fetchHistoricalData();
+      if (!historicalData) {
+        event.target.value = 'custom';
+        $('errorState').hidden = false;
+        $('dashboardContent').hidden = false;
+        $('errorMessage').textContent = '2025 historical data could not be loaded. Try All available data again.';
+        return;
+      }
+      state.historicalData = historicalData;
+      ['dateFrom', 'dateTo'].forEach((id) => { $(id).min = historicalData.coverage.start; });
+    }
     applyPreset(event.target.value);
     render();
   });
@@ -1207,6 +1225,18 @@ function validateHistoricalData(data) {
   });
 }
 
+async function fetchHistoricalData() {
+  try {
+    const response = await fetch('/glv-2/glv_2025_monthly.json?v=20260901-czsk-history-2', { cache: 'no-store' });
+    if (!response.ok) return null;
+    const historicalData = await response.json();
+    validateHistoricalData(historicalData);
+    return historicalData;
+  } catch (error) {
+    return null;
+  }
+}
+
 function updateFreshness() {
   const updated = String(state.data.updated_at || '').replace(' UTC', 'Z').replace(' ', 'T');
   const date = new Date(updated);
@@ -1224,13 +1254,7 @@ async function loadData({ preserveContent = false } = {}) {
   try {
     const historyRequest = state.historicalData
       ? Promise.resolve(state.historicalData)
-      : fetch('/glv-2/glv_2025_monthly.json', { cache: 'force-cache' })
-        .then((historyResponse) => historyResponse.ok ? historyResponse.json() : null)
-        .then((historyData) => {
-          if (historyData) validateHistoricalData(historyData);
-          return historyData;
-        })
-        .catch(() => null);
+      : fetchHistoricalData();
     const [response, historicalData] = await Promise.all([
       fetch('/glv-2/glv_dashboard.json', { cache: 'no-store' }),
       historyRequest,

@@ -37,6 +37,9 @@ test('period controls expose all available history without manual date entry', (
   has(/<option value="all">All available data<\/option>/, 'period selector must expose all available data');
   assert.match(app, /if \(preset === 'all'\)[\s\S]*?state\.historicalData\?\.coverage\?\.start \|\| state\.data\.date_range\.start[\s\S]*?state\.data\.date_range\.end/, 'All available data must span the earliest loaded source through the latest working date');
   assert.match(app, /2025 CZSK history is outside the selected dates\. Choose All available data to include it\./, 'month/year views must explain how to restore out-of-range history');
+  assert.match(html, /src="\/glv-2\/app\.js\?v=[^"]+"/, 'application JavaScript must use a release-versioned URL so existing browsers cannot combine new HTML with stale behavior');
+  assert.match(app, /fetch\('\/glv-2\/glv_2025_monthly\.json\?v=[^']+', \{ cache: 'no-store' \}\)/, 'historical data must bypass stale cached failures');
+  assert.doesNotMatch(app, /glv_2025_monthly\.json', \{ cache: 'force-cache' \}/, 'historical data must not force reuse of a cached failure');
 });
 
 test('executive hierarchy is data-first with open analysis and secondary action detail', () => {
@@ -142,7 +145,7 @@ test('2025 history is a static month/year-only CZSK source', () => {
   assert.doesNotMatch(app, /const allMarkets = state\.selectedRegions\.length === 3/, 'history must not be limited to All markets');
   assert.match(app, /view\.currentRows[\s\S]*?\.filter\(\(row\) => row\.region === 'czsk'\)[\s\S]*?workingMonths\.has/, 'only working CZSK months may supersede CZSK history');
   assert.match(app, /row\.period_start >= view\.filters\.from[\s\S]*?row\.period_end <= view\.filters\.to/, 'only complete historical months may be included');
-  assert.match(app, /fetch\('\/glv-2\/glv_2025_monthly\.json'/, 'static history must load from a route-local snapshot');
+  assert.match(app, /fetch\('\/glv-2\/glv_2025_monthly\.json\?v=[^']+'/, 'static history must load from a versioned route-local snapshot');
   assert.match(app, /fetch\('\/glv-2\/glv_dashboard\.json'/, 'working source must remain independently loaded');
 });
 
