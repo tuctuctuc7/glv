@@ -3,10 +3,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const html = fs.readFileSync(path.join(__dirname, '../public/glv-2/index.html'), 'utf8');
-const app = fs.readFileSync(path.join(__dirname, '../public/glv-2/app.js'), 'utf8');
-const styles = fs.readFileSync(path.join(__dirname, '../public/glv-2/styles.css'), 'utf8');
-const touchIcon = fs.readFileSync(path.join(__dirname, '../public/glv-2/apple-touch-icon.png'));
+const html = fs.readFileSync(path.join(__dirname, '../public/glv/index.html'), 'utf8');
+const app = fs.readFileSync(path.join(__dirname, '../public/glv/app.js'), 'utf8');
+const styles = fs.readFileSync(path.join(__dirname, '../public/glv/styles.css'), 'utf8');
+const touchIcon = fs.readFileSync(path.join(__dirname, '../public/glv/apple-touch-icon.png'));
 
 function has(pattern, message) {
   assert.match(html, pattern, message);
@@ -37,8 +37,8 @@ test('period controls expose all available history without manual date entry', (
   has(/<option value="all">All available data<\/option>/, 'period selector must expose all available data');
   assert.match(app, /if \(preset === 'all'\)[\s\S]*?state\.historicalData\?\.coverage\?\.start \|\| state\.data\.date_range\.start[\s\S]*?state\.data\.date_range\.end/, 'All available data must span the earliest loaded source through the latest working date');
   assert.match(app, /2025 CZSK history is outside the selected dates\. Choose All available data to include it\./, 'month/year views must explain how to restore out-of-range history');
-  assert.match(html, /src="\/glv-2\/app\.js\?v=[^"]+"/, 'application JavaScript must use a release-versioned URL so existing browsers cannot combine new HTML with stale behavior');
-  assert.match(app, /fetch\('\/glv-2\/glv_2025_monthly\.json\?v=[^']+', \{ cache: 'no-store' \}\)/, 'historical data must bypass stale cached failures');
+  assert.match(html, /src="\/glv\/app\.js\?v=[^"]+"/, 'application JavaScript must use a release-versioned URL so existing browsers cannot combine new HTML with stale behavior');
+  assert.match(app, /fetch\('\/glv\/glv_2025_monthly\.json\?v=[^']+', \{ cache: 'no-store' \}\)/, 'historical data must bypass stale cached failures');
   assert.doesNotMatch(app, /glv_2025_monthly\.json', \{ cache: 'force-cache' \}/, 'historical data must not force reuse of a cached failure');
 });
 
@@ -86,8 +86,8 @@ test('both primary trend axes always use an explicit zero baseline', () => {
 
 test('latest executive branding and KPI copy are present', () => {
   has(/GELAVIS · Business intelligence by AGENTHIC/, 'missing approved header copy');
-  has(/<img[^>]*src="\/glv-2\/agenthic-logo\.svg"/, 'missing slash-safe route-local AGENTHIC logo');
-  has(/<link[^>]*rel="apple-touch-icon"[^>]*sizes="180x180"[^>]*href="\/glv-2\/apple-touch-icon\.png"/, 'missing slash-safe iPhone home-screen icon');
+  has(/<img[^>]*src="\/glv\/agenthic-logo\.svg"/, 'missing slash-safe route-local AGENTHIC logo');
+  has(/<link[^>]*rel="apple-touch-icon"[^>]*sizes="180x180"[^>]*href="\/glv\/apple-touch-icon\.png"/, 'missing slash-safe iPhone home-screen icon');
   assert.equal(touchIcon.subarray(1, 4).toString('ascii'), 'PNG', 'touch icon must be a PNG');
   assert.equal(touchIcon.readUInt32BE(16), 180, 'touch icon width must be 180px');
   assert.equal(touchIcon.readUInt32BE(20), 180, 'touch icon height must be 180px');
@@ -145,8 +145,8 @@ test('2025 history is a static month/year-only CZSK source', () => {
   assert.doesNotMatch(app, /const allMarkets = state\.selectedRegions\.length === 3/, 'history must not be limited to All markets');
   assert.match(app, /view\.currentRows[\s\S]*?\.filter\(\(row\) => row\.region === 'czsk'\)[\s\S]*?workingMonths\.has/, 'only working CZSK months may supersede CZSK history');
   assert.match(app, /row\.period_start >= view\.filters\.from[\s\S]*?row\.period_end <= view\.filters\.to/, 'only complete historical months may be included');
-  assert.match(app, /fetch\('\/glv-2\/glv_2025_monthly\.json\?v=[^']+'/, 'static history must load from a versioned route-local snapshot');
-  assert.match(app, /fetch\('\/glv-2\/glv_dashboard\.json'/, 'working source must remain independently loaded');
+  assert.match(app, /fetch\('\/glv\/glv_2025_monthly\.json\?v=[^']+'/, 'static history must load from a versioned route-local snapshot');
+  assert.match(app, /fetch\('\/glv\/glv_dashboard\.json'/, 'working source must remain independently loaded');
 });
 
 test('dashboard copy uses the approved CVR and ROAS names throughout', () => {
@@ -195,8 +195,8 @@ test('latest audit and market presentation feedback is encoded', () => {
 });
 
 test('route-local runtime assets use slash-safe absolute paths', () => {
-  for (const asset of ['styles.css', 'metrics.js', 'app.js']) has(new RegExp(`(?:href|src)="/glv-2/${asset.replace('.', '\\.')}`), `${asset} must load at /glv-2 and /glv-2/`);
-  assert.match(app, /fetch\('\/glv-2\/glv_dashboard\.json'/, 'data must load at /glv-2 and /glv-2/');
+  for (const asset of ['styles.css', 'metrics.js', 'app.js']) has(new RegExp(`(?:href|src)="/glv/${asset.replace('.', '\\.')}`), `${asset} must load at /glv and /glv/`);
+  assert.match(app, /fetch\('\/glv\/glv_dashboard\.json'/, 'data must load at /glv and /glv/');
 });
 
 test('decision-safe vocabulary blocks unsupported acquisition and profitability claims', () => {
@@ -205,8 +205,8 @@ test('decision-safe vocabulary blocks unsupported acquisition and profitability 
 });
 
 test('scripts load pure metrics before the application and contain no inline handlers', () => {
-  const metricsIndex = html.indexOf('/glv-2/metrics.js');
-  const appIndex = html.indexOf('/glv-2/app.js');
+  const metricsIndex = html.indexOf('/glv/metrics.js');
+  const appIndex = html.indexOf('/glv/app.js');
   assert.ok(metricsIndex >= 0 && appIndex > metricsIndex, 'metrics.js must load before app.js');
   assert.doesNotMatch(html, /\son(?:click|change|input|submit)=/i);
 });

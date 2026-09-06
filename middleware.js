@@ -4,6 +4,7 @@ const GLV_AUTH_PATH = '/api/glv-meta-ads/auth';
 const DATA_PATH = '/api/glv-meta-ads/fb-data';
 const MB_OS_DATA_PATH = '/api/glv-mb-os/decision-report';
 const LEGACY_META_PATH = '/glv-meta-ads-2';
+const LEGACY_BI_PATH = '/glv-2';
 
 const ELM_AUTH_COOKIE = 'elm_audit_session';
 const ELM_LOGIN_PATH = '/elm-meta-ads/login';
@@ -91,6 +92,12 @@ export default async function middleware(request) {
   const url = new URL(request.url);
   const { pathname } = url;
 
+  if (pathname === LEGACY_BI_PATH || pathname.startsWith(`${LEGACY_BI_PATH}/`)) {
+    const canonicalUrl = new URL(request.url);
+    canonicalUrl.pathname = `/glv${pathname.slice(LEGACY_BI_PATH.length)}`;
+    return Response.redirect(canonicalUrl, 308);
+  }
+
   if (pathname === LEGACY_META_PATH || pathname.startsWith(`${LEGACY_META_PATH}/`)) {
     const canonicalUrl = new URL(request.url);
     canonicalUrl.pathname = `/glv-meta-ads${pathname.slice(LEGACY_META_PATH.length)}`;
@@ -130,6 +137,8 @@ export default async function middleware(request) {
 
 export const config = {
   matcher: [
+    '/glv-2',
+    '/glv-2/:path*',
     '/glv-meta-ads/:path*',
     '/glv-meta-ads-2',
     '/glv-meta-ads-2/:path*',

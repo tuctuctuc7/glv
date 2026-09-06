@@ -34,7 +34,7 @@
       ]
     },
     {
-      "source": "/glv-2/glv_dashboard.json",
+      "source": "/glv/:path*",
       "headers": [
         {
           "key": "Cache-Control",

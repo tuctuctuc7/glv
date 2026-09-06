@@ -9,9 +9,9 @@ const publicRoot = path.join(projectRoot, 'public');
 const chromePath = '/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome';
 const browserLibRoot = '/home/tom/.cache/hermes-browser-libs/root';
 const evidenceDir = path.resolve(process.env.GLV_QA_EVIDENCE_DIR || path.join(projectRoot, 'qa', 'screenshots'));
-const dashboardData = JSON.parse(fs.readFileSync(path.join(publicRoot, 'glv-2', 'glv_dashboard.json'), 'utf8'));
-const historicalData = JSON.parse(fs.readFileSync(path.join(publicRoot, 'glv-2', 'glv_2025_monthly.json'), 'utf8'));
-const dashboardMetrics = require(path.join(publicRoot, 'glv-2', 'metrics.js'));
+const dashboardData = JSON.parse(fs.readFileSync(path.join(publicRoot, 'glv', 'glv_dashboard.json'), 'utf8'));
+const historicalData = JSON.parse(fs.readFileSync(path.join(publicRoot, 'glv', 'glv_2025_monthly.json'), 'utf8'));
+const dashboardMetrics = require(path.join(publicRoot, 'glv', 'metrics.js'));
 const latestDataDate = dashboardData.date_range.end;
 const latestDate = new Date(`${latestDataDate}T00:00:00Z`);
 const defaultStartDate = new Date(latestDate.getTime() - (27 * 86_400_000));
@@ -44,8 +44,14 @@ const mime = {
   '.png': 'image/png',
 };
 
-function server() {
-  return http.createServer((req, res) => {
+function server(middleware) {
+  return http.createServer(async (req, res) => {
+    const response = await middleware(new Request(`http://${req.headers.host}${req.url}`, { headers: req.headers }));
+    if (response) {
+      res.writeHead(response.status, Object.fromEntries(response.headers));
+      res.end(await response.text());
+      return;
+    }
     const requestPath = new URL(req.url, 'http://127.0.0.1').pathname;
     const relative = requestPath === '/' ? 'index.html' : requestPath.replace(/^\/+/, '');
     let filePath = path.resolve(publicRoot, relative);
@@ -68,10 +74,12 @@ function server() {
 
 async function run() {
   assert.ok(fs.existsSync(chromePath), `Chromium not found at ${chromePath}`);
-  const appServer = server();
+  const middlewareSource = fs.readFileSync(path.join(projectRoot, 'middleware.js'), 'utf8');
+  const { default: middleware } = await import(`data:text/javascript;base64,${Buffer.from(middlewareSource).toString('base64')}`);
+  const appServer = server(middleware);
   await new Promise((resolve) => appServer.listen(0, '127.0.0.1', resolve));
   const { port } = appServer.address();
-  const baseUrl = `http://127.0.0.1:${port}/glv-2/`;
+  const baseUrl = `http://127.0.0.1:${port}/glv/`;
   const browser = await chromium.launch({
     executablePath: chromePath,
     headless: true,
@@ -100,7 +108,7 @@ async function run() {
 
     const response = await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 30_000 });
     assert.equal(response.status(), 200);
-    const touchIconResponse = await page.request.get(new URL('/glv-2/apple-touch-icon.png', baseUrl).href);
+    const touchIconResponse = await page.request.get(new URL('/glv/apple-touch-icon.png', baseUrl).href);
     assert.equal(touchIconResponse.status(), 200, 'iPhone home-screen icon should load');
     assert.match(touchIconResponse.headers()['content-type'] || '', /^image\/png\b/, 'iPhone home-screen icon should use image/png');
     await page.locator('#dashboardContent').waitFor({ state: 'visible' });
@@ -401,7 +409,7 @@ async function run() {
     assert.equal(new URL(presetRefresh.url()).searchParams.get('from'), historicalData.coverage.start, 'All available URL must canonicalize its historical start');
     assert.equal(new URL(presetRefresh.url()).searchParams.get('to'), latestDataDate, 'All available URL must canonicalize its latest end');
     assert.equal((await presetRefresh.evaluate(() => Chart.getChart('trendChart').data.labels)).filter((label) => String(label).startsWith('2025')).length, 12, 'All available data must restore every 2025 historical month');
-    assert.match(await presetRefresh.locator('script[src*="/glv-2/app.js"]').getAttribute('src'), /app\.js\?v=.+/, 'browser must load release-versioned application JavaScript');
+    assert.match(await presetRefresh.locator('script[src*="/glv/app.js"]').getAttribute('src'), /app\.js\?v=.+/, 'browser must load release-versioned application JavaScript');
     await presetRefresh.screenshot({ path: path.join(evidenceDir, 'desktop-all-available.png'), fullPage: true });
 
     const customFrom = dashboardData.date_range.start;
@@ -441,24 +449,65 @@ async function run() {
     assert.equal((await historyRecovery.evaluate(() => Chart.getChart('trendChart').data.labels)).filter((label) => String(label).startsWith('2025')).length, 12, 'recovered All available view must render every 2025 month');
     await historyRecoveryContext.close();
 
-    for (const legacyViewport of [{ name: 'desktop', width: 1440, height: 900 }, { name: 'mobile-390', width: 390, height: 844 }]) {
-      const legacyContext = await browser.newContext({ viewport: legacyViewport, colorScheme: 'dark', reducedMotion: 'reduce' });
-      const legacy = await legacyContext.newPage();
-      await legacy.goto(new URL('/glv/', baseUrl).href, { waitUntil: 'networkidle', timeout: 30_000 });
-      await legacy.locator('#trendChart').waitFor({ state: 'visible' });
-      assert.deepEqual(await legacy.evaluate(() => {
-        const chart = window.Chart.getChart('trendChart');
-        return chart.legend.legendItems.map(item => chart.data.datasets[item.datasetIndex].yAxisID);
-      }), ['barAxis', 'lineAxis']);
-      await legacy.screenshot({ path: path.join(evidenceDir, `legacy-${legacyViewport.name}-legend.png`), fullPage: true });
-      await legacyContext.close();
+    for (const width of [1440, 390, 320]) {
+      const cutoverContext = await browser.newContext({ viewport: { width, height: 900 }, colorScheme: 'dark', reducedMotion: 'reduce' });
+      const cutover = await cutoverContext.newPage();
+      cutover.on('pageerror', error => consoleErrors.push(`cutover: ${error.message}`));
+      await cutover.goto(baseUrl, { waitUntil: 'networkidle' });
+      await cutover.locator('#dashboardContent').waitFor({ state: 'visible' });
+      assert.equal(await cutover.locator('#periodPreset').inputValue(), '28d');
+      assert.equal(await cutover.locator('#grain').inputValue(), 'day');
+      assert.equal(await cutover.locator('#auditGrain').inputValue(), 'day');
+      if (width < 768) await cutover.locator('#filtersToggle').click();
+      // Exact user path: choose All available from untouched defaults, no manual grain repairs.
+      await cutover.locator('#periodPreset').selectOption({ label: 'All available data' });
+      assert.equal(await cutover.locator('#grain').inputValue(), 'month');
+      assert.equal(await cutover.locator('#auditGrain').inputValue(), 'month');
+      assert.equal(await cutover.locator('#dateFrom').inputValue(), historicalData.coverage.start);
+      assert.equal(await cutover.locator('#dateTo').inputValue(), latestDataDate);
+      assert.equal((await cutover.evaluate(() => Chart.getChart('trendChart').data.labels)).filter(label => String(label).startsWith('2025')).length, 12);
+      assert.equal((await cutover.locator('#metricsTableBody tr:not(.summary-row) td:first-child').allTextContents()).filter(label => label.startsWith('2025')).length, 12);
+      assert.ok(await cutover.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+      if (width < 768) await cutover.locator('#filtersToggle').click();
+      await cutover.locator('#trendChart').scrollIntoViewIfNeeded();
+      await cutover.screenshot({ path: path.join(evidenceDir, `canonical-all-${width}.png`) });
+
+      const filterQuery = `?period=custom&from=${historicalData.coverage.start}&to=${latestDataDate}&markets=czsk&grain=month&auditGrain=month&metric=spend#details`;
+      for (const oldPath of ['/glv-2', '/glv-2/']) {
+        const oldUrl = new URL(oldPath + filterQuery, baseUrl).href;
+        const redirect = await cutover.request.get(oldUrl, { maxRedirects: 0 });
+        assert.equal(redirect.status(), 308);
+        assert.equal(redirect.headers().location, oldUrl.replace('/glv-2', '/glv').split('#')[0]);
+        await cutover.goto(oldUrl, { waitUntil: 'networkidle' });
+        await cutover.locator('#dashboardContent').waitFor({ state: 'visible' });
+        const redirected = new URL(cutover.url());
+        assert.equal(redirected.pathname, oldPath.replace('/glv-2', '/glv'));
+        assert.equal(redirected.hash, '#details');
+        for (const [key, value] of new URLSearchParams(filterQuery.slice(1).split('#')[0])) assert.equal(redirected.searchParams.get(key), value, key);
+        assert.equal(await cutover.locator('#periodPreset').inputValue(), 'custom');
+        assert.equal(await cutover.locator('#grain').inputValue(), 'month');
+      }
+      // Fetch uses the legacy literals from already-open V2 tabs; follow actual middleware redirects.
+      for (const file of ['glv_dashboard.json', 'glv_2025_monthly.json?v=20260901-czsk-history-2', 'app.js?v=20260901-all-history-2', 'metrics.js', 'styles.css', 'agenthic-logo.svg', 'apple-touch-icon.png', 'fonts/inter-400.woff2']) {
+        const old = await cutover.request.get(new URL(`/glv-2/${file}`, baseUrl).href, { maxRedirects: 0 });
+        assert.equal(old.status(), 308);
+        const compatibility = await cutover.evaluate(async file => {
+          const response = await fetch(`/glv-2/${file}`, { cache: 'no-store' });
+          return { ok: response.ok, redirected: response.redirected, url: response.url, bytes: Array.from(new Uint8Array(await response.arrayBuffer())) };
+        }, file);
+        assert.equal(compatibility.ok, true);
+        assert.equal(compatibility.redirected, true);
+        assert.equal(new URL(compatibility.url).pathname, `/glv/${file.split('?')[0]}`);
+        assert.deepEqual(Buffer.from(compatibility.bytes), fs.readFileSync(path.join(publicRoot, 'glv', file.split('?')[0])));
+      }
+      await cutoverContext.close();
     }
 
     const slashlessContext = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark', reducedMotion: 'reduce' });
     const slashless = await slashlessContext.newPage();
     await slashless.goto(baseUrl.replace(/\/$/, ''), { waitUntil: 'networkidle', timeout: 30_000 });
     await slashless.locator('#dashboardContent').waitFor({ state: 'visible' });
-    assert.equal(await slashless.locator('#errorState').isVisible(), false, 'slashless /glv-2 must load all route assets and data');
+    assert.equal(await slashless.locator('#errorState').isVisible(), false, 'slashless /glv must load all route assets and data');
     await slashlessContext.close();
 
     const historyFailureContext = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark', reducedMotion: 'reduce' });
@@ -720,6 +769,7 @@ async function run() {
       passed: true,
       baseUrl,
       screenshots: [
+        ...[1440, 390, 320].map(width => path.join(evidenceDir, `canonical-all-${width}.png`)),
         path.join(evidenceDir, 'desktop-dark.png'),
         path.join(evidenceDir, 'desktop-all-available.png'),
         path.join(evidenceDir, 'desktop-history-year.png'),

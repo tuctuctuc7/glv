@@ -10,7 +10,7 @@ This repo is the `agenthic-lab` Vercel project that serves the GLV dashboard sur
 - Production domain: `https://lab.agenthic.com`
 - Lab index: `https://lab.agenthic.com/`
 - Business KPI dashboard: `https://lab.agenthic.com/glv/`
-- Business KPI dashboard V2 overlap route: `https://lab.agenthic.com/glv-2/`
+- Retired Business KPI overlap URL: `/glv-2/` permanently redirects to `/glv/`
 - Meta Ads dashboard: `https://lab.agenthic.com/glv-meta-ads/`
 - Media Buyer OS: `https://lab.agenthic.com/glv-mb-os/`
 - Elmich audit dashboard: `https://lab.agenthic.com/elm-meta-ads/`
@@ -30,8 +30,7 @@ Do not deploy this to Tom's personal Vercel scope. `agenthic.com` belongs to the
 ```text
 public/
   index.html                 Agenthic Lab index
-  glv/                       static business KPI dashboard
-  glv-2/                     V2 business KPI dashboard, running in parallel
+  glv/                       canonical Executive Pulse business KPI dashboard
   glv-meta-ads/              password-gated Meta Ads dashboard
   glv-mb-os/                 password-gated Media Buyer OS cockpit
   elm-meta-ads/              password-gated Elmich audit dashboard
@@ -41,7 +40,7 @@ api/
   elm-meta-ads/              Elmich route-specific password auth
 middleware.js                Vercel auth middleware for gated surfaces
 export_glv_dashboard.py      exports private Google Sheet to public JSON
-deploy_glv_dashboard.sh      export, commit/push JSON, deploy production
+deploy_glv_dashboard.sh      clean-main export, data-only push, wait for Git deployment
 vercel.json                  static output, headers, and daily Vercel cron
 ```
 
@@ -55,14 +54,15 @@ Cutover prerequisites: deploy and verify the `tm-kursa` proxy-compatibility rele
 
 Route: `/glv/`
 
-The business KPI dashboards are static frontends. Both versions use synchronized copies of the same exported snapshot:
+The approved Executive Pulse interface is the sole static business KPI frontend. It consumes one daily exported snapshot:
 
 ```text
 public/glv/glv_dashboard.json
-public/glv-2/glv_dashboard.json
 ```
 
-`/glv/` remains the production reference while `/glv-2/` runs in an overlap period for comparison. Do not deprecate V1 until V2 has proven reliable and Tom explicitly approves the switch.
+Tom approved replacing V1 with the current V2 unchanged. V1 is removed, without an archive; `public/glv-2/` no longer ships. Middleware permanently redirects `/glv-2`, `/glv-2/`, and every suffix to `/glv` before auth, preserving queries. Browsers inherit fragments through the redirect, so saved filters and section anchors survive. Old route-local JSON, scripts, icons, and fonts continue resolving for already-open V2 tabs.
+
+The complete promoted runtime includes local Inter fonts/license, approved branding, and immutable `public/glv/glv_2025_monthly.json`. History retains its versioned/no-store fetch, same-context retry, and automatic Month/Month selection when the user chooses **All available data**. KPI cards remain working-source-only, as disclosed in the UI; history is not silently added to scorecards. All canonical HTML dependencies are slash-safe; JavaScript and CSS use the cutover version `canonical-20260906` to avoid mixing cached V1 assets. Canonical responses use `Cache-Control: no-store`.
 
 The JSON is generated locally from a read-only Google Sheet:
 
@@ -249,11 +249,13 @@ Schedule:
 
 Flow:
 
-1. Run `deploy_glv_dashboard.sh`.
-2. Export the private Google Sheet once and write the identical snapshot to both `public/glv/glv_dashboard.json` and `public/glv-2/glv_dashboard.json`.
-3. Commit both changed JSON files together as `refresh GLV dashboard data`.
-4. Push to `origin main` if ahead.
-5. Deploy production to Vercel with `--scope agenthic`.
+1. The installed daily wrapper invokes `~/.local/bin/glv-dashboard-release-safe.sh` (reviewed source: `deploy_glv_dashboard.sh`).
+2. Fetch `origin/main`, freeze a clean detached worktree, and export the private Google Sheet once to **only** `public/glv/glv_dashboard.json`.
+3. Run `npm run verify:glv-release`. If data is unchanged, exit without a deployment.
+4. Commit only that generated JSON as `refresh GLV dashboard data` and require a fast-forward `git push origin HEAD:main`. A rejected push is a hard stop.
+5. Wait for the exact pushed commit's Vercel Git-integration status. Never use a direct deploy fallback or publish from the dirty long-lived checkout.
+
+Keep this one shared Business KPI refresh timer; there is no separate V2 refresh to disable. The morning crawl is a read-only check, and the independent Meta Ads cache cron remains unchanged. At cutover release, update the installed safe runner's dataset allowlist to the single canonical JSON (or install the reviewed script), verify the wrapper/timer chain, and exercise the installed entrypoint after the new main revision is live. Repository edits alone do not update installed scripts.
 
 Logs:
 
@@ -370,13 +372,13 @@ For static dashboard work:
 
 ```bash
 cd /home/tom/.openclaw/workspace/dashboard/glv
-python3 -m http.server 8081
+python3 -m http.server 8081 --directory public
 ```
 
 Open:
 
 ```text
-http://localhost:8081
+http://localhost:8081/glv/
 ```
 
 For serverless API behavior, use Vercel local tooling if needed:
@@ -386,11 +388,13 @@ cd /home/tom/.openclaw/workspace/dashboard/glv
 PATH=/home/tom/.local/node/bin:$PATH vercel dev --scope agenthic
 ```
 
+Local release gates: `npm ci`, `npm test`, `npm run qa:browser`, `npm run verify:glv-release`, and `git diff --check`. The basic static server does not run middleware; browser QA loads the actual middleware for redirects and covers canonical slashless/trailing-slash URLs, default → All available data, failed-history recovery, retired URLs with filters/fragments, old asset-fetch compatibility, and 390/320 px mobile. Repeat redirects and unrelated auth boundaries live after deployment; local QA is not live deployment evidence.
+
 ## Known History And Gotchas
 
 - `dashboard/glv` is the source for `agenthic/agenthic-lab`.
 - Root `/` is the Agenthic Lab index.
-- `/glv/` is the plain business KPI dashboard.
+- `/glv/` is the approved Executive Pulse business KPI dashboard.
 - `/glv-meta-ads/` is the Meta Ads dashboard.
 - `/glv-mb-os/` is the Media Buyer OS.
 - The old standalone `glv-meta-ads` app was migrated into this repo. Keep API routes namespaced under `/api/glv-meta-ads/*`.

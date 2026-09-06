@@ -6,7 +6,6 @@ export PATH="/home/tom/.local/node/bin:$PATH"
 
 DATASETS=(
   public/glv/glv_dashboard.json
-  public/glv-2/glv_dashboard.json
 )
 
 RELEASE_ROOT="$(mktemp -d /tmp/glv-dashboard-release.XXXXXX)"

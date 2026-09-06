@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const history = require('../public/glv-2/glv_2025_monthly.json');
-const metrics = require('../public/glv-2/metrics.js');
+const history = require('../public/glv/glv_2025_monthly.json');
+const metrics = require('../public/glv/metrics.js');
 
 test('static 2025 snapshot preserves provenance and twelve complete months', () => {
   assert.equal(history.schema_version, 1);

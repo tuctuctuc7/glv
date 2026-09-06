@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'glv-2', 'glv_dashboard.json'), 'utf8'));
+const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'glv', 'glv_dashboard.json'), 'utf8'));
 const readme = fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8');
 
 const DAY_MS = 86_400_000;

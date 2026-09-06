@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const metrics = require('../public/glv-2/metrics.js');
+const metrics = require('../public/glv/metrics.js');
 
 const sample = [
   { date: '2026-07-01', region: 'czsk', spend: 100, revenue: 200, purchases: 4, unique_visitors: 100, new_customers: 3, returning_customers: 1, new_customer_revenue: 150 },

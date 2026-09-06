@@ -15,7 +15,6 @@ SOURCE_TAB = "Daily"
 ROOT = os.path.dirname(__file__)
 OUT_PATHS = (
     os.path.join(ROOT, "public", "glv", "glv_dashboard.json"),
-    os.path.join(ROOT, "public", "glv-2", "glv_dashboard.json"),
 )
 
 
