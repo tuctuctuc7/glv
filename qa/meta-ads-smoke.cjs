@@ -357,6 +357,14 @@ async function run() {
         [['bar', 'impressions'], ['line', 'ctr']],
         [['line', 'cpm'], ['line', 'frequency']],
       ]);
+      const purchaseAxisTicks = await page.evaluate(() => {
+        const chart = window.Chart.getChart('triage-chart-lp-purchase');
+        chart.data.datasets[0].data = [1, 3, 2, 4, 1, 1, 2];
+        chart.update('none');
+        return chart.scales.y.ticks.map(tick => ({ value: tick.value, label: tick.label }));
+      });
+      assert.equal(purchaseAxisTicks.every(tick => Number.isInteger(tick.value)), true, `Purchases axis must use whole-number tick values: ${JSON.stringify(purchaseAxisTicks)}`);
+      assert.equal(new Set(purchaseAxisTicks.map(tick => tick.label)).size, purchaseAxisTicks.length, `Purchases axis must not show duplicate rounded labels: ${JSON.stringify(purchaseAxisTicks)}`);
       const defaultColors = triageCharts.flatMap(chart => chart.datasets.map(dataset => dataset.color));
       assert.equal(new Set(defaultColors).size, 14);
       assert.equal(triageCharts.every(chart => chart.labels > 0 && chart.tableRows === chart.labels), true);
