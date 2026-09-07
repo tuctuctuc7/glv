@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-06 04:47 UTC",
+  "updated_at": "2026-09-07 00:10 UTC",
   "source": {
     "sheet_id": "1KjiRfumk3w8tNZFpfI8RO9X5RTcqoq5LcKfyCzcpplQ",
     "tab": "Daily",
@@ -9,7 +9,7 @@
   "currency": "USD",
   "date_range": {
     "start": "2026-01-01",
-    "end": "2026-09-05"
+    "end": "2026-09-06"
   },
   "absolute_metrics": [
     "spend",
@@ -8209,6 +8209,39 @@
       "purchases": 2,
       "unique_visitors": 35,
       "new_customers": 0,
+      "returning_customers": 2,
+      "new_customer_revenue": 0.0
+    },
+    {
+      "date": "2026-09-06",
+      "region": "czsk",
+      "revenue": 2507.0,
+      "spend": 1133.0,
+      "purchases": 15,
+      "unique_visitors": 847,
+      "new_customers": 11,
+      "returning_customers": 4,
+      "new_customer_revenue": 1260.0
+    },
+    {
+      "date": "2026-09-06",
+      "region": "row",
+      "revenue": 69.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 44,
+      "new_customers": 0,
+      "returning_customers": 1,
+      "new_customer_revenue": 0.0
+    },
+    {
+      "date": "2026-09-06",
+      "region": "us",
+      "revenue": 291.0,
+      "spend": 263.0,
+      "purchases": 3,
+      "unique_visitors": 51,
+      "new_customers": 1,
       "returning_customers": 2,
       "new_customer_revenue": 0.0
     }
