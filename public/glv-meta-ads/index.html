@@ -101,7 +101,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .promo-metric-control .metric-select{width:100%;min-width:0;height:38px;padding:0 8px;}
 .promo-note{font-size:12px;color:var(--gray600);line-height:1.45;margin-bottom:14px;}
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;}
-.triage-data-table.sr-only{display:block!important;table-layout:fixed;}
+.triage-data-table.sr-only,.promo-chart-data-table.sr-only{display:block!important;table-layout:fixed;}
 .triage-filter-section{position:relative;z-index:3;}
 .triage-filter-controls{display:grid;grid-template-columns:repeat(4,minmax(0,320px));gap:12px;}
 .triage-filter-controls .filter-wrap{display:grid;grid-template-rows:auto 44px;gap:5px;margin:0;min-width:0;}
@@ -286,6 +286,22 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 @media(max-width:720px) and (hover:none){.kpi-card:hover{transform:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
+.tab-filter-controls{display:grid;grid-template-columns:minmax(150px,1fr) minmax(180px,2fr) minmax(100px,.65fr);gap:14px;align-items:end}
+.tab-filter-section .filter-wrap{min-width:0;width:100%;position:relative}
+.tab-filter-section .triage-filter-label{display:block;margin-bottom:7px;color:var(--gray500)}
+.tab-filter-section .filter-toggle,.tab-filter-section .metric-select{width:100%;max-width:100%;min-height:44px}
+.tab-filter-section .filter-toggle span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tab-filter-section .filter-dropdown{transition:none!important;min-width:0;width:min(420px,calc(100vw - 48px));max-height:55vh;overflow:auto;left:0;right:auto}
+.tab-filter-section .filter-option{white-space:normal;text-transform:none;letter-spacing:normal}
+.tab-filter-section .filter-search,.tab-filter-section .filter-option,.tab-filter-section .filter-action-btn{min-height:44px}
+.local-filter-label{display:block;font-size:11px;color:var(--gray500);margin-bottom:5px}
+@media(max-width:720px){
+  .tab-filter-controls{grid-template-columns:minmax(0,1fr) minmax(90px,.65fr);gap:12px}
+  .tab-filter-controls>.filter-wrap:nth-child(1){grid-column:1/-1}
+  .tab-filter-section .filter-dropdown{position:fixed;left:16px;right:16px;top:auto;width:calc(100vw - 32px);max-height:45vh}
+  .tab-filter-section .filter-toggle,.tab-filter-section .metric-select{height:44px;font:inherit;font-size:13px}
+  .local-filter-label{display:none}
+}
 </style>
 </head>
 <body>
@@ -861,6 +877,7 @@ function setChartGranularity(seg,grain){
   chartGranularity[seg]=grain;
   const el=document.getElementById('chart-grain-'+seg);
   if(el)el.value=grain;
+  syncTabGrain(seg);
   refreshChart(seg);
 }
 function initSortControls(){
@@ -976,9 +993,8 @@ function processAggregateRows(rawRows){
   for(const r of rawRows){
     if(!isValid(r.name))continue;
     const seg=isUS(r.name)?'us':'czsk';
-    if(seg==='us'&&isAdvert(r.name))continue;
     campaignMeta[r.id]={name:r.name,segment:seg,color:getCampaignColor(r.name)};
-    out.push({id:r.id,name:r.name,segment:seg,group:seg==='czsk'?promoGroupKey(r.name):null,date:null,...processRow(r)});
+    out.push({id:r.id,name:r.name,segment:seg,group:campaignGroupKey(r.name,seg),date:null,...processRow(r)});
   }
   return out;
 }
@@ -987,10 +1003,9 @@ function processDaily(rawRows){
   for(const r of rawRows){
     if(!isValid(r.name))continue;
     const seg=isUS(r.name)?'us':'czsk';
-    if(seg==='us'&&isAdvert(r.name))continue;
     const date=extractDate(r);if(!date)continue;
     campaignMeta[r.id]={name:r.name,segment:seg,color:getCampaignColor(r.name)};
-    out.push({id:r.id,name:r.name,segment:seg,group:seg==='czsk'?promoGroupKey(r.name):null,date,...processRow(r)});
+    out.push({id:r.id,name:r.name,segment:seg,group:campaignGroupKey(r.name,seg),date,...processRow(r)});
   }
   return out;
 }
@@ -1016,30 +1031,81 @@ function getSegmentRows(seg,source='daily'){
 function spendOnlyRow(row){
   return{...row,lp:0,purchases:0,checkouts:0,leads:0,linkClicks:0,revenue:0,impressions:0,reach:0};
 }
-function getMainSegmentRows(seg,source='daily'){
-  const rows=getSegmentRows(seg,source);
-  if(seg!=='czsk')return rows;
-  return includeLeadGen?rows.map(r=>isLeadGen(r.name)?spendOnlyRow(r):r):rows.filter(r=>!isLeadGen(r.name));
+const TAB_KEYS=['czsk','czsk-triage','czsk-promo','czsk-leadgen','us'];
+const tabGrain=Object.fromEntries(TAB_KEYS.map(tab=>[tab,'day']));
+const tabFilterKey=(tab,kind)=>tab==='czsk-triage'?`triage-${kind}`:`tab-${tab}-${kind}`;
+const campaignGroupKey=(name,segment)=>segment==='us'?(isAdvert(name)?'advertorial':'bau'):promoGroupKey(name);
+function getTabBaseRows(tab,source='daily'){
+  const segments=tab==='czsk-triage'?(triageMarket==='all'?['czsk','us']:[triageMarket]):[tab==='us'?'us':'czsk'];
+  let rows=segments.flatMap(segment=>getSegmentRows(segment,source));
+  if(tab==='czsk-leadgen')return leadgenOnly?rows.filter(r=>isLeadGen(r.name)):rows;
+  if(tab==='czsk-promo')return rows.filter(r=>!isLeadGen(r.name));
+  return includeLeadGen?rows.map(r=>r.segment==='czsk'&&isLeadGen(r.name)?spendOnlyRow(r):r):rows.filter(r=>r.segment!=='czsk'||!isLeadGen(r.name));
 }
-function getTriageMarketRows(source='daily'){
-  const segments=triageMarket==='all'?['czsk','us']:[triageMarket];
-  return segments.flatMap(segment=>getMainSegmentRows(segment,source));
+function filterTabRows(tab,rows,groupsOnly=false){
+  const groups=filterState[tabFilterKey(tab,'group')];const names=filterState[tabFilterKey(tab,'campaign')];
+  return rows.filter(row=>(!groups||groups.has(campaignGroupKey(row.campaignName||row.name,row.segment)))&&(groupsOnly||!names||names.has(String(row.campaignId||row.id))));
 }
-function getTriageSegmentRows(source='daily'){
-  const rows=getTriageMarketRows(source);
-  const campaignSelection=filterState['triage-campaign'];
-  const groupSelection=filterState['triage-group'];
-  return rows.filter(r=>(!campaignSelection||campaignSelection.has(r.id))&&(!groupSelection||groupSelection.has(r.group||promoGroupKey(r.name))));
+function getMainSegmentRows(seg,source='daily'){return filterTabRows(seg,getTabBaseRows(seg,source));}
+function getTriageMarketRows(source='daily'){return getTabBaseRows('czsk-triage',source);}
+function getTriageSegmentRows(source='daily'){return filterTabRows('czsk-triage',getTriageMarketRows(source));}
+function getLeadgenRows(source='daily'){return filterTabRows('czsk-leadgen',getTabBaseRows('czsk-leadgen',source));}
+function getPromoSegmentRows(source='daily'){return filterTabRows('czsk-promo',getTabBaseRows('czsk-promo',source));}
+function tabGroupOptions(tab){
+  const market=tab==='czsk-triage'?triageMarket:tab==='us'?'us':'czsk';
+  return (market==='us'?['bau','advertorial']:market==='all'?['promo','bau','wl','advertorial']:['promo','bau','wl']).map(value=>({value,label:{promo:'Promo',bau:'BAU',wl:'WL',advertorial:'Advertorial'}[value]}));
 }
-function getLeadgenRows(source='daily'){
-  const rows=getSegmentRows('czsk',source);
-  return leadgenOnly?rows.filter(r=>isLeadGen(r.name)):rows;
+function buildTabFilters(tab){
+  buildTriageFilterOptions(tabFilterKey(tab,'group'),tabGroupOptions(tab),false);
+  const rows=filterTabRows(tab,[...getTabBaseRows(tab,'aggregate'),...getTabBaseRows(tab,'daily')],true);
+  const options=new Map(rows.map(row=>[String(row.id),{value:String(row.id),label:row.name}]));
+  buildTriageFilterOptions(tabFilterKey(tab,'campaign'),[...options.values()]);
 }
-function getPromoSegmentRows(source='daily'){
-  return getSegmentRows('czsk',source).filter(r=>!isLeadGen(r.name));
+function renderTab(tab){
+  if(tab==='czsk-triage'){refreshTriageCharts();return;}
+  if(tab==='czsk-promo'){renderPromoKPIs();refreshPromoCharts();renderPromoTable();return;}
+  if(tab==='czsk-leadgen'){renderLeadgenKPIs();refreshLeadgenCharts();renderLeadgenTable();return;}
+  renderKPIs(tab);refreshChart(tab);renderDailyTable(tab);renderCreatives(tab);
+}
+function syncTabGrain(tab){
+  if(tab==='czsk-triage'){syncTriageGrainControl();return;}
+  const local=tab==='czsk-leadgen'?document.getElementById('chart-grain-leadgen').value:chartGranularity[tab];
+  document.getElementById(`tab-grain-${tab}`).value=!local||local===tabGrain[tab]?tabGrain[tab]:'mixed';
+}
+function setTabGrain(tab,grain){
+  if(!['day','week','month'].includes(grain))return;
+  tabGrain[tab]=grain;
+  if(tab==='czsk-triage'){setAllTriageGrains(grain);return;}
+  if(tab==='czsk'||tab==='us'){chartGranularity[tab]=grain;document.getElementById('chart-grain-'+tab).value=grain;}
+  if(tab==='czsk-leadgen')document.getElementById('chart-grain-leadgen').value=grain;
+  syncTabGrain(tab);renderTab(tab);
+}
+function periodRows(rows,tab){
+  const grain=tabGrain[tab];
+  return grain==='day'?rows:rows.map(row=>({...row,date:row.date?(grain==='week'?startOfWeek(row.date):monthKey(row.date)):null}));
+}
+function tabFilterMarkup(key,label){
+  return `<div class="filter-wrap" id="filter-wrap-${key}"><span class="triage-filter-label" id="label-${key}">${label}</span><button type="button" class="filter-toggle" id="filter-toggle-${key}" aria-labelledby="label-${key} filter-label-${key}" aria-expanded="false" aria-controls="filter-dropdown-${key}" onclick="toggleFilter('${key}')"><span id="filter-label-${key}">All</span><span aria-hidden="true">▾</span></button><div class="filter-dropdown" id="filter-dropdown-${key}"><input class="filter-search" aria-label="Search ${label}" placeholder="Search…" oninput="filterSearch('${key}',this.value)"><div class="filter-options-list" id="filter-options-${key}"></div><div class="filter-actions"><button class="filter-action-btn" onclick="selectAll('${key}')">Select all</button><button class="filter-action-btn" onclick="clearAll('${key}')">Clear</button></div></div></div>`;
+}
+function initTabFilters(){
+  TAB_KEYS.forEach(tab=>{
+    if(tab==='czsk-triage'){
+      const section=document.getElementById('triage-filter-section');section.classList.add('tab-filter-section');
+      const controls=section.querySelector('.triage-filter-controls');
+      controls.append(document.getElementById('filter-wrap-triage-group'),document.getElementById('filter-wrap-triage-campaign'),document.getElementById('triage-grain').closest('.filter-wrap'),document.getElementById('triage-market').closest('.filter-wrap'));
+      return;
+    }
+    const section=document.createElement('section');section.className='section tab-filter-section';section.id=`tab-filters-${tab}`;
+    section.innerHTML=`<div class="section-title">Filters</div><div class="tab-filter-controls">${tabFilterMarkup(tabFilterKey(tab,'group'),'Campaign group')}${tabFilterMarkup(tabFilterKey(tab,'campaign'),'Campaign name')}<label class="filter-wrap"><span class="triage-filter-label">Grain</span><select class="metric-select" id="tab-grain-${tab}" onchange="setTabGrain('${tab}',this.value)"><option value="day">Day</option><option value="week">Week</option><option value="month">Month</option><option value="mixed" disabled>Mixed</option></select></label></div>`;
+    document.getElementById('panel-'+tab).prepend(section);
+  });
+  document.querySelectorAll('.panel .filter-wrap[data-mobile-label="Campaign"]').forEach(wrap=>{
+    wrap.dataset.mobileLabel='Narrow';
+    const label=document.createElement('span');label.className='local-filter-label';label.textContent='Narrow this table';wrap.prepend(label);
+  });
 }
 function promoActiveDateSet(){
-  return new Set(getPromoSegmentRows('daily').filter(r=>r.group==='promo'&&r.spend>0).map(r=>r.date));
+  return new Set(getTabBaseRows('czsk-promo','daily').filter(r=>r.group==='promo'&&r.spend>0).map(r=>r.date));
 }
 function filterPromoActiveDays(rows){
   if(!promoActiveDaysOnly)return rows;
@@ -1270,7 +1336,7 @@ function formatChartTick(key,v){
 function wholeNumberTickPrecision(key){return['lp','purchases','checkouts','leads','impressions'].includes(key)?0:undefined;}
 function sortLegendByAxis(a,b,data){const rank=item=>data.datasets[item.datasetIndex]?.yAxisID==='y1'?1:0;return rank(a)-rank(b);}
 function refreshChart(seg){
-  const sel=filterState[seg];const rows=getMainSegmentRows(seg,'daily');const grain=chartGranularity[seg]||'day';const daily=byPeriod(rows,sel,grain);
+  const rows=getMainSegmentRows(seg,'daily');const grain=chartGranularity[seg]||'day';const daily=byPeriod(rows,null,grain);
   const lKey=document.getElementById('chart-left-'+seg).value;const rKey=document.getElementById('chart-right-'+seg).value;
   const labels=daily.map(d=>fmtChartDate(d.date,grain));
   const leftVals=daily.map(d=>{const m=calcMetrics(d);return computeChartMetric(lKey,d,m);});
@@ -1317,7 +1383,8 @@ function refreshTrendsChart(){
   });
 }
 function refreshPromoCharts(){
-  const daily=byDateGroup(getPromoDailyRows());
+  const grain=tabGrain['czsk-promo'];
+  const daily=byDateGroup(periodRows(getPromoDailyRows(),'czsk-promo'));
   const dates=[...new Set(daily.map(r=>r.date))].sort();
   const byKey=Object.fromEntries(daily.map(r=>[`${r.date}|${r.group}`,r]));
   const lineConfigs=[
@@ -1337,12 +1404,12 @@ function refreshPromoCharts(){
     }));
     const table=document.getElementById(`promo-chart-table-${chartKey.replace('promo-','')}`);
     if(table){
-      table.querySelector('caption').textContent=`${metric.label} by Promo campaign group and day`;
-      table.querySelector('tbody').innerHTML=dates.map((date,index)=>`<tr><th scope="row">${escapeHtml(fmtDate(date))}</th>${datasets.map(dataset=>`<td>${escapeHtml(formatChartVal(metricKey,dataset.data[index]))}</td>`).join('')}</tr>`).join('');
+      table.querySelector('caption').textContent=`${metric.label} by Promo campaign group and ${grain}`;
+      table.querySelector('tbody').innerHTML=dates.map((date,index)=>`<tr><th scope="row">${escapeHtml(fmtChartDate(date,grain))}</th>${datasets.map(dataset=>`<td>${escapeHtml(formatChartVal(metricKey,dataset.data[index]))}</td>`).join('')}</tr>`).join('');
     }
     charts[chartKey]=new Chart(ctx,{
       type:'line',
-      data:{labels:dates.map(fmtDate),datasets},
+      data:{labels:dates.map(date=>fmtChartDate(date,grain)),datasets},
       options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
         plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
           tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${formatChartVal(metricKey,ctx.raw)}`}}},
@@ -1433,6 +1500,7 @@ function renderLeadgenKPIs(){
 }
 function setLeadgenChartGranularity(grain){
   document.getElementById('chart-grain-leadgen').value=grain;
+  syncTabGrain('czsk-leadgen');
   refreshLeadgenCharts();
 }
 function refreshLeadgenCharts(){
@@ -1474,7 +1542,7 @@ function buildFilterOptions(filterKey,campaignIds){
   const container=document.getElementById('filter-options-'+filterKey);if(!container)return;
   container.innerHTML=campaignIds.map(id=>{
     const info=campaignMeta[id]||{};const color=info.color||'#94a3b8';const name=info.name||id;
-    return`<label class="filter-option" title="${escapeHtml(name)}"><input type="checkbox" value="${escapeHtml(id)}" checked onchange="onFilterChange('${filterKey}')"><span class="camp-dot" style="background:${escapeHtml(color)}"></span><span class="camp-name">${escapeHtml(name)}</span></label>`;
+    return`<label class="filter-option" title="${escapeHtml(name)}"><input type="checkbox" value="${escapeHtml(id)}"${!filterState[filterKey]||filterState[filterKey].has(id)?' checked':''} onchange="onFilterChange('${filterKey}')"><span class="camp-dot" style="background:${escapeHtml(color)}"></span><span class="camp-name">${escapeHtml(name)}</span></label>`;
   }).join('');
 }
 function compareFilterOptions(a,b){
@@ -1482,23 +1550,20 @@ function compareFilterOptions(a,b){
   const keyOrder=a.value.localeCompare(b.value,undefined,{numeric:true,sensitivity:'base'});if(keyOrder)return keyOrder;
   return a.value===b.value?0:a.value<b.value?-1:1;
 }
-function buildTriageFilterOptions(key,options){
+function buildTriageFilterOptions(key,options,sort=true){
   const container=document.getElementById('filter-options-'+key);if(!container)return;
-  const sorted=[...options].sort(compareFilterOptions);const available=new Set(sorted.map(option=>option.value));const previous=filterState[key];
-  if(previous){const valid=new Set([...previous].filter(value=>available.has(value)));filterState[key]=previous.size>0&&valid.size===0?null:valid;}
+  const sorted=sort?[...options].sort(compareFilterOptions):options;
   const selected=filterState[key];
   container.innerHTML=sorted.map(option=>`<label class="filter-option" title="${escapeHtml(option.label)}"><input type="checkbox" value="${escapeHtml(option.value)}"${!selected||selected.has(option.value)?' checked':''} onchange="onFilterChange('${key}')"><span class="camp-name">${escapeHtml(option.label)}</span></label>`).join('');
   updateFilterLabel(key);
 }
 function buildTriageFilters(){
-  const rows=getTriageMarketRows('daily');const campaigns=new Map();const groups=new Map();
-  rows.forEach(row=>{campaigns.set(row.id,{value:String(row.id),label:campaignMeta[row.id]?.name||row.name||String(row.id)});const group=promoGroup(row.group||promoGroupKey(row.name));groups.set(group.key,{value:group.key,label:group.label});});
-  buildTriageFilterOptions('triage-campaign',[...campaigns.values()]);
-  buildTriageFilterOptions('triage-group',[...groups.values()]);
+  buildTabFilters('czsk-triage');
 }
 function onTriageMarketChange(market){
   triageMarket=['czsk','us','all'].includes(market)?market:'czsk';
   const select=document.getElementById('triage-market');if(select)select.value=triageMarket;
+  filterState['triage-group']=null;filterState['triage-campaign']=null;
   buildTriageFilters();
   refreshTriageCharts();
 }
@@ -1507,6 +1572,11 @@ function toggleFilter(key){
   const toggle=document.getElementById('filter-toggle-'+key)||document.getElementById('creative-filter-toggle-'+key.replace('-creative',''));
   const open=dropdown.classList.toggle('open');
   toggle?.setAttribute('aria-expanded',String(open));
+  if(open&&dropdown.closest('.tab-filter-section')){
+    const box=toggle.getBoundingClientRect();const mobile=innerWidth<=720;
+    const width=Math.min(420,innerWidth-32);const top=box.bottom+6;
+    Object.assign(dropdown.style,{position:'fixed',left:`${mobile?16:Math.max(16,Math.min(box.left,innerWidth-width-16))}px`,right:'auto',top:`${top}px`,width:`${mobile?innerWidth-32:width}px`,maxHeight:`${Math.max(44,innerHeight-top-80)}px`});
+  }
 }
 function filterSearch(key,q){
   const lq=q.toLowerCase();
@@ -1514,13 +1584,18 @@ function filterSearch(key,q){
     el.style.display=(el.querySelector('.camp-name')?.textContent||'').toLowerCase().includes(lq)?'':'none';
   });
 }
-function selectAll(key){document.querySelectorAll(`#filter-options-${key} input`).forEach(c=>c.checked=true);onFilterChange(key);}
-function clearAll(key){document.querySelectorAll(`#filter-options-${key} input`).forEach(c=>c.checked=false);onFilterChange(key);}
-function onFilterChange(key){
+function selectAll(key){document.querySelectorAll(`#filter-options-${key} input`).forEach(c=>c.checked=true);onFilterChange(key,'all');}
+function clearAll(key){document.querySelectorAll(`#filter-options-${key} input`).forEach(c=>c.checked=false);onFilterChange(key,'none');}
+function onFilterChange(key,intent){
   const checked=[...document.querySelectorAll(`#filter-options-${key} input:checked`)].map(c=>c.value);
   const all=[...document.querySelectorAll(`#filter-options-${key} input`)].map(c=>c.value);
-  filterState[key]=checked.length===all.length?null:new Set(checked);
+  filterState[key]=intent==='all'||(intent!=='none'&&all.length>0&&checked.length===all.length)?null:new Set(checked);
   updateFilterLabel(key);
+  const tab=TAB_KEYS.find(tab=>['group','campaign'].some(kind=>tabFilterKey(tab,kind)===key));
+  if(tab){
+    if(key===tabFilterKey(tab,'group'))filterState[tabFilterKey(tab,'campaign')]=null;
+    buildAllFilters();renderTab(tab);return;
+  }
   if(key==='czsk'||key==='us'){renderDailyTable(key);}
   else if(key==='triage-campaign'||key==='triage-group')refreshTriageCharts();
   else if(key==='czsk-promo')renderPromoTable();
@@ -1530,16 +1605,17 @@ function onFilterChange(key){
 function updateFilterLabel(key){
   const all=document.querySelectorAll(`#filter-options-${key} input`).length;
   const checked=document.querySelectorAll(`#filter-options-${key} input:checked`).length;
-  const groupFilter=key==='triage-group';const noun=groupFilter?'campaign groups':'campaigns';
-  const text=checked===all?`All ${noun}`:`${checked} of ${all} ${noun}`;
+  const groupFilter=key.endsWith('-group');const noun=groupFilter?'campaign groups':'campaigns';
+  const text=filterState[key]==null?`All ${noun}`:checked===0?`No ${noun}`:`${checked} of ${all} ${noun}`;
   const labelId=(key==='czsk-creative'||key==='us-creative')?'creative-filter-label-'+key.replace('-creative',''):'filter-label-'+key;
   const el=document.getElementById(labelId);if(el)el.textContent=text;
 }
 function buildAllFilters(){
+  TAB_KEYS.forEach(buildTabFilters);
   ['czsk','us'].forEach(seg=>{
     buildFilterOptions(seg,[...new Set(getMainSegmentRows(seg,'daily').map(r=>r.id))]);
     updateFilterLabel(seg);
-    buildFilterOptions(seg+'-creative',[...new Set(adCreatives.filter(c=>c.segment===seg&&(seg!=='czsk'||includeLeadGen||!isLeadGen(c.campaignName))).map(c=>c.campaignId))]);
+    buildFilterOptions(seg+'-creative',[...new Set(filterTabRows(seg,adCreatives).filter(c=>c.segment===seg&&(seg!=='czsk'||includeLeadGen||!isLeadGen(c.campaignName))).map(c=>c.campaignId))]);
     updateFilterLabel(seg+'-creative');
   });
   buildFilterOptions('czsk-promo',[...new Set(getPromoSegmentRows('daily').map(r=>r.id))]);
@@ -1563,7 +1639,7 @@ function roasHtml(v){return`<span class="${roasClass(v)}">${escapeHtml(fmtRoas(v
 function badgeHtml(type){return`<span class="badge ${type==='Video'?'badge-v':'badge-s'}">${escapeHtml(type)}</span>`;}
 
 function renderDailyTable(seg){
-  const sel=filterState[seg];const rows=getMainSegmentRows(seg,'daily');const daily=byDate(rows,sel);
+  const sel=filterState[seg];const rows=getMainSegmentRows(seg,'daily');const daily=byPeriod(rows,sel,tabGrain[seg]);
   const container=document.getElementById('daily-table-'+seg);
   container.innerHTML='';
   if(!daily.length){container.innerHTML='<div class="empty">No data.</div>';return;}
@@ -1571,7 +1647,7 @@ function renderDailyTable(seg){
   const sorted=sortRows(daily,'daily',seg);
   const tableRows=sorted.map(d=>({d,m:calcMetrics(d)}));
   const columns=[
-    {label:'Date',text:r=>r.d.date},
+    {label:tabGrain[seg]==='day'?'Date':'Period',text:r=>tabGrain[seg]==='day'?r.d.date:fmtChartDate(r.d.date,tabGrain[seg])},
     {label:'Spend',text:r=>fmtInt(r.d.spend)},
     {label:'Revenue',text:r=>r.d.revenue>0?fmtInt(r.d.revenue):'—'},
     {label:'ROAS',text:r=>fmtRoas(r.m.roas),html:r=>roasHtml(r.m.roas)},
@@ -1671,7 +1747,8 @@ function promoNestedRow(rowClass,firstHtml,secondHtml,d,parentGroup=''){
 }
 function promoGroupToggleHtml(key){
   const group=promoGroup(key);const expanded=promoExpandedGroups.has(key);const action=expanded?'Collapse':'Expand';
-  return`<button type="button" class="promo-group-toggle" id="promo-group-toggle-${escapeHtml(key)}" aria-expanded="${expanded}" aria-label="${action} ${escapeHtml(group.label)} days" onclick="togglePromoGroup('${key}')"><span class="promo-group-chevron" aria-hidden="true">${expanded?'▾':'▸'}</span>${promoGroupHtml(key)}</button>`;
+  const periods={day:'days',week:'weeks',month:'months'}[tabGrain['czsk-promo']];
+  return`<button type="button" class="promo-group-toggle" id="promo-group-toggle-${escapeHtml(key)}" aria-expanded="${expanded}" aria-label="${action} ${escapeHtml(group.label)} ${periods}" onclick="togglePromoGroup('${key}')"><span class="promo-group-chevron" aria-hidden="true">${expanded?'▾':'▸'}</span>${promoGroupHtml(key)}</button>`;
 }
 function promoSortComparator(a,b){
   const state=sortState.promo.czsk;
@@ -1694,11 +1771,13 @@ function sortPromoChildren(rows){
 }
 function renderPromoTable(){
   const container=document.getElementById('promo-table');if(!container)return;
-  const rows=byDateGroupFiltered(getPromoDailyRows(),filterState['czsk-promo']);
+  const grain=tabGrain['czsk-promo'];const period=grain==='day'?'days':grain==='week'?'weeks':'months';
+  document.getElementById('promo-mode-groups').textContent=`Groups → ${period}`;document.getElementById('promo-mode-days').textContent=`${period[0].toUpperCase()+period.slice(1)} → groups`;
+  const rows=byDateGroupFiltered(periodRows(getPromoDailyRows(),'czsk-promo'),filterState['czsk-promo']);
   if(!rows.length){container.innerHTML='<div class="empty">No CZSK promo data for this range.</div>';return;}
   const columns=promoTableMode==='groups'
-    ? ['Group','Date','Spend','Revenue','ROAS','Purchases','CPA','AOV','LP→Checkout','Checkout→Purchase','Checkouts','Cost/Checkout','LP Views','Cost/LP','CTR','LP→Purchase','CPM']
-    : ['Date','Group','Spend','Revenue','ROAS','Purchases','CPA','AOV','LP→Checkout','Checkout→Purchase','Checkouts','Cost/Checkout','LP Views','Cost/LP','CTR','LP→Purchase','CPM'];
+    ? ['Group',grain==='day'?'Date':'Period','Spend','Revenue','ROAS','Purchases','CPA','AOV','LP→Checkout','Checkout→Purchase','Checkouts','Cost/Checkout','LP Views','Cost/LP','CTR','LP→Purchase','CPM']
+    : [grain==='day'?'Date':'Period','Group','Spend','Revenue','ROAS','Purchases','CPA','AOV','LP→Checkout','Checkout→Purchase','Checkouts','Cost/Checkout','LP Views','Cost/LP','CTR','LP→Purchase','CPM'];
   let body='';
   if(promoTableMode==='groups'){
     const groups=sortPromoParents(PROMO_GROUPS.map(g=>sumPromoRows(rows.filter(r=>r.group===g.key),null,g.key)).filter(g=>g.spend>0||g.revenue>0||g.purchases>0||g.checkouts>0||g.lp>0));
@@ -1706,7 +1785,7 @@ function renderPromoTable(){
       const groupRows=sortPromoChildren(rows.filter(r=>r.group===groupTotal.group));
       if(!groupRows.length)continue;
       body+=promoNestedRow('subtotal-row',promoGroupToggleHtml(groupTotal.group),'Subtotal',groupTotal);
-      if(promoExpandedGroups.has(groupTotal.group))body+=groupRows.map(r=>promoNestedRow('child-row','',`<span class="nested-child">${escapeHtml(r.date)}</span>`,r,groupTotal.group)).join('');
+      if(promoExpandedGroups.has(groupTotal.group))body+=groupRows.map(r=>promoNestedRow('child-row','',`<span class="nested-child">${escapeHtml(grain==='day'?r.date:fmtChartDate(r.date,grain))}</span>`,r,groupTotal.group)).join('');
     }
   }else{
     const dates=sortPromoChildren([...new Set(rows.map(r=>r.date))].map(date=>sumPromoRows(rows.filter(r=>r.date===date),date,null)));
@@ -1717,7 +1796,7 @@ function renderPromoTable(){
           ? promoGroupRank(a.group)-promoGroupRank(b.group)
           : promoSortComparator(a,b);
       });
-      body+=promoNestedRow('subtotal-row',escapeHtml(dateTotal.date),'Subtotal',dateTotal);
+      body+=promoNestedRow('subtotal-row',escapeHtml(grain==='day'?dateTotal.date:fmtChartDate(dateTotal.date,grain)),'Subtotal',dateTotal);
       body+=dateRows.map(r=>promoNestedRow('child-row','',`<span class="nested-child">${promoGroupHtml(r.group)}</span>`,r)).join('');
     }
   }
@@ -1743,18 +1822,20 @@ function leadgenSortComparator(a,b){
 }
 function renderLeadgenTable(){
   const container=document.getElementById('leadgen-table');if(!container)return;
-  const rows=byDateLeadgenGroup(getLeadgenRows('daily'),filterState['czsk-leadgen']);
+  const grain=tabGrain['czsk-leadgen'];const period=grain==='day'?'days':grain==='week'?'weeks':'months';
+  document.getElementById('leadgen-mode-groups').textContent=`Groups → ${period}`;document.getElementById('leadgen-mode-days').textContent=`${period[0].toUpperCase()+period.slice(1)} → groups`;
+  const rows=byDateLeadgenGroup(periodRows(getLeadgenRows('daily'),'czsk-leadgen'),filterState['czsk-leadgen']);
   if(!rows.length){container.innerHTML='<div class="empty">No CZSK Lead-gen data for this range.</div>';return;}
   const metricColumns=['Spend','Revenue','ROAS','Purchases','CPA','AOV','LP→Checkout','Checkout→Purchase','Checkouts','Cost/Checkout','LP Views','Cost/LP','CTR','LP→Purchase','CPM','Leads','CPL','LP→Lead'];
-  const columns=leadgenTableMode==='groups'?['Group','Date',...metricColumns]:['Date','Group',...metricColumns];
+  const columns=leadgenTableMode==='groups'?['Group',grain==='day'?'Date':'Period',...metricColumns]:[grain==='day'?'Date':'Period','Group',...metricColumns];
   const state=sortState.leadgen.czsk;let body='';
   if(leadgenTableMode==='groups'){
     let groups=activeLeadgenGroups().map(g=>sumPromoRows(rows.filter(r=>r.group===g.key),null,g.key)).filter(g=>g.spend||g.revenue||g.purchases||g.checkouts||g.leads||g.lp);
     groups=state.key==='date'?groups.sort((a,b)=>LEADGEN_GROUPS.findIndex(g=>g.key===a.group)-LEADGEN_GROUPS.findIndex(g=>g.key===b.group)):groups.sort(leadgenSortComparator);
-    for(const total of groups){const children=rows.filter(r=>r.group===total.group).sort(leadgenSortComparator);body+=leadgenNestedRow('subtotal-row',leadgenGroupHtml(total.group),'Subtotal',total);body+=children.map(r=>leadgenNestedRow('child-row','',`<span class="nested-child">${escapeHtml(r.date)}</span>`,r)).join('');}
+    for(const total of groups){const children=rows.filter(r=>r.group===total.group).sort(leadgenSortComparator);body+=leadgenNestedRow('subtotal-row',leadgenGroupHtml(total.group),'Subtotal',total);body+=children.map(r=>leadgenNestedRow('child-row','',`<span class="nested-child">${escapeHtml(grain==='day'?r.date:fmtChartDate(r.date,grain))}</span>`,r)).join('');}
   }else{
     const dates=[...new Set(rows.map(r=>r.date))].map(date=>sumPromoRows(rows.filter(r=>r.date===date),date,null)).sort(leadgenSortComparator);
-    for(const total of dates){let children=rows.filter(r=>r.date===total.date);children=state.key==='date'?children.sort((a,b)=>LEADGEN_GROUPS.findIndex(g=>g.key===a.group)-LEADGEN_GROUPS.findIndex(g=>g.key===b.group)):children.sort(leadgenSortComparator);body+=leadgenNestedRow('subtotal-row',escapeHtml(total.date),'Subtotal',total);body+=children.map(r=>leadgenNestedRow('child-row','',`<span class="nested-child">${leadgenGroupHtml(r.group)}</span>`,r)).join('');}
+    for(const total of dates){let children=rows.filter(r=>r.date===total.date);children=state.key==='date'?children.sort((a,b)=>LEADGEN_GROUPS.findIndex(g=>g.key===a.group)-LEADGEN_GROUPS.findIndex(g=>g.key===b.group)):children.sort(leadgenSortComparator);body+=leadgenNestedRow('subtotal-row',escapeHtml(grain==='day'?total.date:fmtChartDate(total.date,grain)),'Subtotal',total);body+=children.map(r=>leadgenNestedRow('child-row','',`<span class="nested-child">${leadgenGroupHtml(r.group)}</span>`,r)).join('');}
   }
   container.innerHTML=`<div class="data-table-wrap"><table class="data-table daily-data-table"><thead><tr>${columns.map(label=>`<th title="${escapeHtml(label)}">${escapeHtml(label)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
@@ -1796,7 +1877,7 @@ function setTypeFilter(seg,type){
 }
 function renderCreatives(seg){
   const campFilter=filterState[seg+'-creative'];const typeFilter=creativeTypeFilter[seg];
-  let creatives=adCreatives.filter(c=>c.segment===seg&&c.spend>0);
+  let creatives=filterTabRows(seg,adCreatives.filter(c=>c.segment===seg&&c.spend>0));
   if(seg==='czsk'&&!includeLeadGen)creatives=creatives.filter(c=>!isLeadGen(c.campaignName));
   if(seg==='czsk'&&includeLeadGen)creatives=creatives.map(c=>isLeadGen(c.campaignName)?spendOnlyRow(c):c);
   if(campFilter)creatives=creatives.filter(c=>campFilter.has(c.campaignId));
@@ -1851,7 +1932,7 @@ async function apiFetch(type){
 function setStatus(msg){const el=document.getElementById('loading-msg');if(el)el.textContent=msg;}
 async function loadData(){
   const loadEl=document.getElementById('loading');const errEl=document.getElementById('error');
-  const triageCampaignSelection=filterState['triage-campaign'];const triageGroupSelection=filterState['triage-group'];
+
   try{
     loadEl.style.display='block';
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
@@ -1864,7 +1945,7 @@ async function loadData(){
     try{
       const d=await apiFetch('aggregate');
       campaignMeta={};aggregateCampaigns=processAggregateRows(d.rows);
-      filterState={czsk:null,us:null,'czsk-promo':null,'czsk-leadgen':null,'czsk-creative':null,'us-creative':null,'triage-campaign':triageCampaignSelection,'triage-group':triageGroupSelection};
+
       ['czsk','us'].forEach(seg=>{renderKPIs(seg);});
       renderPromoKPIs();
       renderLeadgenKPIs();
@@ -1910,6 +1991,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
     document.getElementById('panel-'+btn.dataset.tab)?.classList.add('active');
     const seg=btn.dataset.tab;
+    document.querySelectorAll('.filter-dropdown.open').forEach(dropdown=>{dropdown.classList.remove('open');document.querySelector(`[aria-controls="${dropdown.id}"]`)?.setAttribute('aria-expanded','false');});
     syncPromoFilterVisibility(seg);
     if(seg==='czsk'||seg==='us'){if(charts[seg])charts[seg].resize();}
     if(seg==='czsk-triage')TRIAGE_PRESETS.forEach(preset=>charts[`triage-${preset.id}`]?.resize());
@@ -1925,7 +2007,7 @@ function formatUtcTimestamp(date){
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth()+1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())} UTC`;
 }
 const root=document.documentElement;const themeToggle=document.getElementById('theme-toggle');const mobileControlsToggle=document.getElementById('mobile-controls-toggle');const headerRight=document.querySelector('.header-right');function setTheme(theme){root.dataset.theme=theme;try{localStorage.setItem('glv-meta-ads-theme',theme);}catch(e){}const light=theme==='light';themeToggle.textContent=light?'☾':'☀';themeToggle.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');Chart.defaults.color=light?'#637589':'#9bacc0';Chart.defaults.borderColor=light?'rgba(99,117,137,.18)':'rgba(155,172,192,.16)';Object.values(charts).forEach(chart=>chart?.update('none'));}let preferred='dark';try{preferred=localStorage.getItem('glv-meta-ads-theme')||'dark';}catch(e){}setTheme(preferred==='light'?'light':'dark');if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');}themeToggle.addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));mobileControlsToggle.addEventListener('click',()=>{const collapsed=headerRight.classList.toggle('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded',String(!collapsed));mobileControlsToggle.textContent=collapsed?'Filters':'Done';});
-initTriageCards();initSelects();initSortControls();updateDateLabel();loadData();
+initTabFilters();initTriageCards();initSelects();initSortControls();updateDateLabel();loadData();
 </script>
 </body>
 </html>

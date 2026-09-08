@@ -96,6 +96,9 @@ async function run() {
         if (response.status() >= 400) errors.push(`${viewport.name}: HTTP ${response.status()} ${response.url()}`);
       });
       await page.route('https://api.frankfurter.dev/**', route => route.fulfill({ json: { rates: { USD: 0.044 } } }));
+      await page.goto(base, { waitUntil: 'networkidle' });
+      await page.waitForFunction(() => document.getElementById('loading').style.display === 'none');
+      await require('./meta-tab-filters.cjs')(page, viewport, evidenceDir, { aggregate, daily, ads });
       if (viewport.name === 'desktop') {
         await page.goto(base.slice(0, -1), { waitUntil: 'networkidle' });
         await page.locator('#kpi-czsk .kpi-card').first().waitFor();
@@ -206,7 +209,7 @@ async function run() {
           const sortLabel = controls.querySelector('.metric-label').getBoundingClientRect();
           const sort = controls.querySelector('.metric-select').getBoundingClientRect();
           const direction = controls.querySelector('.sort-dir-btn').getBoundingClientRect();
-          return getComputedStyle(filter, '::before').content === '"Campaign"'
+          return getComputedStyle(filter, '::before').content === '"Narrow"'
             && sortLabel.bottom <= sort.top
             && campaign.left < sort.left && sort.left < direction.left
             && Math.max(campaign.top, sort.top, direction.top) - Math.min(campaign.top, sort.top, direction.top) <= 1
@@ -220,7 +223,7 @@ async function run() {
           const type = controls.querySelector('#creative-type-czsk').getBoundingClientRect();
           const sort = controls.querySelector('#creative-sort-czsk').getBoundingClientRect();
           const direction = controls.querySelector('.sort-dir-btn').getBoundingClientRect();
-          return getComputedStyle(filter, '::before').content === '"Campaign"'
+          return getComputedStyle(filter, '::before').content === '"Narrow"'
             && labels.every(label => label.bottom <= type.top)
             && campaign.left < type.left && type.left < sort.left && sort.left < direction.left
             && Math.max(campaign.top, type.top, sort.top, direction.top) - Math.min(campaign.top, type.top, sort.top, direction.top) <= 1
@@ -329,8 +332,8 @@ async function run() {
       assert.equal(await page.locator('#triage-filter-section .triage-filter-controls').evaluate(controls => getComputedStyle(controls).gridTemplateColumns.split(' ').length), viewport.width <= 720 ? 1 : 4);
       if (viewport.width <= 720) assert.equal(await page.locator('#triage-filter-section .metric-select').evaluateAll(selects => selects.every(select => select.getBoundingClientRect().height === 44)), true);
       assert.deepEqual(await page.locator('#filter-options-triage-campaign input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['c1', true], ['c2', true], ['c3', true]]);
-      assert.deepEqual(await page.locator('#filter-options-triage-group input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['bau', true], ['promo', true], ['wl', true]]);
       assert.equal(await page.locator('#filter-label-triage-campaign').textContent(), 'All campaigns');
+      assert.deepEqual(await page.locator('#filter-options-triage-group input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['promo', true], ['bau', true], ['wl', true]]);
       assert.equal(await page.locator('#filter-label-triage-group').textContent(), 'All campaign groups');
       assert.equal(await page.getByRole('button', { name: 'Campaign name All campaigns' }).count(), 1);
       assert.equal(await page.getByRole('button', { name: 'Campaign group All campaign groups' }).count(), 1);
@@ -417,7 +420,7 @@ async function run() {
       const allCampaignValues = await chartValues();
       await page.locator('#triage-market').selectOption('us');
       assert.deepEqual(await page.locator('#filter-options-triage-campaign input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['u1', true]]);
-      assert.deepEqual(await page.locator('#filter-options-triage-group input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['bau', true]]);
+      assert.deepEqual(await page.locator('#filter-options-triage-group input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['bau', true], ['advertorial', true]]);
       assert.equal(await triageSpend(), 55312);
       const usValues = await chartValues();
       assert.equal(usValues.every((values, index) => JSON.stringify(values) !== JSON.stringify(allCampaignValues[index])), true, 'US market refreshes all seven charts');
@@ -428,18 +431,22 @@ async function run() {
       }
       await page.locator('#triage-market').selectOption('all');
       assert.deepEqual(await page.locator('#filter-options-triage-campaign input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['c1', true], ['c2', true], ['c3', true], ['u1', true]]);
-      assert.deepEqual(await page.locator('#filter-options-triage-group input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['bau', true], ['promo', true], ['wl', true]]);
       assert.equal(await triageSpend(), 155221);
+      assert.deepEqual(await page.locator('#filter-options-triage-group input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['promo', true], ['bau', true], ['wl', true], ['advertorial', true]]);
       await page.locator('#triage-market').selectOption('czsk');
       assert.deepEqual(await page.locator('#filter-options-triage-campaign input').evaluateAll(inputs => inputs.map(input => [input.value, input.checked])), [['c1', true], ['c2', true], ['c3', true]]);
       assert.equal(await triageSpend(), 99909);
+      if (viewport.width <= 720 && await page.locator('#mobile-controls-toggle').getAttribute('aria-expanded') === 'true') await page.locator('#mobile-controls-toggle').click();
       await page.locator('#filter-toggle-triage-group').evaluate(element => element.scrollIntoView({ block: 'center' }));
-      await page.locator('#filter-toggle-triage-group').click({ force: true });
+      await page.locator('#filter-toggle-triage-group').click();
+      assert.equal(await page.locator('#filter-toggle-triage-group').getAttribute('aria-expanded'),'true');
+      await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
       const triageGroupMenuGeometry=await page.locator('#filter-dropdown-triage-group').evaluate(dropdown => {
         const box=dropdown.getBoundingClientRect();return{left:box.left,right:box.right,top:box.top,bottom:box.bottom,width:innerWidth,height:innerHeight,inside:box.left>=0&&box.right<=innerWidth&&box.top>=0&&box.bottom<=innerHeight};
       });
       assert.ok(triageGroupMenuGeometry.inside, JSON.stringify({viewport,triageGroupMenuGeometry}));
-      assert.equal(await page.locator('#filter-dropdown-triage-group .filter-option').first().evaluate(option => option.getBoundingClientRect().height >= 44), true);
+      const triageOptionGeometry=await page.locator('#filter-dropdown-triage-group .filter-option').first().evaluate(option=>({height:option.getBoundingClientRect().height,minHeight:getComputedStyle(option).minHeight,display:getComputedStyle(option).display,menuClass:option.closest('.filter-dropdown').className}));
+      assert.ok(triageOptionGeometry.height>=44,JSON.stringify({viewport,triageOptionGeometry}));
       if (viewport.name === 'desktop' || viewport.name === 'mobile-390') await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-triage-filter-open.png`) });
       await page.locator('#filter-options-triage-group input[value="bau"]').uncheck();
       await page.locator('#filter-options-triage-group input[value="wl"]').uncheck();
@@ -464,11 +471,12 @@ async function run() {
       if (viewport.name === 'desktop') {
         await page.request.get(new URL('/__qa/omit-campaign?id=c2', base).href);
         await page.evaluate(() => loadData());
-        assert.equal(await page.locator('#filter-label-triage-campaign').textContent(), 'All campaigns');
-        assert.deepEqual(await page.locator('#filter-options-triage-campaign input:checked').evaluateAll(inputs => inputs.map(input => input.value)), ['c1', 'c3']);
-        assert.equal(Math.round(await page.evaluate(() => window.Chart.getChart('triage-chart-efficiency').data.datasets[0].data.reduce((sum, value) => sum + value, 0))), 73606, 'stale campaign selection reconciles before all charts refresh');
+        assert.equal(await page.locator('#filter-label-triage-campaign').textContent(), 'No campaigns');
+        assert.deepEqual(await page.locator('#filter-options-triage-campaign input:checked').evaluateAll(inputs => inputs.map(input => input.value)), []);
+        assert.equal(Math.round(await page.evaluate(() => window.Chart.getChart('triage-chart-efficiency').data.datasets[0].data.reduce((sum, value) => sum + value, 0))), 0, 'missing selected campaign does not broaden scope');
         await page.request.get(new URL('/__qa/omit-campaign', base).href);
         await page.evaluate(() => loadData());
+        assert.deepEqual(await page.locator('#filter-options-triage-campaign input:checked').evaluateAll(inputs => inputs.map(input => input.value)), ['c2']);
       }
       await page.evaluate(() => selectAll('triage-campaign'));
       const layout = await page.locator('#triage-grid').evaluate(grid => {

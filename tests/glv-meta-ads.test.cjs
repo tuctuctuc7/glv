@@ -98,7 +98,7 @@ test('Promo group charts have independent metric controls and LP to Purchase is 
     assert.match(dashboard, new RegExp(`id="${titleId}"`));
   }
   assert.equal((dashboard.match(/class="sr-only promo-chart-data-table"/g) || []).length, 3);
-  assert.match(dashboard, /table\.querySelector\('caption'\)\.textContent=`\$\{metric\.label\} by Promo campaign group and day`/);
+  assert.match(dashboard, /table\.querySelector\('caption'\)\.textContent=`\$\{metric\.label\} by Promo campaign group and \$\{grain\}`/);
   assert.match(dashboard, /pieTable\.querySelector\('thead th:nth-child\(2\)'\)\.textContent=pieMetric\.label/);
   for (const surface of [
     /<div class="kpi-label">LP → Purchase<\/div>/,
@@ -166,7 +166,7 @@ test('Triage defines seven independent presets, a market filter, and one unique 
   assert.match(dashboard, /let triageMarket\s*=\s*'czsk'/);
   assert.match(dashboard, /function getTriageMarketRows\(source='daily'\)/);
   assert.match(dashboard, /triageMarket==='all'\?\['czsk','us'\]:\[triageMarket\]/);
-  assert.match(dashboard, /const rows=getTriageMarketRows\(source\)/);
+  assert.match(dashboard, /filterTabRows\('czsk-triage',getTriageMarketRows\(source\)\)/);
   assert.match(dashboard, /function onTriageMarketChange\(market\)/);
   assert.match(dashboard, /triageMarket=\['czsk','us','all'\]\.includes\(market\)\?market:'czsk'/);
   assert.match(dashboard, /onTriageMarketChange[\s\S]*buildTriageFilters\(\);[\s\S]*refreshTriageCharts\(\);/);
@@ -186,8 +186,8 @@ test('Triage defines seven independent presets, a market filter, and one unique 
   assert.match(dashboard, /'triage-campaign': null, 'triage-group': null/);
   assert.match(dashboard, /filterState\['triage-campaign'\]/);
   assert.match(dashboard, /filterState\['triage-group'\]/);
-  assert.match(dashboard, /campaignSelection\.has\(r\.id\)/);
-  assert.match(dashboard, /groupSelection\.has\(r\.group\|\|promoGroupKey\(r\.name\)\)/);
+  assert.match(dashboard, /names\.has\(String\(row\.campaignId\|\|row\.id\)\)/);
+  assert.match(dashboard, /groups\.has\(campaignGroupKey\(row\.campaignName\|\|row\.name,row\.segment\)\)/);
   assert.match(dashboard, /key==='triage-campaign'\|\|key==='triage-group'\)refreshTriageCharts\(\)/);
   assert.match(dashboard, /byPeriod\(getTriageSegmentRows\('daily'\),null,state\.grain\)/);
   assert.match(dashboard, /activeTab!==['"]czsk['"]&&activeTab!==['"]czsk-triage['"]/);
