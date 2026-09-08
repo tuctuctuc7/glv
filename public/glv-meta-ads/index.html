@@ -185,6 +185,10 @@ tr.gridjs-tr:last-child td{border-bottom:none!important;}
 .data-table .narrow{width:96px;min-width:96px;max-width:96px;}
 .data-table tr.subtotal-row td{background:var(--gray50);font-weight:800;border-top:1px solid var(--gray200);}
 .data-table tr.child-row td:first-child{color:var(--gray400);}
+.promo-group-toggle{display:inline-flex;align-items:center;gap:8px;min-height:32px;margin:-4px;padding:4px;border:0;border-radius:7px;background:transparent;color:inherit;font:inherit;font-weight:inherit;cursor:pointer;white-space:nowrap;}
+.promo-group-toggle:hover{background:color-mix(in srgb,var(--blue) 14%,transparent);}
+.promo-group-toggle:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+.promo-group-chevron{width:12px;color:var(--gray400);font-size:12px;line-height:1;text-align:center;}
 .nested-child{display:inline-flex;align-items:center;gap:6px;color:var(--gray600);}
 .nested-child::before{content:'';width:14px;height:1px;background:var(--gray300, #cbd5e1);display:inline-block;}
 .daily-data-table th:nth-child(1),.daily-data-table td:nth-child(1){position:sticky;left:0;z-index:5;}
@@ -232,6 +236,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 .metric-select,.filter-toggle,.filter-search,.segmented,.sort-dir-btn,.tick-filter,.date-menu,.date-custom-row input[type=date]{background:var(--surface-2);border-color:var(--line);color:var(--ink)}.date-menu,.filter-dropdown{background:var(--surface);border-color:var(--line);box-shadow:var(--shadow)}.date-preset-item{color:var(--ink)}.date-preset-item:hover,.filter-option:hover{background:var(--surface-2)}.date-preset-item.active{background:color-mix(in srgb,var(--blue) 14%,var(--surface));color:var(--blue)}.date-custom-section,.filter-actions{border-color:var(--line-soft)}.segmented button{border-color:var(--line);color:var(--muted)}.segmented button.active{background:var(--surface);color:var(--blue)}.chart-wrap{height:280px}.chart-card-title,.metric-label,.promo-note{color:var(--muted)}.table-outer::before{content:'Swipe horizontally for all metrics →';display:block;margin:0 0 8px;color:var(--muted);font-size:10px;font-weight:750;letter-spacing:.06em}.data-table-wrap{border-color:var(--line-soft)}.data-table th,.data-table td{background:var(--surface);border-color:var(--line-soft);color:var(--ink)}.data-table th{background:var(--surface-2);color:var(--muted)}.data-table tr.subtotal-row td{background:color-mix(in srgb,var(--green) 10%,var(--surface));border-color:var(--line)}.data-table tr.child-row td:first-child,.nested-child{color:var(--muted)}.loading,.empty{color:var(--muted)}.spinner{border-color:var(--line);border-top-color:var(--blue)}.err{background:color-mix(in srgb,var(--red) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--red) 36%,var(--line));border-radius:12px;margin-bottom:16px}.mobile-controls-toggle{display:none}
 @media(min-width:901px){.table-outer::before{display:none}}@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.chart-grid{grid-template-columns:1fr}.dashboard-intro{align-items:flex-start}}@media(max-width:720px){body{padding-top:118px}.header-top{padding:10px 14px}.header-tabs{padding:0 10px}.header-logo span,.updated-at,.date-btn-range{display:none}.header-right{gap:6px}.brand-logo{width:34px;height:34px}.date-btn{padding:6px 9px}.page{padding:16px 12px}.dashboard-intro{display:block}.scope-pill{display:inline-flex;margin-top:12px}.kpi-grid{gap:8px}.kpi-card{padding:13px 12px}.kpi-val{font-size:23px}.section{padding:14px 12px}.chart-wrap{height:240px}.mobile-controls-toggle{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink);font-weight:750}.header-right.controls-collapsed .date-wrap,.header-right.controls-collapsed .tick-filter,.header-right.controls-collapsed .updated-at{display:none}.date-menu{position:fixed;left:12px;right:12px;top:70px;min-width:0}.filter-dropdown{position:fixed;left:12px;right:12px;top:130px;min-width:0;max-height:70vh;overflow:auto}.section-controls,.creative-controls{align-items:stretch}.filter-toggle{min-width:0;width:100%}}@media(max-width:360px){.header-logo{font-size:12px}.tab-btn{font-size:12px}.kpi-val{font-size:20px}}
 .tab-mobile-label{display:none}
+@media(max-width:720px){.promo-group-toggle{min-height:44px;margin:-10px -4px}}
 @media (min-width:721px) and (max-width:1000px){
   .triage-grid{grid-template-columns:1fr;}
   .triage-card--hero{grid-column:auto;}
@@ -725,6 +730,7 @@ let chartGranularity   = { czsk: 'day', us: 'day' };
 let triageState        = Object.fromEntries(TRIAGE_PRESETS.map(preset=>[preset.id,{grain:'day',primary:preset.primary,secondary:preset.secondary}]));
 let triageMarket       = 'czsk';
 let promoTableMode     = 'groups';
+let promoExpandedGroups = new Set();
 let leadgenTableMode   = 'groups';
 let promoActiveDaysOnly = false;
 let includeLeadGen = false;
@@ -1468,7 +1474,7 @@ function buildFilterOptions(filterKey,campaignIds){
   const container=document.getElementById('filter-options-'+filterKey);if(!container)return;
   container.innerHTML=campaignIds.map(id=>{
     const info=campaignMeta[id]||{};const color=info.color||'#94a3b8';const name=info.name||id;
-    return`<label class="filter-option" title="${name}"><input type="checkbox" value="${id}" checked onchange="onFilterChange('${filterKey}')"><span class="camp-dot" style="background:${color}"></span><span class="camp-name">${name}</span></label>`;
+    return`<label class="filter-option" title="${escapeHtml(name)}"><input type="checkbox" value="${escapeHtml(id)}" checked onchange="onFilterChange('${filterKey}')"><span class="camp-dot" style="background:${escapeHtml(color)}"></span><span class="camp-name">${escapeHtml(name)}</span></label>`;
   }).join('');
 }
 function compareFilterOptions(a,b){
@@ -1590,6 +1596,11 @@ function setPromoTableMode(mode){
   document.getElementById('promo-mode-days')?.classList.toggle('active',mode==='days');
   renderPromoTable();
 }
+function togglePromoGroup(group){
+  if(promoExpandedGroups.has(group))promoExpandedGroups.delete(group);else promoExpandedGroups.add(group);
+  renderPromoTable();
+  requestAnimationFrame(()=>document.getElementById(`promo-group-toggle-${group}`)?.focus());
+}
 function setPromoActiveDaysOnly(checked){
   promoActiveDaysOnly=checked;
   renderPromoKPIs();
@@ -1653,9 +1664,14 @@ function promoMetricCells(d){
     m.cpm>0?fmtInt(m.cpm):'—',
   ];
 }
-function promoNestedRow(rowClass,firstHtml,secondHtml,d){
+function promoNestedRow(rowClass,firstHtml,secondHtml,d,parentGroup=''){
   const cells=promoMetricCells(d);
-  return`<tr class="${rowClass}"><td class="narrow">${firstHtml}</td><td class="narrow">${secondHtml}</td>${cells.map(v=>`<td>${v}</td>`).join('')}</tr>`;
+  const parentAttr=parentGroup?` data-promo-parent="${escapeHtml(parentGroup)}"`:'';
+  return`<tr class="${rowClass}"${parentAttr}><td class="narrow">${firstHtml}</td><td class="narrow">${secondHtml}</td>${cells.map(v=>`<td>${v}</td>`).join('')}</tr>`;
+}
+function promoGroupToggleHtml(key){
+  const group=promoGroup(key);const expanded=promoExpandedGroups.has(key);const action=expanded?'Collapse':'Expand';
+  return`<button type="button" class="promo-group-toggle" id="promo-group-toggle-${escapeHtml(key)}" aria-expanded="${expanded}" aria-label="${action} ${escapeHtml(group.label)} days" onclick="togglePromoGroup('${key}')"><span class="promo-group-chevron" aria-hidden="true">${expanded?'▾':'▸'}</span>${promoGroupHtml(key)}</button>`;
 }
 function promoSortComparator(a,b){
   const state=sortState.promo.czsk;
@@ -1689,8 +1705,8 @@ function renderPromoTable(){
     for(const groupTotal of groups){
       const groupRows=sortPromoChildren(rows.filter(r=>r.group===groupTotal.group));
       if(!groupRows.length)continue;
-      body+=promoNestedRow('subtotal-row',promoGroupHtml(groupTotal.group),'Subtotal',groupTotal);
-      body+=groupRows.map(r=>promoNestedRow('child-row','',`<span class="nested-child">${escapeHtml(r.date)}</span>`,r)).join('');
+      body+=promoNestedRow('subtotal-row',promoGroupToggleHtml(groupTotal.group),'Subtotal',groupTotal);
+      if(promoExpandedGroups.has(groupTotal.group))body+=groupRows.map(r=>promoNestedRow('child-row','',`<span class="nested-child">${escapeHtml(r.date)}</span>`,r,groupTotal.group)).join('');
     }
   }else{
     const dates=sortPromoChildren([...new Set(rows.map(r=>r.date))].map(date=>sumPromoRows(rows.filter(r=>r.date===date),date,null)));

@@ -20,8 +20,9 @@ const campaign = (id, name, spend, revenue, purchases, checkouts, clicks, impres
   'actions:lead': String(leads), 'actions:landing_page_view': String(landingViews),
   'action_values:omni_purchase': String(revenue), date_start: date, date_stop: date,
 });
+const hostileCampaignName = 'GLV_101_CZ_Promo_August_"><svg onload=window.__promoXss=1></svg>';
 const aggregate = [
-  campaign('c1', 'GLV_101_CZ_Promo_August', 42000, 91000, 121, 238, 1280, 92000),
+  campaign('c1', hostileCampaignName, 42000, 91000, 121, 238, 1280, 92000),
   campaign('c2', 'GLV_102_CZ_Kristyna_Core', 26000, 51000, 69, 141, 840, 61000),
   campaign('c3', 'GLV_103_CZ_BAU_Core', 31000, 58000, 72, 156, 950, 73000),
   campaign('c4', 'GLV_104_CZ_Leads_August', 12000, 0, 0, 0, 360, 28000, undefined, 48, 240),
@@ -102,6 +103,9 @@ async function run() {
       }
       await page.goto(base, { waitUntil: 'networkidle' });
       await page.locator('#kpi-czsk .kpi-card').first().waitFor();
+      assert.equal(await page.evaluate(() => window.__promoXss), undefined);
+      assert.equal(await page.locator('[id^="filter-options-"] svg').count(), 0);
+      assert.equal(await page.locator('[id^="filter-options-"] .camp-name').evaluateAll((names, expected) => names.filter(name => name.textContent === expected).length >= 2, hostileCampaignName), true);
       const homeIconHref = await page.locator('link[rel="apple-touch-icon"]').getAttribute('href');
       assert.equal(homeIconHref, '/glv-meta-ads/apple-touch-icon.png');
       const homeIconResponse = await page.request.get(new URL(homeIconHref, base).href);
@@ -624,7 +628,23 @@ async function run() {
           && getComputedStyle(controls.querySelector('.filter-wrap'), '::before').color === getComputedStyle(controls.querySelector('.toggle-row .metric-label')).color;
       }), true);
       assert.deepEqual(await page.locator('#kpi-czsk-promo .kpi-val').allTextContents(), ['42,000', '26,000', '31,000']);
-      assert.ok(await page.locator('#promo-table tbody tr').count() >= 6);
+      assert.equal(await page.locator('#promo-table .subtotal-row').count(), 3);
+      assert.equal(await page.locator('#promo-table .child-row').count(), 0);
+      const promoGroupToggles = page.locator('#promo-table .promo-group-toggle');
+      assert.equal(await promoGroupToggles.count(), 3);
+      assert.deepEqual(await promoGroupToggles.evaluateAll(buttons => buttons.map(button => button.getAttribute('aria-expanded'))), ['false', 'false', 'false']);
+      await page.getByRole('button', { name: 'Expand Promo days' }).click();
+      assert.equal(await page.getByRole('button', { name: 'Collapse Promo days' }).getAttribute('aria-expanded'), 'true');
+      assert.ok(await page.locator('#promo-table .child-row[data-promo-parent="promo"]').count() > 0);
+      assert.equal(await page.locator('#promo-table .child-row:not([data-promo-parent="promo"])').count(), 0);
+      if (['desktop', 'mobile-390', 'mobile-320'].includes(viewport.name)) await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-promo-group-expanded.png`), fullPage: true });
+      await page.getByRole('button', { name: 'Collapse Promo days' }).click();
+      assert.equal(await page.locator('#promo-table .child-row').count(), 0);
+      await page.locator('#promo-mode-days').click();
+      assert.equal(await page.locator('#promo-table .promo-group-toggle').count(), 0);
+      assert.ok(await page.locator('#promo-table .child-row').count() > 0);
+      await page.locator('#promo-mode-groups').click();
+      assert.equal(await page.locator('#promo-table .child-row').count(), 0);
       assert.ok(await page.evaluate(() => Boolean(window.Chart.getChart('chart-promo-spend')) && Boolean(window.Chart.getChart('chart-promo-pie'))));
       assert.deepEqual(await page.evaluate(() => [
         window.Chart.getChart('chart-promo-spend').data.datasets[0].metricKey,
@@ -701,7 +721,8 @@ async function run() {
       if (viewport.width <= 720) await page.screenshot({ path: path.join(evidenceDir, `${viewport.name}-promo.png`), fullPage: true });
       if (viewport.width <= 720) await page.locator('#mobile-controls-toggle').click();
       await page.locator('#promo-active-days-only').check();
-      assert.ok(await page.locator('#promo-table tbody tr').count() >= 6);
+      assert.equal(await page.locator('#promo-table .subtotal-row').count(), 3);
+      assert.equal(await page.locator('#promo-table .child-row').count(), 0);
       assert.deepEqual(await page.locator('#panel-czsk-promo .promo-metric-control select').evaluateAll(selects => selects.map(select => select.value)), ['lp2pur', 'revenue', 'lp2pur']);
       if (viewport.name === 'desktop') {
         const promoMetricMatrix = await page.evaluate(() => {
