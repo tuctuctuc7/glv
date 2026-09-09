@@ -94,6 +94,7 @@ Derived metrics are calculated after date and region aggregation:
 
 - ROAS = revenue / spend
 - Cost per purchase = spend / purchases
+- CAC = total spend / total new customers, calculated after filtering and aggregation. Nonpositive or unavailable new customers (or unavailable spend) produce an empty CAC cell and a chart gap, never an invented zero. Zero-spend rows with positive new customers legitimately yield $0.00. CAC is available in the Audit Trail and both chart selectors, in USD.
 - AOV = revenue / purchases
 - CVR = purchases / unique visitors
 - New customer rate = new customers / (new customers + returning customers)

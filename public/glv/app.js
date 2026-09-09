@@ -1,4 +1,5 @@
 const METRIC_CONFIG = {
+  cac: { label: 'CAC', type: 'money', color: 'var(--blue)', description: 'Total recorded spend divided by total new customers after aggregation; blank when new customers are not positive or inputs are unavailable.' },
   none: { label: 'None', type: 'count', color: 'transparent', description: 'No metric selected.' },
   revenue: { label: 'Revenue', type: 'money', color: 'var(--accent)', description: 'Total recorded business revenue.' },
   roas: { label: 'ROAS', type: 'ratio', color: 'var(--cyan)', description: 'Total recorded revenue divided by total recorded spend.' },
@@ -50,7 +51,7 @@ function compactNumber(value, digits = 1) {
 }
 
 function formatMetric(key, value, compact = false) {
-  if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—';
+  if (value === null || value === undefined || !Number.isFinite(Number(value))) return key === 'cac' ? '' : '—';
   const config = METRIC_CONFIG[key] || { type: 'count' };
   const number = Number(value);
   if (config.type === 'money') {
@@ -837,7 +838,7 @@ function renderChart(view) {
     pointHoverRadius: 4,
     pointBackgroundColor: colors.surface,
     fill: false,
-    spanGaps: true,
+    spanGaps: secondaryKey !== 'cac',
     tension: 0.28,
     yAxisID: 'y1',
   });
@@ -920,6 +921,7 @@ function renderTable(view) {
     formatMetric('unique_visitors', summary.unique_visitors),
     formatAuditMetric('new_customer_revenue', summary.new_customer_revenue),
     formatMetric('new_customer_rate', summary.new_customer_rate),
+    formatMetric('cac', summary.cac),
   ].forEach((value) => summaryRow.appendChild(element('td', '', value)));
   body.appendChild(summaryRow);
   rows.forEach((row) => {
@@ -936,6 +938,7 @@ function renderTable(view) {
       formatMetric('unique_visitors', row.unique_visitors),
       formatAuditMetric('new_customer_revenue', row.new_customer_revenue),
       formatMetric('new_customer_rate', row.new_customer_rate),
+      formatMetric('cac', row.cac),
     ];
     values.forEach((value) => tr.appendChild(element('td', '', value)));
     body.appendChild(tr);

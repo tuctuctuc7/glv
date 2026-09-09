@@ -4,7 +4,7 @@
   if (root) root.GlvMetrics = api;
 }(typeof globalThis !== 'undefined' ? globalThis : this, () => {
   const ABSOLUTE_METRICS = ['spend', 'revenue', 'purchases', 'unique_visitors', 'new_customers', 'returning_customers', 'new_customer_revenue'];
-  const LOWER_IS_BETTER = new Set(['cpa']);
+  const LOWER_IS_BETTER = new Set(['cpa', 'cac']);
   const HIGHER_IS_BETTER = new Set(['revenue', 'roas', 'purchases', 'aov', 'cvr', 'unique_visitors']);
 
   function finiteNumber(value) {
@@ -60,6 +60,8 @@
       ...totals,
       roas: ratioFromRows(sourceRows, 'revenue', 'spend'),
       cpa: ratioFromRows(sourceRows, 'spend', 'purchases'),
+      cac: totals.new_customers > 0 && sourceRows.every((row) => hasFiniteMetric(row, 'spend') && hasFiniteMetric(row, 'new_customers'))
+        ? totals.spend / totals.new_customers : null,
       aov: ratioFromRows(sourceRows, 'revenue', 'purchases'),
       cvr: ratioFromRows(sourceRows, 'purchases', 'unique_visitors'),
       new_customer_rate: customerRows.length ? ratio(newCustomers, newCustomers + returningCustomers) : null,
@@ -68,6 +70,9 @@
 
   function metricValue(row, key) {
     if (!row) return null;
+    if (key === 'cac' && Object.prototype.hasOwnProperty.call(row, 'cac')) return hasFiniteMetric(row, 'cac') ? Number(row.cac) : null;
+    if (key === 'cac') return hasFiniteMetric(row, 'spend') && hasFiniteMetric(row, 'new_customers') && Number(row.new_customers) > 0
+      ? Number(row.spend) / Number(row.new_customers) : null;
     if (!hasFiniteMetric(row, key) && !['roas', 'cpa', 'aov', 'cvr', 'new_customer_rate'].includes(key)) return null;
     if (key === 'roas') return ratio(finiteNumber(row.revenue), finiteNumber(row.spend));
     if (key === 'cpa') return ratio(finiteNumber(row.spend), finiteNumber(row.purchases));

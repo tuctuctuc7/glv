@@ -157,7 +157,7 @@ async function run() {
     assert.match(await page.locator('#trendDataCaption').textContent(), /Revenue and ROAS by day/);
     assert.equal(await page.locator('#metricsTableBody tr').count(), 29);
     assert.match(await page.locator('#metricsTableBody tr').first().textContent(), /Selected period/);
-    assert.equal(await page.locator('#metricsTable thead th').count(), 11);
+    assert.equal(await page.locator('#metricsTable thead th').count(), 12);
     assert.doesNotMatch(await page.locator('#metricsTable thead').textContent(), /New customers|Returning customers/);
     assert.match(await page.locator('#executiveKpis').textContent(), /New customer rate/);
     assert.doesNotMatch(await page.locator('#executiveKpis').textContent(), /Visitors/);
@@ -179,8 +179,8 @@ async function run() {
       assert.equal(await page.locator(`#${target}`).isVisible(), true, `${target} should expand`);
       assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
     }
-    assert.equal(await page.locator('#trendMetric option').count(), 11);
-    assert.equal(await page.locator('#trendMetricSecondary option').count(), 11);
+    assert.equal(await page.locator('#trendMetric option').count(), 12);
+    assert.equal(await page.locator('#trendMetricSecondary option').count(), 12);
     await page.locator('#trendMetric').selectOption('roas');
     await page.locator('#trendMetricSecondary').selectOption('revenue');
     assert.deepEqual(await page.evaluate(() => window.Chart.getChart('trendChart').data.datasets.map((dataset) => ({ type: dataset.type, label: dataset.label, filled: dataset.fill === true }))), [
@@ -764,6 +764,7 @@ async function run() {
     assert.equal(await errorPage.locator('#dashboardContent').isVisible(), false);
     await errorContext.close();
 
+    await require('./cac-smoke.cjs')(browser, baseUrl, evidenceDir);
     assert.deepEqual(consoleErrors, [], `browser console errors: ${consoleErrors.join(' | ')}`);
     console.log(JSON.stringify({
       passed: true,
