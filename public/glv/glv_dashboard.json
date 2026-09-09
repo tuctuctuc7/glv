@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-08 00:10 UTC",
+  "updated_at": "2026-09-09 00:10 UTC",
   "source": {
     "sheet_id": "1KjiRfumk3w8tNZFpfI8RO9X5RTcqoq5LcKfyCzcpplQ",
     "tab": "Daily",
@@ -9,7 +9,7 @@
   "currency": "USD",
   "date_range": {
     "start": "2026-01-01",
-    "end": "2026-09-07"
+    "end": "2026-09-08"
   },
   "absolute_metrics": [
     "spend",
@@ -8083,13 +8083,13 @@
     {
       "date": "2026-09-02",
       "region": "czsk",
-      "revenue": 3287.0,
+      "revenue": 3285.0,
       "spend": 1600.0,
       "purchases": 23,
       "unique_visitors": 1517,
       "new_customers": 17,
       "returning_customers": 6,
-      "new_customer_revenue": 2424.0
+      "new_customer_revenue": 2422.0
     },
     {
       "date": "2026-09-02",
@@ -8116,7 +8116,7 @@
     {
       "date": "2026-09-03",
       "region": "czsk",
-      "revenue": 1208.0,
+      "revenue": 1207.0,
       "spend": 1537.0,
       "purchases": 8,
       "unique_visitors": 1523,
@@ -8127,35 +8127,35 @@
     {
       "date": "2026-09-03",
       "region": "row",
-      "revenue": 159.0,
-      "spend": 0.0,
-      "purchases": 1,
-      "unique_visitors": 34,
-      "new_customers": 1,
-      "returning_customers": 0,
-      "new_customer_revenue": 159.0
-    },
-    {
-      "date": "2026-09-03",
-      "region": "us",
       "revenue": 0.0,
-      "spend": 223.0,
+      "spend": 0.0,
       "purchases": 0,
-      "unique_visitors": 47,
+      "unique_visitors": 34,
       "new_customers": 0,
       "returning_customers": 0,
       "new_customer_revenue": 0.0
     },
     {
+      "date": "2026-09-03",
+      "region": "us",
+      "revenue": 159.0,
+      "spend": 223.0,
+      "purchases": 1,
+      "unique_visitors": 47,
+      "new_customers": 1,
+      "returning_customers": 0,
+      "new_customer_revenue": 159.0
+    },
+    {
       "date": "2026-09-04",
       "region": "czsk",
-      "revenue": 3014.0,
+      "revenue": 3013.0,
       "spend": 1403.0,
       "purchases": 17,
       "unique_visitors": 1399,
       "new_customers": 8,
       "returning_customers": 9,
-      "new_customer_revenue": 1550.0
+      "new_customer_revenue": 1549.0
     },
     {
       "date": "2026-09-04",
@@ -8182,13 +8182,13 @@
     {
       "date": "2026-09-05",
       "region": "czsk",
-      "revenue": 1796.0,
+      "revenue": 1795.0,
       "spend": 1243.0,
       "purchases": 15,
       "unique_visitors": 1100,
       "new_customers": 13,
       "returning_customers": 2,
-      "new_customer_revenue": 1563.0
+      "new_customer_revenue": 1562.0
     },
     {
       "date": "2026-09-05",
@@ -8215,7 +8215,7 @@
     {
       "date": "2026-09-06",
       "region": "czsk",
-      "revenue": 2669.0,
+      "revenue": 2668.0,
       "spend": 1133.0,
       "purchases": 16,
       "unique_visitors": 847,
@@ -8248,13 +8248,13 @@
     {
       "date": "2026-09-07",
       "region": "czsk",
-      "revenue": 3799.0,
+      "revenue": 3797.0,
       "spend": 1117.0,
       "purchases": 29,
       "unique_visitors": 907,
       "new_customers": 12,
       "returning_customers": 17,
-      "new_customer_revenue": 1586.0
+      "new_customer_revenue": 1585.0
     },
     {
       "date": "2026-09-07",
@@ -8277,6 +8277,39 @@
       "new_customers": 2,
       "returning_customers": 2,
       "new_customer_revenue": 414.0
+    },
+    {
+      "date": "2026-09-08",
+      "region": "czsk",
+      "revenue": 6856.0,
+      "spend": 1188.0,
+      "purchases": 47,
+      "unique_visitors": 1021,
+      "new_customers": 10,
+      "returning_customers": 37,
+      "new_customer_revenue": 1252.0
+    },
+    {
+      "date": "2026-09-08",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 79,
+      "new_customers": 0,
+      "returning_customers": 0,
+      "new_customer_revenue": 0.0
+    },
+    {
+      "date": "2026-09-08",
+      "region": "us",
+      "revenue": 138.0,
+      "spend": 220.0,
+      "purchases": 1,
+      "unique_visitors": 54,
+      "new_customers": 1,
+      "returning_customers": 0,
+      "new_customer_revenue": 138.0
     }
   ]
 }
