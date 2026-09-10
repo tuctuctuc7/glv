@@ -765,6 +765,7 @@ async function run() {
     await errorContext.close();
 
     await require('./cac-smoke.cjs')(browser, baseUrl, evidenceDir);
+    await require('./compact-audit.cjs')(browser, baseUrl, evidenceDir);
     assert.deepEqual(consoleErrors, [], `browser console errors: ${consoleErrors.join(' | ')}`);
     console.log(JSON.stringify({
       passed: true,

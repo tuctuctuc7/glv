@@ -1401,6 +1401,29 @@ html[data-theme="light"] .region-card {
   width: 140px;
 }
 
+/* Keep the grain control in the heading, not in a second full-width row. */
+#auditTable { padding-top: 12px; }
+#auditTable .panel-heading { align-items: center; gap: 12px; }
+#auditTable .section-toggle { align-items: center; }
+#auditTable .audit-toolbar { flex: 0 0 auto; margin: 0; }
+#auditTable .audit-grain-field { width: 120px; }
+#auditTable #auditGrain { min-height: 44px; }
+#auditTable.is-collapsed .audit-toolbar { display: none; }
+#auditTable .audit-table-wrap { margin-top: 12px; }
+
+@media (max-width: 720px) {
+  #auditTable .panel-heading { gap: 8px; }
+  #auditTable .section-toggle { width: 100%; }
+  #auditTable .audit-toolbar { align-self: flex-end; }
+  #auditTable .audit-grain-field {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    width: auto;
+  }
+  #auditTable #auditGrain { width: 120px; }
+}
+
 .table-wrap {
   margin: 16px -20px -20px;
   max-width: calc(100% + 40px);

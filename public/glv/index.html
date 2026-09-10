@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/glv/apple-touch-icon.png" />
   <title>GLV Executive Pulse</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="stylesheet" href="/glv/styles.css?v=canonical-20260906-cac" />
+  <link rel="stylesheet" href="/glv/styles.css?v=canonical-20260906-compact-audit" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f" crossorigin="anonymous" defer></script>
   <script src="/glv/metrics.js?v=canonical-20260906-cac" defer></script>
   <script src="/glv/app.js?v=canonical-20260906-cac" defer></script>
@@ -209,8 +209,6 @@
       <section id="auditTable" class="panel detail-panel" aria-labelledby="detailTitle">
         <div class="panel-heading detail-heading toggle-heading">
           <button class="section-toggle" type="button" aria-controls="auditContent" aria-expanded="true"><span><span class="eyebrow">Audit trail</span><span class="section-title" id="detailTitle">Performance detail</span><span id="tableSubtitle" class="panel-subtitle">Aggregated rows for the selected view.</span></span><span class="toggle-chevron" aria-hidden="true"></span></button>
-        </div>
-        <div id="auditContent" class="section-content">
         <div class="audit-toolbar">
           <label class="field field-compact audit-grain-field">
             <span>Grain</span>
@@ -222,6 +220,8 @@
             </select>
           </label>
         </div>
+        </div>
+        <div id="auditContent" class="section-content">
         <p id="auditHistoryNote" class="historical-scope-note" role="note" hidden></p>
         <p class="table-scroll-hint">Swipe horizontally to inspect every metric →</p>
         <div class="table-wrap audit-table-wrap" id="auditTableWrap" tabindex="0" aria-label="Scrollable performance detail table">
