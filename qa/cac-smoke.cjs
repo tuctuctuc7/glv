@@ -16,6 +16,9 @@ module.exports = async function verifyCac(browser, baseUrl, evidenceDir) {
     await page.route('**/glv_dashboard.json', route => route.fulfill({ json: fixture }));
     await page.goto(`${baseUrl}?period=custom&from=2026-09-01&to=2026-09-03&grain=day&auditGrain=day`, { waitUntil: 'networkidle' });
     await page.locator('#dashboardContent').waitFor({ state: 'visible' });
+    for (const id of ['trendMetric', 'trendMetricSecondary']) {
+      assert.equal(await page.locator(`#${id} option`).first().getAttribute('value'), 'none');
+    }
     assert.equal(await page.locator('#executiveKpis .kpi-card').count(), 8);
     assert.equal(await page.locator('#executiveKpis [data-metric="cpa"]').count(), 0);
     assert.equal(await page.locator('#executiveKpis [data-metric="cac"] .kpi-label').textContent(), 'CAC');
