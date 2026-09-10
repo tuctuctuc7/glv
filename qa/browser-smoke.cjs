@@ -305,7 +305,8 @@ async function run() {
     assert.equal(await page.locator('#trendDataBody tr').count(), 12, 'historical-only month chart must show all twelve months');
     assert.equal(await page.locator('#metricsTableBody tr').count(), 2, 'historical-only year audit must show summary plus 2025');
     assert.equal(await page.locator('#marketComparison').isVisible(), false, 'market comparison must hide when the working source has no rows');
-    assert.ok((await page.locator('#executiveKpis .kpi-value').allTextContents()).every((value) => value.trim() === '—'), 'working-source scorecards must not absorb historical rows');
+    assert.ok((await page.locator('#executiveKpis .kpi-card:not([data-metric="cac"]) .kpi-value').allTextContents()).every((value) => value.trim() === '—'), 'working-source scorecards must not absorb historical rows');
+    assert.equal(await page.locator('#executiveKpis [data-metric="cac"] .kpi-value').textContent(), '', 'CAC stays empty without working-source rows');
 
     await page.locator('#grain').selectOption('day');
     await page.locator('#auditGrain').selectOption('day');

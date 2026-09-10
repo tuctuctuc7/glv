@@ -191,7 +191,7 @@
     const current = aggregateRows(currentRows);
     const previous = aggregateRows(previousRows);
     const changes = {};
-    [...ABSOLUTE_METRICS, 'roas', 'cpa', 'aov', 'cvr', 'new_customer_rate'].forEach((key) => {
+    [...ABSOLUTE_METRICS, 'roas', 'cpa', 'cac', 'aov', 'cvr', 'new_customer_rate'].forEach((key) => {
       changes[key] = percentageChange(current[key], previous[key]);
     });
     return { current, previous, changes };

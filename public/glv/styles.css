@@ -2330,7 +2330,7 @@ tbody tr:last-child td {
   .kpi-grid-executive .kpi-card[data-metric="purchases"] { order: 5; }
   .kpi-grid-executive .kpi-card[data-metric="cvr"] { order: 6; }
   .kpi-grid-executive .kpi-card[data-metric="aov"] { order: 7; }
-  .kpi-grid-executive .kpi-card[data-metric="cpa"] { order: 8; }
+  .kpi-grid-executive .kpi-card[data-metric="cac"] { order: 8; }
 
   .panel.is-collapsed {
     padding: 16px;

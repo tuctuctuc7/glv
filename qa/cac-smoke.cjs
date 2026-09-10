@@ -16,6 +16,11 @@ module.exports = async function verifyCac(browser, baseUrl, evidenceDir) {
     await page.route('**/glv_dashboard.json', route => route.fulfill({ json: fixture }));
     await page.goto(`${baseUrl}?period=custom&from=2026-09-01&to=2026-09-03&grain=day&auditGrain=day`, { waitUntil: 'networkidle' });
     await page.locator('#dashboardContent').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#executiveKpis .kpi-card').count(), 8);
+    assert.equal(await page.locator('#executiveKpis [data-metric="cpa"]').count(), 0);
+    assert.equal(await page.locator('#executiveKpis [data-metric="cac"] .kpi-label').textContent(), 'CAC');
+    assert.equal(await page.locator('#executiveKpis [data-metric="cac"] .kpi-value').textContent(), '$60');
+    if (width <= 720) assert.equal(await page.locator('#executiveKpis [data-metric="cac"]').evaluate(node => getComputedStyle(node).order), '8');
     await page.locator('#trendMetric').selectOption('cac');
     await page.locator('#trendMetricSecondary').selectOption('cac');
     assert.deepEqual(await page.evaluate(() => Chart.getChart('trendChart').data.datasets.map(d => d.data)), [[50, null, 37.5], [50, null, 37.5]]);
@@ -34,6 +39,7 @@ module.exports = async function verifyCac(browser, baseUrl, evidenceDir) {
     await page.screenshot({ path: path.join(evidenceDir, `cac-${width}.png`) });
     fixture.rows.forEach(row => { row.new_customers = 0; });
     await page.reload({ waitUntil: 'networkidle' });
+    assert.equal(await page.locator('#executiveKpis [data-metric="cac"] .kpi-value').textContent(), '');
     assert.deepEqual(await page.locator('#metricsTableBody tr td:last-child').allTextContents(), ['', '']);
     assert.deepEqual(await page.evaluate(() => Chart.getChart('trendChart').data.datasets[0].data), [null]);
     assert.deepEqual(errors, []);

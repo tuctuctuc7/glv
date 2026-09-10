@@ -301,7 +301,7 @@ function renderKpiCard(key, view) {
 function renderKpis(view) {
   const container = $('executiveKpis');
   clear(container);
-  ['revenue', 'spend', 'purchases', 'new_customer_rate', 'cvr', 'aov', 'cpa', 'roas']
+  ['revenue', 'spend', 'purchases', 'new_customer_rate', 'cvr', 'aov', 'cac', 'roas']
     .forEach((key) => container.appendChild(renderKpiCard(key, view)));
   const intersectsHistory = Boolean(state.historicalData
     && view.filters.from <= state.historicalData.coverage.end
