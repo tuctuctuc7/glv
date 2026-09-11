@@ -10,10 +10,10 @@ test('approved Pulse is the sole canonical runtime, with release-versioned depen
   assert.equal(fs.existsSync(path.join(root, 'public/glv-2')), false);
   const html = read('public/glv/index.html');
   assert.match(html, /<title>GLV Executive Pulse<\/title>/);
-  for (const file of ['app.js', 'metrics.js', 'styles.css']) {
-    assert.ok(html.includes(`/glv/${file}?v=canonical-20260906`), file);
+  for (const file of ['app.js', 'metrics.js', 'phases.js', 'styles.css']) {
+    assert.ok(html.includes(`/glv/${file}?v=phases-20260911`), file);
   }
-  for (const file of ['index.html', 'app.js', 'styles.css', 'metrics.js']) assert.ok(!read(`public/glv/${file}`).includes('/glv-2/'));
+  for (const file of ['index.html', 'app.js', 'styles.css', 'metrics.js', 'phases.js']) assert.ok(!read(`public/glv/${file}`).includes('/glv-2/'));
   assert.ok(!read('export_glv_dashboard.py').includes('glv-2'));
   assert.ok(!read('deploy_glv_dashboard.sh').includes('glv-2'));
 });

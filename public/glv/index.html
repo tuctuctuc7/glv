@@ -9,10 +9,11 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/glv/apple-touch-icon.png" />
   <title>GLV Executive Pulse</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="stylesheet" href="/glv/styles.css?v=canonical-20260906-executive-cac-20260910" />
+  <link rel="stylesheet" href="/glv/styles.css?v=phases-20260911" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f" crossorigin="anonymous" defer></script>
-  <script src="/glv/metrics.js?v=canonical-20260906-executive-cac-20260910" defer></script>
-  <script src="/glv/app.js?v=canonical-20260906-executive-cac-20260910" defer></script>
+  <script src="/glv/metrics.js?v=phases-20260911" defer></script>
+  <script src="/glv/phases.js?v=phases-20260911" defer></script>
+  <script src="/glv/app.js?v=phases-20260911" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#mainContent">Skip to dashboard content</a>
@@ -35,6 +36,11 @@
         <p class="product-name">Executive Pulse</p>
       </div>
     </div>
+
+    <nav class="dashboard-view-nav" aria-label="Dashboard views" role="tablist">
+      <button id="homeViewTab" type="button" role="tab" data-dashboard-view="home" aria-selected="true" aria-controls="homeView">Home</button>
+      <button id="phasesViewTab" type="button" role="tab" data-dashboard-view="phases" aria-selected="false" aria-controls="phasesView" tabindex="-1">Phases</button>
+    </nav>
 
     <div class="header-actions">
       <div class="freshness" id="freshnessBadge" data-status="loading">
@@ -121,6 +127,7 @@
     <p id="screenReaderStatus" class="sr-only" aria-live="polite"></p>
 
     <div id="dashboardContent" hidden>
+      <div id="homeView" role="tabpanel" aria-labelledby="homeViewTab">
       <section id="overview" class="overview-heading" aria-labelledby="overviewTitle">
         <div>
           <p class="eyebrow">Executive control room</p>
@@ -257,6 +264,59 @@
         </tr></thead><tbody id="marketComparisonBody"></tbody></table></div></div>
       </section>
 
+      </section>
+      </div>
+
+      <section id="phasesView" class="phases-view" role="tabpanel" aria-labelledby="phasesViewTab" hidden>
+        <section class="overview-heading phase-overview" aria-labelledby="phasesTitle">
+          <div>
+            <p class="eyebrow">Commercial calendar · CZSK only</p>
+            <h1 id="phasesTitle">Phase performance</h1>
+            <p id="phaseRange" class="range-label">Year to date · loading</p>
+          </div>
+          <div class="phase-legend" aria-label="Phase colors">
+            <span data-phase="bau"><i></i>BAU</span><span data-phase="promo"><i></i>Promo</span><span data-phase="influ"><i></i>Influ</span>
+          </div>
+        </section>
+
+        <section class="panel phase-chart-panel" aria-labelledby="phaseChartTitle">
+          <div class="panel-heading phase-panel-heading">
+            <div><span class="eyebrow">Monthly YTD</span><span class="section-title" id="phaseChartTitle">Performance by phase</span><span class="panel-subtitle">One line per phase · through latest loaded working day</span></div>
+            <label class="field field-compact phase-metric-field"><span>Metric</span><select id="phaseMetric">
+              <option value="none">None</option>
+              <option value="revenue" selected>Revenue</option>
+              <option value="spend">Spend</option>
+              <option value="purchases">Purchases</option>
+              <option value="unique_visitors">Visitors</option>
+              <option value="new_customer_revenue">New customer revenue</option>
+              <option value="roas">ROAS</option>
+              <option value="cvr">CVR</option>
+              <option value="cpa">Cost per purchase</option>
+              <option value="aov">AOV</option>
+              <option value="new_customer_rate">New customer rate</option>
+              <option value="cac">CAC</option>
+            </select></label>
+          </div>
+          <div class="phase-chart-wrap"><canvas id="phaseChart" role="img" aria-label="Monthly year-to-date performance by BAU, Promo and Influ" aria-describedby="phaseChartData"></canvas></div>
+          <table id="phaseChartData" class="sr-only"><caption id="phaseChartCaption">Monthly phase chart data</caption><thead><tr><th>Month</th><th>BAU</th><th>Promo</th><th>Influ</th></tr></thead><tbody id="phaseChartDataBody"></tbody></table>
+        </section>
+
+        <section class="panel phase-table-panel" aria-labelledby="phaseTableTitle">
+          <div class="panel-heading phase-table-heading">
+            <div><span class="eyebrow">Expandable audit trail</span><span class="section-title" id="phaseTableTitle">Phase detail</span><span id="phaseTableSubtitle" class="panel-subtitle">Month → phase → days</span></div>
+            <div class="phase-table-controls">
+              <label class="field field-compact"><span>Hierarchy</span><select id="phaseHierarchy"><option value="month-phase" selected>Month → phase → days</option><option value="phase-month">Phase → month → days</option></select></label>
+              <label class="comparison-control phase-split-control" for="phaseInfluSplit"><input id="phaseInfluSplit" type="checkbox" /><span class="switch" aria-hidden="true"></span><span>Split Influ code / no code</span></label>
+            </div>
+          </div>
+          <p class="historical-scope-note" role="note">Share uses each row’s corresponding month total CZSK revenue. Code/no-code child rows expose Revenue and Share only; other metrics remain unavailable.</p>
+          <p class="table-scroll-hint">Swipe horizontally to inspect every metric →</p>
+          <div class="table-wrap phase-table-wrap" tabindex="0" aria-label="Scrollable phase performance table">
+            <table id="phaseTable"><caption class="sr-only">CZSK phase performance by expandable hierarchy</caption><thead><tr>
+              <th scope="col">Dimension</th><th scope="col">Spend</th><th scope="col">Revenue</th><th scope="col">Share</th><th scope="col">ROAS</th><th scope="col">Purchases</th><th scope="col">Cost per purchase</th><th scope="col">AOV</th><th scope="col">CVR</th><th scope="col">Visitors</th><th scope="col">New customer revenue</th><th scope="col">New customer rate</th><th scope="col">CAC</th>
+            </tr></thead><tbody id="phaseTableBody"></tbody></table>
+          </div>
+        </section>
       </section>
     </div>
   </main>

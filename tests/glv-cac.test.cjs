@@ -4,9 +4,9 @@ const m = require('../public/glv/metrics.js');
 const fs = require('node:fs');
 const path = require('node:path');
 
-test('CAC is offered on both chart axes and as an audit column', () => {
+test('CAC is offered on both Home chart axes, the Phases chart, and audit tables', () => {
   const html = fs.readFileSync(path.join(__dirname, '../public/glv/index.html'), 'utf8');
-  assert.equal((html.match(/<option value="cac">CAC<\/option>/g) || []).length, 2);
+  assert.equal((html.match(/<option value="cac">CAC<\/option>/g) || []).length, 3);
   assert.match(html, /<th[^>]*>CAC<\/th>/);
 });
 

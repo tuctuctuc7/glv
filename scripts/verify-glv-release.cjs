@@ -24,6 +24,15 @@ if (!middlewareSource.includes("const LEGACY_BI_PATH = '/glv-2';")
     || !middlewareSource.includes("'/glv-2/:path*'")) fail('retired GLV route must retain its permanent redirect');
 
 const payload = JSON.parse(canonicalBytes.toString('utf8'));
+if (!Array.isArray(payload.phases) || payload.phases.length === 0
+    || payload.source?.phase_calendar_sheet_id !== '18oXDGQaE2p8E_G3PGHJwaYsl0CFM0eE9pVd-ju19edY') {
+  fail('dashboard snapshot is missing its source-driven phase schedule');
+}
+for (const [index, row] of payload.rows.entries()) {
+  if (!Number.isFinite(row.influ_revenue) || row.influ_revenue < 0 || row.influ_revenue > row.revenue) {
+    fail(`dashboard row ${index} has invalid Influ revenue`);
+  }
+}
 const coverageEnd = payload.date_range?.end;
 const coverageDate = new Date(`${coverageEnd}T00:00:00.000Z`);
 if (
@@ -43,13 +52,13 @@ if (coverageEnd < yesterdayUtc) {
 }
 
 const canonicalHtml = fs.readFileSync(routePath('glv', 'index.html'), 'utf8');
-if (!canonicalHtml.includes('<title>GLV Executive Pulse</title>') || !canonicalHtml.includes('Audit trail')) {
+if (!canonicalHtml.includes('<title>GLV Executive Pulse</title>') || !canonicalHtml.includes('Audit trail') || !canonicalHtml.includes('>Phases</button>')) {
   fail('canonical GLV no longer has the approved Executive Pulse identity');
 }
-for (const file of ['app.js', 'metrics.js', 'styles.css']) {
-  if (!canonicalHtml.includes(`/glv/${file}?v=canonical-20260906`)) fail(`unversioned canonical asset: ${file}`);
+for (const file of ['app.js', 'metrics.js', 'phases.js', 'styles.css']) {
+  if (!canonicalHtml.includes(`/glv/${file}?v=phases-20260911`)) fail(`unversioned canonical asset: ${file}`);
 }
-for (const file of ['index.html', 'app.js', 'metrics.js', 'styles.css']) {
+for (const file of ['index.html', 'app.js', 'metrics.js', 'phases.js', 'styles.css']) {
   if (fs.readFileSync(routePath('glv', file), 'utf8').includes('/glv-2/')) fail(`stale overlap URL in ${file}`);
 }
 for (const url of canonicalHtml.matchAll(/(?:src|href)="(\/glv\/[^"?]+)(?:\?[^" ]*)?"/g)) {

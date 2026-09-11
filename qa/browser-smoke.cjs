@@ -166,6 +166,43 @@ async function run() {
     const logoGeometry = await page.locator('.brand-mark img').evaluate((node) => ({ image: node.getBoundingClientRect().toJSON(), mark: node.parentElement.getBoundingClientRect().toJSON() }));
     assert.equal(logoGeometry.image.width, logoGeometry.mark.width, 'logo should fill its square horizontally');
     assert.equal(logoGeometry.image.height, logoGeometry.mark.height, 'logo should fill its square vertically');
+    assert.deepEqual(await page.locator('[role="tab"][data-dashboard-view]').allTextContents(), ['Home', 'Phases']);
+    await page.locator('#homeViewTab').press('ArrowRight');
+    assert.equal(await page.locator('#phasesViewTab').getAttribute('aria-selected'), 'true', 'right arrow should activate Phases');
+    assert.ok(await page.locator('#phasesView').isVisible(), 'Phases panel should be visible');
+    assert.equal(await page.locator('#homeView').isVisible(), false, 'Home panel should be hidden while Phases is active');
+    assert.equal(await page.locator('.command-bar').isVisible(), false, 'Home filters should not change the independent YTD Phases scope');
+    assert.match(await page.locator('#phaseRange').textContent(), new RegExp(`Jan 1, 2026.*${displayDate(latestDate)}.*CZSK only`));
+    assert.equal(await page.locator('#phaseMetric').inputValue(), 'revenue', 'Revenue should be the default Phases metric');
+    assert.deepEqual(await page.evaluate(() => window.Chart.getChart('phaseChart').data.datasets.map((dataset) => ({ type: dataset.type, label: dataset.label }))), [
+      { type: 'line', label: 'BAU' },
+      { type: 'line', label: 'Promo' },
+      { type: 'line', label: 'Influ' },
+    ]);
+    assert.equal(await page.locator('#phaseChartDataBody tr').count(), 9, 'YTD chart should include Jan through Sep');
+    assert.equal(await page.locator('#phaseTable thead th').count(), 13, 'phase table should expose the full approved metric set plus Share');
+    assert.equal(await page.locator('#phaseTableBody .phase-kind-month').count(), 9, 'default hierarchy should show each YTD month');
+    const firstPhaseDisclosure = page.locator('#phaseTableBody .phase-kind-phase .phase-disclosure').first();
+    await firstPhaseDisclosure.click();
+    assert.equal(await firstPhaseDisclosure.getAttribute('aria-expanded'), 'true');
+    assert.ok(await page.locator('#phaseTableBody .phase-kind-day').count() > 0, 'expanded phase should expose working days');
+    assert.equal(await firstPhaseDisclosure.evaluate((node) => document.activeElement === node), true, 'disclosure focus should survive rerender');
+    await page.locator('#phaseHierarchy').selectOption('phase-month');
+    assert.equal(await page.locator('#phaseTableBody > .phase-kind-phase').count(), 3, 'alternate hierarchy should have BAU, Promo and Influ roots');
+    await page.locator('.phase-split-control').click();
+    assert.equal(await page.locator('#phaseInfluSplit').isChecked(), true);
+    const influMonthDisclosure = page.locator('#phaseTableBody .phase-kind-month.phase-influ .phase-disclosure').first();
+    await influMonthDisclosure.click();
+    assert.deepEqual(await page.locator('#phaseTableBody .phase-kind-influ-split .phase-disclosure').allTextContents(), ['Code', 'No code']);
+    const splitRowText = await page.locator('#phaseTableBody .phase-kind-influ-split').first().textContent();
+    assert.match(splitRowText, /Code.*\$.*%.*—/s, 'Influ split row should expose revenue/share and unavailable dashes');
+    await page.locator('#phaseMetric').selectOption('roas');
+    assert.equal(await page.evaluate(() => window.Chart.getChart('phaseChart').data.datasets.length), 3);
+    assert.match(page.url(), /view=phases/);
+    await page.screenshot({ path: path.join(evidenceDir, 'desktop-phases-dark.png'), fullPage: true });
+    await page.locator('#homeViewTab').click();
+    assert.ok(await page.locator('#homeView').isVisible(), 'Home should restore after Phases interaction');
+    assert.equal(await page.locator('.command-bar').isVisible(), true, 'Home filters should restore with Home');
     assert.equal(await page.locator('.section-toggle[aria-controls="executiveKpis"]').count(), 0, 'KPI section must not have a toggle');
     assert.ok(await page.locator('#executiveKpis').isVisible(), 'KPI cards must stay visible');
     assert.equal(await page.locator('.section-toggle[aria-controls="trendContent"]').count(), 0, 'trajectory must not have a collapse toggle');
@@ -472,6 +509,15 @@ async function run() {
       if (width < 768) await cutover.locator('#filtersToggle').click();
       await cutover.locator('#trendChart').scrollIntoViewIfNeeded();
       await cutover.screenshot({ path: path.join(evidenceDir, `canonical-all-${width}.png`) });
+      if (width === 320) {
+        await cutover.locator('#phasesViewTab').click();
+        assert.equal(await cutover.evaluate(() => document.documentElement.scrollWidth - innerWidth), 0, '320px Phases view must not overflow the page');
+        assert.ok(await cutover.locator('#phaseChart').isVisible(), '320px Phases chart should remain visible');
+        await cutover.locator('#themeToggle').click();
+        assert.equal(await cutover.locator('html').getAttribute('data-theme'), 'light', 'Phases should support light theme at 320px');
+        await cutover.screenshot({ path: path.join(evidenceDir, 'mobile-320-phases-light.png') });
+        await cutover.locator('#homeViewTab').click();
+      }
 
       const filterQuery = `?period=custom&from=${historicalData.coverage.start}&to=${latestDataDate}&markets=czsk&grain=month&auditGrain=month&metric=spend#details`;
       for (const oldPath of ['/glv-2', '/glv-2/']) {
@@ -628,6 +674,47 @@ async function run() {
       .sort((a, b) => b.right - a.right)
       .slice(0, 8));
     assert.ok(mobileOverflow <= 1, `mobile horizontal overflow: ${mobileOverflow}px; context: ${JSON.stringify(mobileOverflowContext)}; sources: ${JSON.stringify(mobileOverflowSources)}`);
+    await mobile.locator('#phasesViewTab').click();
+    assert.equal(await mobile.locator('.command-bar').isVisible(), false);
+    assert.ok(await mobile.locator('#phaseChart').isVisible());
+    const mobilePhaseGeometry = await mobile.locator('#phaseTable').evaluate((table) => ({
+      pageOverflow: document.documentElement.scrollWidth - window.innerWidth,
+      tableWidth: table.scrollWidth,
+      wrapWidth: table.parentElement.clientWidth,
+      metricHeight: document.querySelector('#phaseMetric').getBoundingClientRect().height,
+      hierarchyHeight: document.querySelector('#phaseHierarchy').getBoundingClientRect().height,
+      overflowSources: [...document.querySelectorAll('body *')]
+        .map((node) => ({
+          tag: node.tagName,
+          id: node.id,
+          className: typeof node.className === 'string' ? node.className : '',
+          rect: node.getBoundingClientRect().toJSON(),
+          overflowX: getComputedStyle(node).overflowX,
+        }))
+        .filter(({ rect }) => rect.right > window.innerWidth + 1)
+        .sort((a, b) => b.rect.right - a.rect.right)
+        .slice(0, 8),
+      ancestorGeometry: (() => {
+        const values = [];
+        for (let node = table.parentElement; node; node = node.parentElement) {
+          values.push({
+            tag: node.tagName,
+            id: node.id,
+            className: typeof node.className === 'string' ? node.className : '',
+            rect: node.getBoundingClientRect().toJSON(),
+            scrollWidth: node.scrollWidth,
+            overflowX: getComputedStyle(node).overflowX,
+            minWidth: getComputedStyle(node).minWidth,
+          });
+        }
+        return values;
+      })(),
+    }));
+    assert.ok(mobilePhaseGeometry.pageOverflow <= 1, `mobile Phases page should not overflow: ${JSON.stringify(mobilePhaseGeometry)}`);
+    assert.ok(mobilePhaseGeometry.tableWidth > mobilePhaseGeometry.wrapWidth, `mobile Phases table should scroll within its wrapper: ${JSON.stringify(mobilePhaseGeometry)}`);
+    assert.ok(mobilePhaseGeometry.metricHeight >= 44 && mobilePhaseGeometry.hierarchyHeight >= 44, `mobile Phases controls must retain 44px targets: ${JSON.stringify(mobilePhaseGeometry)}`);
+    await mobile.screenshot({ path: path.join(evidenceDir, 'mobile-phases-dark.png'), fullPage: true });
+    await mobile.locator('#homeViewTab').click();
     const mobileDecisionOrder = await mobile.evaluate(() => ({
       kpis: document.querySelector('#executiveKpis').getBoundingClientRect().top,
       trend: document.querySelector('#trendSection').getBoundingClientRect().top,
@@ -778,9 +865,12 @@ async function run() {
         path.join(evidenceDir, 'desktop-history-year.png'),
         path.join(evidenceDir, 'desktop-history-czsk-month.png'),
         path.join(evidenceDir, 'desktop-light-us.png'),
+        path.join(evidenceDir, 'desktop-phases-dark.png'),
         path.join(evidenceDir, 'mobile-dark-filters.png'),
         path.join(evidenceDir, 'mobile-history-year.png'),
+        path.join(evidenceDir, 'mobile-phases-dark.png'),
         path.join(evidenceDir, 'mobile-320-dark-filters.png'),
+        path.join(evidenceDir, 'mobile-320-phases-light.png'),
       ],
       consoleErrors,
     }, null, 2));

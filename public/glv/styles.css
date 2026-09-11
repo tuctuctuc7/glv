@@ -59,6 +59,9 @@
   --negative-soft: rgba(255, 125, 141, 0.11);
   --warning: #ffc85c;
   --warning-soft: rgba(255, 200, 92, 0.11);
+  --phase-bau: #8ea0b6;
+  --phase-promo: #f39a4a;
+  --phase-influ: #c8ff52;
   --focus: #ffffff;
   --shadow-panel: 0 24px 70px rgba(0, 0, 0, 0.26);
   --shadow-float: 0 16px 40px rgba(0, 0, 0, 0.36);
@@ -100,6 +103,9 @@ html[data-theme="light"] {
   --negative-soft: rgba(196, 47, 73, 0.09);
   --warning: #926000;
   --warning-soft: rgba(146, 96, 0, 0.09);
+  --phase-bau: #637387;
+  --phase-promo: #b85d14;
+  --phase-influ: #416800;
   --focus: #111820;
   --shadow-panel: 0 20px 55px rgba(16, 24, 40, 0.08);
   --shadow-float: 0 16px 40px rgba(16, 24, 40, 0.16);
@@ -2544,6 +2550,139 @@ tbody tr:last-child td {
   .kpi-grid-secondary {
     grid-template-columns: 1fr;
   }
+}
+
+/* CZSK Phases view */
+.app-header {
+  grid-template-columns: minmax(240px, 1fr) auto minmax(240px, 1fr);
+}
+
+.dashboard-view-nav {
+  align-items: center;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+}
+
+.dashboard-view-nav button {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 650;
+  min-height: 30px;
+  min-width: 70px;
+  padding: 0 13px;
+}
+
+.dashboard-view-nav button[aria-selected="true"] {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+body[data-dashboard-view="phases"] .command-bar {
+  display: none;
+}
+
+.phases-view {
+  display: grid;
+  gap: 14px;
+}
+
+.phase-overview {
+  margin-bottom: 4px;
+}
+
+.phase-legend {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.phase-legend span {
+  align-items: center;
+  color: var(--text-secondary);
+  display: inline-flex;
+  font-size: 11px;
+  gap: 7px;
+}
+
+.phase-legend i {
+  background: var(--phase-bau);
+  border-radius: 50%;
+  height: 7px;
+  width: 7px;
+}
+
+.phase-legend [data-phase="promo"] i { background: var(--phase-promo); }
+.phase-legend [data-phase="influ"] i { background: var(--phase-influ); }
+.phase-panel-heading,
+.phase-table-heading { align-items: end; }
+.phase-metric-field { margin-left: auto; min-width: 180px; }
+.phase-chart-wrap { height: 320px; margin-top: 18px; position: relative; }
+.phase-chart-panel table.sr-only { min-width: 1px; table-layout: fixed; }
+.phase-chart-panel table.sr-only th,
+.phase-chart-panel table.sr-only td { min-width: 0; width: auto; }
+.phase-table-panel { overflow: hidden; padding-bottom: 0; }
+.phase-table-controls { align-items: end; display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; }
+.phase-table-controls .field { min-width: 210px; }
+.phase-split-control { min-height: 36px; }
+.phase-table-wrap { margin-top: 12px; }
+.phase-table-wrap table { min-width: 1480px; }
+.phase-table-wrap th:first-child,
+.phase-table-wrap td:first-child { left: 0; min-width: 235px; position: sticky; text-align: left; z-index: 1; }
+.phase-table-wrap th:first-child { background: var(--surface-raised); z-index: 2; }
+.phase-table-wrap td:first-child { background: var(--surface); }
+.phase-row.phase-kind-month td { background-color: var(--surface-raised); font-weight: 650; }
+.phase-row.phase-kind-phase td { background-color: var(--surface-soft); }
+.phase-row.phase-kind-influ-split td { color: var(--text-secondary); }
+.phase-dimension { padding-left: calc(18px + var(--phase-depth) * 20px) !important; }
+.phase-disclosure {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  display: inline-flex;
+  font-size: inherit;
+  font-weight: inherit;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0;
+  text-align: left;
+}
+.phase-disclosure::before { color: var(--text-tertiary); content: '›'; display: inline-block; font-size: 16px; transform: rotate(0deg); }
+.phase-disclosure[aria-expanded="true"]::before { transform: rotate(90deg); }
+.phase-leaf-label { display: inline-block; padding-left: 22px; }
+.phase-promo .phase-disclosure::before,
+.phase-promo .phase-leaf-label { color: var(--phase-promo); }
+.phase-influ .phase-disclosure::before,
+.phase-influ .phase-leaf-label { color: var(--phase-influ); }
+
+@media (max-width: 1180px) {
+  .app-header { grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr); }
+  .app-header .dashboard-view-nav { display: flex; }
+}
+
+@media (max-width: 720px) {
+  .app-header { grid-template-columns: minmax(44px, 1fr) auto minmax(88px, 1fr); }
+  .dashboard-view-nav button { min-height: 44px; min-width: 62px; padding: 0 9px; }
+  .phase-overview { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .phase-panel-heading,
+  .phase-table-heading { align-items: stretch; flex-direction: column; gap: 14px; }
+  .phase-metric-field,
+  .phase-table-controls .field { margin-left: 0; min-width: 0; width: 100%; }
+  .phase-table-controls { align-items: stretch; display: grid; justify-content: stretch; width: 100%; }
+  .phase-chart-wrap { height: 280px; }
+}
+
+@media (max-width: 560px) {
+  .header-brand > div { display: none; }
+  .freshness { display: none; }
 }
 
 @keyframes pull-refresh-spin {
