@@ -54,20 +54,22 @@ Cutover prerequisites: deploy and verify the `tm-kursa` proxy-compatibility rele
 
 Route: `/glv/`
 
-The approved Executive Pulse interface is the sole static business KPI frontend. It consumes one daily exported snapshot:
+The approved Executive Pulse interface is the sole static business KPI frontend. Home preserves the existing cross-market pulse; Phases adds an independent CZSK year-to-date view with one monthly line per BAU, Promo, and Influ phase plus an expandable phase audit table. Both views consume one daily exported snapshot:
 
 ```text
 public/glv/glv_dashboard.json
 ```
 
-Tom approved replacing V1 with the current V2 unchanged. V1 is removed, without an archive; `public/glv-2/` no longer ships. Middleware permanently redirects `/glv-2`, `/glv-2/`, and every suffix to `/glv` before auth, preserving queries. Browsers inherit fragments through the redirect, so saved filters and section anchors survive. Old route-local JSON, scripts, icons, and fonts continue resolving for already-open V2 tabs.
+V1 is removed, without an archive; `public/glv-2/` no longer ships. Middleware permanently redirects `/glv-2`, `/glv-2/`, and every suffix to `/glv` before auth, preserving queries. Browsers inherit fragments through the redirect, so saved filters and section anchors survive. Old route-local JSON, scripts, icons, and fonts continue resolving for already-open V2 tabs.
 
-The complete promoted runtime includes local Inter fonts/license, approved branding, and immutable `public/glv/glv_2025_monthly.json`. History retains its versioned/no-store fetch, same-context retry, and automatic Month/Month selection when the user chooses **All available data**. KPI cards remain working-source-only, as disclosed in the UI; history is not silently added to scorecards. All canonical HTML dependencies are slash-safe; JavaScript and CSS use the cutover version `canonical-20260906` to avoid mixing cached V1 assets. Canonical responses use `Cache-Control: no-store`.
+The complete promoted runtime includes local Inter fonts/license, approved branding, and immutable `public/glv/glv_2025_monthly.json`. History retains its versioned/no-store fetch, same-context retry, and automatic Month/Month selection when the user chooses **All available data**. KPI cards remain working-source-only, as disclosed in the UI; history is not silently added to scorecards. All canonical HTML dependencies are slash-safe; JavaScript and CSS use the release version `phases-20260911` to avoid mixing cached assets. Canonical responses use `Cache-Control: no-store`.
 
 The JSON is generated locally from a read-only Google Sheet:
 
 - Sheet ID: `1KjiRfumk3w8tNZFpfI8RO9X5RTcqoq5LcKfyCzcpplQ`
 - Tab: `Daily`
+- Public phase-calendar Sheet ID: `18oXDGQaE2p8E_G3PGHJwaYsl0CFM0eE9pVd-ju19edY`
+- Phase-calendar tab: `Sheet1` (`gid=0`)
 - Export script: `export_glv_dashboard.py`
 - Python env: `/home/tom/.config/fb-sync/.venv/bin/python`
 - Env file used by exporter: `/home/tom/.config/fb-sync/.env`
@@ -88,6 +90,16 @@ The exporter includes only absolute metrics, so ratios are always recalculated a
 - returning customers
 - new customer revenue
 
+For the Phases view it also exports `Revenue INFLU ($)` as `influ_revenue` and the normalized source calendar as `phases`. The exporter reads both sources before an atomic replacement, rejects malformed dates, reversed intervals, Promo/Influ overlaps, stale schedule coverage, and invalid Influ revenue, and keeps the last valid JSON untouched on failure. It never publishes the source calendar itself as a browser asset.
+
+Phase rules:
+
+- Scope is CZSK only, from January 1 through the latest loaded Daily date in the reporting year; Home filters do not alter it.
+- Promo and Influ use exact inclusive calendar intervals. Every remaining working date is BAU.
+- Calendar subtypes such as `promo retention`, `promo acquisition`, `promo private`, `promo public`, and named Influ labels are preserved in the JSON provenance but report under broad Promo or Influ buckets.
+- Influ code revenue comes directly from `Revenue INFLU ($)`; no-code revenue is total revenue minus code revenue. Split children intentionally show Revenue and monthly revenue Share only.
+- Share is always a month-local denominator: row revenue divided by total CZSK revenue for that same month.
+
 `BLENDED` rows are excluded. The dashboard `All` filter is calculated from `CZSK`, `US`, and `ROW` rows.
 
 Derived metrics are calculated after date and region aggregation:
@@ -100,6 +112,20 @@ Derived metrics are calculated after date and region aggregation:
 - New customer rate = new customers / (new customers + returning customers)
 
 Currency for the business KPI dashboard JSON is USD.
+
+### Build, test, and run locally
+
+```bash
+npm ci
+npm run export:glv
+PYTHONDONTWRITEBYTECODE=1 /home/tom/.config/fb-sync/.venv/bin/python -m unittest tests/test_glv_phases_export.py -v
+npm test
+npm run verify:glv-release
+GLV_QA_EVIDENCE_DIR=/tmp/glv-bi-qa-screenshots npm run qa:browser
+python3 -m http.server 4173 --directory public
+```
+
+Then open `http://127.0.0.1:4173/glv/`. The export command requires the existing local read-only Google service-account configuration; tests do not.
 
 ## Elmich Audit Dashboard
 

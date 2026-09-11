@@ -23,12 +23,16 @@ const state = {
   data: null,
   historicalData: null,
   chart: null,
+  phaseChart: null,
+  activeView: 'home',
+  phaseExpanded: new Set(),
   selectedRegions: ['czsk', 'us', 'row'],
   loadAttempts: 0,
 };
 
 const $ = (id) => document.getElementById(id);
 const metrics = window.GlvMetrics;
+const phases = window.GlvPhases;
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -170,6 +174,7 @@ function applyPreset(preset) {
 
 function syncUrl() {
   const params = new URLSearchParams();
+  params.set('view', state.activeView);
   params.set('period', $('periodPreset').value);
   params.set('from', $('dateFrom').value);
   params.set('to', $('dateTo').value);
@@ -179,6 +184,9 @@ function syncUrl() {
   params.set('metric2', $('trendMetricSecondary').value);
   params.set('grain', $('grain').value);
   params.set('auditGrain', $('auditGrain').value);
+  params.set('phaseMetric', $('phaseMetric').value);
+  params.set('phaseHierarchy', $('phaseHierarchy').value);
+  params.set('phaseInfluSplit', $('phaseInfluSplit').checked ? '1' : '0');
   const query = params.toString();
   try {
     window.history.replaceState(null, '', `${window.location.pathname}?${query}${window.location.hash}`);
@@ -189,6 +197,7 @@ function syncUrl() {
 
 function restoreUrlState() {
   const params = new URLSearchParams(window.location.search);
+  state.activeView = params.get('view') === 'phases' ? 'phases' : 'home';
   const preset = params.get('period');
   const presetIsValid = Boolean(preset && [...$('periodPreset').options].some((option) => option.value === preset));
   if (presetIsValid) {
@@ -217,6 +226,11 @@ function restoreUrlState() {
   if (['day', 'week', 'month', 'year'].includes(grain)) $('grain').value = grain;
   const auditGrain = params.get('auditGrain');
   if (['day', 'week', 'month', 'year'].includes(auditGrain)) $('auditGrain').value = auditGrain;
+  const phaseMetric = params.get('phaseMetric');
+  if (phaseMetric && [...$('phaseMetric').options].some((option) => option.value === phaseMetric)) $('phaseMetric').value = phaseMetric;
+  const phaseHierarchy = params.get('phaseHierarchy');
+  if (['month-phase', 'phase-month'].includes(phaseHierarchy)) $('phaseHierarchy').value = phaseHierarchy;
+  $('phaseInfluSplit').checked = params.get('phaseInfluSplit') === '1';
   if (activePreset === 'all') {
     $('grain').value = 'month';
     $('auditGrain').value = 'month';
@@ -971,6 +985,159 @@ function renderTrust() {
     : `${formatDate(state.data.date_range.start)} – ${formatDate(state.data.date_range.end)} · ${state.data.rows.length.toLocaleString('en-US')} market-days`;
 }
 
+function setActiveView(view, { focus = false } = {}) {
+  state.activeView = view === 'phases' ? 'phases' : 'home';
+  document.body.dataset.dashboardView = state.activeView;
+  document.querySelectorAll('[data-dashboard-view]').forEach((tab) => {
+    const selected = tab.dataset.dashboardView === state.activeView;
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+    if (focus && selected) tab.focus();
+  });
+  $('homeView').hidden = state.activeView !== 'home';
+  $('phasesView').hidden = state.activeView !== 'phases';
+}
+
+function phaseMonthLabel(month) {
+  return formatDate(`${month}-01`, { month: 'long', year: 'numeric' });
+}
+
+function phaseNodeLabel(node) {
+  if (node.kind === 'month') return phaseMonthLabel(node.label);
+  if (node.kind === 'day') return formatDate(node.label, { month: 'short', day: 'numeric' });
+  return node.label;
+}
+
+function phaseMetricCell(key, value) {
+  if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—';
+  return formatAuditMetric(key, value);
+}
+
+function renderPhaseChart(days) {
+  const metric = $('phaseMetric').value;
+  const chartData = phases.monthlySeries(days, metric);
+  const body = $('phaseChartDataBody');
+  clear(body);
+  chartData.months.forEach((month, index) => {
+    const row = element('tr');
+    [phaseMonthLabel(month), ...chartData.phases.map((phase) => phaseMetricCell(metric, chartData.series[phase][index]))]
+      .forEach((value) => row.appendChild(element('td', '', value)));
+    body.appendChild(row);
+  });
+  $('phaseChartCaption').textContent = `Monthly CZSK ${METRIC_CONFIG[metric]?.label || 'metric'} by phase through ${days[days.length - 1]?.date || 'latest loaded day'}`;
+  if (state.phaseChart) state.phaseChart.destroy();
+  state.phaseChart = null;
+  const canvas = $('phaseChart');
+  if (!window.Chart || metric === 'none') {
+    canvas.hidden = metric === 'none';
+    return;
+  }
+  canvas.hidden = false;
+  const style = getComputedStyle(document.documentElement);
+  const colors = {
+    BAU: style.getPropertyValue('--phase-bau').trim(),
+    Promo: style.getPropertyValue('--phase-promo').trim(),
+    Influ: style.getPropertyValue('--phase-influ').trim(),
+  };
+  const textColor = style.getPropertyValue('--text-tertiary').trim();
+  const gridColor = style.getPropertyValue('--border').trim();
+  state.phaseChart = new window.Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: chartData.months.map((month) => phaseMonthLabel(month).replace(` ${month.slice(0, 4)}`, '')),
+      datasets: chartData.phases.map((phase) => ({
+        type: 'line',
+        label: phase,
+        data: chartData.series[phase],
+        borderColor: colors[phase],
+        backgroundColor: colors[phase],
+        borderWidth: 2.5,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        spanGaps: false,
+        tension: 0.25,
+      })),
+    },
+    options: {
+      animation: false,
+      maintainAspectRatio: false,
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', align: 'start', labels: { color: textColor, boxWidth: 18, boxHeight: 2, padding: 16 } },
+        tooltip: { callbacks: { label: (item) => `${item.dataset.label}: ${formatMetric(metric, item.raw)}` } },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: textColor }, border: { color: gridColor } },
+        y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: (value) => formatMetric(metric, value, true) }, border: { display: false } },
+      },
+    },
+  });
+}
+
+function phaseNodeVisible(node, byId) {
+  let parentId = node.parentId;
+  while (parentId) {
+    if (!state.phaseExpanded.has(parentId)) return false;
+    parentId = byId.get(parentId)?.parentId || null;
+  }
+  return true;
+}
+
+function renderPhaseTable(days) {
+  const hierarchy = $('phaseHierarchy').value;
+  const nodes = phases.buildHierarchy(days, hierarchy, $('phaseInfluSplit').checked);
+  if (!state.phaseExpanded.size) {
+    nodes.filter((node) => node.depth === 0).forEach((node) => state.phaseExpanded.add(node.id));
+  }
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  const body = $('phaseTableBody');
+  clear(body);
+  nodes.filter((node) => phaseNodeVisible(node, byId)).forEach((node) => {
+    const row = element('tr', `phase-row phase-${String(node.phase || 'neutral').toLowerCase()} phase-kind-${node.kind}`);
+    row.dataset.phaseNode = node.id;
+    const dimension = element('td', 'phase-dimension');
+    dimension.style.setProperty('--phase-depth', node.depth);
+    if (node.expandable) {
+      const button = element('button', 'phase-disclosure', phaseNodeLabel(node));
+      button.type = 'button';
+      button.dataset.phaseToggle = node.id;
+      button.setAttribute('aria-expanded', String(state.phaseExpanded.has(node.id)));
+      button.setAttribute('aria-label', `${state.phaseExpanded.has(node.id) ? 'Collapse' : 'Expand'} ${phaseNodeLabel(node)}`);
+      dimension.appendChild(button);
+    } else {
+      dimension.appendChild(element('span', 'phase-leaf-label', phaseNodeLabel(node)));
+    }
+    row.appendChild(dimension);
+    const values = [
+      phaseMetricCell('spend', node.metrics.spend),
+      phaseMetricCell('revenue', node.metrics.revenue),
+      node.share === null || node.share === undefined ? '—' : formatMetric('new_customer_rate', node.share),
+      phaseMetricCell('roas', node.metrics.roas),
+      phaseMetricCell('purchases', node.metrics.purchases),
+      phaseMetricCell('cpa', node.metrics.cpa),
+      phaseMetricCell('aov', node.metrics.aov),
+      phaseMetricCell('cvr', node.metrics.cvr),
+      phaseMetricCell('unique_visitors', node.metrics.unique_visitors),
+      phaseMetricCell('new_customer_revenue', node.metrics.new_customer_revenue),
+      phaseMetricCell('new_customer_rate', node.metrics.new_customer_rate),
+      phaseMetricCell('cac', node.metrics.cac),
+    ];
+    values.forEach((value) => row.appendChild(element('td', '', value)));
+    body.appendChild(row);
+  });
+  $('phaseTableSubtitle').textContent = hierarchy === 'month-phase' ? 'Month → phase → days' : 'Phase → month → days';
+}
+
+function renderPhases() {
+  const days = phases.buildPhaseDays(state.data.rows, state.data.phases, state.data.phase_contract?.latest_date);
+  if (!days.length) throw new Error('No CZSK rows are available for the reporting year.');
+  $('phaseRange').textContent = `${formatDate(days[0].date)} – ${formatDate(days[days.length - 1].date)} · ${days.length} working days · CZSK only`;
+  renderPhaseChart(days);
+  renderPhaseTable(days);
+  $('screenReaderStatus').textContent = `Phases view updated for CZSK, year to date through ${formatDate(days[days.length - 1].date)}.`;
+}
+
 function showEmpty(message) {
   $('loadingState').hidden = true;
   $('dashboardContent').hidden = true;
@@ -981,6 +1148,19 @@ function showEmpty(message) {
 
 function render() {
   if (!state.data) return;
+  setActiveView(state.activeView);
+  if (state.activeView === 'phases') {
+    $('errorState').hidden = true;
+    $('loadingState').hidden = true;
+    $('dashboardContent').hidden = false;
+    try {
+      renderPhases();
+      syncUrl();
+    } catch (error) {
+      showEmpty(error instanceof Error ? error.message : 'Phase data could not be rendered.');
+    }
+    return;
+  }
   const filters = currentFilters();
   if (!filters.from || !filters.to || filters.from > filters.to) {
     showEmpty('Choose a valid date range where From is on or before To.');
@@ -1041,7 +1221,8 @@ function setTheme(theme) {
   document.documentElement.dataset.theme = theme;
   $('themeToggle').setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`);
   try { localStorage.setItem('glv-theme', theme); } catch (error) { /* storage can be disabled */ }
-  if (state.data) renderChart(getViewData());
+  if (state.data && state.activeView === 'home') renderChart(getViewData());
+  if (state.data && state.activeView === 'phases') renderPhases();
 }
 
 function setupTheme() {
@@ -1053,6 +1234,39 @@ function setupTheme() {
 }
 
 function setupEvents() {
+  const viewTabs = [...document.querySelectorAll('[data-dashboard-view]')];
+  viewTabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => {
+      setActiveView(tab.dataset.dashboardView);
+      render();
+    });
+    tab.addEventListener('keydown', (event) => {
+      const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
+      if (!keys.includes(event.key)) return;
+      event.preventDefault();
+      const nextIndex = event.key === 'Home' ? 0 : event.key === 'End' ? viewTabs.length - 1
+        : (index + (event.key === 'ArrowRight' ? 1 : -1) + viewTabs.length) % viewTabs.length;
+      setActiveView(viewTabs[nextIndex].dataset.dashboardView, { focus: true });
+      render();
+    });
+  });
+  $('phaseMetric').addEventListener('change', render);
+  $('phaseHierarchy').addEventListener('change', () => {
+    state.phaseExpanded.clear();
+    render();
+  });
+  $('phaseInfluSplit').addEventListener('change', render);
+  $('phaseTableBody').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-phase-toggle]');
+    if (!button) return;
+    const id = button.dataset.phaseToggle;
+    if (state.phaseExpanded.has(id)) state.phaseExpanded.delete(id); else state.phaseExpanded.add(id);
+    renderPhases();
+    const replacement = [...document.querySelectorAll('[data-phase-toggle]')]
+      .find((candidate) => candidate.dataset.phaseToggle === id);
+    replacement?.focus();
+    syncUrl();
+  });
   $('periodPreset').addEventListener('change', async (event) => {
     if (event.target.value === 'all' && !state.historicalData) {
       const historicalData = await fetchHistoricalData();
@@ -1209,6 +1423,13 @@ function validateData(data) {
   if (!data || !Array.isArray(data.rows) || !data.date_range?.start || !data.date_range?.end) throw new Error('Dashboard data has an invalid structure.');
   if (data.currency !== 'USD') throw new Error('Dashboard currency must be USD.');
   metrics.validateRows(data.rows);
+  if (!phases) throw new Error('Phase calculation module could not be loaded.');
+  phases.validateSchedule(data.phases);
+  data.rows.forEach((row, index) => {
+    if (typeof row.influ_revenue !== 'number' || !Number.isFinite(row.influ_revenue) || row.influ_revenue < 0 || row.influ_revenue > row.revenue) {
+      throw new Error(`Invalid Influ revenue at dashboard row ${index}.`);
+    }
+  });
 }
 
 function validateHistoricalData(data) {
