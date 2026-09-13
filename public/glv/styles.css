@@ -59,9 +59,10 @@
   --negative-soft: rgba(255, 125, 141, 0.11);
   --warning: #ffc85c;
   --warning-soft: rgba(255, 200, 92, 0.11);
-  --phase-bau: #8ea0b6;
+  --phase-bau: #5ed6c1;
   --phase-promo: #f39a4a;
-  --phase-influ: #c8ff52;
+  --phase-influ: #c4a0ff;
+  --phase-influ-secondary: #e1caff;
   --focus: #ffffff;
   --shadow-panel: 0 24px 70px rgba(0, 0, 0, 0.26);
   --shadow-float: 0 16px 40px rgba(0, 0, 0, 0.36);
@@ -103,9 +104,10 @@ html[data-theme="light"] {
   --negative-soft: rgba(196, 47, 73, 0.09);
   --warning: #926000;
   --warning-soft: rgba(146, 96, 0, 0.09);
-  --phase-bau: #637387;
+  --phase-bau: #087b70;
   --phase-promo: #b85d14;
-  --phase-influ: #416800;
+  --phase-influ: #7035b6;
+  --phase-influ-secondary: #9252a8;
   --focus: #111820;
   --shadow-panel: 0 20px 55px rgba(16, 24, 40, 0.08);
   --shadow-float: 0 16px 40px rgba(16, 24, 40, 0.16);
@@ -2624,19 +2626,34 @@ body[data-dashboard-view="phases"] .command-bar {
 .phase-panel-heading,
 .phase-table-heading { align-items: end; }
 .phase-metric-field { margin-left: auto; min-width: 180px; }
-.phase-chart-wrap { height: 320px; margin-top: 18px; position: relative; }
+.phase-chart-wrap { height: 320px; margin-top: 18px; position: relative; min-width: 0; }
+.phase-chart-wrap canvas { max-width: 100%; }
 .phase-chart-panel table.sr-only { min-width: 1px; table-layout: fixed; }
 .phase-chart-panel table.sr-only th,
 .phase-chart-panel table.sr-only td { min-width: 0; width: auto; }
-.phase-table-panel { overflow: hidden; padding-bottom: 0; }
+.phase-table-panel { overflow: visible; padding-bottom: 0; min-width: 0; }
 .phase-table-controls { align-items: end; display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; }
 .phase-table-controls .field { min-width: 210px; }
-.phase-split-control { min-height: 36px; }
-.phase-table-wrap { margin-top: 12px; }
+.phase-split-control { min-height: 44px; }
+.phases-view select { min-height: 44px; }
+.phase-row.phase-kind-phase td:first-child { background: var(--surface-raised); }
+.phase-table-wrap { margin-top: 12px; margin-bottom: 0; height: 520px; max-width: 100%; overflow: auto; isolation: isolate; border-radius: 0 0 12px 12px; }
+.phase-table-wrap th { position: sticky; top: 0; z-index: 3; background: var(--surface-raised); }
+.phase-table-wrap td { padding-top: 2px; padding-bottom: 2px; }
+.phase-global-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; min-width: 0; }
+.phase-multiselect { position: relative; min-width: 0; }
+.phase-menu-trigger { min-height: 44px; padding: 0 12px; font: inherit; color: var(--text-primary); background: var(--surface-raised); border: 1px solid var(--border); border-radius: 8px; }
+.phase-menu-options { position: absolute; top: 100%; right: 0; width: 220px; max-width: calc(100vw - 48px); max-height: 320px; overflow: auto; z-index: 20; padding: 6px; background: var(--surface-raised); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px #0003; }
+.phase-menu-options label { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 8px; cursor: pointer; }
+.phase-menu-options input { width: 18px; height: 18px; }
+.phase-global-controls .phase-menu-options { left: 0; right: auto; }
+.phase-multiselect :focus-visible { outline: 2px solid var(--phase-influ); outline-offset: 2px; }
+.phase-bau .phase-disclosure, .phase-bau .phase-leaf-label { color: var(--phase-bau); }
+.phase-influ .phase-disclosure { color: var(--phase-influ); }
 .phase-table-wrap table { min-width: 1480px; }
 .phase-table-wrap th:first-child,
 .phase-table-wrap td:first-child { left: 0; min-width: 235px; position: sticky; text-align: left; z-index: 1; }
-.phase-table-wrap th:first-child { background: var(--surface-raised); z-index: 2; }
+.phase-table-wrap th:first-child { background: var(--surface-raised); z-index: 4; }
 .phase-table-wrap td:first-child { background: var(--surface); }
 .phase-row.phase-kind-month td { background-color: var(--surface-raised); font-weight: 650; }
 .phase-row.phase-kind-phase td { background-color: var(--surface-soft); }
@@ -2651,7 +2668,7 @@ body[data-dashboard-view="phases"] .command-bar {
   font-size: inherit;
   font-weight: inherit;
   gap: 7px;
-  min-height: 36px;
+  min-height: 30px;
   padding: 0;
   text-align: left;
 }
@@ -2678,6 +2695,7 @@ body[data-dashboard-view="phases"] .command-bar {
   .phase-table-controls .field { margin-left: 0; min-width: 0; width: 100%; }
   .phase-table-controls { align-items: stretch; display: grid; justify-content: stretch; width: 100%; }
   .phase-chart-wrap { height: 280px; }
+  .phase-disclosure { min-height: 44px; }
 }
 
 @media (max-width: 560px) {

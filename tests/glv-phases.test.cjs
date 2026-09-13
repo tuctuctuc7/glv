@@ -34,6 +34,30 @@ const rows = [
   row('2026-05-27', 'czsk', 90, 10, 3, 30, 3, 0, 45),
 ];
 
+test('filtered split hierarchy keeps full-month denominators and phase → segment → month', () => {
+  const days = phases.buildPhaseDays(rows, schedule, '2026-05-27');
+  const nodes = phases.buildHierarchy(days, 'phase-month', true, { phases: ['Influ'], months: ['2026-02', '2026-05'] });
+  assert.deepEqual(nodes.filter(n => n.depth === 0).map(n => n.label), ['Influ']);
+  const code = nodes.find(n => n.kind === 'influ-split' && n.label === 'Code');
+  assert.equal(code.parentId, 'phase|Influ');
+  assert.equal(code.metrics.revenue, 195);
+  assert.equal(code.share, 195 / 830);
+  const month = nodes.find(n => n.parentId === code.id && n.month === '2026-02');
+  assert.equal(month.share, 120 / 600);
+  assert.equal(month.metrics.spend, null);
+  assert.equal(phases.buildHierarchy(days, 'month-phase', false, { phases: [] }).length, 0);
+  assert.equal(phases.buildHierarchy(days, 'month-phase', false, { months: [] }).length, 0);
+});
+
+test('split chart replaces Influ only for revenue and honors explicit none', () => {
+  const days = phases.buildPhaseDays(rows, schedule, '2026-05-27');
+  const result = phases.monthlySeries(days, 'revenue', { phases: ['BAU', 'Influ'], splitInflu: true });
+  assert.deepEqual(result.phases, ['BAU', 'Influ · Code', 'Influ · No code']);
+  assert.equal(result.series['Influ · Code'][1], 120);
+  assert.deepEqual(phases.monthlySeries(days, 'roas', { splitInflu: true }).phases, ['BAU', 'Promo', 'Influ']);
+  assert.deepEqual(phases.monthlySeries(days, 'revenue', { phases: [] }).phases, []);
+});
+
 test('strict ISO date parsing rejects rollover and non-ISO input', () => {
   assert.equal(phases.parseIsoDate('2026-02-06').toISOString().slice(0, 10), '2026-02-06');
   assert.throws(() => phases.parseIsoDate('2026-02-30'), /invalid date/i);

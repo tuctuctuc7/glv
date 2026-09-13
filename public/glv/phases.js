@@ -185,10 +185,11 @@
     });
   }
 
-  function buildHierarchy(days, orientation = 'month-phase', splitInflu = false) {
+  function buildHierarchy(days, orientation = 'month-phase', splitInflu = false, filters = {}) {
     if (!['month-phase', 'phase-month'].includes(orientation)) throw new Error(`Unknown hierarchy: ${orientation}.`);
-    const source = Array.isArray(days) ? days : [];
-    const denominators = monthlyDenominators(source);
+    const allDays = (Array.isArray(days) ? days : []).filter(day => filters.months == null || filters.months.includes(day.month));
+    const denominators = monthlyDenominators(allDays);
+    const source = allDays.filter(day => filters.phases == null || filters.phases.includes(day.phase));
     const nodes = [];
     const months = [...new Set(source.map((day) => day.month))].sort();
     const presentPhases = PHASES.filter((phase) => source.some((day) => day.phase === phase));
@@ -197,7 +198,7 @@
       months.forEach((month) => {
         const monthDays = source.filter((day) => day.month === month);
         const monthId = `month|${month}`;
-        nodes.push(makeNode({ id: monthId, depth: 0, kind: 'month', label: month, month, metrics: aggregateRows(monthDays), share: 1, expandable: true }));
+        nodes.push(makeNode({ id: monthId, depth: 0, kind: 'month', label: month, month, metrics: aggregateRows(monthDays), share: ratio(aggregateRows(monthDays).revenue, denominators.get(month)), expandable: true }));
         presentPhases.forEach((phase) => {
           const phaseDays = monthDays.filter((day) => day.phase === phase);
           if (!phaseDays.length) return;
@@ -213,6 +214,24 @@
         const phaseDays = source.filter((day) => day.phase === phase);
         const phaseId = `phase|${phase}`;
         nodes.push(makeNode({ id: phaseId, depth: 0, kind: 'phase', label: phase, phase, metrics: aggregateRows(phaseDays), expandable: true }));
+        if (splitInflu && phase === 'Influ') {
+          const denominator = [...denominators.values()].reduce((sum, value) => sum + value, 0);
+          [['code', 'Code'], ['no-code', 'No code']].forEach(([segment, label]) => {
+            const value = day => Number(segment === 'code' ? day.code_revenue : day.no_code_revenue);
+            const revenue = phaseDays.reduce((sum, day) => sum + value(day), 0);
+            const id = `${phaseId}|${segment}`;
+            nodes.push(makeNode({ id, parentId: phaseId, depth: 1, kind: 'influ-split', label, phase, metrics: unavailableRevenueMetrics(revenue), share: ratio(revenue, denominator), expandable: true }));
+            months.forEach(month => {
+              const monthDays = phaseDays.filter(day => day.month === month);
+              if (!monthDays.length) return;
+              const monthId = `${id}|month|${month}`;
+              const monthlyRevenue = monthDays.reduce((sum, day) => sum + value(day), 0);
+              nodes.push(makeNode({ id: monthId, parentId: id, depth: 2, kind: 'month', label: month, month, phase, metrics: unavailableRevenueMetrics(monthlyRevenue), share: ratio(monthlyRevenue, denominators.get(month)), expandable: true }));
+              appendDayNodes(nodes, monthDays, monthId, 3, denominators, segment);
+            });
+          });
+          return;
+        }
         months.forEach((month) => {
           const monthDays = phaseDays.filter((day) => day.month === month);
           if (!monthDays.length) return;
@@ -232,14 +251,25 @@
     return finite(metrics?.[key]) ? Number(metrics[key]) : null;
   }
 
-  function monthlySeries(days, metric) {
+  function monthlySeries(days, metric, filters = {}) {
     const months = [...new Set((days || []).map((day) => day.month))].sort();
     const groups = aggregatePhaseGroups(days);
     const series = Object.fromEntries(PHASES.map((phase) => [phase, months.map((month) => {
       const group = groups.find((candidate) => candidate.month === month && candidate.phase === phase);
       return group ? metricValue(group, metric) : null;
     })]));
-    return { months, phases: [...PHASES], series };
+    let active = PHASES.filter(phase => filters.phases == null || filters.phases.includes(phase));
+    if (metric === 'revenue' && filters.splitInflu && active.includes('Influ')) {
+      active = active.flatMap(phase => phase === 'Influ' ? ['Influ · Code', 'Influ · No code'] : [phase]);
+      [['Influ · Code', 'code_revenue'], ['Influ · No code', 'no_code_revenue']].forEach(([label, key]) => {
+        series[label] = months.map(month => {
+          const rows = days.filter(day => day.month === month && day.phase === 'Influ');
+          return rows.length ? rows.reduce((sum, day) => sum + Number(day[key]), 0) : null;
+        });
+      });
+    }
+    if (metric === 'none') active = [];
+    return { months, phases: active, series };
   }
 
   return {

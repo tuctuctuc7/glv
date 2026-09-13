@@ -191,9 +191,55 @@ async function run() {
     assert.equal(await page.locator('#phaseTableBody > .phase-kind-phase').count(), 3, 'alternate hierarchy should have BAU, Promo and Influ roots');
     await page.locator('.phase-split-control').click();
     assert.equal(await page.locator('#phaseInfluSplit').isChecked(), true);
+    assert.deepEqual(await page.locator('#phaseTableBody .phase-kind-influ-split .phase-disclosure').allTextContents(), ['Code', 'No code']);
+    assert.deepEqual(await page.evaluate(() => Chart.getChart('phaseChart').data.datasets.map(d => d.label)), ['BAU', 'Promo', 'Influ · Code', 'Influ · No code']);
+    assert.match(await page.locator('#phaseChart').getAttribute('aria-label'), /Influ · Code, Influ · No code/);
+    await page.locator('#phaseTableBody .phase-kind-influ-split .phase-disclosure').first().click();
     const influMonthDisclosure = page.locator('#phaseTableBody .phase-kind-month.phase-influ .phase-disclosure').first();
     await influMonthDisclosure.click();
-    assert.deepEqual(await page.locator('#phaseTableBody .phase-kind-influ-split .phase-disclosure').allTextContents(), ['Code', 'No code']);
+    assert.ok(await page.locator('#phaseTableBody .phase-kind-day.phase-influ').count() > 0);
+    await page.locator('#phaseFilter button').click();
+    await page.locator('#phaseFilter').getByLabel('Promo', { exact: true }).uncheck();
+    assert.equal(await page.locator('#phaseFilter input').first().evaluate(n => n.indeterminate), true);
+    assert.deepEqual(await page.evaluate(() => Chart.getChart('phaseChart').data.datasets.map(d => d.label)), ['BAU', 'Influ · Code', 'Influ · No code']);
+    await page.locator('#phaseFilter').getByLabel('All', { exact: true }).check();
+    await page.locator('#phaseFilter').getByLabel('All', { exact: true }).uncheck();
+    assert.equal(await page.locator('#phaseTableBody tr').count(), 0);
+    assert.equal(await page.evaluate(() => Chart.getChart('phaseChart').data.datasets.length), 0);
+    await page.locator('#phaseFilter input').first().press('Escape');
+    await page.locator('#phaseMetric').selectOption('spend');
+    assert.equal(await page.evaluate(() => Chart.getChart('phaseChart').data.datasets.length), 0);
+    await page.locator('#phaseFilter button').click();
+    await page.locator('#phaseFilter').getByLabel('All', { exact: true }).check();
+    await page.locator('#phaseFilter input').first().press('Escape');
+    assert.equal(await page.locator('#phaseFilter button').evaluate(n => n === document.activeElement), true);
+    await page.locator('#phaseMonths button').click();
+    await page.locator('#phaseMonths').getByLabel('All', { exact: true }).uncheck();
+    assert.equal(await page.locator('#phaseTableBody tr').count(), 0);
+    assert.equal(await page.evaluate(() => Chart.getChart('phaseChart').data.datasets.length), 3, 'months are table local');
+    await page.locator('#phaseMonths input').nth(1).check();
+    assert.ok(await page.locator('#phaseTableBody tr').count() > 0);
+    await page.locator('#phaseMonths').getByLabel('All', { exact: true }).check();
+    await page.locator('#phaseMonths input').first().press('Escape');
+    await page.locator('#phaseHierarchy').selectOption('month-phase');
+    for (const width of [1440, 390, 320]) {
+      await page.setViewportSize({ width, height: 1100 });
+      const geometry = await page.locator('.phase-table-wrap').evaluate(w => {
+        w.scrollTop = 250; w.scrollLeft = 300;
+        const box = w.getBoundingClientRect();
+        return { overflow: document.documentElement.scrollWidth > innerWidth, vertical: w.scrollTop, horizontal: w.scrollLeft,
+          rowHeight: w.querySelector('tbody tr').getBoundingClientRect().height,
+          bottomOvershoot: box.bottom - w.closest('.phase-table-panel').getBoundingClientRect().bottom,
+          headers: [...w.querySelectorAll('th')].map(n => ({ top: n.getBoundingClientRect().top - box.top, background: getComputedStyle(n).backgroundColor, position: getComputedStyle(n).position })) };
+      });
+      assert.equal(geometry.overflow, false, `Phases overflow at ${width}: ${JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('#phasesView *')].filter(n => { const r = n.getBoundingClientRect(); return r.right > innerWidth && !n.closest('.table-wrap') && !n.closest('.sr-only'); }).map(n => [n.tagName, n.className, n.getBoundingClientRect().width])))}`);
+      assert.ok(geometry.vertical > 0 && geometry.horizontal > 0);
+      assert.ok(geometry.bottomOvershoot <= 1, `Scroll area must stay inside the panel: ${JSON.stringify(geometry)}`);
+      assert.ok(width > 720 ? geometry.rowHeight <= 40 : geometry.rowHeight >= 44, `Compact desktop / touch-sized mobile rows: ${JSON.stringify(geometry)}`);
+      assert.ok(geometry.headers.every(h => h.position === 'sticky' && Math.abs(h.top) < 3 && !h.background.includes('rgba')), JSON.stringify(geometry));
+    }
+    await page.setViewportSize({ width: 1440, height: 1100 });
+    await page.locator('#phaseHierarchy').selectOption('phase-month');
     const splitRowText = await page.locator('#phaseTableBody .phase-kind-influ-split').first().textContent();
     assert.match(splitRowText, /Code.*\$.*%.*—/s, 'Influ split row should expose revenue/share and unavailable dashes');
     await page.locator('#phaseMetric').selectOption('roas');
