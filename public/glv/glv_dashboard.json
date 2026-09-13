@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-12 00:10 UTC",
+  "updated_at": "2026-09-13 00:10 UTC",
   "source": {
     "tab": "Daily",
     "phase_calendar_sheet_id": "18oXDGQaE2p8E_G3PGHJwaYsl0CFM0eE9pVd-ju19edY",
@@ -10,7 +10,7 @@
   "currency": "USD",
   "date_range": {
     "start": "2026-01-01",
-    "end": "2026-09-11"
+    "end": "2026-09-12"
   },
   "absolute_metrics": [
     "spend",
@@ -32,7 +32,7 @@
   "phase_contract": {
     "scope": "czsk",
     "reporting_year": 2026,
-    "latest_date": "2026-09-11",
+    "latest_date": "2026-09-12",
     "calendar_authority": "Marketing Ops | Gelavis, Sheet1",
     "bau": "Every CZSK date in the reporting year not covered by Promo or Influ.",
     "overlap_rule": "Promo and Influ must not overlap."
@@ -9248,13 +9248,13 @@
     {
       "date": "2026-09-10",
       "region": "czsk",
-      "revenue": 4115.0,
+      "revenue": 4185.0,
       "spend": 1242.0,
-      "purchases": 31,
+      "purchases": 32,
       "unique_visitors": 861,
-      "new_customers": 13,
+      "new_customers": 14,
       "returning_customers": 18,
-      "new_customer_revenue": 1441.0,
+      "new_customer_revenue": 1511.0,
       "influ_revenue": 206.0
     },
     {
@@ -9315,6 +9315,42 @@
       "new_customers": 2,
       "returning_customers": 1,
       "new_customer_revenue": 414.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-09-12",
+      "region": "czsk",
+      "revenue": 3728.0,
+      "spend": 1165.0,
+      "purchases": 21,
+      "unique_visitors": 737,
+      "new_customers": 12,
+      "returning_customers": 9,
+      "new_customer_revenue": 2420.0,
+      "influ_revenue": 292.0
+    },
+    {
+      "date": "2026-09-12",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 300,
+      "new_customers": 0,
+      "returning_customers": 0,
+      "new_customer_revenue": 0.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-09-12",
+      "region": "us",
+      "revenue": 207.0,
+      "spend": 157.0,
+      "purchases": 2,
+      "unique_visitors": 44,
+      "new_customers": 0,
+      "returning_customers": 2,
+      "new_customer_revenue": 0.0,
       "influ_revenue": 0.0
     }
   ]
