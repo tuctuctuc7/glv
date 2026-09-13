@@ -26,6 +26,9 @@ const state = {
   phaseChart: null,
   activeView: 'home',
   phaseExpanded: new Set(),
+  phaseSelection: null,
+  phaseMonths: null,
+  phaseExpansionInitialized: false,
   selectedRegions: ['czsk', 'us', 'row'],
   loadAttempts: 0,
 };
@@ -1015,7 +1018,12 @@ function phaseMetricCell(key, value) {
 
 function renderPhaseChart(days) {
   const metric = $('phaseMetric').value;
-  const chartData = phases.monthlySeries(days, metric);
+  const chartData = phases.monthlySeries(days, metric, { phases: state.phaseSelection, splitInflu: $('phaseInfluSplit').checked });
+  $('phaseChart').setAttribute('aria-label', `Monthly year-to-date performance: ${chartData.phases.join(', ') || 'no series selected'}`);
+  const header = $('phaseChartData').querySelector('thead tr');
+  clear(header);
+  ['Month', ...chartData.phases].forEach(label => header.appendChild(element('th', '', label)));
+  $('phaseSplitNotice').hidden = !$('phaseInfluSplit').checked || ['none', 'revenue'].includes(metric);
   const body = $('phaseChartDataBody');
   clear(body);
   chartData.months.forEach((month, index) => {
@@ -1038,6 +1046,8 @@ function renderPhaseChart(days) {
     BAU: style.getPropertyValue('--phase-bau').trim(),
     Promo: style.getPropertyValue('--phase-promo').trim(),
     Influ: style.getPropertyValue('--phase-influ').trim(),
+    'Influ · Code': style.getPropertyValue('--phase-influ').trim(),
+    'Influ · No code': style.getPropertyValue('--phase-influ-secondary').trim(),
   };
   const textColor = style.getPropertyValue('--text-tertiary').trim();
   const gridColor = style.getPropertyValue('--border').trim();
@@ -1052,6 +1062,7 @@ function renderPhaseChart(days) {
         borderColor: colors[phase],
         backgroundColor: colors[phase],
         borderWidth: 2.5,
+        borderDash: phase === 'Influ · No code' ? [6, 4] : [],
         pointRadius: 3,
         pointHoverRadius: 5,
         spanGaps: false,
@@ -1086,9 +1097,10 @@ function phaseNodeVisible(node, byId) {
 
 function renderPhaseTable(days) {
   const hierarchy = $('phaseHierarchy').value;
-  const nodes = phases.buildHierarchy(days, hierarchy, $('phaseInfluSplit').checked);
-  if (!state.phaseExpanded.size) {
+  const nodes = phases.buildHierarchy(days, hierarchy, $('phaseInfluSplit').checked, { phases: state.phaseSelection, months: state.phaseMonths });
+  if (!state.phaseExpansionInitialized) {
     nodes.filter((node) => node.depth === 0).forEach((node) => state.phaseExpanded.add(node.id));
+    state.phaseExpansionInitialized = true;
   }
   const byId = new Map(nodes.map((node) => [node.id, node]));
   const body = $('phaseTableBody');
@@ -1126,12 +1138,54 @@ function renderPhaseTable(days) {
     values.forEach((value) => row.appendChild(element('td', '', value)));
     body.appendChild(row);
   });
-  $('phaseTableSubtitle').textContent = hierarchy === 'month-phase' ? 'Month → phase → days' : 'Phase → month → days';
+  $('phaseTableSubtitle').textContent = $('phaseInfluSplit').checked
+    ? (hierarchy === 'month-phase' ? 'Month → phase → code/no code → days' : 'Phase → code/no code → month → days')
+    : (hierarchy === 'month-phase' ? 'Month → phase → days' : 'Phase → month → days');
+}
+
+function renderPhaseMenu(id, title, values, key, label = value => value) {
+  const host = $(id);
+  const focusValue = host.contains(document.activeElement) ? document.activeElement.dataset.value : null;
+  const open = host.querySelector('button')?.getAttribute('aria-expanded') === 'true';
+  clear(host);
+  const selected = state[key];
+  const count = selected == null ? values.length : values.filter(value => selected.includes(value)).length;
+  const trigger = element('button', 'phase-menu-trigger', `${title}: ${selected == null ? 'All' : count === 0 ? 'None' : `${count} selected`}`);
+  trigger.type = 'button';
+  trigger.setAttribute('aria-expanded', String(open));
+  trigger.setAttribute('aria-controls', `${id}Options`);
+  const menu = element('div', 'phase-menu-options');
+  menu.id = `${id}Options`;
+  menu.hidden = !open;
+  menu.setAttribute('role', 'group');
+  menu.setAttribute('aria-label', title);
+  const close = () => { menu.hidden = true; trigger.setAttribute('aria-expanded', 'false'); };
+  trigger.onclick = () => { menu.hidden = !menu.hidden; trigger.setAttribute('aria-expanded', String(!menu.hidden)); };
+  const option = (value, text, checked, change) => {
+    const row = element('label');
+    const input = element('input');
+    input.type = 'checkbox'; input.checked = checked; input.dataset.value = value;
+    input.onchange = change;
+    row.append(input, document.createTextNode(text)); menu.appendChild(row);
+    return input;
+  };
+  const master = option('*', 'All', count === values.length && selected?.length !== 0, event => { state[key] = event.target.checked ? null : []; renderPhases(); });
+  master.indeterminate = count > 0 && count < values.length;
+  values.forEach(value => option(value, label(value), selected == null || selected.includes(value), event => {
+    const next = new Set(state[key] == null ? values : state[key]);
+    if (event.target.checked) next.add(value); else next.delete(value);
+    state[key] = [...next]; renderPhases();
+  }));
+  host.append(trigger, menu);
+  host.onkeydown = event => { if (event.key === 'Escape') { close(); trigger.focus(); } };
+  if (focusValue != null) [...menu.querySelectorAll('input')].find(input => input.dataset.value === focusValue)?.focus();
 }
 
 function renderPhases() {
   const days = phases.buildPhaseDays(state.data.rows, state.data.phases, state.data.phase_contract?.latest_date);
   if (!days.length) throw new Error('No CZSK rows are available for the reporting year.');
+  renderPhaseMenu('phaseFilter', 'Phases', phases.PHASES, 'phaseSelection');
+  renderPhaseMenu('phaseMonths', 'Months', [...new Set(days.map(day => day.month))].sort(), 'phaseMonths', phaseMonthLabel);
   $('phaseRange').textContent = `${formatDate(days[0].date)} – ${formatDate(days[days.length - 1].date)} · ${days.length} working days · CZSK only`;
   renderPhaseChart(days);
   renderPhaseTable(days);
@@ -1251,8 +1305,18 @@ function setupEvents() {
     });
   });
   $('phaseMetric').addEventListener('change', render);
+  document.addEventListener('click', event => {
+    document.querySelectorAll('.phase-multiselect').forEach(host => {
+      if (!host.contains(event.target)) {
+        const menu = host.querySelector('.phase-menu-options');
+        if (menu) menu.hidden = true;
+        host.querySelector('button')?.setAttribute('aria-expanded', 'false');
+      }
+    });
+  });
   $('phaseHierarchy').addEventListener('change', () => {
     state.phaseExpanded.clear();
+    state.phaseExpansionInitialized = false;
     render();
   });
   $('phaseInfluSplit').addEventListener('change', render);
