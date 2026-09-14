@@ -199,6 +199,12 @@ async function run() {
     await influMonthDisclosure.click();
     assert.ok(await page.locator('#phaseTableBody .phase-kind-day.phase-influ').count() > 0);
     await page.locator('#phaseFilter button').click();
+    const filterTypography = await page.evaluate(() => {
+      const properties = ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight'];
+      const sample = selector => Object.fromEntries(properties.map(key => [key, getComputedStyle(document.querySelector(selector))[key]]));
+      return { reference: sample('#phaseMetric'), phase: sample('#phaseFilter button'), months: sample('#phaseMonths button'), options: sample('#phaseFilter label') };
+    });
+    for (const key of ['phase', 'months', 'options']) assert.deepEqual(filterTypography[key], filterTypography.reference, `${key} filter typography should match dashboard selects`);
     await page.locator('#phaseFilter').getByLabel('Promo', { exact: true }).uncheck();
     assert.equal(await page.locator('#phaseFilter input').first().evaluate(n => n.indeterminate), true);
     assert.deepEqual(await page.evaluate(() => Chart.getChart('phaseChart').data.datasets.map(d => d.label)), ['BAU', 'Influ · Code', 'Influ · No code']);
