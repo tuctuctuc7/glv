@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-14 00:10 UTC",
+  "updated_at": "2026-09-14 10:10 UTC",
   "source": {
     "tab": "Daily",
     "phase_calendar_sheet_id": "18oXDGQaE2p8E_G3PGHJwaYsl0CFM0eE9pVd-ju19edY",
@@ -697,13 +697,13 @@
       "date": "2026-01-15",
       "region": "czsk",
       "revenue": 4141.0,
-      "spend": 369.0,
+      "spend": 973.0,
       "purchases": 35,
       "unique_visitors": 679,
       "new_customers": 25,
       "returning_customers": 10,
       "new_customer_revenue": 3009.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 3021.0
     },
     {
       "date": "2026-01-15",
@@ -733,25 +733,25 @@
       "date": "2026-01-16",
       "region": "czsk",
       "revenue": 3040.0,
-      "spend": 355.0,
+      "spend": 865.0,
       "purchases": 25,
       "unique_visitors": 556,
       "new_customers": 19,
       "returning_customers": 6,
       "new_customer_revenue": 2412.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 2549.0
     },
     {
       "date": "2026-01-16",
       "region": "row",
       "revenue": 264.0,
-      "spend": 0.0,
+      "spend": 48.0,
       "purchases": 1,
       "unique_visitors": 30,
       "new_customers": 1,
       "returning_customers": 0,
       "new_customer_revenue": 264.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 240.0
     },
     {
       "date": "2026-01-16",
@@ -769,13 +769,13 @@
       "date": "2026-01-17",
       "region": "czsk",
       "revenue": 4262.0,
-      "spend": 348.0,
+      "spend": 1043.0,
       "purchases": 34,
       "unique_visitors": 535,
       "new_customers": 27,
       "returning_customers": 7,
       "new_customer_revenue": 3361.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 3472.0
     },
     {
       "date": "2026-01-17",
@@ -805,13 +805,13 @@
       "date": "2026-01-18",
       "region": "czsk",
       "revenue": 4798.0,
-      "spend": 352.0,
+      "spend": 1151.0,
       "purchases": 43,
       "unique_visitors": 541,
       "new_customers": 34,
       "returning_customers": 9,
       "new_customer_revenue": 3555.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 3993.0
     },
     {
       "date": "2026-01-18",
@@ -841,25 +841,25 @@
       "date": "2026-01-19",
       "region": "czsk",
       "revenue": 5007.0,
-      "spend": 377.0,
+      "spend": 1133.0,
       "purchases": 45,
       "unique_visitors": 641,
       "new_customers": 40,
       "returning_customers": 5,
       "new_customer_revenue": 4384.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 3779.0
     },
     {
       "date": "2026-01-19",
       "region": "row",
       "revenue": 71.0,
-      "spend": 0.0,
+      "spend": 14.0,
       "purchases": 1,
       "unique_visitors": 36,
       "new_customers": 1,
       "returning_customers": 0,
       "new_customer_revenue": 71.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 71.0
     },
     {
       "date": "2026-01-19",
@@ -877,13 +877,13 @@
       "date": "2026-01-20",
       "region": "czsk",
       "revenue": 965.0,
-      "spend": 424.0,
+      "spend": 482.0,
       "purchases": 9,
       "unique_visitors": 493,
       "new_customers": 8,
       "returning_customers": 1,
       "new_customer_revenue": 806.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 292.0
     },
     {
       "date": "2026-01-20",
@@ -1957,13 +1957,13 @@
       "date": "2026-02-19",
       "region": "czsk",
       "revenue": 1938.0,
-      "spend": 866.0,
+      "spend": 1119.0,
       "purchases": 17,
       "unique_visitors": 972,
       "new_customers": 10,
       "returning_customers": 7,
       "new_customer_revenue": 976.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 1263.0
     },
     {
       "date": "2026-02-19",
@@ -1993,13 +1993,13 @@
       "date": "2026-02-20",
       "region": "czsk",
       "revenue": 2330.0,
-      "spend": 866.0,
+      "spend": 1160.0,
       "purchases": 22,
       "unique_visitors": 848,
       "new_customers": 11,
       "returning_customers": 11,
       "new_customer_revenue": 1040.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 1468.0
     },
     {
       "date": "2026-02-20",
@@ -2029,13 +2029,13 @@
       "date": "2026-02-21",
       "region": "czsk",
       "revenue": 2082.0,
-      "spend": 835.0,
+      "spend": 1129.0,
       "purchases": 18,
       "unique_visitors": 970,
       "new_customers": 9,
       "returning_customers": 9,
       "new_customer_revenue": 936.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 1469.0
     },
     {
       "date": "2026-02-21",
@@ -2065,13 +2065,13 @@
       "date": "2026-02-22",
       "region": "czsk",
       "revenue": 7412.0,
-      "spend": 1016.0,
+      "spend": 2188.0,
       "purchases": 62,
       "unique_visitors": 1296,
       "new_customers": 47,
       "returning_customers": 15,
       "new_customer_revenue": 5279.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 5859.0
     },
     {
       "date": "2026-02-22",
@@ -2101,13 +2101,13 @@
       "date": "2026-02-23",
       "region": "czsk",
       "revenue": 6643.0,
-      "spend": 1099.0,
+      "spend": 2033.0,
       "purchases": 54,
       "unique_visitors": 1119,
       "new_customers": 39,
       "returning_customers": 15,
       "new_customer_revenue": 4947.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 4669.0
     },
     {
       "date": "2026-02-23",
@@ -2137,13 +2137,13 @@
       "date": "2026-02-24",
       "region": "czsk",
       "revenue": 1118.0,
-      "spend": 1254.0,
+      "spend": 1283.0,
       "purchases": 11,
       "unique_visitors": 1072,
       "new_customers": 7,
       "returning_customers": 4,
       "new_customer_revenue": 662.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 146.0
     },
     {
       "date": "2026-02-24",
@@ -2701,25 +2701,25 @@
       "date": "2026-03-11",
       "region": "us",
       "revenue": 449.0,
-      "spend": 274.0,
+      "spend": 282.0,
       "purchases": 6,
       "unique_visitors": 74,
       "new_customers": 1,
       "returning_customers": 5,
       "new_customer_revenue": 94.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 80.0
     },
     {
       "date": "2026-03-12",
       "region": "czsk",
       "revenue": 6709.0,
-      "spend": 891.0,
+      "spend": 1954.0,
       "purchases": 54,
       "unique_visitors": 844,
       "new_customers": 25,
       "returning_customers": 29,
       "new_customer_revenue": 3022.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 5317.0
     },
     {
       "date": "2026-03-12",
@@ -2749,13 +2749,13 @@
       "date": "2026-03-13",
       "region": "czsk",
       "revenue": 4749.0,
-      "spend": 1100.0,
+      "spend": 1676.0,
       "purchases": 44,
       "unique_visitors": 823,
       "new_customers": 24,
       "returning_customers": 20,
       "new_customer_revenue": 2717.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 2879.0
     },
     {
       "date": "2026-03-13",
@@ -2785,13 +2785,13 @@
       "date": "2026-03-14",
       "region": "czsk",
       "revenue": 8298.0,
-      "spend": 899.0,
+      "spend": 2256.0,
       "purchases": 68,
       "unique_visitors": 1061,
       "new_customers": 51,
       "returning_customers": 17,
       "new_customer_revenue": 6045.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 6785.0
     },
     {
       "date": "2026-03-14",
@@ -2821,13 +2821,13 @@
       "date": "2026-03-15",
       "region": "czsk",
       "revenue": 10188.0,
-      "spend": 1255.0,
+      "spend": 2898.0,
       "purchases": 85,
       "unique_visitors": 1237,
       "new_customers": 60,
       "returning_customers": 25,
       "new_customer_revenue": 6632.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 8216.0
     },
     {
       "date": "2026-03-15",
@@ -2857,13 +2857,13 @@
       "date": "2026-03-16",
       "region": "czsk",
       "revenue": 10644.0,
-      "spend": 1109.0,
+      "spend": 2857.0,
       "purchases": 94,
       "unique_visitors": 1089,
       "new_customers": 63,
       "returning_customers": 31,
       "new_customer_revenue": 7111.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 8814.0
     },
     {
       "date": "2026-03-16",
@@ -2893,13 +2893,13 @@
       "date": "2026-03-17",
       "region": "czsk",
       "revenue": 1534.0,
-      "spend": 967.0,
+      "spend": 996.0,
       "purchases": 12,
       "unique_visitors": 770,
       "new_customers": 8,
       "returning_customers": 4,
       "new_customer_revenue": 893.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 146.0
     },
     {
       "date": "2026-03-17",
@@ -3109,13 +3109,13 @@
       "date": "2026-03-23",
       "region": "czsk",
       "revenue": 10004.0,
-      "spend": 1018.0,
+      "spend": 1031.0,
       "purchases": 78,
       "unique_visitors": 930,
       "new_customers": 29,
       "returning_customers": 49,
       "new_customer_revenue": 3290.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 127.0
     },
     {
       "date": "2026-03-23",
@@ -3361,13 +3361,13 @@
       "date": "2026-03-30",
       "region": "czsk",
       "revenue": 18527.0,
-      "spend": 2885.0,
+      "spend": 2847.0,
       "purchases": 155,
       "unique_visitors": 2291,
       "new_customers": 62,
       "returning_customers": 93,
       "new_customer_revenue": 7342.0,
-      "influ_revenue": 377.0
+      "influ_revenue": 0.0
     },
     {
       "date": "2026-03-30",
@@ -3397,13 +3397,13 @@
       "date": "2026-03-31",
       "region": "czsk",
       "revenue": 1890.0,
-      "spend": 1574.0,
+      "spend": 1613.0,
       "purchases": 13,
       "unique_visitors": 1232,
       "new_customers": 7,
       "returning_customers": 6,
       "new_customer_revenue": 1025.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 386.0
     },
     {
       "date": "2026-03-31",
@@ -3475,7 +3475,7 @@
       "new_customers": 8,
       "returning_customers": 1,
       "new_customer_revenue": 906.0,
-      "influ_revenue": 59.0
+      "influ_revenue": 60.0
     },
     {
       "date": "2026-04-02",
@@ -3721,25 +3721,25 @@
       "date": "2026-04-09",
       "region": "czsk",
       "revenue": 3505.0,
-      "spend": 1499.0,
+      "spend": 1531.0,
       "purchases": 29,
       "unique_visitors": 990,
       "new_customers": 21,
       "returning_customers": 8,
       "new_customer_revenue": 2622.0,
-      "influ_revenue": 1369.0
+      "influ_revenue": 1528.0
     },
     {
       "date": "2026-04-09",
       "region": "row",
       "revenue": 79.0,
-      "spend": 14.0,
+      "spend": 16.0,
       "purchases": 1,
       "unique_visitors": 36,
       "new_customers": 0,
       "returning_customers": 1,
       "new_customer_revenue": 0.0,
-      "influ_revenue": 71.0
+      "influ_revenue": 79.0
     },
     {
       "date": "2026-04-09",
@@ -3757,13 +3757,13 @@
       "date": "2026-04-10",
       "region": "czsk",
       "revenue": 4400.0,
-      "spend": 1764.0,
+      "spend": 1796.0,
       "purchases": 36,
       "unique_visitors": 1398,
       "new_customers": 19,
       "returning_customers": 17,
       "new_customer_revenue": 2272.0,
-      "influ_revenue": 2728.0
+      "influ_revenue": 2890.0
     },
     {
       "date": "2026-04-10",
@@ -3793,13 +3793,13 @@
       "date": "2026-04-11",
       "region": "czsk",
       "revenue": 3247.0,
-      "spend": 1929.0,
+      "spend": 1966.0,
       "purchases": 32,
       "unique_visitors": 1319,
       "new_customers": 22,
       "returning_customers": 10,
       "new_customer_revenue": 1998.0,
-      "influ_revenue": 1668.0
+      "influ_revenue": 1856.0
     },
     {
       "date": "2026-04-11",
@@ -3829,13 +3829,13 @@
       "date": "2026-04-12",
       "region": "czsk",
       "revenue": 4632.0,
-      "spend": 2749.0,
+      "spend": 2874.0,
       "purchases": 37,
       "unique_visitors": 3010,
       "new_customers": 22,
       "returning_customers": 15,
       "new_customer_revenue": 2766.0,
-      "influ_revenue": 2195.0
+      "influ_revenue": 2822.0
     },
     {
       "date": "2026-04-12",
@@ -3865,13 +3865,13 @@
       "date": "2026-04-13",
       "region": "czsk",
       "revenue": 5681.0,
-      "spend": 3046.0,
+      "spend": 3140.0,
       "purchases": 49,
       "unique_visitors": 2896,
       "new_customers": 33,
       "returning_customers": 16,
       "new_customer_revenue": 4034.0,
-      "influ_revenue": 3582.0
+      "influ_revenue": 4055.0
     },
     {
       "date": "2026-04-13",
@@ -3901,13 +3901,13 @@
       "date": "2026-04-14",
       "region": "czsk",
       "revenue": 3649.0,
-      "spend": 2430.0,
+      "spend": 2473.0,
       "purchases": 32,
       "unique_visitors": 2033,
       "new_customers": 24,
       "returning_customers": 8,
       "new_customer_revenue": 2767.0,
-      "influ_revenue": 1518.0
+      "influ_revenue": 1735.0
     },
     {
       "date": "2026-04-14",
@@ -3937,13 +3937,13 @@
       "date": "2026-04-15",
       "region": "czsk",
       "revenue": 4436.0,
-      "spend": 2351.0,
+      "spend": 2371.0,
       "purchases": 43,
       "unique_visitors": 1943,
       "new_customers": 23,
       "returning_customers": 20,
       "new_customer_revenue": 2575.0,
-      "influ_revenue": 2350.0
+      "influ_revenue": 2452.0
     },
     {
       "date": "2026-04-15",
@@ -3973,13 +3973,13 @@
       "date": "2026-04-16",
       "region": "czsk",
       "revenue": 1362.0,
-      "spend": 1810.0,
+      "spend": 1852.0,
       "purchases": 10,
       "unique_visitors": 1994,
       "new_customers": 8,
       "returning_customers": 2,
       "new_customer_revenue": 1034.0,
-      "influ_revenue": 0.0
+      "influ_revenue": 208.0
     },
     {
       "date": "2026-04-16",
@@ -4519,7 +4519,7 @@
       "new_customers": 10,
       "returning_customers": 2,
       "new_customer_revenue": 1299.0,
-      "influ_revenue": 147.0
+      "influ_revenue": 146.0
     },
     {
       "date": "2026-05-01",
@@ -4627,7 +4627,7 @@
       "new_customers": 15,
       "returning_customers": 6,
       "new_customer_revenue": 2655.0,
-      "influ_revenue": 147.0
+      "influ_revenue": 146.0
     },
     {
       "date": "2026-05-04",
@@ -4771,7 +4771,7 @@
       "new_customers": 12,
       "returning_customers": 4,
       "new_customer_revenue": 1815.0,
-      "influ_revenue": 148.0
+      "influ_revenue": 146.0
     },
     {
       "date": "2026-05-08",
@@ -4945,7 +4945,7 @@
       "date": "2026-05-13",
       "region": "czsk",
       "revenue": 18091.0,
-      "spend": 1624.0,
+      "spend": 1623.0,
       "purchases": 131,
       "unique_visitors": 1501,
       "new_customers": 29,
@@ -4981,13 +4981,13 @@
       "date": "2026-05-14",
       "region": "czsk",
       "revenue": 11844.0,
-      "spend": 2268.0,
+      "spend": 2258.0,
       "purchases": 84,
       "unique_visitors": 1770,
       "new_customers": 30,
       "returning_customers": 54,
       "new_customer_revenue": 4295.0,
-      "influ_revenue": 95.0
+      "influ_revenue": 0.0
     },
     {
       "date": "2026-05-14",
@@ -5233,13 +5233,13 @@
       "date": "2026-05-21",
       "region": "czsk",
       "revenue": 9420.0,
-      "spend": 4134.0,
+      "spend": 3204.0,
       "purchases": 79,
       "unique_visitors": 2621,
       "new_customers": 45,
       "returning_customers": 34,
       "new_customer_revenue": 5625.0,
-      "influ_revenue": 4650.0
+      "influ_revenue": 0.0
     },
     {
       "date": "2026-05-21",
@@ -5269,13 +5269,13 @@
       "date": "2026-05-22",
       "region": "czsk",
       "revenue": 7204.0,
-      "spend": 3409.0,
+      "spend": 2456.0,
       "purchases": 55,
       "unique_visitors": 2003,
       "new_customers": 30,
       "returning_customers": 25,
       "new_customer_revenue": 4007.0,
-      "influ_revenue": 4764.0
+      "influ_revenue": 0.0
     },
     {
       "date": "2026-05-22",
@@ -5305,13 +5305,13 @@
       "date": "2026-05-23",
       "region": "czsk",
       "revenue": 5797.0,
-      "spend": 3473.0,
+      "spend": 2771.0,
       "purchases": 49,
       "unique_visitors": 2114,
       "new_customers": 32,
       "returning_customers": 17,
       "new_customer_revenue": 3674.0,
-      "influ_revenue": 3509.0
+      "influ_revenue": 0.0
     },
     {
       "date": "2026-05-23",
@@ -5341,13 +5341,13 @@
       "date": "2026-05-24",
       "region": "czsk",
       "revenue": 5535.0,
-      "spend": 3404.0,
+      "spend": 2885.0,
       "purchases": 45,
       "unique_visitors": 2236,
       "new_customers": 33,
       "returning_customers": 12,
       "new_customer_revenue": 4070.0,
-      "influ_revenue": 2593.0
+      "influ_revenue": 0.0
     },
     {
       "date": "2026-05-24",
@@ -5377,25 +5377,25 @@
       "date": "2026-05-25",
       "region": "czsk",
       "revenue": 5723.0,
-      "spend": 3604.0,
+      "spend": 3066.0,
       "purchases": 52,
       "unique_visitors": 2352,
       "new_customers": 29,
       "returning_customers": 23,
       "new_customer_revenue": 3387.0,
-      "influ_revenue": 2691.0
+      "influ_revenue": 0.0
     },
     {
       "date": "2026-05-25",
       "region": "row",
       "revenue": 135.0,
-      "spend": 24.0,
+      "spend": 0.0,
       "purchases": 1,
       "unique_visitors": 9,
       "new_customers": 1,
       "returning_customers": 0,
       "new_customer_revenue": 0.0,
-      "influ_revenue": 121.0
+      "influ_revenue": 0.0
     },
     {
       "date": "2026-05-25",
@@ -5413,13 +5413,13 @@
       "date": "2026-05-26",
       "region": "czsk",
       "revenue": 4113.0,
-      "spend": 2912.0,
+      "spend": 2867.0,
       "purchases": 29,
       "unique_visitors": 2175,
       "new_customers": 23,
       "returning_customers": 6,
       "new_customer_revenue": 3512.0,
-      "influ_revenue": 226.0
+      "influ_revenue": 0.0
     },
     {
       "date": "2026-05-26",
@@ -5449,13 +5449,13 @@
       "date": "2026-05-27",
       "region": "czsk",
       "revenue": 8810.0,
-      "spend": 3395.0,
+      "spend": 2574.0,
       "purchases": 64,
       "unique_visitors": 2529,
       "new_customers": 40,
       "returning_customers": 24,
       "new_customer_revenue": 5041.0,
-      "influ_revenue": 4104.0
+      "influ_revenue": 0.0
     },
     {
       "date": "2026-05-27",
@@ -5473,25 +5473,25 @@
       "date": "2026-05-27",
       "region": "us",
       "revenue": 224.0,
-      "spend": 332.0,
+      "spend": 320.0,
       "purchases": 3,
       "unique_visitors": 174,
       "new_customers": 1,
       "returning_customers": 2,
       "new_customer_revenue": 74.0,
-      "influ_revenue": 62.0
+      "influ_revenue": 0.0
     },
     {
       "date": "2026-05-28",
       "region": "czsk",
       "revenue": 4069.0,
-      "spend": 2668.0,
+      "spend": 2508.0,
       "purchases": 27,
       "unique_visitors": 1744,
       "new_customers": 16,
       "returning_customers": 11,
       "new_customer_revenue": 2817.0,
-      "influ_revenue": 798.0
+      "influ_revenue": 0.0
     },
     {
       "date": "2026-05-28",
@@ -5635,7 +5635,7 @@
       "new_customers": 21,
       "returning_customers": 6,
       "new_customer_revenue": 2720.0,
-      "influ_revenue": 293.0
+      "influ_revenue": 292.0
     },
     {
       "date": "2026-06-01",
@@ -5671,7 +5671,7 @@
       "new_customers": 18,
       "returning_customers": 7,
       "new_customer_revenue": 2301.0,
-      "influ_revenue": 61.0
+      "influ_revenue": 60.0
     },
     {
       "date": "2026-06-02",
@@ -5707,7 +5707,7 @@
       "new_customers": 15,
       "returning_customers": 3,
       "new_customer_revenue": 2129.0,
-      "influ_revenue": 294.0
+      "influ_revenue": 292.0
     },
     {
       "date": "2026-06-03",
@@ -5743,7 +5743,7 @@
       "new_customers": 9,
       "returning_customers": 4,
       "new_customer_revenue": 1350.0,
-      "influ_revenue": 943.0
+      "influ_revenue": 937.0
     },
     {
       "date": "2026-06-04",
@@ -5773,13 +5773,13 @@
       "date": "2026-06-05",
       "region": "czsk",
       "revenue": 3061.0,
-      "spend": 1597.0,
+      "spend": 1596.0,
       "purchases": 24,
       "unique_visitors": 1178,
       "new_customers": 19,
       "returning_customers": 5,
       "new_customer_revenue": 2448.0,
-      "influ_revenue": 1064.0
+      "influ_revenue": 1056.0
     },
     {
       "date": "2026-06-05",
@@ -5815,7 +5815,7 @@
       "new_customers": 11,
       "returning_customers": 6,
       "new_customer_revenue": 1268.0,
-      "influ_revenue": 147.0
+      "influ_revenue": 146.0
     },
     {
       "date": "2026-06-06",
@@ -5851,7 +5851,7 @@
       "new_customers": 13,
       "returning_customers": 4,
       "new_customer_revenue": 1879.0,
-      "influ_revenue": 208.0
+      "influ_revenue": 206.0
     },
     {
       "date": "2026-06-07",
@@ -6493,13 +6493,13 @@
       "date": "2026-06-25",
       "region": "czsk",
       "revenue": 2273.0,
-      "spend": 1887.0,
+      "spend": 1912.0,
       "purchases": 18,
       "unique_visitors": 1052,
       "new_customers": 5,
       "returning_customers": 13,
       "new_customer_revenue": 704.0,
-      "influ_revenue": 869.0
+      "influ_revenue": 995.0
     },
     {
       "date": "2026-06-25",
@@ -6529,13 +6529,13 @@
       "date": "2026-06-26",
       "region": "czsk",
       "revenue": 2395.0,
-      "spend": 1659.0,
+      "spend": 1689.0,
       "purchases": 20,
       "unique_visitors": 993,
       "new_customers": 9,
       "returning_customers": 11,
       "new_customer_revenue": 707.0,
-      "influ_revenue": 1056.0
+      "influ_revenue": 1203.0
     },
     {
       "date": "2026-06-26",
@@ -6565,13 +6565,13 @@
       "date": "2026-06-27",
       "region": "czsk",
       "revenue": 1892.0,
-      "spend": 1748.0,
+      "spend": 1747.0,
       "purchases": 15,
       "unique_visitors": 1109,
       "new_customers": 12,
       "returning_customers": 3,
       "new_customer_revenue": 1529.0,
-      "influ_revenue": 1001.0
+      "influ_revenue": 994.0
     },
     {
       "date": "2026-06-27",
@@ -6601,13 +6601,13 @@
       "date": "2026-06-28",
       "region": "czsk",
       "revenue": 3509.0,
-      "spend": 1935.0,
+      "spend": 1980.0,
       "purchases": 30,
       "unique_visitors": 1602,
       "new_customers": 17,
       "returning_customers": 13,
       "new_customer_revenue": 2208.0,
-      "influ_revenue": 1597.0
+      "influ_revenue": 1819.0
     },
     {
       "date": "2026-06-28",
@@ -6637,13 +6637,13 @@
       "date": "2026-06-29",
       "region": "czsk",
       "revenue": 2662.0,
-      "spend": 1688.0,
+      "spend": 1716.0,
       "purchases": 25,
       "unique_visitors": 943,
       "new_customers": 10,
       "returning_customers": 15,
       "new_customer_revenue": 969.0,
-      "influ_revenue": 1074.0
+      "influ_revenue": 1215.0
     },
     {
       "date": "2026-06-29",
@@ -6673,13 +6673,13 @@
       "date": "2026-06-30",
       "region": "czsk",
       "revenue": 989.0,
-      "spend": 1426.0,
+      "spend": 1434.0,
       "purchases": 9,
       "unique_visitors": 886,
       "new_customers": 7,
       "returning_customers": 2,
       "new_customer_revenue": 994.0,
-      "influ_revenue": 310.0
+      "influ_revenue": 351.0
     },
     {
       "date": "2026-06-30",
@@ -7249,13 +7249,13 @@
       "date": "2026-07-16",
       "region": "czsk",
       "revenue": 5239.0,
-      "spend": 1842.0,
+      "spend": 1918.0,
       "purchases": 40,
       "unique_visitors": 1022,
       "new_customers": 12,
       "returning_customers": 28,
       "new_customer_revenue": 1553.0,
-      "influ_revenue": 2836.0
+      "influ_revenue": 3215.0
     },
     {
       "date": "2026-07-16",
@@ -7285,13 +7285,13 @@
       "date": "2026-07-17",
       "region": "czsk",
       "revenue": 4426.0,
-      "spend": 1756.0,
+      "spend": 1799.0,
       "purchases": 37,
       "unique_visitors": 988,
       "new_customers": 17,
       "returning_customers": 20,
       "new_customer_revenue": 2013.0,
-      "influ_revenue": 1580.0
+      "influ_revenue": 1796.0
     },
     {
       "date": "2026-07-17",
@@ -7321,13 +7321,13 @@
       "date": "2026-07-18",
       "region": "czsk",
       "revenue": 3475.0,
-      "spend": 1875.0,
+      "spend": 1916.0,
       "purchases": 31,
       "unique_visitors": 1278,
       "new_customers": 18,
       "returning_customers": 13,
       "new_customer_revenue": 1738.0,
-      "influ_revenue": 1617.0
+      "influ_revenue": 1821.0
     },
     {
       "date": "2026-07-18",
@@ -7357,13 +7357,13 @@
       "date": "2026-07-19",
       "region": "czsk",
       "revenue": 5090.0,
-      "spend": 2272.0,
+      "spend": 2302.0,
       "purchases": 37,
       "unique_visitors": 1863,
       "new_customers": 13,
       "returning_customers": 24,
       "new_customer_revenue": 1609.0,
-      "influ_revenue": 2219.0
+      "influ_revenue": 2370.0
     },
     {
       "date": "2026-07-19",
@@ -7393,13 +7393,13 @@
       "date": "2026-07-20",
       "region": "czsk",
       "revenue": 7492.0,
-      "spend": 2547.0,
+      "spend": 2640.0,
       "purchases": 55,
       "unique_visitors": 1855,
       "new_customers": 31,
       "returning_customers": 24,
       "new_customer_revenue": 4144.0,
-      "influ_revenue": 3385.0
+      "influ_revenue": 3848.0
     },
     {
       "date": "2026-07-20",
@@ -7429,13 +7429,13 @@
       "date": "2026-07-21",
       "region": "czsk",
       "revenue": 17386.0,
-      "spend": 3581.0,
+      "spend": 3590.0,
       "purchases": 130,
       "unique_visitors": 2985,
       "new_customers": 65,
       "returning_customers": 65,
       "new_customer_revenue": 8404.0,
-      "influ_revenue": 310.0
+      "influ_revenue": 353.0
     },
     {
       "date": "2026-07-21",
@@ -8257,13 +8257,13 @@
       "date": "2026-08-13",
       "region": "czsk",
       "revenue": 9165.0,
-      "spend": 3301.0,
+      "spend": 3411.0,
       "purchases": 70,
       "unique_visitors": 2331,
       "new_customers": 41,
       "returning_customers": 29,
       "new_customer_revenue": 4961.0,
-      "influ_revenue": 5417.0
+      "influ_revenue": 5967.0
     },
     {
       "date": "2026-08-13",
@@ -8293,13 +8293,13 @@
       "date": "2026-08-14",
       "region": "czsk",
       "revenue": 6210.0,
-      "spend": 4084.0,
+      "spend": 4135.0,
       "purchases": 46,
       "unique_visitors": 3405,
       "new_customers": 25,
       "returning_customers": 21,
       "new_customer_revenue": 3218.0,
-      "influ_revenue": 3243.0
+      "influ_revenue": 3494.0
     },
     {
       "date": "2026-08-14",
@@ -8329,13 +8329,13 @@
       "date": "2026-08-15",
       "region": "czsk",
       "revenue": 5821.0,
-      "spend": 5052.0,
+      "spend": 5114.0,
       "purchases": 52,
       "unique_visitors": 3915,
       "new_customers": 34,
       "returning_customers": 18,
       "new_customer_revenue": 3762.0,
-      "influ_revenue": 3132.0
+      "influ_revenue": 3440.0
     },
     {
       "date": "2026-08-15",
@@ -8365,13 +8365,13 @@
       "date": "2026-08-16",
       "region": "czsk",
       "revenue": 15063.0,
-      "spend": 6889.0,
+      "spend": 6941.0,
       "purchases": 109,
       "unique_visitors": 5089,
       "new_customers": 67,
       "returning_customers": 42,
       "new_customer_revenue": 9515.0,
-      "influ_revenue": 8684.0
+      "influ_revenue": 8942.0
     },
     {
       "date": "2026-08-16",
@@ -8401,13 +8401,13 @@
       "date": "2026-08-17",
       "region": "czsk",
       "revenue": 11441.0,
-      "spend": 6889.0,
+      "spend": 7002.0,
       "purchases": 90,
       "unique_visitors": 5080,
       "new_customers": 54,
       "returning_customers": 36,
       "new_customer_revenue": 7340.0,
-      "influ_revenue": 5825.0
+      "influ_revenue": 6389.0
     },
     {
       "date": "2026-08-17",
@@ -8437,13 +8437,13 @@
       "date": "2026-08-18",
       "region": "czsk",
       "revenue": 17794.0,
-      "spend": 4780.0,
+      "spend": 4796.0,
       "purchases": 123,
       "unique_visitors": 4338,
       "new_customers": 27,
       "returning_customers": 96,
       "new_customer_revenue": 3912.0,
-      "influ_revenue": 768.0
+      "influ_revenue": 850.0
     },
     {
       "date": "2026-08-18",
