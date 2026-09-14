@@ -3,6 +3,22 @@ const assert = require('node:assert/strict');
 
 const phases = require('../public/glv/phases.js');
 
+test('frozen real calendar classifies every January 2026 date at inclusive boundaries', () => {
+  const data = require('../public/glv/glv_dashboard.json');
+  const days = phases.buildPhaseDays(data.rows, data.phases, data.phase_contract.latest_date);
+  const january = days.filter(day => day.month === '2026-01');
+  assert.equal(january.length, 31);
+  for (const day of january) {
+    const date = Number(day.date.slice(-2));
+    const expected = date >= 6 && date <= 14 ? 'Promo' : date >= 15 && date <= 19 ? 'Influ' : 'BAU';
+    assert.equal(day.phase, expected, day.date);
+    assert.equal(day.schedule.length, expected === 'BAU' ? 0 : 1, day.date);
+  }
+  const groups = phases.aggregatePhaseGroups(january);
+  assert.equal(groups.length, 3);
+  assert.ok(Math.abs(groups.reduce((sum, group) => sum + group.share, 0) - 1) < 1e-12);
+});
+
 const schedule = [
   { start_date: '2026-02-06', end_date: '2026-02-14', phase: 'Promo', label: 'promo', source_row: 4 },
   { start_date: '2026-02-19', end_date: '2026-02-22', phase: 'Influ', label: 'influ', source_row: 5 },

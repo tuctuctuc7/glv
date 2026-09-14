@@ -48,6 +48,41 @@ def daily(date="2026-09-10", region="CZ+SK", revenue="200", influ="80"):
 
 
 class ManualCalendarParserTest(unittest.TestCase):
+    def test_january_2026_supplement_survives_export_without_changing_other_months(self):
+        payload = EXPORTER.build_payload([daily()], calendar_rows())
+        january = [e for e in payload['phases'] if e['start_date'].startswith('2026-01')]
+        self.assertEqual([(e['start_date'], e['end_date'], e['phase']) for e in january], [
+            ('2026-01-06', '2026-01-14', 'Promo'),
+            ('2026-01-15', '2026-01-19', 'Influ'),
+        ])
+        self.assertTrue(all(e['source_row'] is None and 'Tom' in e['source'] for e in january))
+        self.assertEqual([e for e in payload['phases'] if e not in january],
+                         EXPORTER.parse_manual_phase_calendar(calendar_rows(), 2026))
+
+    def test_identical_sheet_january_is_retained_without_duplicates(self):
+        rows = [["", "jan"], ["", "promo (06-14)"], ["", "influ (15-19)"]] + calendar_rows()
+        source = EXPORTER.parse_manual_phase_calendar(rows, 2026)
+        self.assertEqual(EXPORTER.build_payload([daily()], rows)['phases'], source)
+
+    def test_conflicting_partial_empty_and_duplicate_january_fail_closed(self):
+        for intervals in [ ['promo (07-14)', 'influ (15-19)'], ['promo (06-14)'],
+                           ['full price'], ['promo (06-14)', 'influ (15-19)', 'promo (06-14)'] ]:
+            rows = [["", "jan"]] + [["", value] for value in intervals] + calendar_rows()
+            with self.subTest(intervals=intervals), tempfile.TemporaryDirectory() as directory:
+                target = pathlib.Path(directory) / 'snapshot.json'
+                target.write_text('last-valid')
+                with self.assertRaisesRegex(ValueError, 'PHASE_JANUARY_CONFLICT'):
+                    EXPORTER.export_snapshot(lambda: EXPORTER.build_payload([daily()], rows), [target])
+                self.assertEqual(target.read_text(), 'last-valid')
+
+    def test_supplement_is_idempotent_and_never_applies_to_other_years(self):
+        source = EXPORTER.parse_manual_phase_calendar(calendar_rows(), 2026)
+        supplemented = EXPORTER.supplement_phase_calendar(source, 2026)
+        self.assertEqual(EXPORTER.supplement_phase_calendar(supplemented, 2026), supplemented)
+        for year in (2025, 2027):
+            source = EXPORTER.parse_manual_phase_calendar(calendar_rows(), year)
+            self.assertEqual(EXPORTER.supplement_phase_calendar(source, year), source)
+
     def test_reporting_year_is_latest_valid_czsk_daily_year(self):
         records = [daily("2025-12-31"), daily("2026-09-10"), daily("2027-01-01", region="US")]
         self.assertEqual(EXPORTER.infer_reporting_year(records), 2026)
