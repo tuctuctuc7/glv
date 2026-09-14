@@ -188,6 +188,33 @@ def parse_manual_phase_calendar(rows, reporting_year):
     return schedule
 
 
+def supplement_phase_calendar(schedule, reporting_year, january_present=False):
+    """Tom's approved CZSK January 2026 schedule, only when absent in Sheet1.
+
+    Never invent spreadsheet row numbers or change source intervals. A later
+    January source must match the approved intervals exactly or export fails.
+    """
+    validate_phase_schedule(schedule)
+    if reporting_year != 2026:
+        return schedule
+    approved = [
+        {"start_date": "2026-01-06", "end_date": "2026-01-14", "phase": "Promo",
+         "label": "promo", "source_row": None, "source": "Tom's supplied January 2026 schedule"},
+        {"start_date": "2026-01-15", "end_date": "2026-01-19", "phase": "Influ",
+         "label": "influ", "source_row": None, "source": "Tom's supplied January 2026 schedule"},
+    ]
+    january = [entry for entry in schedule
+               if entry['start_date'] <= '2026-01-31' and entry['end_date'] >= '2026-01-01']
+    if january or january_present:
+        identity = lambda entry: (entry['start_date'], entry['end_date'], entry['phase'])
+        if sorted(map(identity, january)) != sorted(map(identity, approved)):
+            raise ValueError("PHASE_JANUARY_CONFLICT: Sheet1 January differs from Tom's supplied 2026 schedule")
+        return schedule
+    supplemented = approved + schedule
+    validate_phase_schedule(supplemented)
+    return supplemented
+
+
 def phase_metric(value, day, region):
     text = str(value if value is not None else "").strip()
     if not text:
@@ -204,7 +231,10 @@ def phase_metric(value, day, region):
 
 def build_payload(records, calendar_rows, now=None):
     reporting_year = infer_reporting_year(records)
-    schedule = parse_manual_phase_calendar(calendar_rows, reporting_year)
+    schedule = supplement_phase_calendar(
+        parse_manual_phase_calendar(calendar_rows, reporting_year), reporting_year,
+        january_present=any(month_from_label(str(row[1])) == 1 for row in calendar_rows if len(row) > 1),
+    )
     rows = []
     for record in records:
         day = date_iso(record.get("Date"))

@@ -92,6 +92,8 @@ The exporter includes only absolute metrics, so ratios are always recalculated a
 
 For the Phases view it also exports `Revenue INFLU ($)` as `influ_revenue` and the normalized source calendar as `phases`. The exporter reads both sources before an atomic replacement, rejects malformed dates, reversed intervals, Promo/Influ overlaps, stale schedule coverage, and invalid Influ revenue, and keeps the last valid JSON untouched on failure. It never publishes the source calendar itself as a browser asset.
 
+January 2026 has a narrow exporter fallback explicitly supplied by Tom, not inferred from revenue or attributed to Sheet1: **Promo January 6–14 inclusive; Influ January 15–19 inclusive; BAU January 1–5 and 20–31**. When Sheet1 lacks January, `supplement_phase_calendar` adds only these two intervals, with `source: "Tom's supplied January 2026 schedule"` and `source_row: null`. Existing spreadsheet intervals, labels, and row provenance are untouched. If Sheet1 later supplies the identical January intervals, its entries are retained without adding duplicates; conflicting, partial, duplicate, or empty January schedules fail closed before atomic publication. The supplement applies only to reporting year 2026 and reuses schedule validation. It changes classification only—not Daily metrics, revenue, forecasts, or the read-only shared sheet. The tracked snapshot was updated offline from its frozen JSON, changing only `phases` and preserving its extraction timestamp.
+
 Phase rules:
 
 - Scope is CZSK only, from January 1 through the latest loaded Daily date in the reporting year; Home filters do not alter it.
