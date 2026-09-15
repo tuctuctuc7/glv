@@ -61,6 +61,11 @@
     return normalized;
   }
 
+  // Represented dates include zero-revenue days, but never calendar gaps.
+  function distinctDayCount(rows) {
+    return new Set((rows || []).map(row => row.date).filter(Boolean)).size;
+  }
+
   function aggregateRows(rows) {
     const source = Array.isArray(rows) ? rows : [];
     const totals = {};
@@ -70,6 +75,7 @@
     });
     return {
       ...totals,
+      avg_daily_revenue: ratio(totals.revenue, distinctDayCount(source)),
       roas: ratio(totals.revenue, totals.spend),
       cpa: ratio(totals.spend, totals.purchases),
       aov: ratio(totals.revenue, totals.purchases),
@@ -137,9 +143,10 @@
     }).sort((a, b) => a.month.localeCompare(b.month) || PHASES.indexOf(a.phase) - PHASES.indexOf(b.phase));
   }
 
-  function unavailableRevenueMetrics(revenue) {
+  function unavailableRevenueMetrics(revenue, days) {
     const metrics = Object.fromEntries([...ABSOLUTE_METRICS, 'roas', 'cpa', 'aov', 'cvr', 'new_customer_rate', 'cac'].map((key) => [key, null]));
     metrics.revenue = revenue;
+    metrics.avg_daily_revenue = ratio(revenue, distinctDayCount(days));
     return metrics;
   }
 
@@ -150,7 +157,7 @@
   function appendDayNodes(nodes, days, parentId, depth, denominators, segment = null) {
     days.forEach((day) => {
       const revenue = segment === 'code' ? day.code_revenue : segment === 'no-code' ? day.no_code_revenue : day.revenue;
-      const metrics = segment ? unavailableRevenueMetrics(revenue) : aggregateRows([day]);
+      const metrics = segment ? unavailableRevenueMetrics(revenue, [day]) : aggregateRows([day]);
       nodes.push(makeNode({
         id: `${parentId}|day|${day.date}${segment ? `|${segment}` : ''}`,
         parentId,
@@ -177,7 +184,7 @@
         label,
         month: days[0]?.month || null,
         phase: 'Influ',
-        metrics: unavailableRevenueMetrics(revenue),
+        metrics: unavailableRevenueMetrics(revenue, days),
         share: ratio(revenue, denominators.get(days[0]?.month)),
         expandable: true,
       }));
@@ -220,13 +227,13 @@
             const value = day => Number(segment === 'code' ? day.code_revenue : day.no_code_revenue);
             const revenue = phaseDays.reduce((sum, day) => sum + value(day), 0);
             const id = `${phaseId}|${segment}`;
-            nodes.push(makeNode({ id, parentId: phaseId, depth: 1, kind: 'influ-split', label, phase, metrics: unavailableRevenueMetrics(revenue), share: ratio(revenue, denominator), expandable: true }));
+            nodes.push(makeNode({ id, parentId: phaseId, depth: 1, kind: 'influ-split', label, phase, metrics: unavailableRevenueMetrics(revenue, phaseDays), share: ratio(revenue, denominator), expandable: true }));
             months.forEach(month => {
               const monthDays = phaseDays.filter(day => day.month === month);
               if (!monthDays.length) return;
               const monthId = `${id}|month|${month}`;
               const monthlyRevenue = monthDays.reduce((sum, day) => sum + value(day), 0);
-              nodes.push(makeNode({ id: monthId, parentId: id, depth: 2, kind: 'month', label: month, month, phase, metrics: unavailableRevenueMetrics(monthlyRevenue), share: ratio(monthlyRevenue, denominators.get(month)), expandable: true }));
+              nodes.push(makeNode({ id: monthId, parentId: id, depth: 2, kind: 'month', label: month, month, phase, metrics: unavailableRevenueMetrics(monthlyRevenue, monthDays), share: ratio(monthlyRevenue, denominators.get(month)), expandable: true }));
               appendDayNodes(nodes, monthDays, monthId, 3, denominators, segment);
             });
           });
@@ -259,12 +266,13 @@
       return group ? metricValue(group, metric) : null;
     })]));
     let active = PHASES.filter(phase => filters.phases == null || filters.phases.includes(phase));
-    if (metric === 'revenue' && filters.splitInflu && active.includes('Influ')) {
+    if (['revenue', 'avg_daily_revenue'].includes(metric) && filters.splitInflu && active.includes('Influ')) {
       active = active.flatMap(phase => phase === 'Influ' ? ['Influ · Code', 'Influ · No code'] : [phase]);
       [['Influ · Code', 'code_revenue'], ['Influ · No code', 'no_code_revenue']].forEach(([label, key]) => {
         series[label] = months.map(month => {
           const rows = days.filter(day => day.month === month && day.phase === 'Influ');
-          return rows.length ? rows.reduce((sum, day) => sum + Number(day[key]), 0) : null;
+          const revenue = rows.length ? rows.reduce((sum, day) => sum + Number(day[key]), 0) : null;
+          return metric === 'avg_daily_revenue' ? ratio(revenue, distinctDayCount(rows)) : revenue;
         });
       });
     }
