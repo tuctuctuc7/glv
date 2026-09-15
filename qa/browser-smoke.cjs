@@ -194,11 +194,11 @@ async function run() {
       return eligible.length ? eligible.reduce((s, d) => s + d.revenue, 0) / new Set(eligible.map(d => d.date)).size : null;
     };
     assert.deepEqual(averageContract.data, ['BAU', 'Promo', 'Influ'].map(phase => [...new Set(phaseDays.map(d => d.month))].map(month => expectedAverage(month, phase))));
-    assert.match(averageContract.tick, /^\$/);
-    assert.equal(averageContract.tooltip, 'BAU: $1,234.50');
+    assert.equal(averageContract.tick, '$1,234');
+    assert.equal(averageContract.tooltip, 'BAU: $1,235');
     assert.match(await page.locator('#phaseChartCaption').textContent(), /Avg daily revenue/);
-    assert.match(await page.locator('#phaseChartDataBody tr').first().locator('td').nth(1).textContent(), /^\$/);
-    assert.match(await page.locator('#phaseTableBody tr').first().locator('td').nth(3).textContent(), /^\$/);
+    assert.match(await page.locator('#phaseChartDataBody tr').first().locator('td').nth(1).textContent(), /^\$[\d,]+$/);
+    assert.match(await page.locator('#phaseTableBody tr').first().locator('td').nth(3).textContent(), /^\$[\d,]+$/);
     assert.equal(await page.locator('#phaseTableBody .phase-kind-month').count(), 9, 'default hierarchy should show each YTD month');
     const firstPhaseDisclosure = page.locator('#phaseTableBody .phase-kind-phase .phase-disclosure').first();
     await firstPhaseDisclosure.click();
