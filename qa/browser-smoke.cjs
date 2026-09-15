@@ -180,7 +180,25 @@ async function run() {
       { type: 'line', label: 'Influ' },
     ]);
     assert.equal(await page.locator('#phaseChartDataBody tr').count(), 9, 'YTD chart should include Jan through Sep');
-    assert.equal(await page.locator('#phaseTable thead th').count(), 13, 'phase table should expose the full approved metric set plus Share');
+    assert.equal(await page.locator('#phaseTable thead th').count(), 14, 'phase table includes Avg daily revenue next to Revenue');
+    assert.equal(await page.locator('#phaseTable thead th').nth(3).textContent(), 'Avg daily revenue');
+    assert.equal(await page.locator('#trendMetric option[value="avg_daily_revenue"]').count(), 0);
+    await page.locator('#phaseMetric').selectOption('avg_daily_revenue');
+    const averageContract = await page.evaluate(() => {
+      const chart = Chart.getChart('phaseChart');
+      return { data: chart.data.datasets.map(d => d.data), tick: chart.options.scales.y.ticks.callback(1234), tooltip: chart.options.plugins.tooltip.callbacks.label({ dataset: { label: 'BAU' }, raw: 1234.5 }) };
+    });
+    const phaseDays = require('../public/glv/phases.js').buildPhaseDays(dashboardData.rows, dashboardData.phases, dashboardData.phase_contract.latest_date);
+    const expectedAverage = (month, phase) => {
+      const eligible = phaseDays.filter(d => d.month === month && d.phase === phase);
+      return eligible.length ? eligible.reduce((s, d) => s + d.revenue, 0) / new Set(eligible.map(d => d.date)).size : null;
+    };
+    assert.deepEqual(averageContract.data, ['BAU', 'Promo', 'Influ'].map(phase => [...new Set(phaseDays.map(d => d.month))].map(month => expectedAverage(month, phase))));
+    assert.match(averageContract.tick, /^\$/);
+    assert.equal(averageContract.tooltip, 'BAU: $1,234.50');
+    assert.match(await page.locator('#phaseChartCaption').textContent(), /Avg daily revenue/);
+    assert.match(await page.locator('#phaseChartDataBody tr').first().locator('td').nth(1).textContent(), /^\$/);
+    assert.match(await page.locator('#phaseTableBody tr').first().locator('td').nth(3).textContent(), /^\$/);
     assert.equal(await page.locator('#phaseTableBody .phase-kind-month').count(), 9, 'default hierarchy should show each YTD month');
     const firstPhaseDisclosure = page.locator('#phaseTableBody .phase-kind-phase .phase-disclosure').first();
     await firstPhaseDisclosure.click();
@@ -191,6 +209,11 @@ async function run() {
     assert.equal(await page.locator('#phaseTableBody > .phase-kind-phase').count(), 3, 'alternate hierarchy should have BAU, Promo and Influ roots');
     await page.locator('.phase-split-control').click();
     assert.equal(await page.locator('#phaseInfluSplit').isChecked(), true);
+    assert.equal(await page.locator('#phaseSplitNotice').isVisible(), false);
+    const splitAverage = await page.evaluate(() => Chart.getChart('phaseChart').data.datasets.map(d => d.data));
+    for (let i = 0; i < averageContract.data[2].length; i++) {
+      if (averageContract.data[2][i] !== null) assert.ok(Math.abs(splitAverage[2][i] + splitAverage[3][i] - averageContract.data[2][i]) < 1e-8);
+    }
     assert.deepEqual(await page.locator('#phaseTableBody .phase-kind-influ-split .phase-disclosure').allTextContents(), ['Code', 'No code']);
     assert.deepEqual(await page.evaluate(() => Chart.getChart('phaseChart').data.datasets.map(d => d.label)), ['BAU', 'Promo', 'Influ · Code', 'Influ · No code']);
     assert.match(await page.locator('#phaseChart').getAttribute('aria-label'), /Influ · Code, Influ · No code/);
@@ -228,6 +251,7 @@ async function run() {
     await page.locator('#phaseMonths').getByLabel('All', { exact: true }).check();
     await page.locator('#phaseMonths input').first().press('Escape');
     await page.locator('#phaseHierarchy').selectOption('month-phase');
+    await page.locator('#phaseMetric').selectOption('avg_daily_revenue');
     for (const width of [1440, 390, 320]) {
       await page.setViewportSize({ width, height: 1100 });
       const geometry = await page.locator('.phase-table-wrap').evaluate(w => {
@@ -238,7 +262,7 @@ async function run() {
           bottomOvershoot: box.bottom - w.closest('.phase-table-panel').getBoundingClientRect().bottom,
           headers: [...w.querySelectorAll('th')].map(n => ({ top: n.getBoundingClientRect().top - box.top, background: getComputedStyle(n).backgroundColor, position: getComputedStyle(n).position })) };
       });
-      assert.equal(geometry.overflow, false, `Phases overflow at ${width}: ${JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('#phasesView *')].filter(n => { const r = n.getBoundingClientRect(); return r.right > innerWidth && !n.closest('.table-wrap') && !n.closest('.sr-only'); }).map(n => [n.tagName, n.className, n.getBoundingClientRect().width])))}`);
+      assert.equal(geometry.overflow, false, `Phases overflow at ${width}: ${JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('#phasesView *')].filter(n => { const r = n.getBoundingClientRect(); return r.right > innerWidth && !n.closest('.table-wrap'); }).map(n => [n.tagName, n.className, n.getBoundingClientRect().width])))}`);
       assert.ok(geometry.vertical > 0 && geometry.horizontal > 0);
       assert.ok(geometry.bottomOvershoot <= 1, `Scroll area must stay inside the panel: ${JSON.stringify(geometry)}`);
       assert.ok(width > 720 ? geometry.rowHeight <= 40 : geometry.rowHeight >= 44, `Compact desktop / touch-sized mobile rows: ${JSON.stringify(geometry)}`);

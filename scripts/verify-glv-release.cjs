@@ -56,7 +56,7 @@ if (!canonicalHtml.includes('<title>GLV Executive Pulse</title>') || !canonicalH
   fail('canonical GLV no longer has the approved Executive Pulse identity');
 }
 for (const file of ['app.js', 'metrics.js', 'phases.js', 'styles.css']) {
-  if (!canonicalHtml.includes(`/glv/${file}?v=phases-refinement-20260913`)) fail(`unversioned canonical asset: ${file}`);
+  if (!canonicalHtml.includes(`/glv/${file}?v=phases-daily-revenue-20260915`)) fail(`unversioned canonical asset: ${file}`);
 }
 for (const file of ['index.html', 'app.js', 'metrics.js', 'phases.js', 'styles.css']) {
   if (fs.readFileSync(routePath('glv', file), 'utf8').includes('/glv-2/')) fail(`stale overlap URL in ${file}`);

@@ -2628,7 +2628,7 @@ body[data-dashboard-view="phases"] .command-bar {
 .phase-metric-field { margin-left: auto; min-width: 180px; }
 .phase-chart-wrap { height: 320px; margin-top: 18px; position: relative; min-width: 0; }
 .phase-chart-wrap canvas { max-width: 100%; }
-.phase-chart-panel table.sr-only { min-width: 1px; table-layout: fixed; }
+.phase-chart-panel table.sr-only { display: block; width: 1px; min-width: 1px; table-layout: fixed; }
 .phase-chart-panel table.sr-only th,
 .phase-chart-panel table.sr-only td { min-width: 0; width: auto; }
 .phase-table-panel { overflow: visible; padding-bottom: 0; min-width: 0; }

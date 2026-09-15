@@ -1,4 +1,5 @@
 const METRIC_CONFIG = {
+  avg_daily_revenue: { label: 'Avg daily revenue', type: 'money', color: 'var(--accent)', description: 'Phase revenue divided by distinct represented phase dates, including zero-revenue days.' },
   cac: { label: 'CAC', type: 'money', color: 'var(--blue)', description: 'Total recorded spend divided by total new customers after aggregation; blank when new customers are not positive or inputs are unavailable.' },
   none: { label: 'None', type: 'count', color: 'transparent', description: 'No metric selected.' },
   revenue: { label: 'Revenue', type: 'money', color: 'var(--accent)', description: 'Total recorded business revenue.' },
@@ -1023,7 +1024,7 @@ function renderPhaseChart(days) {
   const header = $('phaseChartData').querySelector('thead tr');
   clear(header);
   ['Month', ...chartData.phases].forEach(label => header.appendChild(element('th', '', label)));
-  $('phaseSplitNotice').hidden = !$('phaseInfluSplit').checked || ['none', 'revenue'].includes(metric);
+  $('phaseSplitNotice').hidden = !$('phaseInfluSplit').checked || ['none', 'revenue', 'avg_daily_revenue'].includes(metric);
   const body = $('phaseChartDataBody');
   clear(body);
   chartData.months.forEach((month, index) => {
@@ -1124,6 +1125,7 @@ function renderPhaseTable(days) {
     const values = [
       phaseMetricCell('spend', node.metrics.spend),
       phaseMetricCell('revenue', node.metrics.revenue),
+      phaseMetricCell('avg_daily_revenue', node.metrics.avg_daily_revenue),
       node.share === null || node.share === undefined ? '—' : formatMetric('new_customer_rate', node.share),
       phaseMetricCell('roas', node.metrics.roas),
       phaseMetricCell('purchases', node.metrics.purchases),
