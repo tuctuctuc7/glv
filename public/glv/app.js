@@ -62,6 +62,7 @@ function formatMetric(key, value, compact = false) {
   if (value === null || value === undefined || !Number.isFinite(Number(value))) return key === 'cac' ? '' : '—';
   const config = METRIC_CONFIG[key] || { type: 'count' };
   const number = Number(value);
+  if (key === 'avg_daily_revenue') return number.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
   if (config.type === 'money') {
     return compact
       ? `$${compactNumber(number, Math.abs(number) >= 1000 ? 1 : 0)}`
