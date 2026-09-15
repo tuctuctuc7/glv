@@ -75,6 +75,7 @@
     });
     return {
       ...totals,
+      day_count: distinctDayCount(source),
       avg_daily_revenue: ratio(totals.revenue, distinctDayCount(source)),
       roas: ratio(totals.revenue, totals.spend),
       cpa: ratio(totals.spend, totals.purchases),
@@ -146,6 +147,7 @@
   function unavailableRevenueMetrics(revenue, days) {
     const metrics = Object.fromEntries([...ABSOLUTE_METRICS, 'roas', 'cpa', 'aov', 'cvr', 'new_customer_rate', 'cac'].map((key) => [key, null]));
     metrics.revenue = revenue;
+    metrics.day_count = distinctDayCount(days);
     metrics.avg_daily_revenue = ratio(revenue, distinctDayCount(days));
     return metrics;
   }
