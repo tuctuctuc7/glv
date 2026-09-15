@@ -1129,6 +1129,7 @@ function renderPhaseTable(days) {
       phaseMetricCell('avg_daily_revenue', node.metrics.avg_daily_revenue),
       node.share === null || node.share === undefined ? '—' : formatMetric('new_customer_rate', node.share),
       phaseMetricCell('roas', node.metrics.roas),
+      phaseMetricCell('cac', node.metrics.cac),
       phaseMetricCell('purchases', node.metrics.purchases),
       phaseMetricCell('cpa', node.metrics.cpa),
       phaseMetricCell('aov', node.metrics.aov),
@@ -1136,7 +1137,7 @@ function renderPhaseTable(days) {
       phaseMetricCell('unique_visitors', node.metrics.unique_visitors),
       phaseMetricCell('new_customer_revenue', node.metrics.new_customer_revenue),
       phaseMetricCell('new_customer_rate', node.metrics.new_customer_rate),
-      phaseMetricCell('cac', node.metrics.cac),
+      phaseMetricCell('day_count', node.metrics.day_count),
     ];
     values.forEach((value) => row.appendChild(element('td', '', value)));
     body.appendChild(row);

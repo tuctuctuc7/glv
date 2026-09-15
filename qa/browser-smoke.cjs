@@ -180,7 +180,9 @@ async function run() {
       { type: 'line', label: 'Influ' },
     ]);
     assert.equal(await page.locator('#phaseChartDataBody tr').count(), 9, 'YTD chart should include Jan through Sep');
-    assert.equal(await page.locator('#phaseTable thead th').count(), 14, 'phase table includes Avg daily revenue next to Revenue');
+    assert.equal(await page.locator('#phaseTable thead th').count(), 15, 'phase table includes final day count');
+    assert.deepEqual(await page.locator('#phaseTable thead th').allTextContents(), ['Dimension', 'Spend', 'Revenue', 'Avg daily revenue', 'Share', 'ROAS', 'CAC', 'Purchases', 'Cost per purchase', 'AOV', 'CVR', 'Visitors', 'New customer revenue', 'New customer rate', 'Number of days']);
+    assert.equal(await page.locator('#phaseTableBody tr').first().locator('td').last().textContent(), '31');
     assert.equal(await page.locator('#phaseTable thead th').nth(3).textContent(), 'Avg daily revenue');
     assert.equal(await page.locator('#trendMetric option[value="avg_daily_revenue"]').count(), 0);
     await page.locator('#phaseMetric').selectOption('avg_daily_revenue');
