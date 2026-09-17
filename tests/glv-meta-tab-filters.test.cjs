@@ -35,11 +35,16 @@ test('US advertorials survive aggregate and daily normalization with canonical g
 test('CZSK exact marker classifier and US BAU fallback are independent',()=>{
   const context=runtime();
   for(const [name,segment,expected] of [
-    ['GLV_1_CZ_Promo_Test','czsk','promo'],['GLV_2_CZ_Kristyna_Test','czsk','wl'],
+    ['GLV_1_CZ_Promo_Test','czsk','promo'],['GLV_2_CZ_Kristyna_Test','czsk','bau'],
+    ['GLV_7_CZ_WL_Kristyna','czsk','wl'],['GLV_8_CZ_WL_ActionKate','czsk','wl'],
+    ['GLV_9_CZ_Sales','czsk','bau'],['GLV_10_CZ_WL_Unknown','czsk','wl'],
+    ['GLV_11_CZ_WL_Kristyna_Promo','czsk','promo'],
     ['GLV_3_CZ_Lead_Test','czsk','bau'],['GLV_4_CZ_promo_Test','czsk','bau'],
     ['GLV_5_US_Promo_Test','us','bau'],['GLV_6_US_advertorial_Test','us','advertorial'],
   ]) {
     context.name=name;context.segment=segment;
     assert.equal(vm.runInContext('campaignGroupKey(name,segment)',context),expected);
+    context.fixture={id:'fixture',name,amount_spent:'10',date_start:'2026-08-10'};
+    for(const fn of ['processAggregateRows','processDaily'])assert.equal(vm.runInContext(`${fn}([fixture])[0].group`,context),expected,`${fn}: ${name}`);
   }
 });

@@ -23,7 +23,7 @@ const campaign = (id, name, spend, revenue, purchases, checkouts, clicks, impres
 const hostileCampaignName = 'GLV_101_CZ_Promo_August_"><svg onload=window.__promoXss=1></svg>';
 const aggregate = [
   campaign('c1', hostileCampaignName, 42000, 91000, 121, 238, 1280, 92000),
-  campaign('c2', 'GLV_102_CZ_Kristyna_Core', 26000, 51000, 69, 141, 840, 61000),
+  campaign('c2', 'GLV_102_CZ_WL_Kristyna_Core', 26000, 51000, 69, 141, 840, 61000),
   campaign('c3', 'GLV_103_CZ_BAU_Core', 31000, 58000, 72, 156, 950, 73000),
   campaign('c4', 'GLV_104_CZ_Leads_August', 12000, 0, 0, 0, 360, 28000, undefined, 48, 240),
   campaign('u1', 'GLV_201_US_Core', 55000, 47000, 38, 106, 1210, 132000),
@@ -96,6 +96,9 @@ async function run() {
         if (response.status() >= 400) errors.push(`${viewport.name}: HTTP ${response.status()} ${response.url()}`);
       });
       await page.route('https://api.frankfurter.dev/**', route => route.fulfill({ json: { rates: { USD: 0.044 } } }));
+      await page.goto(base, { waitUntil: 'networkidle' });
+      await page.waitForFunction(() => document.getElementById('loading').style.display === 'none');
+      await require('./meta-wl-influencers.cjs')(page, viewport, evidenceDir);
       await page.goto(base, { waitUntil: 'networkidle' });
       await page.waitForFunction(() => document.getElementById('loading').style.display === 'none');
       await require('./meta-tab-filters.cjs')(page, viewport, evidenceDir, { aggregate, daily, ads });
@@ -649,7 +652,8 @@ async function run() {
       await page.getByRole('button', { name: 'Collapse Promo days' }).click();
       assert.equal(await page.locator('#promo-table .child-row').count(), 0);
       await page.locator('#promo-mode-days').click();
-      assert.equal(await page.locator('#promo-table .promo-group-toggle').count(), 0);
+      assert.equal(await page.locator('#promo-table .promo-period-toggle').count(), 3);
+      assert.ok(await page.locator('#promo-table .promo-period-toggle').evaluateAll(buttons => buttons.every(button => button.getAttribute('aria-expanded') === 'true')));
       assert.ok(await page.locator('#promo-table .child-row').count() > 0);
       await page.locator('#promo-mode-groups').click();
       assert.equal(await page.locator('#promo-table .child-row').count(), 0);

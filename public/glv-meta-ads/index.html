@@ -124,6 +124,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .triage-field .triage-metric-select{border-left:4px solid var(--metric-color,var(--line));}
 .group-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;}
 .group-promo{background:#eff6ff;color:#2563eb;}.group-wl{background:#f5f3ff;color:#7c3aed;}.group-bau{background:#f0fdf4;color:#15803d;}.group-leadgen{background:#fff7ed;color:#c2410c;}.group-sales{background:#f0fdf4;color:#15803d;}
+.group-wl-actionkate{background:#fdf2f8;color:#be185d;}.group-wl-other{background:#fffbeb;color:#b45309;}
+.promo-period-toggle .promo-group-chevron::before{content:attr(data-chevron);}
+#promo-table .promo-group-toggle{max-width:100%;}
+#promo-table .promo-group-chevron{flex-shrink:0;}
+#promo-table .group-badge{min-width:0;max-width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:anywhere;}
+.wl-breakdown-filter{min-height:44px;box-sizing:border-box;align-self:end;max-width:100%;}
 .toggle-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .tick-filter{display:flex;align-items:center;gap:8px;background:var(--gray50);border:1px solid var(--gray200);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--gray800);cursor:pointer;user-select:none;}
 .tick-filter.hidden{display:none;}
@@ -492,7 +498,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 <div class="panel" id="panel-czsk-promo" role="tabpanel" aria-labelledby="tab-czsk-promo">
   <div class="section">
     <div class="section-title">Promo Period Split</div>
-    <div class="promo-note">CZSK campaign grouping uses campaign names: <strong>_Promo</strong> = Promo, <strong>_Kristyna</strong> = WL, everything else = BAU.</div>
+    <div class="promo-note">CZSK campaign grouping uses campaign names: <strong>_Promo</strong> = Promo, <strong>_WL</strong> = WL, everything else = BAU.</div>
     <div class="kpi-grid" id="kpi-czsk-promo"></div>
   </div>
   <div class="section">
@@ -745,8 +751,11 @@ let creativeTypeFilter = { czsk: 'all', us: 'all' };
 let chartGranularity   = { czsk: 'day', us: 'day' };
 let triageState        = Object.fromEntries(TRIAGE_PRESETS.map(preset=>[preset.id,{grain:'day',primary:preset.primary,secondary:preset.secondary}]));
 let triageMarket       = 'czsk';
+let wlInfluencerBreakdown = false;
 let promoTableMode     = 'groups';
 let promoExpandedGroups = new Set();
+// Period rows default expanded, preserving the legacy days-first layout.
+let promoCollapsedPeriods = new Set();
 let leadgenTableMode   = 'groups';
 let promoActiveDaysOnly = false;
 let includeLeadGen = false;
@@ -764,6 +773,12 @@ const PROMO_GROUPS = [
   {key:'wl',label:'WL',color:'#8b5cf6',className:'group-wl'},
   {key:'bau',label:'BAU',color:'#10b981',className:'group-bau'},
 ];
+const WL_INFLUENCER_GROUPS = [
+  {key:'wl-kristyna',label:'WL · Kristyna',color:'#8b5cf6',className:'group-wl'},
+  {key:'wl-actionkate',label:'WL · ActionKate',color:'#db2777',className:'group-wl-actionkate'},
+  {key:'wl-other',label:'WL · Other',color:'#d97706',className:'group-wl-other'},
+];
+const activePromoGroups = () => wlInfluencerBreakdown ? [PROMO_GROUPS[0],...WL_INFLUENCER_GROUPS,PROMO_GROUPS[2]] : PROMO_GROUPS;
 const LEADGEN_GROUPS = [
   {key:'leadgen',label:'Lead-gen',color:'#f97316',className:'group-leadgen'},
   {key:'sales',label:'Sales',color:'#10b981',className:'group-sales'},
@@ -775,8 +790,20 @@ const isValid  = n => /^(TUC|GLV)_\d+_/.test(n);
 const isUS     = n => n.includes('_US_');
 const isAdvert = n => n.toLowerCase().includes('advertorial');
 const isLeadGen = n => String(n||'').includes('_Lead');
-const promoGroupKey = name => String(name||'').includes('_Promo') ? 'promo' : String(name||'').includes('_Kristyna') ? 'wl' : 'bau';
-const promoGroup = key => PROMO_GROUPS.find(g=>g.key===key)||PROMO_GROUPS[2];
+const promoGroupKey = name => String(name||'').includes('_Promo') ? 'promo' : String(name||'').includes('_WL') ? 'wl' : 'bau';
+// Raw campaign phases remain canonical; presentation is applied only after filtering.
+function promoPresentationKey(row){
+  const phase=row.group||promoGroupKey(row.name);
+  if(!wlInfluencerBreakdown||phase!=='wl')return phase;
+  const name=String(row.name||'').toLowerCase();
+  const kristyna=name.includes('kristyna'),actionKate=name.includes('actionkate');
+  return kristyna===actionKate?'wl-other':kristyna?'wl-kristyna':'wl-actionkate';
+}
+const promoGroup = key => [...PROMO_GROUPS,...WL_INFLUENCER_GROUPS].find(g=>g.key===key)||PROMO_GROUPS[2];
+function setWlInfluencerBreakdown(enabled){
+  wlInfluencerBreakdown=Boolean(enabled);
+  renderTab('czsk-promo');
+}
 const leadgenGroupKey = name => isLeadGen(name) ? 'leadgen' : 'sales';
 const leadgenGroup = key => LEADGEN_GROUPS.find(g=>g.key===key)||LEADGEN_GROUPS[1];
 const activeLeadgenGroups = () => leadgenOnly ? LEADGEN_GROUPS.filter(g=>g.key==='leadgen') : LEADGEN_GROUPS;
@@ -1097,6 +1124,7 @@ function initTabFilters(){
     }
     const section=document.createElement('section');section.className='section tab-filter-section';section.id=`tab-filters-${tab}`;
     section.innerHTML=`<div class="section-title">Filters</div><div class="tab-filter-controls">${tabFilterMarkup(tabFilterKey(tab,'group'),'Campaign group')}${tabFilterMarkup(tabFilterKey(tab,'campaign'),'Campaign name')}<label class="filter-wrap"><span class="triage-filter-label">Grain</span><select class="metric-select" id="tab-grain-${tab}" onchange="setTabGrain('${tab}',this.value)"><option value="day">Day</option><option value="week">Week</option><option value="month">Month</option><option value="mixed" disabled>Mixed</option></select></label></div>`;
+    if(tab==='czsk-promo')section.querySelector('.tab-filter-controls').insertAdjacentHTML('beforeend','<label class="tick-filter wl-breakdown-filter"><input type="checkbox" id="wl-influencer-breakdown" onchange="setWlInfluencerBreakdown(this.checked)"> Break down WL influencers</label>');
     document.getElementById('panel-'+tab).prepend(section);
   });
   document.querySelectorAll('.panel .filter-wrap[data-mobile-label="Campaign"]').forEach(wrap=>{
@@ -1120,14 +1148,14 @@ function getPromoKpiRows(){
 }
 function byPromoGroup(rows){
   const map={};
-  PROMO_GROUPS.forEach(g=>{map[g.key]=emptyAgg(null,g.key);});
+  activePromoGroups().forEach(g=>{map[g.key]=emptyAgg(null,g.key);});
   for(const r of rows.filter(r=>r.segment==='czsk')){
-    const key=r.group||promoGroupKey(r.name);
+    const key=promoPresentationKey(r);
     const d=map[key]||(map[key]=emptyAgg(null,key));
     d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
     d.linkClicks+=r.linkClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
   }
-  return PROMO_GROUPS.map(g=>map[g.key]);
+  return activePromoGroups().map(g=>map[g.key]);
 }
 function byDateGroup(rows){
   return byDateGroupFiltered(rows,null);
@@ -1137,14 +1165,14 @@ function byDateGroupFiltered(rows,selectedIds){
   const filtered=selectedIds?rows.filter(r=>selectedIds.has(r.id)):rows;
   for(const r of filtered.filter(r=>r.segment==='czsk')){
     if(!r.date)continue;
-    const key=r.group||promoGroupKey(r.name);
+    const key=promoPresentationKey(r);
     const mapKey=`${r.date}|${key}`;
     if(!map[mapKey])map[mapKey]=emptyAgg(r.date,key);
     const d=map[mapKey];
     d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
     d.linkClicks+=r.linkClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
   }
-  return Object.values(map).sort((a,b)=>a.date===b.date?PROMO_GROUPS.findIndex(g=>g.key===a.group)-PROMO_GROUPS.findIndex(g=>g.key===b.group):a.date<b.date?-1:1);
+  return Object.values(map).sort((a,b)=>a.date===b.date?activePromoGroups().findIndex(g=>g.key===a.group)-activePromoGroups().findIndex(g=>g.key===b.group):a.date<b.date?-1:1);
 }
 function byDate(rows,selectedIds){
   const filtered=selectedIds?rows.filter(r=>selectedIds.has(r.id)):rows;
@@ -1397,7 +1425,7 @@ function refreshPromoCharts(){
     if(charts[chartKey]){charts[chartKey].destroy();delete charts[chartKey];}
     const canvas=document.getElementById(canvasId);canvas?.setAttribute('aria-label',`${metric.label} by Promo campaign group`);
     const ctx=canvas?.getContext('2d');if(!ctx)return;
-    const datasets=PROMO_GROUPS.map(g=>({
+    const datasets=activePromoGroups().map(g=>({
       label:g.label,metricKey,
       data:dates.map(date=>{const r=byKey[`${date}|${g.key}`]||emptyAgg(date,g.key);return computeChartMetric(metricKey,r,calcMetrics(r));}),
       borderColor:g.color,backgroundColor:g.color+'22',borderWidth:2,tension:.3,pointRadius:3,fill:false,
@@ -1405,6 +1433,7 @@ function refreshPromoCharts(){
     const table=document.getElementById(`promo-chart-table-${chartKey.replace('promo-','')}`);
     if(table){
       table.querySelector('caption').textContent=`${metric.label} by Promo campaign group and ${grain}`;
+      table.querySelector('thead').innerHTML=`<tr><th scope="col">${grain==='day'?'Date':'Period'}</th>${activePromoGroups().map(group=>`<th scope="col">${escapeHtml(group.label)}</th>`).join('')}</tr>`;
       table.querySelector('tbody').innerHTML=dates.map((date,index)=>`<tr><th scope="row">${escapeHtml(fmtChartDate(date,grain))}</th>${datasets.map(dataset=>`<td>${escapeHtml(formatChartVal(metricKey,dataset.data[index]))}</td>`).join('')}</tr>`).join('');
     }
     charts[chartKey]=new Chart(ctx,{
@@ -1420,7 +1449,7 @@ function refreshPromoCharts(){
   lineConfigs.forEach(makeLine);
   const totals=byPromoGroup(getPromoKpiRows());
   const pieMetricKey=document.getElementById('chart-metric-promo-pie')?.value||'spend';const pieMetric=metricDefinition(pieMetricKey);
-  const pieValues=PROMO_GROUPS.map(group=>{const row=totals.find(item=>item.group===group.key)||emptyAgg(null,group.key);return computeChartMetric(pieMetricKey,row,calcMetrics(row));});
+  const pieValues=activePromoGroups().map(group=>{const row=totals.find(item=>item.group===group.key)||emptyAgg(null,group.key);return computeChartMetric(pieMetricKey,row,calcMetrics(row));});
   const pieTotal=pieValues.reduce((sum,value)=>sum+value,0);
   const pieTitle=document.getElementById('promo-chart-title-pie');if(pieTitle)pieTitle.textContent=`${pieMetric.label} Mix`;
   if(charts['promo-pie']){charts['promo-pie'].destroy();delete charts['promo-pie'];}
@@ -1429,7 +1458,7 @@ function refreshPromoCharts(){
   if(pieTable){
     pieTable.querySelector('caption').textContent=`${pieMetric.label} mix by Promo campaign group`;
     pieTable.querySelector('thead th:nth-child(2)').textContent=pieMetric.label;
-    pieTable.querySelector('tbody').innerHTML=PROMO_GROUPS.map((group,index)=>`<tr><th scope="row">${escapeHtml(group.label)}</th><td>${escapeHtml(formatChartVal(pieMetricKey,pieValues[index]))}</td><td>${escapeHtml((pieTotal?pieValues[index]/pieTotal*100:0).toFixed(1)+'%')}</td></tr>`).join('');
+    pieTable.querySelector('tbody').innerHTML=activePromoGroups().map((group,index)=>`<tr><th scope="row">${escapeHtml(group.label)}</th><td>${escapeHtml(formatChartVal(pieMetricKey,pieValues[index]))}</td><td>${escapeHtml((pieTotal?pieValues[index]/pieTotal*100:0).toFixed(1)+'%')}</td></tr>`).join('');
   }
   const pieCtx=pieCanvas?.getContext('2d');
   if(pieCtx){
@@ -1458,7 +1487,7 @@ function refreshPromoCharts(){
     };
     charts['promo-pie']=new Chart(pieCtx,{
       type:'doughnut',
-      data:{labels:PROMO_GROUPS.map(g=>g.label),datasets:[{metricKey:pieMetricKey,label:pieMetric.label,data:pieValues,backgroundColor:PROMO_GROUPS.map(g=>g.color),borderWidth:0}]},
+      data:{labels:activePromoGroups().map(g=>g.label),datasets:[{metricKey:pieMetricKey,label:pieMetric.label,data:pieValues,backgroundColor:activePromoGroups().map(g=>g.color),borderWidth:0}]},
       plugins:[percentLabelPlugin],
       options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:ctx=>{
         const pct=pieTotal?ctx.raw/pieTotal*100:0;
@@ -1750,6 +1779,16 @@ function promoGroupToggleHtml(key){
   const periods={day:'days',week:'weeks',month:'months'}[tabGrain['czsk-promo']];
   return`<button type="button" class="promo-group-toggle" id="promo-group-toggle-${escapeHtml(key)}" aria-expanded="${expanded}" aria-label="${action} ${escapeHtml(group.label)} ${periods}" onclick="togglePromoGroup('${key}')"><span class="promo-group-chevron" aria-hidden="true">${expanded?'▾':'▸'}</span>${promoGroupHtml(key)}</button>`;
 }
+function togglePromoPeriod(key){
+  if(promoCollapsedPeriods.has(key))promoCollapsedPeriods.delete(key);else promoCollapsedPeriods.add(key);
+  renderPromoTable();
+  requestAnimationFrame(()=>document.getElementById(`promo-period-toggle-${key}`)?.focus());
+}
+function promoPeriodToggleHtml(date){
+  const grain=tabGrain['czsk-promo'],key=`${grain}:${date}`,expanded=!promoCollapsedPeriods.has(key);
+  const label=grain==='day'?date:fmtChartDate(date,grain);
+  return `<button type="button" class="promo-group-toggle promo-period-toggle" id="promo-period-toggle-${escapeHtml(key)}" aria-expanded="${expanded}" aria-label="${expanded?'Collapse':'Expand'} ${escapeHtml(label)} groups" onclick="togglePromoPeriod('${key}')"><span class="promo-group-chevron" aria-hidden="true" data-chevron="${expanded?'▾':'▸'}"></span>${escapeHtml(label)}</button>`;
+}
 function promoSortComparator(a,b){
   const state=sortState.promo.czsk;
   const av=metricForSort(a,state.key),bv=metricForSort(b,state.key);
@@ -1758,7 +1797,7 @@ function promoSortComparator(a,b){
     : av-bv;
   return state.dir==='asc'?cmp:-cmp;
 }
-function promoGroupRank(key){return PROMO_GROUPS.findIndex(g=>g.key===key);}
+function promoGroupRank(key){return activePromoGroups().findIndex(g=>g.key===key);}
 function sortPromoParents(rows){
   const state=sortState.promo.czsk;
   if(state.key==='date')return [...rows].sort((a,b)=>promoGroupRank(a.group)-promoGroupRank(b.group));
@@ -1780,7 +1819,7 @@ function renderPromoTable(){
     : [grain==='day'?'Date':'Period','Group','Spend','Revenue','ROAS','Purchases','CPA','AOV','LP→Checkout','Checkout→Purchase','Checkouts','Cost/Checkout','LP Views','Cost/LP','CTR','LP→Purchase','CPM'];
   let body='';
   if(promoTableMode==='groups'){
-    const groups=sortPromoParents(PROMO_GROUPS.map(g=>sumPromoRows(rows.filter(r=>r.group===g.key),null,g.key)).filter(g=>g.spend>0||g.revenue>0||g.purchases>0||g.checkouts>0||g.lp>0));
+    const groups=sortPromoParents(activePromoGroups().map(g=>sumPromoRows(rows.filter(r=>r.group===g.key),null,g.key)).filter(g=>g.spend>0||g.revenue>0||g.purchases>0||g.checkouts>0||g.lp>0));
     for(const groupTotal of groups){
       const groupRows=sortPromoChildren(rows.filter(r=>r.group===groupTotal.group));
       if(!groupRows.length)continue;
@@ -1796,8 +1835,8 @@ function renderPromoTable(){
           ? promoGroupRank(a.group)-promoGroupRank(b.group)
           : promoSortComparator(a,b);
       });
-      body+=promoNestedRow('subtotal-row',escapeHtml(grain==='day'?dateTotal.date:fmtChartDate(dateTotal.date,grain)),'Subtotal',dateTotal);
-      body+=dateRows.map(r=>promoNestedRow('child-row','',`<span class="nested-child">${promoGroupHtml(r.group)}</span>`,r)).join('');
+      body+=promoNestedRow('subtotal-row',promoPeriodToggleHtml(dateTotal.date),'Subtotal',dateTotal);
+      if(!promoCollapsedPeriods.has(`${grain}:${dateTotal.date}`))body+=dateRows.map(r=>promoNestedRow('child-row','',`<span class="nested-child">${promoGroupHtml(r.group)}</span>`,r)).join('');
     }
   }
   container.innerHTML=`<div class="data-table-wrap"><table class="data-table daily-data-table"><thead><tr>${columns.map(label=>`<th title="${escapeHtml(label)}">${escapeHtml(label)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
