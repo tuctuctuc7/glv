@@ -379,12 +379,12 @@ async function run() {
     const january2025 = page.locator('#metricsTableBody tr').filter({ has: page.locator('td:first-child', { hasText: '2025-01' }) });
     assert.equal(await january2025.count(), 1, 'January 2025 audit row must be present once');
     const januaryCells = await january2025.locator('td').allTextContents();
-    assert.equal(januaryCells[7], '—', '2025 CVR must remain unavailable');
-    assert.equal(januaryCells[8], '—', '2025 Visitors must remain unavailable');
-    assert.equal(januaryCells[9], '—', '2025 New customer revenue must remain unavailable');
+    assert.equal(januaryCells[9], '—', '2025 CVR must remain unavailable');
+    assert.equal(januaryCells[10], '—', '2025 Visitors must remain unavailable');
+    assert.equal(januaryCells[11], '—', '2025 New customer revenue must remain unavailable');
     const workingSummary = dashboardMetrics.aggregateRows(dashboardData.rows);
     const expectedWorkingCvr = `${(workingSummary.cvr * 100).toFixed(2)}%`;
-    assert.equal((await page.locator('#metricsTableBody .summary-row td').nth(7).textContent()).trim(), expectedWorkingCvr, 'mixed-period CVR must use only rows with visitor data');
+    assert.equal((await page.locator('#metricsTableBody .summary-row td').nth(9).textContent()).trim(), expectedWorkingCvr, 'mixed-period CVR must use only rows with visitor data');
 
     await page.locator('#grain').selectOption('year');
     assert.deepEqual(await page.evaluate(() => window.Chart.getChart('trendChart').data.labels), ['2025', '2026'], 'Year chart must expose 2025 and the working-source year');
