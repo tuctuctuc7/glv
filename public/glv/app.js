@@ -933,14 +933,14 @@ function renderTable(view) {
     formatAuditMetric('spend', summary.spend),
     formatAuditMetric('revenue', summary.revenue),
     formatAuditMetric('roas', summary.roas),
+    formatMetric('cac', summary.cac),
     formatMetric('purchases', summary.purchases),
     formatMetric('cpa', summary.cpa),
     formatMetric('aov', summary.aov),
+    formatMetric('new_customer_rate', summary.new_customer_rate),
     formatMetric('cvr', summary.cvr),
     formatMetric('unique_visitors', summary.unique_visitors),
     formatAuditMetric('new_customer_revenue', summary.new_customer_revenue),
-    formatMetric('new_customer_rate', summary.new_customer_rate),
-    formatMetric('cac', summary.cac),
   ].forEach((value) => summaryRow.appendChild(element('td', '', value)));
   body.appendChild(summaryRow);
   rows.forEach((row) => {
@@ -950,14 +950,14 @@ function renderTable(view) {
       formatAuditMetric('spend', row.spend),
       formatAuditMetric('revenue', row.revenue),
       formatAuditMetric('roas', row.roas),
+      formatMetric('cac', row.cac),
       formatMetric('purchases', row.purchases),
       formatMetric('cpa', row.cpa),
       formatMetric('aov', row.aov),
+      formatMetric('new_customer_rate', row.new_customer_rate),
       formatMetric('cvr', row.cvr),
       formatMetric('unique_visitors', row.unique_visitors),
       formatAuditMetric('new_customer_revenue', row.new_customer_revenue),
-      formatMetric('new_customer_rate', row.new_customer_rate),
-      formatMetric('cac', row.cac),
     ];
     values.forEach((value) => tr.appendChild(element('td', '', value)));
     body.appendChild(tr);
