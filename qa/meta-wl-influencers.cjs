@@ -5,6 +5,11 @@ module.exports=async function(page,viewport,evidenceDir){
  const toggle=page.getByRole('checkbox',{name:'Break down WL influencers',exact:true});
  assert.equal(await toggle.isChecked(),false);
  assert.equal(await page.locator('#tab-filters-czsk-promo #wl-influencer-breakdown').count(),1);
+ if(viewport.width>720){
+  const boxes=await page.locator('#tab-filters-czsk-promo').evaluate(section=>[...section.querySelectorAll('.filter-toggle,.metric-select,.wl-breakdown-filter')].map(el=>{const r=el.getBoundingClientRect();return{top:r.top,bottom:r.bottom};}));
+  assert.equal(boxes.length,4);
+  assert.ok(Math.max(...boxes.map(b=>b.bottom))-Math.min(...boxes.map(b=>b.bottom))<=1,`all four Promo filters share one desktop row: ${JSON.stringify({viewport,boxes})}`);
+ }
  await page.evaluate(()=>{
   const source=aggregateCampaigns.find(r=>r.id==='c2');
   const extras=[['kate','GLV_301_CZ_WL_ACTIONKATE',300,1500,3,15],['other','GLV_302_CZ_WL_New',100,700,7,30],['ambiguous','GLV_303_CZ_WL_Kristyna_ActionKate',200,100,1,5],['old','GLV_304_CZ_Kristyna',400,500,5,50],['sales','GLV_305_CZ_Sales',500,500,5,50],['precedence','GLV_306_CZ_WL_ActionKate_Promo',600,500,5,50]];
