@@ -102,11 +102,42 @@ class ManualCalendarParserTest(unittest.TestCase):
         self.assertNotIn("full price", [entry["label"] for entry in schedule])
         self.assertNotIn("//total promo", [entry["label"] for entry in schedule])
 
+    def test_calendar_parser_accepts_cross_month_dotted_intervals(self):
+        rows = [["", "october"], ["", "promo (28.10. - 4.11.)"]]
+        schedule = EXPORTER.parse_manual_phase_calendar(rows, 2026)
+        self.assertEqual(schedule, [{
+            "start_date": "2026-10-28",
+            "end_date": "2026-11-04",
+            "phase": "Promo",
+            "label": "promo",
+            "source_row": 2,
+        }])
+
     def test_calendar_parser_rejects_malformed_or_impossible_intervals(self):
         with self.assertRaisesRegex(ValueError, "PHASE_DATE_INVALID"):
             EXPORTER.parse_manual_phase_calendar([["", "feb"], ["", "promo (31-32)"]], 2026)
         with self.assertRaisesRegex(ValueError, "PHASE_RANGE_INVALID"):
             EXPORTER.parse_manual_phase_calendar([["", "feb"], ["", "promo (14-06)"]], 2026)
+
+    def test_future_malformed_phase_interval_warns_without_blocking_current_data(self):
+        rows = calendar_rows() + [["", "october"], ["", "promo (banana)"]]
+        payload = EXPORTER.build_payload(
+            [daily("2026-09-17")],
+            rows,
+            now=dt.datetime(2026, 9, 18, tzinfo=dt.UTC),
+        )
+        self.assertEqual(payload["date_range"]["end"], "2026-09-17")
+        self.assertEqual(len(payload["phase_contract"]["warnings"]), 1)
+        self.assertIn("PHASE_FUTURE_INTERVAL_SKIPPED", payload["phase_contract"]["warnings"][0])
+
+    def test_current_malformed_phase_interval_still_fails_closed(self):
+        rows = calendar_rows() + [["", "september"], ["", "promo (banana)"]]
+        with self.assertRaisesRegex(ValueError, "PHASE_DATE_INVALID"):
+            EXPORTER.build_payload(
+                [daily("2026-09-17")],
+                rows,
+                now=dt.datetime(2026, 9, 18, tzinfo=dt.UTC),
+            )
 
     def test_cross_phase_overlap_is_rejected(self):
         rows = [["", "feb"], ["", "promo (06-14)"], ["", "influ (14-16)"]]

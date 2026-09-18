@@ -140,7 +140,78 @@ def validate_phase_schedule(schedule):
             raise ValueError(f"PHASE_OVERLAP_PROMO_INFLU: rows {rows} overlap {day}")
 
 
-def parse_manual_phase_calendar(rows, reporting_year):
+def parse_segment_dates(segment, current_month, reporting_year, source_row):
+    day_range = re.fullmatch(r"(\d{1,2})(?:\s*-\s*(\d{1,2}))?", segment)
+    if day_range:
+        start_day = int(day_range.group(1))
+        end_day = int(day_range.group(2) or start_day)
+        if end_day < start_day:
+            raise ValueError(f"PHASE_RANGE_INVALID: calendar row {source_row} {segment}")
+        try:
+            return (
+                dt.date(reporting_year, current_month, start_day),
+                dt.date(reporting_year, current_month, end_day),
+            )
+        except ValueError as error:
+            raise ValueError(f"PHASE_DATE_INVALID: calendar row {source_row} {segment}") from error
+
+    dotted_range = re.fullmatch(
+        r"(\d{1,2})\.(\d{1,2})\.?\s*(?:-\s*(\d{1,2})\.(\d{1,2})\.?)?",
+        segment,
+    )
+    if dotted_range:
+        start_day = int(dotted_range.group(1))
+        start_month = int(dotted_range.group(2))
+        end_day = int(dotted_range.group(3) or start_day)
+        end_month = int(dotted_range.group(4) or start_month)
+        try:
+            start = dt.date(reporting_year, start_month, start_day)
+            end_year = reporting_year + 1 if end_month < start_month else reporting_year
+            end = dt.date(end_year, end_month, end_day)
+        except ValueError as error:
+            raise ValueError(f"PHASE_DATE_INVALID: calendar row {source_row} {segment}") from error
+        if end < start:
+            raise ValueError(f"PHASE_RANGE_INVALID: calendar row {source_row} {segment}")
+        return start, end
+
+    raise ValueError(f"PHASE_DATE_INVALID: calendar row {source_row} malformed interval {segment}")
+
+
+def infer_segment_start(segment, current_month, reporting_year):
+    day_match = re.match(r"\s*(\d{1,2})(?!\s*\.)", segment)
+    if day_match and current_month is not None:
+        try:
+            return dt.date(reporting_year, current_month, int(day_match.group(1)))
+        except ValueError:
+            return None
+    dotted_match = re.match(r"\s*(\d{1,2})\.(\d{1,2})\.?", segment)
+    if dotted_match:
+        try:
+            return dt.date(reporting_year, int(dotted_match.group(2)), int(dotted_match.group(1)))
+        except ValueError:
+            return None
+    return None
+
+
+def future_phase_warning(error, source_row, segment, current_month, reporting_year, latest_czsk):
+    if latest_czsk is None:
+        return None
+    start = infer_segment_start(segment, current_month, reporting_year)
+    if start is None and current_month is not None:
+        try:
+            start = dt.date(reporting_year, current_month, 1)
+        except ValueError:
+            start = None
+    if start and start > latest_czsk:
+        return (
+            f"PHASE_FUTURE_INTERVAL_SKIPPED: calendar row {source_row} "
+            f"after current data coverage {latest_czsk.isoformat()}: {segment} ({error})"
+        )
+    return None
+
+
+def parse_manual_phase_calendar(rows, reporting_year, latest_czsk=None, warnings=None):
+    warnings = warnings if warnings is not None else []
     schedule = []
     current_month = None
     for source_row, row in enumerate(rows, start=1):
@@ -163,18 +234,16 @@ def parse_manual_phase_calendar(rows, reporting_year):
         source_label = re.sub(r"\s+", " ", match.group(1)).strip()
         phase = "Promo" if source_label.startswith("promo") else "Influ"
         for segment in (part.strip() for part in match.group(2).split(",")):
-            range_match = re.fullmatch(r"(\d{1,2})(?:\s*-\s*(\d{1,2}))?", segment)
-            if not range_match:
-                raise ValueError(f"PHASE_DATE_INVALID: calendar row {source_row} malformed interval {segment}")
-            start_day = int(range_match.group(1))
-            end_day = int(range_match.group(2) or start_day)
-            if end_day < start_day:
-                raise ValueError(f"PHASE_RANGE_INVALID: calendar row {source_row} {segment}")
             try:
-                start = dt.date(reporting_year, current_month, start_day)
-                end = dt.date(reporting_year, current_month, end_day)
+                start, end = parse_segment_dates(segment, current_month, reporting_year, source_row)
             except ValueError as error:
-                raise ValueError(f"PHASE_DATE_INVALID: calendar row {source_row} {segment}") from error
+                warning = future_phase_warning(
+                    error, source_row, segment, current_month, reporting_year, latest_czsk
+                )
+                if warning:
+                    warnings.append(warning)
+                    continue
+                raise
             schedule.append({
                 "start_date": start.isoformat(),
                 "end_date": end.isoformat(),
@@ -229,10 +298,29 @@ def phase_metric(value, day, region):
     return round(parsed, 2)
 
 
+def latest_czsk_daily_date(records):
+    dates = []
+    for record in records:
+        if region_key(record.get("Region")) != "czsk":
+            continue
+        day = date_iso(record.get("Date"))
+        try:
+            dates.append(strict_date(day, "DAILY_DATE_INVALID", "Daily czsk"))
+        except ValueError:
+            continue
+    if not dates:
+        raise ValueError("DAILY_SCOPE_EMPTY: no valid CZSK Daily rows")
+    return max(dates)
+
+
 def build_payload(records, calendar_rows, now=None):
     reporting_year = infer_reporting_year(records)
+    latest_czsk_date = latest_czsk_daily_date(records)
+    phase_warnings = []
     schedule = supplement_phase_calendar(
-        parse_manual_phase_calendar(calendar_rows, reporting_year), reporting_year,
+        parse_manual_phase_calendar(
+            calendar_rows, reporting_year, latest_czsk=latest_czsk_date, warnings=phase_warnings
+        ), reporting_year,
         january_present=any(month_from_label(str(row[1])) == 1 for row in calendar_rows if len(row) > 1),
     )
     rows = []
@@ -262,7 +350,7 @@ def build_payload(records, calendar_rows, now=None):
     dates = sorted({row["date"] for row in rows})
     if not dates:
         raise ValueError("DAILY_SCOPE_EMPTY: no dashboard rows")
-    latest_czsk = max(row["date"] for row in rows if row["region"] == "czsk")
+    latest_czsk = latest_czsk_date.isoformat()
     if max(entry["end_date"] for entry in schedule) < latest_czsk:
         raise ValueError(
             f"PHASE_CALENDAR_STALE: latest interval ends before CZSK Daily coverage {latest_czsk}"
@@ -295,6 +383,7 @@ def build_payload(records, calendar_rows, now=None):
             "calendar_authority": "Marketing Ops | Gelavis, Sheet1",
             "bau": "Every CZSK date in the reporting year not covered by Promo or Influ.",
             "overlap_rule": "Promo and Influ must not overlap.",
+            "warnings": phase_warnings,
         },
         "phases": schedule,
         "rows": rows,
@@ -343,6 +432,8 @@ def main():
     records = client.open_by_key(SOURCE_SHEET_ID).worksheet(SOURCE_TAB).get_all_records()
     calendar_rows = fetch_calendar_rows()
     payload = export_snapshot(lambda: build_payload(records, calendar_rows))
+    for warning in payload["phase_contract"].get("warnings", []):
+        print(f"WARNING: {warning}")
     print(f"Wrote {OUT_PATHS[0]} with {len(payload['rows']):,} rows and {len(payload['phases'])} phase intervals")
 
 
