@@ -1,0 +1,17 @@
+.section-info-title { display: inline-flex; align-items: center; gap: 3px; max-width: 100%; vertical-align: middle; }
+.section-info-title + .panel-subtitle { display: block; }
+.section-info-title > .section-title { display: inline; min-width: 0; }
+.section-info-button { flex: 0 0 32px; width: 32px; height: 32px; display: inline-grid; place-items: center; padding: 0; border: 0; background: transparent; color: var(--text-secondary); cursor: pointer; border-radius: 50%; }
+.section-info-button > span { display: grid; place-items: center; border: 1px solid currentColor; width: 16px; height: 16px; border-radius: 50%; font: 600 11px/1 var(--font-sans); }
+.section-info-button:hover, .section-info-button[aria-expanded="true"] { color: var(--accent); background: var(--accent-soft); }
+.section-info-button:focus-visible, .section-info-panel:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.section-info-title .section-info-disclosure { width: auto; min-width: 0; flex: initial; display: inline-flex; gap: 12px; align-items: center; padding: 0; }
+.section-info-panel { position: fixed; z-index: 1000; box-sizing: border-box; width: min(440px, calc(100vw - 16px)); max-height: min(520px, calc(100dvh - 16px)); overflow: auto; overscroll-behavior: contain; padding: 18px; border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface); color: var(--text-secondary); box-shadow: var(--shadow-float); font: 400 13px/1.6 var(--font-sans); overflow-wrap: anywhere; }
+.toggle-heading > span { width: 100%; min-width: 0; }
+.toggle-heading .section-info-title { position: relative; width: 100%; padding-right: 24px; }
+.toggle-heading .section-info-disclosure .toggle-chevron { position: absolute; right: 0; top: 50%; margin-top: -4px; }
+.section-info-panel[hidden] { display: none; }
+.section-info-panel strong { color: var(--text); }
+.section-info-panel p { margin: 12px 0 0; }
+.section-info-panel .historical-scope-note { padding: 0; border: 0; background: transparent; color: inherit; }
+@media(max-width: 600px) { .section-info-button { flex-basis: 44px; width: 44px; height: 44px; } }

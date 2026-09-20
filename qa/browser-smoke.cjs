@@ -4,6 +4,17 @@ const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 
+async function visibleSectionNote(page, id) {
+  const titles = {chartHistoryNote: 'trendTitle', auditHistoryNote: 'detailTitle', phaseSplitNotice: 'phaseChartTitle'};
+  const button = page.locator(`#${titles[id]}-info-button`);
+  await button.focus();
+  const note = page.locator(`#${id}`);
+  assert.equal(await note.isVisible(), true, `${id} must be visible inside open information`);
+  const text = await note.innerText();
+  await page.keyboard.press('Escape');
+  return text;
+}
+
 const projectRoot = path.resolve(__dirname, '..');
 const publicRoot = path.join(projectRoot, 'public');
 const chromePath = '/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome';
@@ -347,7 +358,7 @@ async function run() {
     assert.equal(await page.locator('#metricsTableBody tr').count(), defaultMonthCount + 1, 'monthly audit grain should show summary plus the current preset month rows');
     assert.equal((await page.locator('#auditPeriodHeader').textContent()).trim(), 'Month');
     assert.match(await page.locator('#metricsTableCaption').textContent(), /by month/);
-    assert.match(await page.locator('#auditHistoryNote').textContent(), /2025 CZSK history is outside the selected dates.*All available data/);
+    assert.match(await visibleSectionNote(page, 'auditHistoryNote'), /2025 CZSK history is outside the selected dates.*All available data/);
 
     assert.equal(await page.locator('#dateFrom').getAttribute('min'), historicalData.coverage.start, 'date controls must expose 2025 history');
     await page.locator('#dateFrom').fill(historicalData.coverage.start);
@@ -360,8 +371,8 @@ async function run() {
     const dailyChartLabels = await page.evaluate(() => window.Chart.getChart('trendChart').data.labels);
     assert.ok(dailyChartLabels.every((label) => !String(label).startsWith('2025')), 'Day chart must exclude the monthly historical snapshot');
     assert.ok((await page.locator('#metricsTableBody tr:not(.summary-row) td:first-child').allTextContents()).every((label) => !label.startsWith('2025')), 'Day audit must exclude the monthly historical snapshot');
-    assert.match(await page.locator('#chartHistoryNote').textContent(), /excluded at Day and Week grain/);
-    assert.match(await page.locator('#auditHistoryNote').textContent(), /excluded at Day and Week grain/);
+    assert.match(await visibleSectionNote(page, 'chartHistoryNote'), /excluded at Day and Week grain/);
+    assert.match(await visibleSectionNote(page, 'auditHistoryNote'), /excluded at Day and Week grain/);
 
     await page.locator('#grain').selectOption('month');
     const workingMonths = [...new Set(dashboardData.rows.map((row) => row.date.slice(0, 7)))];
@@ -373,7 +384,7 @@ async function run() {
     assert.deepEqual(monthChart.labels, expectedMonthLabels, 'Month chart must combine the twelve static months with working-source months');
     assert.equal(monthChart.revenue[0], historicalData.rows[0].revenue, 'January 2025 revenue must come from the static snapshot');
     assert.ok(Math.abs(monthChart.roas[0] - (historicalData.rows[0].revenue / historicalData.rows[0].spend)) < 1e-12, 'January 2025 ROAS must be derived from normalized sums');
-    assert.match(await page.locator('#chartHistoryNote').textContent(), /static 2025 CZSK monthly snapshot/);
+    assert.match(await visibleSectionNote(page, 'chartHistoryNote'), /static 2025 CZSK monthly snapshot/);
 
     await page.locator('#auditGrain').selectOption('month');
     assert.equal(await page.locator('#metricsTableBody tr').count(), expectedMonthLabels.length + 1, 'Month audit must show summary plus historical and working months');
@@ -402,17 +413,17 @@ async function run() {
     await page.locator('#grain').selectOption('month');
     assert.equal((await page.evaluate(() => window.Chart.getChart('trendChart').data.labels)).filter((label) => String(label).startsWith('2025')).length, 12, 'CZSK chart must include all twelve 2025 months');
     assert.equal(await page.locator('#metricsTableBody tr').filter({ has: page.locator('td:first-child', { hasText: '2025' }) }).count(), 1, 'CZSK Year audit must include 2025');
-    assert.match(await page.locator('#chartHistoryNote').textContent(), /2025 CZSK monthly snapshot/);
+    assert.match(await visibleSectionNote(page, 'chartHistoryNote'), /2025 CZSK monthly snapshot/);
     await page.screenshot({ path: path.join(evidenceDir, 'desktop-history-czsk-month.png'), fullPage: true });
     await page.locator('[data-region="all"]').click();
     await page.locator('[data-region="us"]').click();
     assert.ok((await page.evaluate(() => window.Chart.getChart('trendChart').data.labels)).every((label) => !String(label).startsWith('2025')), 'US-only chart must exclude CZSK 2025 history');
     assert.equal(await page.locator('#metricsTableBody tr').filter({ has: page.locator('td:first-child', { hasText: '2025' }) }).count(), 0, 'US-only audit must exclude CZSK 2025 history');
-    assert.match(await page.locator('#chartHistoryNote').textContent(), /selected markets do not include CZSK/);
+    assert.match(await visibleSectionNote(page, 'chartHistoryNote'), /selected markets do not include CZSK/);
     await page.locator('[data-region="all"]').click();
     await page.locator('[data-region="row"]').click();
     assert.ok((await page.evaluate(() => window.Chart.getChart('trendChart').data.labels)).every((label) => !String(label).startsWith('2025')), 'ROW-only chart must exclude CZSK 2025 history');
-    assert.match(await page.locator('#chartHistoryNote').textContent(), /selected markets do not include CZSK/);
+    assert.match(await visibleSectionNote(page, 'chartHistoryNote'), /selected markets do not include CZSK/);
     await page.locator('[data-region="all"]').click();
 
     await page.locator('#dateTo').fill(historicalData.coverage.end);
@@ -558,10 +569,12 @@ async function run() {
     });
     await historyRecovery.goto(baseUrl, { waitUntil: 'networkidle', timeout: 30_000 });
     await historyRecovery.locator('#dashboardContent').waitFor({ state: 'visible' });
+    assert.equal(await historyRecovery.locator('#historyLoadWarning').isVisible(), true, 'history failure stays inline, not inside an info popover');
     assert.equal(await historyRecovery.locator('#dateFrom').getAttribute('min'), dashboardData.date_range.start, 'failed initial history request should leave the working view available');
     await historyRecovery.locator('#periodPreset').selectOption('all');
     await historyRecovery.waitForFunction((historyStart) => document.querySelector('#dateFrom').value === historyStart, historicalData.coverage.start);
     assert.ok(historicalRequestCount >= 2, `selecting All available must retry unavailable history, got ${historicalRequestCount} request(s)`);
+    assert.equal(await historyRecovery.locator('#historyLoadWarning').isVisible(), false, 'successful history recovery clears the warning');
     assert.ok(historicalRequestUrls.every((url) => new URL(url).search.length > 0), `historical requests must use a versioned URL: ${historicalRequestUrls.join(', ')}`);
     assert.equal(await historyRecovery.locator('#grain').inputValue(), 'month');
     assert.equal(await historyRecovery.locator('#auditGrain').inputValue(), 'month');
@@ -708,16 +721,19 @@ async function run() {
     await mobile.locator('#filtersToggle').click();
     await mobile.locator('#grain').selectOption('year');
     await mobile.locator('#auditGrain').selectOption('year');
-    assert.match(await mobile.locator('#chartHistoryNote').textContent(), /static 2025 CZSK monthly snapshot/);
-    assert.match(await mobile.locator('#auditHistoryNote').textContent(), /static 2025 CZSK monthly snapshot/);
+    assert.match(await visibleSectionNote(mobile, 'chartHistoryNote'), /static 2025 CZSK monthly snapshot/);
+    assert.match(await visibleSectionNote(mobile, 'auditHistoryNote'), /static 2025 CZSK monthly snapshot/);
     assert.deepEqual(await mobile.evaluate(() => window.Chart.getChart('trendChart').data.labels), ['2025', '2026']);
-    const mobileHistoryGeometry = await mobile.locator('.historical-scope-note:visible').evaluateAll((notes) => notes.map((note) => {
+    await mobile.locator('#trendTitle-info-button').focus();
+    const mobileHistoryGeometry = await mobile.locator('.section-info-panel .historical-scope-note:visible').evaluateAll((notes) => notes.map((note) => {
       const rect = note.getBoundingClientRect();
-      const panel = note.closest('.panel').getBoundingClientRect();
+      const panel = note.closest('.section-info-panel').getBoundingClientRect();
       return { left: rect.left, right: rect.right, panelLeft: panel.left, panelRight: panel.right };
     }));
     assert.ok(mobileHistoryGeometry.every(({ left, right, panelLeft, panelRight }) => left >= panelLeft && right <= panelRight), `mobile historical notes must stay within their panels: ${JSON.stringify(mobileHistoryGeometry)}`);
+    assert.ok(mobileHistoryGeometry.length > 0, 'open history info has visible notes');
     await mobile.screenshot({ path: path.join(evidenceDir, 'mobile-history-year.png'), fullPage: true });
+    await mobile.keyboard.press('Escape');
     await mobile.locator('#filtersToggle').click();
     await mobile.locator('#dateFrom').fill(defaultStartDate.toISOString().slice(0, 10));
     await mobile.locator('#dateFrom').dispatchEvent('change');
@@ -813,7 +829,7 @@ async function run() {
     assert.equal(await mobile.locator('#marketComparisonContent').isVisible(), false, 'market comparison section should collapse');
     const collapsedGeometry = await mobile.evaluate(() => ['#auditTable', '#marketComparison'].map((selector) => {
       const panel = document.querySelector(selector);
-      const button = panel.querySelector('.section-toggle').getBoundingClientRect();
+      const button = panel.querySelector('.section-info-title').getBoundingClientRect();
       const arrow = panel.querySelector('.toggle-chevron').getBoundingClientRect();
       const panelRect = panel.getBoundingClientRect();
       return {
