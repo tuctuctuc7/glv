@@ -1539,11 +1539,13 @@ function validateHistoricalData(data) {
 async function fetchHistoricalData() {
   try {
     const response = await fetch('/glv/glv_2025_monthly.json?v=20260901-czsk-history-2', { cache: 'no-store' });
-    if (!response.ok) return null;
+    if (!response.ok) throw new Error('Historical data request failed.');
     const historicalData = await response.json();
     validateHistoricalData(historicalData);
+    $('historyLoadWarning').hidden = true;
     return historicalData;
   } catch (error) {
+    $('historyLoadWarning').hidden = false;
     return null;
   }
 }

@@ -16,7 +16,9 @@
   <script src="/glv/promo-comparison.js?v=promo-comparison-1" defer></script>
   <script src="/glv/promo-comparison-ui.js?v=promo-comparison-2" defer></script>
   <link rel="stylesheet" href="/glv/promo-comparison.css?v=promo-comparison-1" />
-  <script src="/glv/app.js?v=nc-rc-metrics-20260920&amp;columns=home-order" defer></script>
+  <script src="/glv/app.js?v=nc-rc-metrics-20260920&amp;columns=home-order&amp;history-warning=1" defer></script>
+  <link rel="stylesheet" href="/glv/section-info.css?v=section-info-20260920" />
+  <script src="/glv/section-info.js?v=section-info-20260920" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#mainContent">Skip to dashboard content</a>
@@ -131,6 +133,7 @@
 
     <div id="dashboardContent" hidden>
       <div id="homeView" role="tabpanel" aria-labelledby="homeViewTab">
+      <p id="historyLoadWarning" class="state-banner" role="status" hidden>2025 monthly history could not be loaded. Showing working-source data only. Select All available data to retry.</p>
       <section id="overview" class="overview-heading" aria-labelledby="overviewTitle">
         <div>
           <p class="eyebrow">Executive control room</p>

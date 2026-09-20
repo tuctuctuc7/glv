@@ -41,7 +41,10 @@ module.exports = async (browser, baseUrl, evidenceDir) => {
    assert.ok((await page.locator('#phaseChartDataBody').textContent()).length>0);
   }
   await page.locator('label[for="phaseInfluSplit"]').click();
+  await page.locator('#phaseChartTitle-info-button').focus();
   assert.equal(await page.locator('#phaseSplitNotice').isVisible(),true);
+  assert.match(await page.locator('#phaseSplitNotice').innerText(), /Influ total; no cost, order or customer attribution/);
+  await page.keyboard.press('Escape');
   await page.locator('#phaseTableBody [data-phase-toggle="month|2026-01|phase|Influ"]').click();
   for(const row of await page.locator('#phaseTableBody .phase-kind-influ-split').all()) {
    assert.equal(await row.locator('td').nth(ph.indexOf('NC ROAS')).textContent(),'—');

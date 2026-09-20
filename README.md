@@ -125,6 +125,10 @@ Derived metrics are calculated after date and region aggregation:
 
 Currency for the business KPI dashboard JSON is USD.
 
+### Section information
+
+The seven Home/Phases section titles have independent information buttons (`section-info.js` / `section-info.css`, version `section-info-20260920`). Existing live explanatory nodes move into fixed, scrollable popovers; filter/grain/split updates retain their original node IDs. Historical fetch errors and Promo empty states remain inline. Hover/focus opens, click/tap pins or toggles, and Escape restores trigger focus. Collapsible titles keep separate sibling buttons. Run `npm run qa:section-info` for all seven sections at 1440/390/320 in both themes; evidence is saved under `/tmp/glv-section-info-evidence`.
+
 ### Build, test, and run locally
 
 ```bash
