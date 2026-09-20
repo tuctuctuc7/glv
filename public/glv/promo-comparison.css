@@ -1,0 +1,11 @@
+#promoComparison { min-width: 0; overflow: visible; }
+.promo-controls { display: flex; align-items: end; gap: 12px; min-width: 0; }
+.promo-controls .field { min-width: 180px; }
+#promoMonths .phase-menu-options { left: 0; right: auto; }
+#promoMonths label:has(input:disabled) { opacity: .65; cursor: default; }
+@media (max-width: 700px) {
+  .promo-controls { flex-wrap: wrap; }
+  .promo-controls .field { min-width: 0; width: 100%; }
+  #promoMonths { width: 100%; }
+  #promoMonths .phase-menu-trigger { width: 100%; text-align: left; }
+}

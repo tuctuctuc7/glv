@@ -1,4 +1,6 @@
 const METRIC_CONFIG = {
+  nc_roas: { label: 'NC ROAS', type: 'ratio', color: 'var(--cyan)', description: 'NC revenue / existing ad spend, using matching available rows. Nonpositive spend is unavailable.' },
+  returning_customer_revenue: { label: 'RC revenue', type: 'money', color: 'var(--purple)', description: 'Revenue minus NC revenue on matching available rows. Negative source discrepancies are preserved.' },
   avg_daily_revenue: { label: 'Avg daily revenue', type: 'money', color: 'var(--accent)', description: 'Phase revenue divided by distinct represented phase dates, including zero-revenue days.' },
   cac: { label: 'CAC', type: 'money', color: 'var(--blue)', description: 'Total recorded spend divided by total new customers after aggregation; blank when new customers are not positive or inputs are unavailable.' },
   none: { label: 'None', type: 'count', color: 'transparent', description: 'No metric selected.' },
@@ -515,6 +517,10 @@ function renderMarketComparison(regions) {
       formatMetric('aov', data.aov),
       formatMetric('cvr', data.cvr),
       formatMetric('roas', data.roas),
+      formatMetric('cac', data.cac),
+      formatMetric('nc_roas', data.nc_roas),
+      formatMetric('new_customer_revenue', data.new_customer_revenue, true),
+      formatMetric('returning_customer_revenue', data.returning_customer_revenue, true),
     ]);
     row.firstChild.dataset.market = data.region;
     body.appendChild(row);
@@ -524,6 +530,7 @@ function renderMarketComparison(regions) {
     ['revenue', 'spend'].forEach((key) => { result.previous[key] += region.previous?.[key] || 0; });
     return result;
   }, { revenue: 0, spend: 0, purchases: 0, unique_visitors: 0, previous: { revenue: 0, spend: 0 } });
+  const acquisitionTotals = metrics.aggregateRows(getViewData().currentRows);
   const totalRow = document.createElement('tr');
   totalRow.className = 'market-total-row';
   appendCells(totalRow, [
@@ -537,6 +544,10 @@ function renderMarketComparison(regions) {
     formatMetric('aov', totals.purchases ? totals.revenue / totals.purchases : null),
     formatMetric('cvr', totals.unique_visitors ? totals.purchases / totals.unique_visitors : null),
     formatMetric('roas', totals.spend ? totals.revenue / totals.spend : null),
+    formatMetric('cac', acquisitionTotals.cac),
+    formatMetric('nc_roas', acquisitionTotals.nc_roas),
+    formatMetric('new_customer_revenue', acquisitionTotals.new_customer_revenue, true),
+    formatMetric('returning_customer_revenue', acquisitionTotals.returning_customer_revenue, true),
   ]);
   body.appendChild(totalRow);
 }
@@ -857,7 +868,7 @@ function renderChart(view) {
     pointHoverRadius: 4,
     pointBackgroundColor: colors.surface,
     fill: false,
-    spanGaps: secondaryKey !== 'cac',
+    spanGaps: !['cac', 'nc_roas', 'returning_customer_revenue'].includes(secondaryKey),
     tension: 0.28,
     yAxisID: 'y1',
   });
@@ -911,10 +922,10 @@ function renderChart(view) {
 function formatAuditMetric(key, value) {
   if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—';
   const number = Number(value);
-  if (['spend', 'revenue', 'new_customer_revenue'].includes(key)) {
+  if (['spend', 'revenue', 'new_customer_revenue', 'returning_customer_revenue'].includes(key)) {
     return number.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
   }
-  if (key === 'roas') return number.toFixed(2);
+  if (['roas', 'nc_roas'].includes(key)) return number.toFixed(2);
   return formatMetric(key, number);
 }
 
@@ -934,6 +945,7 @@ function renderTable(view) {
     formatAuditMetric('revenue', summary.revenue),
     formatAuditMetric('roas', summary.roas),
     formatMetric('cac', summary.cac),
+    formatAuditMetric('nc_roas', summary.nc_roas),
     formatMetric('purchases', summary.purchases),
     formatMetric('cpa', summary.cpa),
     formatMetric('aov', summary.aov),
@@ -941,6 +953,7 @@ function renderTable(view) {
     formatMetric('cvr', summary.cvr),
     formatMetric('unique_visitors', summary.unique_visitors),
     formatAuditMetric('new_customer_revenue', summary.new_customer_revenue),
+    formatAuditMetric('returning_customer_revenue', summary.returning_customer_revenue),
   ].forEach((value) => summaryRow.appendChild(element('td', '', value)));
   body.appendChild(summaryRow);
   rows.forEach((row) => {
@@ -951,6 +964,7 @@ function renderTable(view) {
       formatAuditMetric('revenue', row.revenue),
       formatAuditMetric('roas', row.roas),
       formatMetric('cac', row.cac),
+    formatAuditMetric('nc_roas', row.nc_roas),
       formatMetric('purchases', row.purchases),
       formatMetric('cpa', row.cpa),
       formatMetric('aov', row.aov),
@@ -958,6 +972,7 @@ function renderTable(view) {
       formatMetric('cvr', row.cvr),
       formatMetric('unique_visitors', row.unique_visitors),
       formatAuditMetric('new_customer_revenue', row.new_customer_revenue),
+    formatAuditMetric('returning_customer_revenue', row.returning_customer_revenue),
     ];
     values.forEach((value) => tr.appendChild(element('td', '', value)));
     body.appendChild(tr);
@@ -1130,12 +1145,14 @@ function renderPhaseTable(days) {
       node.share === null || node.share === undefined ? '—' : formatMetric('new_customer_rate', node.share),
       phaseMetricCell('roas', node.metrics.roas),
       phaseMetricCell('cac', node.metrics.cac),
+      phaseMetricCell('nc_roas', node.metrics.nc_roas),
       phaseMetricCell('purchases', node.metrics.purchases),
       phaseMetricCell('cpa', node.metrics.cpa),
       phaseMetricCell('aov', node.metrics.aov),
       phaseMetricCell('cvr', node.metrics.cvr),
       phaseMetricCell('unique_visitors', node.metrics.unique_visitors),
       phaseMetricCell('new_customer_revenue', node.metrics.new_customer_revenue),
+      phaseMetricCell('returning_customer_revenue', node.metrics.returning_customer_revenue),
       phaseMetricCell('new_customer_rate', node.metrics.new_customer_rate),
       phaseMetricCell('day_count', node.metrics.day_count),
     ];
@@ -1193,6 +1210,7 @@ function renderPhases() {
   $('phaseRange').textContent = `${formatDate(days[0].date)} – ${formatDate(days[days.length - 1].date)} · ${days.length} working days · CZSK only`;
   renderPhaseChart(days);
   renderPhaseTable(days);
+  window.renderPromoComparison(days);
   $('screenReaderStatus').textContent = `Phases view updated for CZSK, year to date through ${formatDate(days[days.length - 1].date)}.`;
 }
 
@@ -1250,19 +1268,20 @@ async function exportCsv() {
   const sourcePayload = new TextEncoder().encode(JSON.stringify(state.data.rows));
   const digest = await crypto.subtle.digest('SHA-256', sourcePayload);
   const checksum = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-  const headers = ['date', 'region', 'spend_usd', 'revenue_usd', 'purchases', 'market_day_unique_visitors', 'new_customers', 'returning_customers', 'new_customer_revenue_usd'];
+  const headers = ['date', 'region', 'spend_usd', 'revenue_usd', 'purchases', 'market_day_unique_visitors', 'new_customers', 'returning_customers', 'new_customer_revenue_usd', 'returning_customer_revenue_usd', 'nc_roas'];
   const lines = [
     `# source_updated_at=${state.data.updated_at || 'unknown'}`,
     `# exported_at=${new Date().toISOString()}`,
     `# selected_from=${view.filters.from}`,
     `# selected_to=${view.filters.to}`,
     `# selected_regions=${state.selectedRegions.join('|')}`,
+    '# acquisition_metrics=matching available inputs only; NC ROAS uses existing ad spend; RC revenue is revenue minus NC revenue; historical NC unavailable',
     '# aggregation_version=glv-metrics-v2-post-aggregation-ratios',
     `# dataset_sha256=${checksum}`,
     headers.join(','),
   ];
   [...view.currentRows].sort((a, b) => a.date.localeCompare(b.date) || a.region.localeCompare(b.region)).forEach((row) => {
-    lines.push([row.date, row.region, row.spend, row.revenue, row.purchases, row.unique_visitors, row.new_customers, row.returning_customers, row.new_customer_revenue].join(','));
+    lines.push([row.date, row.region, row.spend, row.revenue, row.purchases, row.unique_visitors, row.new_customers, row.returning_customers, row.new_customer_revenue, metrics.metricValue(row, 'returning_customer_revenue'), metrics.metricValue(row, 'nc_roas')].join(','));
   });
   const blob = new Blob([`${lines.join('\n')}\n`], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);

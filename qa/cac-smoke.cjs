@@ -17,8 +17,8 @@ module.exports = async function verifyCac(browser, baseUrl, evidenceDir) {
     await page.route('**/glv_dashboard.json', route => route.fulfill({ json: fixture }));
     await page.goto(`${baseUrl}?period=custom&from=2026-09-01&to=2026-09-03&grain=day&auditGrain=day`, { waitUntil: 'networkidle' });
     await page.locator('#dashboardContent').waitFor({ state: 'visible' });
-    assert.deepEqual(await page.locator('#metricsTable thead th').allTextContents(), ['Date', 'Spend', 'Revenue', 'ROAS', 'CAC', 'Purchases', 'Cost per purchase', 'AOV', 'New customer rate', 'CVR', 'Visitors', 'New customer revenue']);
-    assert.deepEqual(await page.locator('#metricsTableBody tr td:nth-child(9)').allTextContents(), ['29.41%', '50.00%', '0.00%', '20.00%']);
+    assert.deepEqual(await page.locator('#metricsTable thead th').allTextContents(), ['Date', 'Spend', 'Revenue', 'ROAS', 'CAC', 'NC ROAS', 'Purchases', 'Cost per purchase', 'AOV', 'New customer rate', 'CVR', 'Visitors', 'New customer revenue', 'RC revenue']);
+    assert.deepEqual(await page.locator('#metricsTableBody tr td:nth-child(10)').allTextContents(), ['29.41%', '50.00%', '0.00%', '20.00%']);
     for (const id of ['trendMetric', 'trendMetricSecondary']) {
       assert.equal(await page.locator(`#${id} option`).first().getAttribute('value'), 'none');
     }
@@ -36,7 +36,7 @@ module.exports = async function verifyCac(browser, baseUrl, evidenceDir) {
     await page.locator('#auditGrain').selectOption('month');
     assert.deepEqual(await page.evaluate(() => Chart.getChart('trendChart').data.datasets[0].data), [60]);
     assert.deepEqual(await page.locator('#metricsTableBody tr td:nth-child(5)').allTextContents(), ['$60.00', '$60.00']);
-    assert.deepEqual(await page.locator('#metricsTableBody tr td:nth-child(9)').allTextContents(), ['29.41%', '29.41%']);
+    assert.deepEqual(await page.locator('#metricsTableBody tr td:nth-child(10)').allTextContents(), ['29.41%', '29.41%']);
     await page.reload({ waitUntil: 'networkidle' });
     assert.equal(await page.locator('#trendMetric').inputValue(), 'cac');
     assert.equal(await page.locator('#trendMetricSecondary').inputValue(), 'cac');
