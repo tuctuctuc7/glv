@@ -52,6 +52,14 @@ module.exports = async function checkPromo(page, evidenceDir) {
       if (await page.locator('html').getAttribute('data-theme') !== theme) await page.locator('#themeToggle').click();
       await page.locator('#promoComparison').scrollIntoViewIfNeeded();
       assert.ok(await page.locator('#promoChart').isVisible());
+      const appearance = await page.evaluate(() => {
+        const summarize = id => {
+          const c = Chart.getChart(id), d = c.data.datasets[0], o = c.options;
+          return { tension:d.tension, width:d.borderWidth, radius:d.pointRadius, hover:d.pointHoverRadius, gaps:d.spanGaps, legend:o.plugins.legend.labels.padding, text:o.scales.y.ticks.color, border:o.scales.y.border.display, tick:o.scales.y.ticks.callback(25000) };
+        };
+        return { promo:summarize('promoChart'), phase:summarize('phaseChart') };
+      });
+      assert.deepEqual(appearance.promo, appearance.phase, 'Promo line/point/axis/legend formatting matches the existing Phases chart');
       assert.equal(await page.evaluate(() => Chart.getChart('promoChart').options.scales.x.ticks.font.family), await page.evaluate(() => getComputedStyle(document.body).fontFamily));
       const layout = await page.locator('#promoComparison').evaluate(n => ({right:n.getBoundingClientRect().right, width:innerWidth}));
       assert.ok(layout.right <= layout.width, `Promo overflows ${width} ${theme}`);
