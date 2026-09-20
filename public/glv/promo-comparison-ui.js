@@ -7,12 +7,9 @@ window.renderPromoComparison = (() => {
   const node = (tag, text) => { const n = document.createElement(tag); if (text != null) n.textContent = text; return n; };
   const names = {revenue:'Revenue', avg_daily_revenue:'Avg daily revenue', spend:'Spend', roas:'ROAS', nc_roas:'NC ROAS', cac:'CAC', purchases:'Purchases', cpa:'Cost per purchase', aov:'AOV', cvr:'CVR', unique_visitors:'Visitors', new_customer_revenue:'New customer revenue', returning_customer_revenue:'RC revenue', new_customer_rate:'New customer rate'};
   const monthName = month => new Intl.DateTimeFormat('en-US', {month:'long', year:'numeric', timeZone:'UTC'}).format(new Date(`${month}-01T00:00:00Z`));
-  function format(key, value) {
+  function format(key, value, compact = false) {
     if (value == null) return '—';
-    if (['roas','nc_roas'].includes(key)) return `${value.toFixed(2)}x`;
-    if (['cvr','new_customer_rate'].includes(key)) return `${(value*100).toFixed(2)}%`;
-    if (['purchases','unique_visitors'].includes(key)) return value.toLocaleString('en-US', {maximumFractionDigits:0});
-    return value.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:key === 'avg_daily_revenue' ? 0 : 2});
+    return formatMetric(key, value, compact);
   }
   function render(days) {
     lastDays = days;
@@ -60,9 +57,29 @@ window.renderPromoComparison = (() => {
     if (chart) chart.destroy(); chart = null;
     const canvas = $('promoChart'); canvas.hidden = !hasValues;
     if (!window.Chart || !hasValues) return;
-    const style = getComputedStyle(document.documentElement); const text = style.getPropertyValue('--text-secondary').trim(); const grid = style.getPropertyValue('--border').trim();
+    const style = getComputedStyle(document.documentElement); const text = style.getPropertyValue('--text-tertiary').trim(); const grid = style.getPropertyValue('--border').trim();
     const font = { family: getComputedStyle(document.body).fontFamily };
-    chart = new window.Chart(canvas, {type:'line', data:{labels:data.labels, datasets:data.series.map(s => ({label:monthName(s.month), month:s.month, dates:s.dates, data:s.values, borderColor:api.color(s.month,document.documentElement.dataset.theme), backgroundColor:api.color(s.month,document.documentElement.dataset.theme), borderWidth:2.5, pointRadius:3, spanGaps:false, tension:0}))}, options:{animation:false, responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, plugins:{legend:{position:'bottom',align:'start',onClick:()=>{},labels:{font,color:text,boxWidth:18,boxHeight:2}}, tooltip:{titleFont:font,bodyFont:font,callbacks:{label:item => `${item.dataset.label} · ${item.dataset.dates[item.dataIndex]}: ${format(metric,item.raw)}`}}}, scales:{x:{grid:{display:false},ticks:{font,color:text}},y:{beginAtZero:true,title:{font,display:true,text:names[metric],color:text},grid:{color:grid},ticks:{font,color:text,callback:value => format(metric,value)}}}}});
+    chart = new window.Chart(canvas, {
+      type: 'line',
+      data: { labels: data.labels, datasets: data.series.map(s => ({
+        label: monthName(s.month), month: s.month, dates: s.dates, data: s.values,
+        borderColor: api.color(s.month, document.documentElement.dataset.theme),
+        backgroundColor: api.color(s.month, document.documentElement.dataset.theme),
+        borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 5, spanGaps: false, tension: 0.25,
+      })) },
+      options: {
+        animation: false, responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'bottom', align: 'start', onClick: () => {}, labels: { font, color: text, boxWidth: 18, boxHeight: 2, padding: 16 } },
+          tooltip: { titleFont: font, bodyFont: font, callbacks: { label: item => `${item.dataset.label} · ${item.dataset.dates[item.dataIndex]}: ${format(metric, item.raw)}` } },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font, color: text }, border: { color: grid } },
+          y: { beginAtZero: true, grid: { color: grid }, ticks: { font, color: text, callback: value => format(metric, value, true) }, border: { display: false } },
+        },
+      },
+    });
   }
   return render;
 })();
