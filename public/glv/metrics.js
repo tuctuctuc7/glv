@@ -56,8 +56,15 @@
     const newCustomers = customerRows.reduce((sum, row) => sum + Number(row.new_customers), 0);
     const returningCustomers = customerRows.reduce((sum, row) => sum + Number(row.returning_customers), 0);
 
+    // Match inputs per row: unknown historical NC must not dilute current NC.
+    const ncRows = sourceRows.filter(row => ['new_customer_revenue', 'spend'].every(key => hasFiniteMetric(row, key)));
+    const rcRows = sourceRows.filter(row => ['new_customer_revenue', 'revenue'].every(key => hasFiniteMetric(row, key)));
+    const ncSpend = ncRows.reduce((sum, row) => sum + Number(row.spend), 0);
+    const ncRevenue = ncRows.reduce((sum, row) => sum + Number(row.new_customer_revenue), 0);
     return {
       ...totals,
+      nc_roas: ncRows.length && ncSpend > 0 ? ncRevenue / ncSpend : null,
+      returning_customer_revenue: rcRows.length ? rcRows.reduce((sum, row) => sum + Number(row.revenue) - Number(row.new_customer_revenue), 0) : null,
       roas: ratioFromRows(sourceRows, 'revenue', 'spend'),
       cpa: ratioFromRows(sourceRows, 'spend', 'purchases'),
       cac: totals.new_customers > 0 && sourceRows.every((row) => hasFiniteMetric(row, 'spend') && hasFiniteMetric(row, 'new_customers'))
@@ -70,6 +77,10 @@
 
   function metricValue(row, key) {
     if (!row) return null;
+    if (['nc_roas', 'returning_customer_revenue'].includes(key)) {
+      if (Object.prototype.hasOwnProperty.call(row, key)) return hasFiniteMetric(row, key) ? Number(row[key]) : null;
+      return aggregateRows([row])[key];
+    }
     if (key === 'cac' && Object.prototype.hasOwnProperty.call(row, 'cac')) return hasFiniteMetric(row, 'cac') ? Number(row.cac) : null;
     if (key === 'cac') return hasFiniteMetric(row, 'spend') && hasFiniteMetric(row, 'new_customers') && Number(row.new_customers) > 0
       ? Number(row.spend) / Number(row.new_customers) : null;
@@ -191,7 +202,7 @@
     const current = aggregateRows(currentRows);
     const previous = aggregateRows(previousRows);
     const changes = {};
-    [...ABSOLUTE_METRICS, 'roas', 'cpa', 'cac', 'aov', 'cvr', 'new_customer_rate'].forEach((key) => {
+    [...ABSOLUTE_METRICS, 'nc_roas', 'returning_customer_revenue', 'roas', 'cpa', 'cac', 'aov', 'cvr', 'new_customer_rate'].forEach((key) => {
       changes[key] = percentageChange(current[key], previous[key]);
     });
     return { current, previous, changes };

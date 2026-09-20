@@ -20,6 +20,8 @@ test('aggregateRows sums absolutes and derives ratios after aggregation', () => 
     new_customers: 8,
     returning_customers: 3,
     new_customer_revenue: 395,
+    nc_roas: 395 / 350,
+    returning_customer_revenue: 130,
     roas: 1.5,
     cpa: 350 / 11,
     cac: 350 / 8,

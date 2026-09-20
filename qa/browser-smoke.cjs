@@ -157,7 +157,7 @@ async function run() {
     assert.match(await page.locator('#trendDataCaption').textContent(), /Revenue and ROAS by day/);
     assert.equal(await page.locator('#metricsTableBody tr').count(), 29);
     assert.match(await page.locator('#metricsTableBody tr').first().textContent(), /Selected period/);
-    assert.equal(await page.locator('#metricsTable thead th').count(), 12);
+    assert.equal(await page.locator('#metricsTable thead th').count(), 14);
     assert.doesNotMatch(await page.locator('#metricsTable thead').textContent(), /New customers|Returning customers/);
     assert.match(await page.locator('#executiveKpis').textContent(), /New customer rate/);
     assert.doesNotMatch(await page.locator('#executiveKpis').textContent(), /Visitors/);
@@ -174,14 +174,15 @@ async function run() {
     assert.equal(await page.locator('.command-bar').isVisible(), false, 'Home filters should not change the independent YTD Phases scope');
     assert.match(await page.locator('#phaseRange').textContent(), new RegExp(`Jan 1, 2026.*${displayDate(latestDate)}.*CZSK only`));
     assert.equal(await page.locator('#phaseMetric').inputValue(), 'revenue', 'Revenue should be the default Phases metric');
+    await require('./promo-comparison-checks.cjs')(page, evidenceDir);
     assert.deepEqual(await page.evaluate(() => window.Chart.getChart('phaseChart').data.datasets.map((dataset) => ({ type: dataset.type, label: dataset.label }))), [
       { type: 'line', label: 'BAU' },
       { type: 'line', label: 'Promo' },
       { type: 'line', label: 'Influ' },
     ]);
     assert.equal(await page.locator('#phaseChartDataBody tr').count(), 9, 'YTD chart should include Jan through Sep');
-    assert.equal(await page.locator('#phaseTable thead th').count(), 15, 'phase table includes final day count');
-    assert.deepEqual(await page.locator('#phaseTable thead th').allTextContents(), ['Dimension', 'Spend', 'Revenue', 'Avg daily revenue', 'Share', 'ROAS', 'CAC', 'Purchases', 'Cost per purchase', 'AOV', 'CVR', 'Visitors', 'New customer revenue', 'New customer rate', 'Number of days']);
+    assert.equal(await page.locator('#phaseTable thead th').count(), 17, 'phase table includes final day count');
+    assert.deepEqual(await page.locator('#phaseTable thead th').allTextContents(), ['Dimension', 'Spend', 'Revenue', 'Avg daily revenue', 'Share', 'ROAS', 'CAC', 'NC ROAS', 'Purchases', 'Cost per purchase', 'AOV', 'CVR', 'Visitors', 'New customer revenue', 'RC revenue', 'New customer rate', 'Number of days']);
     assert.equal(await page.locator('#phaseTableBody tr').first().locator('td').last().textContent(), '31');
     assert.equal(await page.locator('#phaseTable thead th').nth(3).textContent(), 'Avg daily revenue');
     assert.equal(await page.locator('#trendMetric option[value="avg_daily_revenue"]').count(), 0);
@@ -294,8 +295,8 @@ async function run() {
       assert.equal(await page.locator(`#${target}`).isVisible(), true, `${target} should expand`);
       assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
     }
-    assert.equal(await page.locator('#trendMetric option').count(), 12);
-    assert.equal(await page.locator('#trendMetricSecondary option').count(), 12);
+    assert.equal(await page.locator('#trendMetric option').count(), 14);
+    assert.equal(await page.locator('#trendMetricSecondary option').count(), 14);
     await page.locator('#trendMetric').selectOption('roas');
     await page.locator('#trendMetricSecondary').selectOption('revenue');
     assert.deepEqual(await page.evaluate(() => window.Chart.getChart('trendChart').data.datasets.map((dataset) => ({ type: dataset.type, label: dataset.label, filled: dataset.fill === true }))), [
@@ -379,12 +380,14 @@ async function run() {
     const january2025 = page.locator('#metricsTableBody tr').filter({ has: page.locator('td:first-child', { hasText: '2025-01' }) });
     assert.equal(await january2025.count(), 1, 'January 2025 audit row must be present once');
     const januaryCells = await january2025.locator('td').allTextContents();
-    assert.equal(januaryCells[9], '—', '2025 CVR must remain unavailable');
-    assert.equal(januaryCells[10], '—', '2025 Visitors must remain unavailable');
-    assert.equal(januaryCells[11], '—', '2025 New customer revenue must remain unavailable');
+    assert.equal(januaryCells[10], '—', '2025 CVR must remain unavailable');
+    assert.equal(januaryCells[11], '—', '2025 Visitors must remain unavailable');
+    assert.equal(januaryCells[12], '—', '2025 New customer revenue must remain unavailable');
+    assert.equal(januaryCells[5], '—', '2025 NC ROAS must remain unavailable');
+    assert.equal(januaryCells[13], '—', '2025 RC revenue must remain unavailable');
     const workingSummary = dashboardMetrics.aggregateRows(dashboardData.rows);
     const expectedWorkingCvr = `${(workingSummary.cvr * 100).toFixed(2)}%`;
-    assert.equal((await page.locator('#metricsTableBody .summary-row td').nth(9).textContent()).trim(), expectedWorkingCvr, 'mixed-period CVR must use only rows with visitor data');
+    assert.equal((await page.locator('#metricsTableBody .summary-row td').nth(10).textContent()).trim(), expectedWorkingCvr, 'mixed-period CVR must use only rows with visitor data');
 
     await page.locator('#grain').selectOption('year');
     assert.deepEqual(await page.evaluate(() => window.Chart.getChart('trendChart').data.labels), ['2025', '2026'], 'Year chart must expose 2025 and the working-source year');
@@ -931,6 +934,7 @@ async function run() {
     await errorContext.close();
 
     await require('./cac-smoke.cjs')(browser, baseUrl, evidenceDir);
+    await require('./nc-rc-smoke.cjs')(browser, baseUrl, evidenceDir);
     await require('./compact-audit.cjs')(browser, baseUrl, evidenceDir);
     assert.deepEqual(consoleErrors, [], `browser console errors: ${consoleErrors.join(' | ')}`);
     console.log(JSON.stringify({

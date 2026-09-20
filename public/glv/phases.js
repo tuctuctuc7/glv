@@ -73,8 +73,15 @@
       totals[key] = source.length && source.every((row) => finite(row[key]))
         ? source.reduce((sum, row) => sum + Number(row[key]), 0) : null;
     });
+    // Match inputs per row: unknown historical NC must not dilute current NC.
+    const ncRows = source.filter(row => ['new_customer_revenue', 'spend'].every(key => finite(row[key])));
+    const rcRows = source.filter(row => ['new_customer_revenue', 'revenue'].every(key => finite(row[key])));
+    const ncSpend = ncRows.reduce((sum, row) => sum + Number(row.spend), 0);
+    const ncRevenue = ncRows.reduce((sum, row) => sum + Number(row.new_customer_revenue), 0);
     return {
       ...totals,
+      nc_roas: ncRows.length && ncSpend > 0 ? ncRevenue / ncSpend : null,
+      returning_customer_revenue: rcRows.length ? rcRows.reduce((sum, row) => sum + Number(row.revenue) - Number(row.new_customer_revenue), 0) : null,
       day_count: distinctDayCount(source),
       avg_daily_revenue: ratio(totals.revenue, distinctDayCount(source)),
       roas: ratio(totals.revenue, totals.spend),
@@ -145,7 +152,7 @@
   }
 
   function unavailableRevenueMetrics(revenue, days) {
-    const metrics = Object.fromEntries([...ABSOLUTE_METRICS, 'roas', 'cpa', 'aov', 'cvr', 'new_customer_rate', 'cac'].map((key) => [key, null]));
+    const metrics = Object.fromEntries([...ABSOLUTE_METRICS, 'roas', 'cpa', 'aov', 'cvr', 'new_customer_rate', 'cac', 'nc_roas', 'returning_customer_revenue'].map((key) => [key, null]));
     metrics.revenue = revenue;
     metrics.day_count = distinctDayCount(days);
     metrics.avg_daily_revenue = ratio(revenue, distinctDayCount(days));
@@ -257,6 +264,7 @@
 
   function metricValue(metrics, key) {
     if (key === 'none') return null;
+    if (metrics && ['nc_roas', 'returning_customer_revenue'].includes(key) && !Object.prototype.hasOwnProperty.call(metrics, key)) return aggregateRows([metrics])[key];
     return finite(metrics?.[key]) ? Number(metrics[key]) : null;
   }
 
