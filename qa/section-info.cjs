@@ -23,6 +23,14 @@ const titles = ['executiveKpiTitle','trendTitle','detailTitle','marketComparison
    await page.locator(i<4?'#homeViewTab':'#phasesViewTab').click();
    const button=page.locator(`#${id}-info-button`); const panel=page.locator(`#${id}-info`);
    await button.scrollIntoViewIfNeeded();
+   const headingLayout = await page.locator(`#${id}`).evaluate(title => {
+    const row = title.closest('.section-info-title');
+    const eyebrow = row.previousElementSibling;
+    const a = eyebrow.getBoundingClientRect(), b = row.getBoundingClientRect();
+    return { eyebrow: eyebrow.classList.contains('eyebrow'), bottom: a.bottom, top: b.top };
+   });
+   assert.equal(headingLayout.eyebrow, true);
+   assert.ok(headingLayout.top >= headingLayout.bottom - 1, `${id}: section label must remain above title`);
    assert.equal(await panel.isVisible(),false);
    const before=await page.locator(`#${id}`).boundingBox();
    await button.focus(); assert.equal(await panel.isVisible(),true,'keyboard focus opens');
