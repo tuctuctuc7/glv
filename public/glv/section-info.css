@@ -1,4 +1,4 @@
-.section-info-title { display: inline-flex; align-items: center; gap: 3px; max-width: 100%; vertical-align: middle; }
+.section-info-title { display: flex; align-items: center; gap: 3px; max-width: 100%; }
 .section-info-title + .panel-subtitle { display: block; }
 .section-info-title > .section-title { display: inline; min-width: 0; }
 .section-info-button { flex: 0 0 32px; width: 32px; height: 32px; display: inline-grid; place-items: center; padding: 0; border: 0; background: transparent; color: var(--text-secondary); cursor: pointer; border-radius: 50%; }
