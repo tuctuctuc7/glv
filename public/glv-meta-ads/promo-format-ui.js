@@ -4,17 +4,10 @@ let promoFormatError = '';
 const PROMO_FORMAT_CHART_KEYS = ['promo-format-spend','promo-format-purchases'];
 function promoFormatRows() {
   if (!promoFormatPayload) return [];
-  let rows = filterTabRows('czsk-promo',promoFormatPayload.rows.map(row=>({...row,id:row.campaign_id,name:row.campaign_name,segment:'czsk',group:'promo'})));
-  if (promoActiveDaysOnly) {
-    const dates = new Set(promoFormatPayload.rows.filter(row=>row.spend>0).map(row=>row.date));
-    rows=rows.filter(row=>dates.has(row.date));
-  }
-  return rows;
+  return promoFormatPayload.rows;
 }
 function promoFormatHistory() {
-  const end=new Date();end.setUTCDate(end.getUTCDate()-1);
-  customRange={since:'2026-03-01',until:end.toISOString().slice(0,10)};datePreset=null;
-  updateDateLabel();loadData();
+  return loadPromoFormats();
 }
 async function loadPromoFormats() {
   promoFormatPayload=null;promoFormatError='';
@@ -28,7 +21,8 @@ async function loadPromoFormats() {
 function refreshPromoFormats() {
   const section=document.getElementById('promo-format-section');if(!section)return;
   PROMO_FORMAT_CHART_KEYS.forEach(key=>{if(charts[key]){charts[key].destroy();delete charts[key];}});
-  const status=document.getElementById('promo-format-status');
+  const status=document.getElementById('promo-format-status');status.hidden=false;
+  document.getElementById('promo-format-summary').textContent='';
   const body=document.querySelector('#promo-format-table tbody');body.innerHTML='';
   const unknown=document.getElementById('promo-format-unknown');unknown.innerHTML='';unknown.hidden=true;
   const chartGrid=section.querySelector('.promo-format-grid');
@@ -38,12 +32,14 @@ function refreshPromoFormats() {
   status.classList.toggle('format-warning',Boolean(promoFormatError));
   if(!promoFormatPayload){status.textContent=promoFormatError?`Format data unavailable — ${promoFormatError}`:'Loading ad-level format facts…';return;}
   const range=promoFormatPayload.range;
-  document.getElementById('promo-format-range').textContent=`${range.since} → ${range.until} · Monthly within selected dates${promoActiveDaysOnly?' · Promo delivery dates only':''}`;
-  if(!months.length){status.textContent='No Promo ad activity matches these dates and campaign filters.';return;}
+  document.getElementById('promo-format-range').textContent=`${range.since} → ${range.until} · Monthly · independent history`;
+  if(!months.length){status.textContent='No Promo ad activity in this history range.';return;}
   const unknownRows=rows.filter(row=>row.format==='Unknown');
   const unknownCount=new Set(unknownRows.map(row=>row.ad_id)).size;
-  status.textContent=unknownCount?`Unknown: ${unknownCount} ads retained in totals and shares. Review unmapped or conflicting labels below.`:`All ${new Set(rows.map(row=>row.ad_id)).size} activity-bearing ads classified. Carryover purchases included${promoActiveDaysOnly?' on Promo delivery dates':''}.`;
+  status.textContent=unknownCount?`Unknown: ${unknownCount} ads retained in totals and shares. Review unmapped or conflicting labels below.`:`All ${new Set(rows.map(row=>row.ad_id)).size} activity-bearing ads classified. Carryover purchases included.`;
   status.classList.toggle('format-warning',unknownCount>0);
+  status.hidden=unknownCount===0;
+  if(!unknownCount)document.getElementById('promo-format-summary').textContent=status.textContent;
   const formats=PromoFormat.FORMATS.filter(format=>format!=='Unknown'||unknownCount);
   const percent=value=>value===null?'—':value.toFixed(1)+'%';
   const value=(key,n)=>n===null?'—':formatChartVal(key,n);

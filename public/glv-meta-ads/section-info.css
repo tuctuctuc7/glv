@@ -1,0 +1,45 @@
+.section-info-title { display: flex; align-items: center; gap: 3px; max-width: 100%; }
+.section-info-title + .panel-subtitle { display: block; }
+.section-info-title > .section-title { display: inline; min-width: 0; }
+.section-info-button { flex: 0 0 32px; width: 32px; height: 32px; display: inline-grid; place-items: center; padding: 0; border: 0; background: transparent; color: var(--muted); cursor: pointer; border-radius: 50%; }
+.section-info-button > span { display: grid; place-items: center; border: 1px solid currentColor; width: 16px; height: 16px; border-radius: 50%; font: 600 11px/1 Inter,ui-sans-serif,system-ui,sans-serif; }
+.section-info-button:hover, .section-info-button[aria-expanded="true"] { color: var(--blue); background: color-mix(in srgb,var(--blue) 12%,transparent); }
+.section-info-button:focus-visible, .section-info-panel:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.section-info-title .section-info-disclosure { width: auto; min-width: 0; flex: initial; display: inline-flex; gap: 12px; align-items: center; padding: 0; }
+.section-info-panel { position: fixed; z-index: 1000; box-sizing: border-box; width: min(440px, calc(100vw - 16px)); max-height: min(520px, calc(100dvh - 16px)); overflow: auto; overscroll-behavior: contain; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--muted); box-shadow: var(--shadow); font: 400 13px/1.6 Inter,ui-sans-serif,system-ui,sans-serif; overflow-wrap: anywhere; }
+.toggle-heading > span { width: 100%; min-width: 0; }
+.toggle-heading .section-info-title { position: relative; width: 100%; padding-right: 24px; }
+.toggle-heading .section-info-disclosure .toggle-chevron { position: absolute; right: 0; top: 50%; margin-top: -4px; }
+.section-info-panel[hidden] { display: none; }
+.section-info-panel strong { color: var(--ink); }
+.section-info-panel p { margin: 12px 0 0; }
+.section-info-panel p, .section-info-panel strong, .section-info-panel .historical-scope-note { font-family: inherit; font-size: inherit; line-height: inherit; }
+.section-info-panel .historical-scope-note { padding: 0; border: 0; background: transparent; color: inherit; }
+@media(max-width: 600px) { .section-info-button { flex-basis: 44px; width: 44px; height: 44px; } }
+
+ .section-methodology { display:none; }
+.section-info-panel .section-methodology { display:block; }
+/* Preserve heading typography and put spacing on its row, not its baseline. */
+.section-info-title { width:fit-content; margin-bottom:12px; }
+.section-info-title > .section-title { margin:0; }
+.triage-card-heading .section-info-title,.promo-format-heading .section-info-title { margin-bottom:0; }
+.section-info-panel,.section-info-panel * { font-family:Inter,ui-sans-serif,system-ui,sans-serif; font-size:13px; line-height:1.6; letter-spacing:normal; text-transform:none; }
+.section-info-panel .promo-note { margin:12px 0 0; color:inherit; }
+#date-wrap[hidden] { display:none!important; }
+@media(max-width:720px){
+ .header-tabs { grid-template-columns:repeat(6,minmax(0,1fr)); }
+ #tab-czsk-promo-creative .tab-mobile-label { font-size:9px; white-space:normal; line-height:1.2; }
+}
+/* Group controls: matching label rows and matching control rows. */
+@media(min-width:721px){
+ #panel-czsk-promo .compact-grouped-table-controls { display:grid; grid-template-columns:minmax(160px,220px) minmax(220px,260px) minmax(160px,220px) 44px; grid-template-rows:auto 44px; align-items:end; gap:5px 12px; }
+ #panel-czsk-promo .compact-grouped-table-controls > .filter-wrap { display:grid; grid-template-rows:auto 44px; gap:5px; grid-column:1; grid-row:1/3; margin:0; min-width:0; }
+ #panel-czsk-promo .compact-grouped-table-controls > .toggle-row { display:grid; grid-template-rows:auto 44px; gap:5px; grid-column:2; grid-row:1/3; min-width:0; }
+ #panel-czsk-promo .compact-grouped-table-controls > .sort-controls { display:contents; }
+ #panel-czsk-promo .compact-grouped-table-controls .sort-controls > .metric-label { grid-column:3; grid-row:1; }
+ #panel-czsk-promo .compact-grouped-table-controls .sort-controls > select { grid-column:3; grid-row:2; }
+ #panel-czsk-promo .compact-grouped-table-controls .sort-dir-btn { grid-column:4; grid-row:2; }
+ #panel-czsk-promo .compact-grouped-table-controls .metric-label,#panel-czsk-promo .compact-grouped-table-controls .local-filter-label { margin:0; font-size:11px; line-height:1.2; font-weight:600; color:var(--muted); }
+}
+#panel-czsk-promo .compact-grouped-table-controls .filter-toggle,#panel-czsk-promo .compact-grouped-table-controls .metric-select,#panel-czsk-promo .compact-grouped-table-controls .segmented,#panel-czsk-promo .compact-grouped-table-controls .sort-dir-btn { height:44px; min-height:44px; min-width:0; width:100%; }
+#panel-czsk-promo .compact-grouped-table-controls .segmented button { flex:1; min-width:0; }

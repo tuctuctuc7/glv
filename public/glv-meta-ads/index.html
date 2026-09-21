@@ -310,9 +310,10 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   .local-filter-label{display:none}
 }
 </style>
-<link rel="stylesheet" href="/glv-meta-ads/promo-format.css?v=promo-format-20260921">
-<script src="/glv-meta-ads/promo-format.js?v=promo-format-20260921"></script>
-<script src="/glv-meta-ads/promo-format-ui.js?v=promo-format-20260921"></script>
+<link rel="stylesheet" href="/glv-meta-ads/promo-format.css?v=promo-creative-20260921">
+<script src="/glv-meta-ads/promo-format.js?v=promo-creative-20260921"></script>
+<script src="/glv-meta-ads/promo-format-ui.js?v=promo-creative-20260921"></script>
+<link rel="stylesheet" href="/glv-meta-ads/section-info.css?v=promo-creative-20260921">
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to dashboard content</a>
@@ -369,6 +370,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
     <button class="tab-btn active" id="tab-czsk" data-tab="czsk" role="tab" aria-selected="true" aria-controls="panel-czsk"><span class="tab-desktop-label">🇨🇿 CZSK</span><span class="tab-mobile-label"><span class="tab-mobile-icon">🇨🇿</span>CZSK</span></button>
     <button class="tab-btn" id="tab-czsk-triage" data-tab="czsk-triage" role="tab" aria-selected="false" aria-controls="panel-czsk-triage"><span class="tab-desktop-label">Triage</span><span class="tab-mobile-label"><span class="tab-mobile-icon">⌁</span>Triage</span></button>
     <button class="tab-btn" id="tab-czsk-promo" data-tab="czsk-promo" role="tab" aria-selected="false" aria-controls="panel-czsk-promo"><span class="tab-desktop-label">CZSK Promo</span><span class="tab-mobile-label"><span class="tab-mobile-icon">◫</span>Promo</span></button>
+    <button class="tab-btn" id="tab-czsk-promo-creative" data-tab="czsk-promo-creative" role="tab" aria-label="CZSK Promo Creative" aria-selected="false" aria-controls="panel-czsk-promo-creative"><span class="tab-desktop-label">CZSK Promo Creative</span><span class="tab-mobile-label">CZSK Promo<br>Creative</span></button>
     <button class="tab-btn" id="tab-czsk-leadgen" data-tab="czsk-leadgen" role="tab" aria-selected="false" aria-controls="panel-czsk-leadgen"><span class="tab-desktop-label">CZSK Lead-gen</span><span class="tab-mobile-label"><span class="tab-mobile-icon">◎</span>Lead-gen</span></button>
     <button class="tab-btn" id="tab-us" data-tab="us" role="tab" aria-selected="false" aria-controls="panel-us"><span class="tab-desktop-label">🇺🇸 US</span><span class="tab-mobile-label"><span class="tab-mobile-icon">🇺🇸</span>US</span></button>
   </div>
@@ -502,7 +504,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 <div class="panel" id="panel-czsk-promo" role="tabpanel" aria-labelledby="tab-czsk-promo">
   <div class="section">
     <div class="section-title">Promo Period Split</div>
-    <div class="promo-note">CZSK campaign grouping uses campaign names: <strong>_Promo</strong> = Promo, <strong>_WL</strong> = WL, everything else = BAU.</div>
+    <div class="promo-note section-methodology">CZSK campaign grouping uses campaign names: <strong>_Promo</strong> = Promo, <strong>_WL</strong> = WL, everything else = BAU.</div>
     <div class="kpi-grid" id="kpi-czsk-promo"></div>
   </div>
   <div class="section">
@@ -525,18 +527,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
       </div>
     </div>
   </div>
-  <section class="section" id="promo-format-section" aria-labelledby="promo-format-title">
-    <div class="promo-format-heading"><h2 class="section-title" id="promo-format-title">Promo Format Mix</h2><button type="button" class="metric-select promo-format-history" onclick="promoFormatHistory()" title="Set the dashboard date range from March 2026 through yesterday">Mar 2026 → latest</button></div>
-    <p class="promo-note" id="promo-format-range">Monthly within selected dates</p>
-    <p class="promo-note" id="promo-format-status" role="status">Loading ad-level format facts…</p>
-    <details><summary>Scope &amp; classification</summary><p>Uses the dashboard date range and this tab’s Campaign group / Campaign name filters. Always monthly; Grain changes the neighboring group views. The history button changes the dashboard dates for every tab. Promo only restricts this view to dates with Promo spend; leave it off to retain purchases on dates without delivery.</p><p>Only current CZSK <strong>_Promo</strong> campaigns. Current ad-set Banner / Video labels take precedence; conflicts stay Unknown. Approved original campaign/code mappings follow the ad into later months. No creative metadata inference. Includes archived ads and zero-delivery purchases; purchases use only omni_purchase with the same Meta attribution parameters as the other charts. Unknown ads remain in every denominator. A dash means no denominator, not zero.</p></details>
-    <div class="promo-format-grid" hidden>
-      <div class="chart-card"><h3 class="chart-card-title">Spend share</h3><div class="chart-wrap"><canvas id="chart-promo-format-spend" role="img" aria-label="Monthly Banner and Video spend share" aria-describedby="promo-format-table"></canvas></div></div>
-      <div class="chart-card"><h3 class="chart-card-title">Purchase share</h3><div class="chart-wrap"><canvas id="chart-promo-format-purchases" role="img" aria-label="Monthly Banner and Video purchase share" aria-describedby="promo-format-table"></canvas></div></div>
-    </div>
-    <div class="data-table-wrap promo-format-table-wrap" tabindex="0" role="region" aria-label="Promo format monthly metrics" hidden><table class="data-table" id="promo-format-table"><caption class="sr-only">Monthly Promo format totals and shares, including Unknown; amounts in CZK</caption><thead><tr><th scope="col">Month</th><th scope="col">Format</th><th scope="col">Ads</th><th scope="col">Spend</th><th scope="col">Spend share</th><th scope="col">Purchases</th><th scope="col">Purchase share</th><th scope="col">Revenue</th><th scope="col">ROAS</th><th scope="col">CPA</th></tr></thead><tbody></tbody></table></div>
-    <details id="promo-format-unknown" hidden></details>
-  </section>
+
   <div class="section">
     <div class="section-title">Promo Group Table</div>
     <div class="section-controls compact-table-controls compact-grouped-table-controls">
@@ -570,11 +561,26 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   </div>
 </div>
 
+<div class="panel" id="panel-czsk-promo-creative" role="tabpanel" aria-labelledby="tab-czsk-promo-creative">
+  <section class="section" id="promo-format-section" aria-labelledby="promo-format-title">
+    <div class="promo-format-heading"><h2 class="section-title" id="promo-format-title">Promo Format Mix</h2><button type="button" class="metric-select promo-format-history" onclick="promoFormatHistory()" title="Refresh independent history from March 2026 through the latest complete day">Refresh history</button></div>
+    <p class="promo-note" id="promo-format-range">Monthly · March 2026 → latest complete day</p>
+    <p class="promo-note" id="promo-format-status" role="status">Loading ad-level format facts…</p>
+    <div class="promo-format-methodology section-methodology"><p id="promo-format-summary"></p><p>Independent history from March 1, 2026 through the latest available complete day, refreshed automatically with the dashboard. Always monthly. Other tabs’ dates, campaign filters, grains and Promo only toggle do not change this view.</p><p>Only current CZSK <strong>_Promo</strong> campaigns. Current ad-set Banner / Video labels take precedence; conflicts stay Unknown. Approved original campaign/code mappings follow the ad into later months. No creative metadata inference. Includes archived ads and zero-delivery purchases; purchases use only omni_purchase with the same Meta attribution parameters as the other charts. Unknown ads remain in every denominator. A dash means no denominator, not zero.</p></div>
+    <div class="promo-format-grid" hidden>
+      <div class="chart-card"><h3 class="chart-card-title">Spend share</h3><div class="chart-wrap"><canvas id="chart-promo-format-spend" role="img" aria-label="Monthly Banner and Video spend share" aria-describedby="promo-format-table"></canvas></div></div>
+      <div class="chart-card"><h3 class="chart-card-title">Purchase share</h3><div class="chart-wrap"><canvas id="chart-promo-format-purchases" role="img" aria-label="Monthly Banner and Video purchase share" aria-describedby="promo-format-table"></canvas></div></div>
+    </div>
+    <div class="data-table-wrap promo-format-table-wrap" tabindex="0" role="region" aria-label="Promo format monthly metrics" hidden><table class="data-table" id="promo-format-table"><caption class="sr-only">Monthly Promo format totals and shares, including Unknown; amounts in CZK</caption><thead><tr><th scope="col">Month</th><th scope="col">Format</th><th scope="col">Ads</th><th scope="col">Spend</th><th scope="col">Spend share</th><th scope="col">Purchases</th><th scope="col">Purchase share</th><th scope="col">Revenue</th><th scope="col">ROAS</th><th scope="col">CPA</th></tr></thead><tbody></tbody></table></div>
+    <details id="promo-format-unknown" hidden></details>
+  </section>
+</div>
+
 <!-- ═══ CZSK LEAD-GEN PANEL ═══ -->
 <div class="panel" id="panel-czsk-leadgen" role="tabpanel" aria-labelledby="tab-czsk-leadgen">
   <div class="section">
     <div class="section-title">Lead-gen Split</div>
-    <div class="promo-note">CZSK campaign grouping uses campaign names: <strong>_Lead</strong> = Lead-gen, everything else = Sales.</div>
+    <div class="promo-note section-methodology">CZSK campaign grouping uses campaign names: <strong>_Lead</strong> = Lead-gen, everything else = Sales.</div>
     <div class="kpi-grid" id="kpi-czsk-leadgen"></div>
   </div>
   <div class="section">
@@ -1100,11 +1106,8 @@ function tabGroupOptions(tab){
 }
 function buildTabFilters(tab){
   buildTriageFilterOptions(tabFilterKey(tab,'group'),tabGroupOptions(tab),false);
-  // The ad-level feed also contains archived/zero-delivery carryover campaigns
-  // which the older campaign endpoints can omit. Keep them selectable, using
-  // their current object names, without adding ad facts to campaign KPI totals.
-  const formatRows=tab==='czsk-promo'?(promoFormatPayload?.rows||[]).map(row=>({id:row.campaign_id,name:row.campaign_name,segment:'czsk'})):[];
-  const rows=filterTabRows(tab,[...getTabBaseRows(tab,'aggregate'),...getTabBaseRows(tab,'daily'),...formatRows],true);
+  // Creative history is independent; these options use only this tab's dates.
+  const rows=filterTabRows(tab,[...getTabBaseRows(tab,'aggregate'),...getTabBaseRows(tab,'daily')],true);
   const options=new Map(rows.map(row=>[String(row.id),{value:String(row.id),label:row.name}]));
   buildTriageFilterOptions(tabFilterKey(tab,'campaign'),[...options.values()]);
 }
@@ -1431,7 +1434,6 @@ function refreshTrendsChart(){
   });
 }
 function refreshPromoCharts(){
-  refreshPromoFormats();
   const grain=tabGrain['czsk-promo'];
   const daily=byDateGroup(periodRows(getPromoDailyRows(),'czsk-promo'));
   const dates=[...new Set(daily.map(r=>r.date))].sort();
@@ -1734,6 +1736,7 @@ function setPromoActiveDaysOnly(checked){
   renderPromoTable();
 }
 function syncPromoFilterVisibility(activeTab){
+  document.getElementById('date-wrap').hidden=activeTab==='czsk-promo-creative';
   document.getElementById('promo-active-days-wrap')?.classList.toggle('hidden',activeTab!=='czsk-promo');
   document.getElementById('include-leadgen-wrap')?.classList.toggle('hidden',activeTab!=='czsk'&&activeTab!=='czsk-triage');
   document.getElementById('leadgen-only-wrap')?.classList.toggle('hidden',activeTab!=='czsk-leadgen');
@@ -1984,7 +1987,8 @@ async function fetchUsdRate(){
 }
 async function apiFetch(type){
   const qs=new URLSearchParams({type});
-  if(customRange)qs.set('time_range',JSON.stringify(customRange));
+  if(type==='promo_formats')qs.set('date_preset','promo_history');
+  else if(customRange)qs.set('time_range',JSON.stringify(customRange));
   else qs.set('date_preset',datePreset);
   const r=await fetch(`/api/glv-meta-ads/fb-data?${qs}`);const json=await r.json();
   if(!r.ok)throw new Error(json.error||`HTTP ${r.status}`);return json;
@@ -2056,11 +2060,12 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     const seg=btn.dataset.tab;
     document.querySelectorAll('.filter-dropdown.open').forEach(dropdown=>{dropdown.classList.remove('open');document.querySelector(`[aria-controls="${dropdown.id}"]`)?.setAttribute('aria-expanded','false');});
     syncPromoFilterVisibility(seg);
+    if(seg==='czsk-promo-creative')PROMO_FORMAT_CHART_KEYS.forEach(k=>charts[k]?.resize());
     if(seg==='czsk'||seg==='us'){if(charts[seg])charts[seg].resize();}
     if(seg==='czsk-triage')TRIAGE_PRESETS.forEach(preset=>charts[`triage-${preset.id}`]?.resize());
-    if(seg==='czsk-promo'){['promo-spend','promo-roas','promo-pie',...PROMO_FORMAT_CHART_KEYS].forEach(k=>charts[k]?.resize());}
+    if(seg==='czsk-promo'){['promo-spend','promo-roas','promo-pie'].forEach(k=>charts[k]?.resize());}
     if(seg==='czsk-leadgen'){['leadgen-metric','leadgen-pie'].forEach(k=>charts[k]?.resize());}
-    if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');mobileControlsToggle.textContent='Filters';window.scrollTo({top:0,behavior:'auto'});requestAnimationFrame(()=>{if(seg==='czsk'||seg==='us')charts[seg]?.resize();if(seg==='czsk-triage')TRIAGE_PRESETS.forEach(preset=>charts[`triage-${preset.id}`]?.resize());if(seg==='czsk-promo')['promo-spend','promo-roas','promo-pie',...PROMO_FORMAT_CHART_KEYS].forEach(k=>charts[k]?.resize());if(seg==='czsk-leadgen')['leadgen-metric','leadgen-pie'].forEach(k=>charts[k]?.resize());});}
+    if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');mobileControlsToggle.textContent='Filters';window.scrollTo({top:0,behavior:'auto'});requestAnimationFrame(()=>{if(seg==='czsk'||seg==='us')charts[seg]?.resize();if(seg==='czsk-triage')TRIAGE_PRESETS.forEach(preset=>charts[`triage-${preset.id}`]?.resize());if(seg==='czsk-promo')['promo-spend','promo-roas','promo-pie'].forEach(k=>charts[k]?.resize());if(seg==='czsk-leadgen')['leadgen-metric','leadgen-pie'].forEach(k=>charts[k]?.resize());});}
   });
 });
 document.addEventListener('click',event=>document.querySelectorAll('.filter-dropdown.open').forEach(dropdown=>{if(dropdown.closest('.filter-wrap')?.contains(event.target))return;dropdown.classList.remove('open');const toggle=document.querySelector(`[aria-controls="${dropdown.id}"]`);toggle?.setAttribute('aria-expanded','false');}));
@@ -2072,5 +2077,6 @@ function formatUtcTimestamp(date){
 const root=document.documentElement;const themeToggle=document.getElementById('theme-toggle');const mobileControlsToggle=document.getElementById('mobile-controls-toggle');const headerRight=document.querySelector('.header-right');function setTheme(theme){root.dataset.theme=theme;try{localStorage.setItem('glv-meta-ads-theme',theme);}catch(e){}const light=theme==='light';themeToggle.textContent=light?'☾':'☀';themeToggle.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');Chart.defaults.color=light?'#637589':'#9bacc0';Chart.defaults.borderColor=light?'rgba(99,117,137,.18)':'rgba(155,172,192,.16)';Object.values(charts).forEach(chart=>chart?.update('none'));}let preferred='dark';try{preferred=localStorage.getItem('glv-meta-ads-theme')||'dark';}catch(e){}setTheme(preferred==='light'?'light':'dark');if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');}themeToggle.addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));mobileControlsToggle.addEventListener('click',()=>{const collapsed=headerRight.classList.toggle('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded',String(!collapsed));mobileControlsToggle.textContent=collapsed?'Filters':'Done';});
 initTabFilters();initTriageCards();initSelects();initSortControls();updateDateLabel();loadData();
 </script>
+<script src="/glv-meta-ads/section-info.js?v=promo-creative-20260921"></script>
 </body>
 </html>
