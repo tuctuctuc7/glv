@@ -1,6 +1,8 @@
 // GLV Meta Ads daily cron — runs at 00:00 UTC (07:00 GMT+7)
 // Scheduled runs end yesterday; authorized manual runs may include today's partial data.
 
+const { fetchPromoFormats, formatRange, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
+const { validPayload } = require('../../public/glv-meta-ads/promo-format.js');
 const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
 
@@ -49,10 +51,46 @@ function resolveRedisConfig(env = process.env) {
   return null;
 }
 
+// One wall-clock budget for every network operation, including response bodies.
+// Keep 30s below Vercel's 300s cap for final serialization/logging.
+function boundedFetcher(deadline) {
+  return async (url, options = {}) => {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) throw new Error('Cron refresh time budget exceeded');
+    const controller = new AbortController();
+    let timer, rejectBudget;
+    const budget = new Promise((_, reject) => { rejectBudget = reject; });
+    const abort = () => {
+      controller.abort();
+      rejectBudget(new Error('Cron request time budget exceeded'));
+    };
+    const upstream = options.signal;
+    upstream?.addEventListener('abort', abort, {once:true});
+    timer = setTimeout(abort, Math.min(45000, remaining));
+    if (upstream?.aborted) abort();
+    try {
+      const result = await Promise.race([budget, (async () => {
+        if (controller.signal.aborted) throw new Error('Cron request time budget exceeded');
+        const response = await fetch(url, {...options, signal:controller.signal});
+        const data = await response.json();
+        return {ok:response.ok, status:response.status, json:async () => data};
+      })()]);
+      return result;
+    } finally {
+      clearTimeout(timer);
+      upstream?.removeEventListener('abort', abort);
+    }
+  };
+}
+
 async function redisCmd(...args) {
+  return redisCommand(boundedFetcher(Date.now() + 45000), ...args);
+}
+
+async function redisCommand(fetcher, ...args) {
   const redis = resolveRedisConfig();
   if (!redis) throw new Error('Redis is not configured with one complete credential pair');
-  const r = await fetch(redis.url, {
+  const r = await fetcher(redis.url, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${redis.token}`,
@@ -63,6 +101,7 @@ async function redisCmd(...args) {
   const payload = await r.json();
   if (!r.ok) throw new Error(`Redis HTTP ${r.status}`);
   if (payload?.error) throw new Error(`Redis: ${payload.error}`);
+  if (String(args[0]).toUpperCase() === 'SET' && payload?.result !== 'OK') throw new Error('Redis SET was not acknowledged');
   return payload;
 }
 
@@ -143,11 +182,11 @@ function normalizeAd(row, statusMap) {
   };
 }
 
-async function paginate(url) {
+async function paginate(url, fetcher) {
   let rows = [];
   let next = url;
   while (next) {
-    const r = await fetch(next);
+    const r = await fetcher(next);
     const data = await r.json();
     if (data.error) throw new Error(`FB API: ${data.error.message} (code ${data.error.code})`);
     rows = rows.concat(data.data || []);
@@ -156,7 +195,7 @@ async function paginate(url) {
   return rows;
 }
 
-async function fetchAndCache(token, preset, includeToday = false) {
+async function fetchAndCache(token, preset, includeToday, fetcher) {
   const { since, until } = monthRange(preset, includeToday);
   const dateParam = `time_range=${encodeURIComponent(JSON.stringify({ since, until }))}`;
   const auth = `access_token=${token}`;
@@ -167,9 +206,9 @@ async function fetchAndCache(token, preset, includeToday = false) {
   try {
     const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&limit=500&${auth}`;
-    const raw = await paginate(url);
+    const raw = await paginate(url, fetcher);
     const rows = raw.map(normalizeCampaign);
-    await redisCmd('SET', `glv:aggregate:${preset}`, JSON.stringify({ rows }), 'EX', String(TTL));
+    await redisCommand(fetcher, 'SET', `glv:aggregate:${preset}`, JSON.stringify({ rows }), 'EX', String(TTL));
     stats.aggregate = summarizeRows(rows);
   } catch (e) {
     errors.push(`aggregate/${preset}: ${e.message}`);
@@ -179,9 +218,9 @@ async function fetchAndCache(token, preset, includeToday = false) {
   try {
     const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&time_increment=1&limit=500&${auth}`;
-    const raw = await paginate(url);
+    const raw = await paginate(url, fetcher);
     const rows = raw.map(normalizeCampaign);
-    await redisCmd('SET', `glv:daily:${preset}`, JSON.stringify({ rows }), 'EX', String(TTL));
+    await redisCommand(fetcher, 'SET', `glv:daily:${preset}`, JSON.stringify({ rows }), 'EX', String(TTL));
     stats.daily = summarizeRows(rows);
   } catch (e) {
     errors.push(`daily/${preset}: ${e.message}`);
@@ -191,13 +230,13 @@ async function fetchAndCache(token, preset, includeToday = false) {
   try {
     const fields = 'ad_id,ad_name,campaign_id,spend,impressions,actions,action_values,video_p100_watched_actions,video_thruplay_watched_actions';
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=ad&fields=${fields}&${dateParam}&sort=spend_descending&limit=50&${auth}`;
-    const raw = await paginate(url);
+    const raw = await paginate(url, fetcher);
 
     const adIds = [...new Set(raw.map(r => r.ad_id || r.id).filter(Boolean))];
     let statusMap = {};
     if (adIds.length) {
       try {
-        const sr = await fetch(`${FB_API}/?ids=${adIds.join(',')}&fields=effective_status&${auth}`);
+        const sr = await fetcher(`${FB_API}/?ids=${adIds.join(',')}&fields=effective_status&${auth}`);
         const sd = await sr.json();
         if (!sd.error) {
           for (const [id, d] of Object.entries(sd)) statusMap[id] = d.effective_status || 'UNKNOWN';
@@ -206,13 +245,45 @@ async function fetchAndCache(token, preset, includeToday = false) {
     }
 
     const rows = raw.map(r => normalizeAd(r, statusMap));
-    await redisCmd('SET', `glv:ads:${preset}`, JSON.stringify({ rows }), 'EX', String(TTL));
+    await redisCommand(fetcher, 'SET', `glv:ads:${preset}`, JSON.stringify({ rows }), 'EX', String(TTL));
     stats.ads = summarizeRows(rows);
   } catch (e) {
     errors.push(`ads/${preset}: ${e.message}`);
   }
 
   return { errors, stats };
+}
+
+async function refreshPromoFormatCache(token, includeToday = false, fetcher = boundedFetcher(Date.now() + 270000)) {
+  const range = formatRange({date_preset:'promo_history',include_today:includeToday ? '1' : '0'});
+  const payload = await fetchPromoFormats(token,range,fetcher);
+  if (!validPayload(payload)) throw new Error('Invalid Promo format refresh');
+  await redisCommand(fetcher, 'SET',CACHE_KEY,JSON.stringify(payload),'EX',String(TTL));
+  return {type:'promo_formats',...range,rows:payload.rows.length,unknownAds:new Set(payload.rows.filter(r=>r.format==='Unknown').map(r=>r.ad_id)).size};
+}
+
+async function runRefresh(token, includeToday, {timeoutMs = 270000} = {}) {
+  const fetcher = boundedFetcher(Date.now() + timeoutMs);
+  const allErrors = [];
+  const summaries = [];
+  // Start the single bounded history pull alongside the old sequential preset
+  // refreshes, so it does not add another full history budget at their end.
+  // Attach both handlers immediately: failures must never become unhandled.
+  const formatRefresh = refreshPromoFormatCache(token,includeToday,fetcher).then(
+    stats=>({stats}), error=>({error:error.message})
+  );
+  for (const preset of PRESETS) {
+    const result = await fetchAndCache(token, preset, includeToday,fetcher);
+    allErrors.push(...result.errors);
+    summaries.push(result.stats);
+  }
+
+  // One history pull per existing daily job, not one ad-level pull per preset.
+  // Replace all historical facts so attribution backfill and label changes land.
+  const formatResult = await formatRefresh;
+  if (formatResult.error) allErrors.push(`promo_formats: ${formatResult.error}`);
+  else summaries.push(formatResult.stats);
+  return {allErrors, summaries};
 }
 
 async function handler(req, res) {
@@ -232,14 +303,7 @@ async function handler(req, res) {
   }
 
   const includeToday = ['1', 'true'].includes(String(req.query?.include_today || '').toLowerCase());
-  const allErrors = [];
-  const summaries = [];
-  for (const preset of PRESETS) {
-    const result = await fetchAndCache(token, preset, includeToday);
-    allErrors.push(...result.errors);
-    summaries.push(result.stats);
-  }
-
+  const {allErrors, summaries} = await runRefresh(token, includeToday);
   const success = allErrors.length === 0;
   const through = cutoffDate(includeToday);
   const coverageNote = includeToday ? ' including partial current day' : '';
@@ -252,4 +316,4 @@ async function handler(req, res) {
 }
 
 module.exports = handler;
-module.exports._test = { cutoffDate, sinceDate, monthRange, redisCmd, summarizeRows, normalizeCampaign, resolveRedisConfig };
+module.exports._test = { cutoffDate, sinceDate, monthRange, redisCmd, summarizeRows, normalizeCampaign, resolveRedisConfig, refreshPromoFormatCache, runRefresh };

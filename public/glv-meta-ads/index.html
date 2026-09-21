@@ -310,6 +310,9 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   .local-filter-label{display:none}
 }
 </style>
+<link rel="stylesheet" href="/glv-meta-ads/promo-format.css?v=promo-format-20260921">
+<script src="/glv-meta-ads/promo-format.js?v=promo-format-20260921"></script>
+<script src="/glv-meta-ads/promo-format-ui.js?v=promo-format-20260921"></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to dashboard content</a>
@@ -522,6 +525,18 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
       </div>
     </div>
   </div>
+  <section class="section" id="promo-format-section" aria-labelledby="promo-format-title">
+    <div class="promo-format-heading"><h2 class="section-title" id="promo-format-title">Promo Format Mix</h2><button type="button" class="metric-select promo-format-history" onclick="promoFormatHistory()" title="Set the dashboard date range from March 2026 through yesterday">Mar 2026 → latest</button></div>
+    <p class="promo-note" id="promo-format-range">Monthly within selected dates</p>
+    <p class="promo-note" id="promo-format-status" role="status">Loading ad-level format facts…</p>
+    <details><summary>Scope &amp; classification</summary><p>Uses the dashboard date range and this tab’s Campaign group / Campaign name filters. Always monthly; Grain changes the neighboring group views. The history button changes the dashboard dates for every tab. Promo only restricts this view to dates with Promo spend; leave it off to retain purchases on dates without delivery.</p><p>Only current CZSK <strong>_Promo</strong> campaigns. Current ad-set Banner / Video labels take precedence; conflicts stay Unknown. Approved original campaign/code mappings follow the ad into later months. No creative metadata inference. Includes archived ads and zero-delivery purchases; purchases use only omni_purchase with the same Meta attribution parameters as the other charts. Unknown ads remain in every denominator. A dash means no denominator, not zero.</p></details>
+    <div class="promo-format-grid" hidden>
+      <div class="chart-card"><h3 class="chart-card-title">Spend share</h3><div class="chart-wrap"><canvas id="chart-promo-format-spend" role="img" aria-label="Monthly Banner and Video spend share" aria-describedby="promo-format-table"></canvas></div></div>
+      <div class="chart-card"><h3 class="chart-card-title">Purchase share</h3><div class="chart-wrap"><canvas id="chart-promo-format-purchases" role="img" aria-label="Monthly Banner and Video purchase share" aria-describedby="promo-format-table"></canvas></div></div>
+    </div>
+    <div class="data-table-wrap promo-format-table-wrap" tabindex="0" role="region" aria-label="Promo format monthly metrics" hidden><table class="data-table" id="promo-format-table"><caption class="sr-only">Monthly Promo format totals and shares, including Unknown; amounts in CZK</caption><thead><tr><th scope="col">Month</th><th scope="col">Format</th><th scope="col">Ads</th><th scope="col">Spend</th><th scope="col">Spend share</th><th scope="col">Purchases</th><th scope="col">Purchase share</th><th scope="col">Revenue</th><th scope="col">ROAS</th><th scope="col">CPA</th></tr></thead><tbody></tbody></table></div>
+    <details id="promo-format-unknown" hidden></details>
+  </section>
   <div class="section">
     <div class="section-title">Promo Group Table</div>
     <div class="section-controls compact-table-controls compact-grouped-table-controls">
@@ -1085,7 +1100,11 @@ function tabGroupOptions(tab){
 }
 function buildTabFilters(tab){
   buildTriageFilterOptions(tabFilterKey(tab,'group'),tabGroupOptions(tab),false);
-  const rows=filterTabRows(tab,[...getTabBaseRows(tab,'aggregate'),...getTabBaseRows(tab,'daily')],true);
+  // The ad-level feed also contains archived/zero-delivery carryover campaigns
+  // which the older campaign endpoints can omit. Keep them selectable, using
+  // their current object names, without adding ad facts to campaign KPI totals.
+  const formatRows=tab==='czsk-promo'?(promoFormatPayload?.rows||[]).map(row=>({id:row.campaign_id,name:row.campaign_name,segment:'czsk'})):[];
+  const rows=filterTabRows(tab,[...getTabBaseRows(tab,'aggregate'),...getTabBaseRows(tab,'daily'),...formatRows],true);
   const options=new Map(rows.map(row=>[String(row.id),{value:String(row.id),label:row.name}]));
   buildTriageFilterOptions(tabFilterKey(tab,'campaign'),[...options.values()]);
 }
@@ -1412,6 +1431,7 @@ function refreshTrendsChart(){
   });
 }
 function refreshPromoCharts(){
+  refreshPromoFormats();
   const grain=tabGrain['czsk-promo'];
   const daily=byDateGroup(periodRows(getPromoDailyRows(),'czsk-promo'));
   const dates=[...new Set(daily.map(r=>r.date))].sort();
@@ -1979,6 +1999,7 @@ async function loadData(){
     errEl.style.display='none';
     Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}});charts={};
     dailyCampaigns=[];
+    promoFormatPayload=null;promoFormatError='';
     const errors=[];
     setStatus('Loading exchange rate...');await fetchUsdRate();
     setStatus('Loading campaign totals...');
@@ -2007,6 +2028,8 @@ async function loadData(){
       const leadEl=document.getElementById('leadgen-table');if(leadEl)leadEl.innerHTML=`<div class="empty" style="color:var(--red)">Daily data unavailable: ${err.message}</div>`;
       refreshTriageCharts();
     }
+    setStatus('Loading Promo format facts...');
+    await loadPromoFormats();
     setStatus('Loading creatives...');
     try{const d=await apiFetch('ads');adCreatives=processCreatives(d.rows);}catch(err){errors.push('Creatives: '+err.message);}
     buildAllFilters();
@@ -2035,9 +2058,9 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     syncPromoFilterVisibility(seg);
     if(seg==='czsk'||seg==='us'){if(charts[seg])charts[seg].resize();}
     if(seg==='czsk-triage')TRIAGE_PRESETS.forEach(preset=>charts[`triage-${preset.id}`]?.resize());
-    if(seg==='czsk-promo'){['promo-spend','promo-roas','promo-pie'].forEach(k=>charts[k]?.resize());}
+    if(seg==='czsk-promo'){['promo-spend','promo-roas','promo-pie',...PROMO_FORMAT_CHART_KEYS].forEach(k=>charts[k]?.resize());}
     if(seg==='czsk-leadgen'){['leadgen-metric','leadgen-pie'].forEach(k=>charts[k]?.resize());}
-    if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');mobileControlsToggle.textContent='Filters';window.scrollTo({top:0,behavior:'auto'});requestAnimationFrame(()=>{if(seg==='czsk'||seg==='us')charts[seg]?.resize();if(seg==='czsk-triage')TRIAGE_PRESETS.forEach(preset=>charts[`triage-${preset.id}`]?.resize());if(seg==='czsk-promo')['promo-spend','promo-roas','promo-pie'].forEach(k=>charts[k]?.resize());if(seg==='czsk-leadgen')['leadgen-metric','leadgen-pie'].forEach(k=>charts[k]?.resize());});}
+    if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');mobileControlsToggle.textContent='Filters';window.scrollTo({top:0,behavior:'auto'});requestAnimationFrame(()=>{if(seg==='czsk'||seg==='us')charts[seg]?.resize();if(seg==='czsk-triage')TRIAGE_PRESETS.forEach(preset=>charts[`triage-${preset.id}`]?.resize());if(seg==='czsk-promo')['promo-spend','promo-roas','promo-pie',...PROMO_FORMAT_CHART_KEYS].forEach(k=>charts[k]?.resize());if(seg==='czsk-leadgen')['leadgen-metric','leadgen-pie'].forEach(k=>charts[k]?.resize());});}
   });
 });
 document.addEventListener('click',event=>document.querySelectorAll('.filter-dropdown.open').forEach(dropdown=>{if(dropdown.closest('.filter-wrap')?.contains(event.target))return;dropdown.classList.remove('open');const toggle=document.querySelector(`[aria-controls="${dropdown.id}"]`);toggle?.setAttribute('aria-expanded','false');}));

@@ -1,6 +1,8 @@
 // GLV Meta Ads Dashboard — FB Graph API proxy with Upstash Redis cache
 // Requires env vars: GLV_META_FB_ACCESS_TOKEN, KV_REST_API_URL, KV_REST_API_TOKEN
 
+const { fetchPromoFormats, formatRange, sliceCachedFormats, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
+const { validPayload } = require('../../public/glv-meta-ads/promo-format.js');
 const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
 // Presets the cron pre-warms; everything else hits Meta live
@@ -35,6 +37,7 @@ async function redisGet(key) {
 }
 
 function cachedPayloadUsable(type, payload) {
+  if (type === 'promo_formats') return validPayload(payload);
   if (!payload || !Array.isArray(payload.rows)) return false;
   if (type !== 'aggregate' && type !== 'daily') return true;
   return payload.rows.every(row => {
@@ -142,6 +145,23 @@ module.exports = async (req, res) => {
 
   const { type, date_preset, time_range } = req.query;
   const preset = date_preset || 'last_30d';
+
+  if (type === 'promo_formats') {
+    res.setHeader('Cache-Control', 'private, no-store');
+    let range;
+    try { range = formatRange(req.query); }
+    catch { return res.status(400).json({error:'Invalid Promo date range or preset'}); }
+    try {
+      const cached = sliceCachedFormats(await redisGet(CACHE_KEY), range);
+      res.setHeader('X-Cache', cached ? 'HIT' : 'MISS');
+      const payload = cached || await fetchPromoFormats(token, range);
+      if (!validPayload(payload)) throw new Error('Invalid Promo format data');
+      return res.json(payload);
+    } catch (error) {
+      // Never log token-bearing URLs or return a success-shaped empty split.
+      return res.status(502).json({error:error.message});
+    }
+  }
 
   // Serve from cache for standard presets (no time_range = custom date)
   if (!time_range && CACHED_PRESETS.has(preset)) {

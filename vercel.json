@@ -5,6 +5,16 @@
   "installCommand": null,
   "outputDirectory": "public",
   "cleanUrls": true,
+  "functions": {
+    "api/glv-meta-ads/fb-data.js": {
+      "maxDuration": 300,
+      "includeFiles": "{lib/glv-promo-format.cjs,public/glv-meta-ads/promo-format.js}"
+    },
+    "api/glv-meta-ads/cron.js": {
+      "maxDuration": 300,
+      "includeFiles": "{lib/glv-promo-format.cjs,public/glv-meta-ads/promo-format.js}"
+    }
+  },
   "rewrites": [
     {
       "source": "/krs-meta-ads/",
