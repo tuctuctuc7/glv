@@ -33,6 +33,9 @@ const titles = ['executiveKpiTitle','trendTitle','detailTitle','marketComparison
    const box=await panel.boundingBox(); assert.ok(box.x>=7 && box.x+box.width<=width-7 && box.y>=7 && box.y+box.height<=901,'viewport containment');
    const after=await page.locator(`#${id}`).boundingBox(); assert.equal(before.height,after.height);
    assert.ok((await panel.innerText()).length>80);
+   const typography = await panel.evaluate(el => [...el.querySelectorAll('*')].filter(node => node.textContent.trim()).map(node => { const s = getComputedStyle(node); return [s.fontFamily, s.fontSize, s.lineHeight]; }));
+   const expectedTypography = await panel.evaluate(el => { const s = getComputedStyle(el); return [s.fontFamily, s.fontSize, s.lineHeight]; });
+   for (const actual of typography) assert.deepEqual(actual, expectedTypography, `${id}: all info text must share typography`);
    assert.equal(await page.locator('#dashboardContent .historical-scope-note:visible').count(),0,'closed baseline has no inline explanatory panels');
    if(width===320 && id==='phaseTableTitle') {
     assert.ok(await panel.evaluate(e=>e.scrollHeight>e.clientHeight),'long content scrolls');

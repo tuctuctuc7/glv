@@ -13,5 +13,6 @@
 .section-info-panel[hidden] { display: none; }
 .section-info-panel strong { color: var(--text); }
 .section-info-panel p { margin: 12px 0 0; }
+.section-info-panel p, .section-info-panel strong, .section-info-panel .historical-scope-note { font-family: inherit; font-size: inherit; line-height: inherit; }
 .section-info-panel .historical-scope-note { padding: 0; border: 0; background: transparent; color: inherit; }
 @media(max-width: 600px) { .section-info-button { flex-basis: 44px; width: 44px; height: 44px; } }
