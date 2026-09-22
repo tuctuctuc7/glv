@@ -87,13 +87,28 @@ const server=http.createServer((req,res)=>{
     for(const item of sections){
      sectionCases++;
      await page.locator(`[data-tab="${item.tab}"]`).click();
-     const button=page.locator('#'+item.id);await button.focus();
+     const button=page.locator('#'+item.id);
      const popup=page.locator('#'+await button.getAttribute('aria-controls'));
+     assert.equal(await popup.isVisible(),false,'definitions are hidden until interaction');
+     const wlSection = ['About Promo Period Split','About Promo Group Charts','About Promo Group Table'].includes(await button.getAttribute('aria-label'));
+     if(wlSection){
+      await button.scrollIntoViewIfNeeded();
+      if(width>720) await button.hover(); else await button.tap();
+      assert.equal(await popup.isVisible(),true,'WL definition opens on hover/tap');
+      assert.match(await popup.innerText(),/WL is a campaign-name group based on substrings, not ad-set or ad names/);
+      assert.match(await popup.innerText(),/both or neither → Other/);
+      assert.match(await popup.innerText(),/A displayed 0 does not prove no activity outside this scope/);
+      await page.keyboard.press('Escape');
+      assert.equal(await popup.isVisible(),false);
+      await button.blur();
+     }
+     await button.focus();
      assert.equal(await popup.isVisible(),true);
      const bounds=await popup.boundingBox();assert.ok(bounds.x>=0&&bounds.y>=0&&bounds.x+bounds.width<=width+1&&bounds.y+bounds.height<=1101);
      const styles=await popup.evaluate(el=>[el,...el.querySelectorAll('p,strong,.promo-note')].map(n=>{const s=getComputedStyle(n);return[s.fontSize,s.lineHeight,s.fontFamily];}));
      assert.ok(styles.every(s=>JSON.stringify(s)===JSON.stringify(styles[0])),'uniform popup typography');
      assert.equal(styles[0][0],'13px');
+     if(wlSection) await popup.screenshot({path:`${out}/${width}-${theme}-${item.id}.png`});
      if(item.id==='promo-format-title-info-button')await popup.screenshot({path:`${out}/${width}-${theme}-info.png`});
      await page.keyboard.press('Escape');assert.equal(await popup.isVisible(),false);
     }

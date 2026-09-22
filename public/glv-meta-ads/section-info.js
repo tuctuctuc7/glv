@@ -3,14 +3,15 @@
   // Route-local adapter of GLV's existing hover/focus/tap disclosure system.
   // Inventory every section heading; move only methodology, never alerts.
   const titles = [...document.querySelectorAll('.panel .section-title, .panel .triage-preset')];
+  const wlDefinition = 'WL is a campaign-name group based on substrings, not ad-set or ad names. Case-sensitive: _Promo takes priority, then _WL; otherwise BAU. “Break down WL influencers” splits only WL by case-insensitive campaign-name matches: kristyna → Kristyna, actionkate → ActionKate; both or neither → Other. Totals use selected dates and filters. A displayed 0 does not prove no activity outside this scope.';
   const descriptions = {
     'Filters': 'These campaign and grain controls apply only to this tab. Table-level campaign controls narrow their own table further.',
     'Daily Performance Chart': 'Uses the dashboard dates and this tab’s campaign filters. Select metrics and daily, weekly or monthly grain. Ratios are recalculated from aggregated inputs.',
     'Daily Campaign Table': 'Campaign performance within the dashboard dates and this tab’s filters. Narrow this table and choose its sort independently.',
     'Creative Evaluation': 'Ad-level creative performance within the dashboard dates and this tab’s campaign filters. Type and sort controls affect this table only.',
-    'Promo Period Split': 'Promo only restricts the group views to dates with Promo spend; it does not affect the independent Creative tab.',
-    'Promo Group Charts': 'Promo, WL and BAU use campaign-name groups. Metrics and this tab’s grain control the group charts. Ratios are calculated from summed inputs.',
-    'Promo Group Table': 'Group subtotals expand into dates. Switch grouping to start from dates instead. Campaign, grouping and sort controls affect this table only.',
+    'Promo Period Split': wlDefinition + ' Promo only restricts the group views to dates with Promo spend; it does not affect the independent Creative tab.',
+    'Promo Group Charts': wlDefinition + ' Metrics and this tab’s grain control the group charts. Ratios are calculated from summed inputs.',
+    'Promo Group Table': wlDefinition + ' Group subtotals expand into dates. Switch grouping to start from dates instead. Campaign, grouping and sort controls affect this table only.',
     'Lead-gen Split': 'Lead-gen only restricts this tab to Lead-gen campaigns.',
     'Lead-gen Group Charts': 'Compares campaign-name Lead-gen and Sales groups within the dashboard dates and this tab’s filters.',
     'Lead-gen Group Table': 'Group subtotals expand into dates. Campaign, grouping and sort controls affect this table only.',
