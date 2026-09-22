@@ -312,7 +312,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 </style>
 <link rel="stylesheet" href="/glv-meta-ads/promo-format.css?v=promo-creative-20260921">
 <script src="/glv-meta-ads/promo-format.js?v=promo-creative-20260921"></script>
-<script src="/glv-meta-ads/promo-format-ui.js?v=promo-creative-20260921"></script>
+<script src="/glv-meta-ads/promo-format-ui.js?v=meta-cache-20260922"></script>
+<script src="/glv-meta-ads/session-cache.js?v=meta-cache-20260922"></script>
 <link rel="stylesheet" href="/glv-meta-ads/section-info.css?v=promo-creative-20260921">
 </head>
 <body>
@@ -378,7 +379,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 
 <main class="page" id="main-content">
   <section class="dashboard-intro" aria-labelledby="dashboard-title"><div><p class="dashboard-kicker">Executive media control room</p><h1 class="dashboard-title" id="dashboard-title">Performance, without the noise.</h1><p class="dashboard-sub">Campaign efficiency, promo contribution, creative health, and daily evidence across CZSK and US.</p></div><div class="scope-pill">META ADS · ACCOUNT CURRENCY CZK</div></section>
-<div id="loading" class="loading"><div class="spinner"></div><span id="loading-msg">Loading campaigns…</span></div>
+<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button id="refresh-data" type="button" class="metric-select" style="min-height:44px" onclick="loadData({force:true})" title="Reload selected dates, exchange rate and independent creative history">Refresh data</button></div>
+<div id="loading" class="loading" role="status"><div class="spinner"></div><span id="loading-msg">Loading campaigns…</span></div>
 <div id="error" class="err" style="display:none;"></div>
 
 <!-- ═══ CZSK PANEL ═══ -->
@@ -1235,7 +1237,16 @@ function fmtChartDate(iso,grain){
   return fmtDate(iso);
 }
 
+function renderSourceEmpty(id,source){
+  const rows=source==='aggregate'?aggregateCampaigns:source==='daily'?dailyCampaigns:adCreatives;
+  if(rows.length)return false;
+  const el=document.getElementById(id);if(!el)return false;
+  el.innerHTML='<div class="empty"></div>';
+  el.firstChild.textContent=sourceErrors[source]?'Data unavailable — '+sourceErrors[source]:'No campaign activity for these dates.';
+  return true;
+}
 function renderKPIs(seg){
+  if(renderSourceEmpty('kpi-'+seg,'aggregate'))return;
   const rows=getMainSegmentRows(seg,'aggregate');const a=aggregate(rows);const m=calcMetrics(a);
   document.getElementById('kpi-'+seg).innerHTML=`
     <div class="kpi-card"><div class="kpi-label">Spend</div><div class="kpi-val">${fmtInt(a.spend)}</div><div class="kpi-sub">CZK</div><div class="kpi-sub2">${fmtUsd(a.spend)}</div></div>
@@ -1249,6 +1260,7 @@ function renderKPIs(seg){
   `;
 }
 function renderPromoKPIs(){
+  if(renderSourceEmpty('kpi-czsk-promo',promoActiveDaysOnly?'daily':'aggregate'))return;
   const rows=byPromoGroup(getPromoKpiRows());
   document.getElementById('kpi-czsk-promo').innerHTML=rows.map(a=>{
     const m=calcMetrics(a);const g=promoGroup(a.group);
@@ -1544,6 +1556,7 @@ function byDateLeadgenGroup(rows,selectedIds=null){
   return Object.values(map).sort((a,b)=>a.date===b.date?LEADGEN_GROUPS.findIndex(g=>g.key===a.group)-LEADGEN_GROUPS.findIndex(g=>g.key===b.group):a.date<b.date?-1:1);
 }
 function renderLeadgenKPIs(){
+  if(renderSourceEmpty('kpi-czsk-leadgen','aggregate'))return;
   const rows=byLeadgenGroup(getLeadgenRows('aggregate'));
   document.getElementById('kpi-czsk-leadgen').innerHTML=rows.map(a=>{
     const m=calcMetrics(a);const g=leadgenGroup(a.group);
@@ -1691,6 +1704,7 @@ function roasHtml(v){return`<span class="${roasClass(v)}">${escapeHtml(fmtRoas(v
 function badgeHtml(type){return`<span class="badge ${type==='Video'?'badge-v':'badge-s'}">${escapeHtml(type)}</span>`;}
 
 function renderDailyTable(seg){
+  if(renderSourceEmpty('daily-table-'+seg,'daily'))return;
   const sel=filterState[seg];const rows=getMainSegmentRows(seg,'daily');const daily=byPeriod(rows,sel,tabGrain[seg]);
   const container=document.getElementById('daily-table-'+seg);
   container.innerHTML='';
@@ -1833,6 +1847,7 @@ function sortPromoChildren(rows){
   return [...rows].sort(promoSortComparator);
 }
 function renderPromoTable(){
+  if(renderSourceEmpty('promo-table','daily'))return;
   const container=document.getElementById('promo-table');if(!container)return;
   const grain=tabGrain['czsk-promo'];const period=grain==='day'?'days':grain==='week'?'weeks':'months';
   document.getElementById('promo-mode-groups').textContent=`Groups → ${period}`;document.getElementById('promo-mode-days').textContent=`${period[0].toUpperCase()+period.slice(1)} → groups`;
@@ -1884,6 +1899,7 @@ function leadgenSortComparator(a,b){
   return state.dir==='asc'?cmp:-cmp;
 }
 function renderLeadgenTable(){
+  if(renderSourceEmpty('leadgen-table','daily'))return;
   const container=document.getElementById('leadgen-table');if(!container)return;
   const grain=tabGrain['czsk-leadgen'];const period=grain==='day'?'days':grain==='week'?'weeks':'months';
   document.getElementById('leadgen-mode-groups').textContent=`Groups → ${period}`;document.getElementById('leadgen-mode-days').textContent=`${period[0].toUpperCase()+period.slice(1)} → groups`;
@@ -1939,6 +1955,7 @@ function setTypeFilter(seg,type){
   renderCreatives(seg);
 }
 function renderCreatives(seg){
+  if(renderSourceEmpty('creative-'+seg,'ads'))return;
   const campFilter=filterState[seg+'-creative'];const typeFilter=creativeTypeFilter[seg];
   let creatives=filterTabRows(seg,adCreatives.filter(c=>c.segment===seg&&c.spend>0));
   if(seg==='czsk'&&!includeLeadGen)creatives=creatives.filter(c=>!isLeadGen(c.campaignName));
@@ -1976,82 +1993,102 @@ function renderCreatives(seg){
   renderControlledTable(container,columns,tableRows,'creative-data-table');
 }
 
+const responseCache=MetaSessionCache.createSessionCache();
+function requestScope(){return customRange?{customRange:{since:customRange.since,until:customRange.until}}:{datePreset};}
 async function fetchUsdRate(){
-  const ctrl=new AbortController();
-  const timer=setTimeout(()=>ctrl.abort(),1500);
-  try{
-    const r=await fetch('https://api.frankfurter.dev/v1/latest?from=CZK&to=USD',{signal:ctrl.signal});
-    const d=await r.json();
-    if(d.rates?.USD)usdRate=d.rates.USD;
-  }catch(e){}finally{clearTimeout(timer);}
+  return responseCache.get('fx:CZK:USD',async()=>{
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),1500);
+    try{
+      const r=await fetch('https://api.frankfurter.dev/v1/latest?from=CZK&to=USD',{signal:ctrl.signal,cache:'no-store'});
+      const d=await r.json();
+      if(!r.ok||!Number.isFinite(d.rates?.USD)||d.rates.USD<=0)throw new Error('Exchange rate unavailable');
+      return d.rates.USD;
+    }finally{clearTimeout(timer);}
+  });
 }
-async function apiFetch(type){
+async function apiFetch(type,scope=requestScope()){
   const qs=new URLSearchParams({type});
   if(type==='promo_formats')qs.set('date_preset','promo_history');
-  else if(customRange)qs.set('time_range',JSON.stringify(customRange));
-  else qs.set('date_preset',datePreset);
-  const r=await fetch(`/api/glv-meta-ads/fb-data?${qs}`);const json=await r.json();
-  if(!r.ok)throw new Error(json.error||`HTTP ${r.status}`);return json;
+  else if(scope.customRange)qs.set('time_range',JSON.stringify(scope.customRange));
+  else qs.set('date_preset',scope.datePreset);
+  // URL is the exact type + range/preset scope; history never inherits tab dates.
+  const url=`/api/glv-meta-ads/fb-data?${qs}`;
+  return responseCache.get(url,async()=>{
+    const r=await fetch(url,{cache:'no-store'});const json=await r.json();
+    if(!r.ok)throw new Error(json.error||`HTTP ${r.status}`);
+    if(type==='promo_formats'?!PromoFormat.validPayload(json):!Array.isArray(json.rows))throw new Error('Refresh required: data schema unavailable');
+    return json;
+  });
 }
 function setStatus(msg){const el=document.getElementById('loading-msg');if(el)el.textContent=msg;}
-async function loadData(){
-  const loadEl=document.getElementById('loading');const errEl=document.getElementById('error');
-
+let loadSequence=0,renderedScope='',sourceErrors={},requestedDay='';
+function scopeIdentity(scope){return new Date().toISOString().slice(0,10)+'|'+JSON.stringify(scope);}
+function syncLoadingPanels(scopeKey){
+  document.querySelectorAll('.panel').forEach(panel=>{
+    // Independent history remains usable during another tab's date request.
+    panel.style.display=panel.id==='panel-czsk-promo-creative'||renderedScope===scopeKey?'':'none';
+  });
+}
+async function loadData({force=false}={}){
+  const sequence=++loadSequence;
+  if(force)responseCache.clear();
+  const loadEl=document.getElementById('loading'),errEl=document.getElementById('error');
+  const scope=requestScope(),scopeKey=scopeIdentity(scope);
+  requestedDay=scopeKey.slice(0,10);
+  loadEl.style.display='block';errEl.style.display='none';
+  syncLoadingPanels(scopeKey);
+  setStatus(renderedScope===scopeKey?'Refreshing current view…':'Loading selected dates…');
   try{
-    loadEl.style.display='block';
-    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-    errEl.style.display='none';
-    Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}});charts={};
-    dailyCampaigns=[];
-    promoFormatPayload=null;promoFormatError='';
+    // History owns its own generation guard; neither it nor optional FX gates tabs.
+    void loadPromoFormats();
+    void fetchUsdRate().then(rate=>{
+      if(sequence!==loadSequence)return;
+      usdRate=rate;
+      if(renderedScope===scopeKey)['czsk','us'].forEach(renderKPIs);
+    }).catch(()=>{});
+    const [aggregate,daily,ads]=await Promise.allSettled([
+      apiFetch('aggregate',scope),apiFetch('daily',scope),apiFetch('ads',scope)
+    ]);
+    if(sequence!==loadSequence)return;
     const errors=[];
-    setStatus('Loading exchange rate...');await fetchUsdRate();
-    setStatus('Loading campaign totals...');
-    try{
-      const d=await apiFetch('aggregate');
-      campaignMeta={};aggregateCampaigns=processAggregateRows(d.rows);
+    sourceErrors=Object.fromEntries([['aggregate',aggregate],['daily',daily],['ads',ads]].filter(([,result])=>result.status==='rejected').map(([type,result])=>[type,result.reason.message]));
 
-      ['czsk','us'].forEach(seg=>{renderKPIs(seg);});
-      renderPromoKPIs();
-      renderLeadgenKPIs();
-    }catch(err){errors.push('Totals: '+err.message);}
-    setStatus('Loading daily breakdown...');
-    try{
-      const d=await apiFetch('daily');
-      dailyCampaigns=processDaily(d.rows);
-      buildTriageFilters();
-      ['czsk','us'].forEach(seg=>{refreshChart(seg);renderDailyTable(seg);});
-      refreshTriageCharts();
-      renderPromoKPIs();refreshPromoCharts();renderPromoTable();
-      renderLeadgenKPIs();refreshLeadgenCharts();renderLeadgenTable();
-    }catch(err){
-      errors.push('Daily: '+err.message);
-      buildTriageFilters();
-      ['czsk','us'].forEach(seg=>{const el=document.getElementById('daily-table-'+seg);if(el)el.innerHTML=`<div class="empty" style="color:var(--red)">Daily data unavailable: ${err.message}</div>`;});
-      const el=document.getElementById('promo-table');if(el)el.innerHTML=`<div class="empty" style="color:var(--red)">Daily data unavailable: ${err.message}</div>`;
-      const leadEl=document.getElementById('leadgen-table');if(leadEl)leadEl.innerHTML=`<div class="empty" style="color:var(--red)">Daily data unavailable: ${err.message}</div>`;
-      refreshTriageCharts();
-    }
-    setStatus('Loading Promo format facts...');
-    await loadPromoFormats();
-    setStatus('Loading creatives...');
-    try{const d=await apiFetch('ads');adCreatives=processCreatives(d.rows);}catch(err){errors.push('Creatives: '+err.message);}
-    buildAllFilters();
-    ['czsk','us'].forEach(seg=>renderCreatives(seg));
-    loadEl.style.display='none';
-    document.getElementById('updated-at').textContent='Updated '+formatUtcTimestamp(new Date());
+    campaignMeta={};aggregateCampaigns=[];dailyCampaigns=[];adCreatives=[];
+    if(aggregate.status==='fulfilled')aggregateCampaigns=processAggregateRows(aggregate.value.rows);
+    else errors.push('Totals: '+aggregate.reason.message);
+    if(daily.status==='fulfilled')dailyCampaigns=processDaily(daily.value.rows);
+    else errors.push('Daily: '+daily.reason.message);
+    if(ads.status==='fulfilled')adCreatives=processCreatives(ads.value.rows);
+    else errors.push('Creatives: '+ads.reason.message);
+    buildAllFilters();buildTriageFilters();
+    ['czsk','us'].forEach(seg=>{renderKPIs(seg);refreshChart(seg);renderDailyTable(seg);renderCreatives(seg);});
+    refreshTriageCharts();
+    renderPromoKPIs();refreshPromoCharts();renderPromoTable();
+    renderLeadgenKPIs();refreshLeadgenCharts();renderLeadgenTable();
+    renderedScope=scopeKey;syncLoadingPanels(scopeKey);
+    document.getElementById('updated-at').textContent='Loaded '+formatUtcTimestamp(new Date());
     if(errors.length){errEl.style.display='block';errEl.textContent='Partial errors: '+errors.join(' | ');}
+  }catch(err){
+    if(sequence!==loadSequence)return;
+    errEl.style.display='block';errEl.textContent='Dashboard failed to render: '+(err?.message||err);
+  }finally{
+    if(sequence!==loadSequence)return;
+    loadEl.style.display='none';
     const activeTab=document.querySelector('.tab-btn.active')?.dataset.tab||'czsk';
     syncPromoFilterVisibility(activeTab);
     document.getElementById('panel-'+activeTab)?.classList.add('active');
-  }catch(err){
-    loadEl.style.display='none';
-    errEl.style.display='block';
-    errEl.textContent='Dashboard failed to render: '+(err?.message||err);
-    syncPromoFilterVisibility('czsk');
-    document.getElementById('panel-czsk')?.classList.add('active');
   }
 }
+function resumeUtcDay(){
+  if(document.visibilityState==='hidden'||requestedDay===new Date().toISOString().slice(0,10))return;
+  updateDateLabel();
+  void loadData({force:true});
+}
+document.addEventListener('visibilitychange',resumeUtcDay);
+window.addEventListener('focus',resumeUtcDay);
+window.addEventListener('pageshow',resumeUtcDay);
+setInterval(resumeUtcDay,60000);
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     document.querySelectorAll('.tab-btn').forEach(b=>{const active=b===btn;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));});

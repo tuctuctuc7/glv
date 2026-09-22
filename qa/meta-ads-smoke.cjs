@@ -473,12 +473,12 @@ async function run() {
       await page.locator('#triage-grain-lp-checkout').selectOption('day');
       if (viewport.name === 'desktop') {
         await page.request.get(new URL('/__qa/omit-campaign?id=c2', base).href);
-        await page.evaluate(() => loadData());
+        await page.evaluate(() => loadData({force:true}));
         assert.equal(await page.locator('#filter-label-triage-campaign').textContent(), 'No campaigns');
         assert.deepEqual(await page.locator('#filter-options-triage-campaign input:checked').evaluateAll(inputs => inputs.map(input => input.value)), []);
         assert.equal(Math.round(await page.evaluate(() => window.Chart.getChart('triage-chart-efficiency').data.datasets[0].data.reduce((sum, value) => sum + value, 0))), 0, 'missing selected campaign does not broaden scope');
         await page.request.get(new URL('/__qa/omit-campaign', base).href);
-        await page.evaluate(() => loadData());
+        await page.evaluate(() => loadData({force:true}));
         assert.deepEqual(await page.locator('#filter-options-triage-campaign input:checked').evaluateAll(inputs => inputs.map(input => input.value)), ['c2']);
       }
       await page.evaluate(() => selectAll('triage-campaign'));

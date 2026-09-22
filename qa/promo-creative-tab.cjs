@@ -127,12 +127,14 @@ const server=http.createServer((req,res)=>{
     assert.equal(await page.locator('#promo-format-section .promo-format-table-wrap').isVisible(),false);
     payload=fixture;await page.evaluate(()=>promoFormatHistory());
    }
-   malformed=true;await page.evaluate(()=>loadData());
+   malformed=true;await page.evaluate(()=>loadData({force:true}));
+   await page.waitForFunction(()=>Boolean(promoFormatError));
    assert.match(await page.locator('#promo-format-status').textContent(),/unavailable/i);
    assert.equal(await page.locator('#promo-format-status').isVisible(),true);
    assert.equal(await page.locator('#promo-format-table tbody tr').count(),0);
    assert.equal(await page.evaluate(()=>Boolean(charts['promo-format-spend'])),false);
    malformed=false;await page.evaluate(()=>loadData());
+   await page.waitForFunction(()=>Boolean(promoFormatPayload && charts['promo-format-spend']));
    assert.equal(await page.evaluate(()=>Boolean(charts['promo-format-spend'])),true);
    const historyRequest=page.waitForRequest(request=>request.url().includes('/api/glv-meta-ads/fb-data?type=promo_formats'));
    await page.locator('.promo-format-history').click();

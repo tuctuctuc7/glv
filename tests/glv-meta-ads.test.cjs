@@ -192,7 +192,8 @@ test('Triage defines seven independent presets, a market filter, and one unique 
   assert.match(dashboard, /byPeriod\(getTriageSegmentRows\('daily'\),null,state\.grain\)/);
   assert.match(dashboard, /activeTab!==['"]czsk['"]&&activeTab!==['"]czsk-triage['"]/);
   assert.match(dashboard, /renderKPIs\('czsk'\);refreshChart\('czsk'\);renderDailyTable\('czsk'\);renderCreatives\('czsk'\);refreshTriageCharts\(\)/);
-  const loadDataBody = dashboard.slice(dashboard.indexOf('async function loadData(){'), dashboard.indexOf("document.querySelectorAll('.tab-btn')"));
+  const loadDataBody = dashboard.slice(dashboard.indexOf('async function loadData('), dashboard.indexOf("document.querySelectorAll('.tab-btn')"));
+  assert.ok(loadDataBody.includes('buildTriageFilters();') && loadDataBody.includes('refreshTriageCharts();'), 'extract the actual load lifecycle and both required operations');
   assert.ok(loadDataBody.indexOf('buildTriageFilters();') < loadDataBody.indexOf('refreshTriageCharts();'), 'Triage selections must reconcile before charts refresh after data reload');
   assert.match(dashboard, /class="triage-primary-header"/);
   assert.match(dashboard, /class="triage-secondary-header"/);

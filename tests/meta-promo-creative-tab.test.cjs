@@ -13,9 +13,9 @@ test('Promo group campaign options cannot be expanded by independent Creative hi
  assert.doesNotMatch(fn,/promoFormatPayload/);
 });
 test('format API always requests rolling history independently of global dates',async()=>{
- const fn=html.match(/async function apiFetch\(type\)\{[\s\S]*?\n\}/)[0];
+ const fn=html.slice(html.indexOf('const responseCache='),html.indexOf('function setStatus('));
  for(const customRange of [null,{since:'2026-09-01',until:'2026-09-10'}]){
-  let url;const ctx={URLSearchParams,customRange,datePreset:'last_30d',fetch:async u=>{url=u;return{ok:true,json:async()=>({})}}};vm.createContext(ctx);vm.runInContext(fn,ctx);
+  let url;const ctx={URLSearchParams,customRange,datePreset:'last_30d',MetaSessionCache:require('../public/glv-meta-ads/session-cache.js'),PromoFormat:{validPayload:()=>true},fetch:async u=>{url=u;return{ok:true,json:async()=>({rows:[]})}}};vm.createContext(ctx);vm.runInContext(fn,ctx);
   await ctx.apiFetch('promo_formats');assert.equal(new URL(url,'https://test').searchParams.get('date_preset'),'promo_history');assert.equal(new URL(url,'https://test').searchParams.has('time_range'),false);
   await ctx.apiFetch('daily');assert.equal(new URL(url,'https://test').searchParams.get(customRange?'time_range':'date_preset'),customRange?JSON.stringify(customRange):'last_30d');
  }

@@ -6,16 +6,23 @@ function promoFormatRows() {
   if (!promoFormatPayload) return [];
   return promoFormatPayload.rows;
 }
+let promoFormatSequence=0;
 function promoFormatHistory() {
+  responseCache.invalidate('/api/glv-meta-ads/fb-data?type=promo_formats&date_preset=promo_history');
   return loadPromoFormats();
 }
 async function loadPromoFormats() {
-  promoFormatPayload=null;promoFormatError='';
+  const sequence=++promoFormatSequence;
   try {
     const data=await apiFetch('promo_formats');
+    if(sequence!==promoFormatSequence)return;
     if (!PromoFormat.validPayload(data)) throw new Error('Refresh required: format schema unavailable');
-    promoFormatPayload=data;
-  } catch (error) { promoFormatError=error.message; }
+    if(promoFormatPayload===data&&!promoFormatError)return;
+    promoFormatPayload=data;promoFormatError='';
+  } catch (error) {
+    if(sequence!==promoFormatSequence)return;
+    promoFormatPayload=null;promoFormatError=error.message;
+  }
   refreshPromoFormats();
 }
 function refreshPromoFormats() {
