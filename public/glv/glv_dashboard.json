@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-24 00:10 UTC",
+  "updated_at": "2026-09-24 11:21 UTC",
   "source": {
     "tab": "Daily",
     "phase_calendar_sheet_id": "18oXDGQaE2p8E_G3PGHJwaYsl0CFM0eE9pVd-ju19edY",
@@ -176,7 +176,7 @@
     },
     {
       "start_date": "2026-09-14",
-      "end_date": "2026-09-21",
+      "end_date": "2026-09-22",
       "phase": "Promo",
       "label": "promo",
       "source_row": 47
