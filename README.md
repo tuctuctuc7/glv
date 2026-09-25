@@ -34,10 +34,12 @@ public/
   glv-meta-ads/              password-gated Meta Ads dashboard
   glv-mb-os/                 password-gated Media Buyer OS cockpit
   elm-meta-ads/              password-gated Elmich audit dashboard
+  krs-meta-ads/              final frozen KRS dashboard shell
 api/
   glv-meta-ads/              Meta Ads, decision, auth, and summary APIs
   glv-mb-os/                 browser-safe proxy for Media Buyer OS
   elm-meta-ads/              Elmich route-specific password auth
+  krs-meta-ads/              immutable KRS snapshot reader and retired cron response
 middleware.js                Vercel auth middleware for gated surfaces
 export_glv_dashboard.py      exports private Google Sheet to public JSON
 deploy_glv_dashboard.sh      clean-main export, data-only push, wait for Git deployment
@@ -46,9 +48,7 @@ vercel.json                  static output, headers, and daily Vercel cron
 
 Static assets are served from `public/`. Serverless functions live in `api/`. Private service-account files, tokens, and Slack details stay outside the repo.
 
-The KURSA Meta Ads dashboard is an ingress-only exception. Its canonical UI, API, auth, and Meta integration live in `tucmedia-hq/tm-kursa`; this Vercel project owns only the `/krs-meta-ads/*` and `/api/krs-meta-ads/*` rewrites. Do not copy KURSA dashboard source or credentials into this repository.
-
-Cutover prerequisites: deploy and verify the `tm-kursa` proxy-compatibility release first, then publish an IP rate limit for `/api/krs-meta-ads/auth` in the Agenthic Labs Vercel Firewall before enabling these rewrites.
+The discontinued KRS Meta Ads dashboard keeps its final UI and upstream login boundary. Its data API reads one immutable Redis snapshot anchored to the final completed Prague day; relative presets, date labels, and custom-date limits remain anchored to that cutoff. There is no KRS refresh cron or live Meta fallback. No KRS credentials or client data are committed to this repository.
 
 ## Business KPI Dashboard
 

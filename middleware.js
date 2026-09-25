@@ -3,6 +3,9 @@ const GLV_LOGIN_PATH = '/glv-meta-ads/login';
 const GLV_AUTH_PATH = '/api/glv-meta-ads/auth';
 const DATA_PATH = '/api/glv-meta-ads/fb-data';
 const MB_OS_DATA_PATH = '/api/glv-mb-os/decision-report';
+const KRS_FROZEN_DATA_PATH = '/api/krs-meta-ads/fb-data';
+const KRS_DASHBOARD_PATH = '/krs-meta-ads';
+const KRS_LOGIN_PATH = '/krs-meta-ads/login';
 const LEGACY_META_PATH = '/glv-meta-ads-2';
 const LEGACY_BI_PATH = '/glv-2';
 
@@ -40,9 +43,32 @@ function isElmDashboardPath(pathname) {
   return pathname === '/elm-meta-ads' || pathname.startsWith('/elm-meta-ads/');
 }
 
+function isKrsDashboardPath(pathname) {
+  return pathname === KRS_DASHBOARD_PATH
+    || pathname === `${KRS_DASHBOARD_PATH}/`
+    || pathname === `${KRS_DASHBOARD_PATH}/index`
+    || pathname === `${KRS_DASHBOARD_PATH}/index/`
+    || pathname === `${KRS_DASHBOARD_PATH}/index.html`;
+}
+
 function hasGlvAccess(request) {
   const token = process.env.GLV_META_BETA_AUTH_TOKEN;
   return Boolean(token && cookieValue(request.headers.get('cookie'), GLV_AUTH_COOKIE) === token);
+}
+
+async function hasKrsAccess(request) {
+  const token = cookieValue(request.headers.get('cookie'), 'krs_meta_beta');
+  if (!token) return false;
+  try {
+    const response = await fetch('https://kursa-cyan.vercel.app/krs-meta-ads/', {
+      headers: { cookie: `krs_meta_beta=${encodeURIComponent(token)}` },
+      redirect: 'manual',
+      cache: 'no-store',
+    });
+    return response.status === 200;
+  } catch (error) {
+    return false;
+  }
 }
 
 function decodeBase64Url(value) {
@@ -105,6 +131,10 @@ export default async function middleware(request) {
   }
 
   if (PUBLIC_ASSET_PATHS.has(pathname)) return;
+  if (pathname === `${KRS_DASHBOARD_PATH}/kursa-logo.svg`
+    || pathname === KRS_LOGIN_PATH
+    || pathname === `${KRS_LOGIN_PATH}/`
+    || pathname === `${KRS_LOGIN_PATH}.html`) return;
 
   if (
     pathname === GLV_AUTH_PATH
@@ -120,6 +150,16 @@ export default async function middleware(request) {
 
   if ((pathname === DATA_PATH || pathname === MB_OS_DATA_PATH) && !hasGlvAccess(request)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if ((pathname === KRS_FROZEN_DATA_PATH || pathname === `${KRS_FROZEN_DATA_PATH}/`) && !(await hasKrsAccess(request))) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (isKrsDashboardPath(pathname) && !(await hasKrsAccess(request))) {
+    const loginUrl = new URL(`${KRS_LOGIN_PATH}/`, request.url);
+    loginUrl.searchParams.set('next', `${url.pathname}${url.search}`);
+    return Response.redirect(loginUrl);
   }
 
   if (isGlvDashboardPath(pathname) && !hasGlvAccess(request)) {
@@ -144,6 +184,9 @@ export const config = {
     '/glv-meta-ads-2/:path*',
     '/glv-mb-os/:path*',
     '/api/glv-meta-ads/fb-data',
+    '/api/krs-meta-ads/fb-data',
+    '/api/krs-meta-ads/fb-data/:path*',
+    '/krs-meta-ads/:path*',
     '/api/glv-mb-os/decision-report',
     '/elm-meta-ads/:path*',
     '/api/elm-meta-ads/auth',
