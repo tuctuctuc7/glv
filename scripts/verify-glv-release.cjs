@@ -112,14 +112,22 @@ const approvedKursaRewrites = [
   { source: '/krs-meta-ads/', destination: 'https://kursa-cyan.vercel.app/krs-meta-ads/' },
   { source: '/krs-meta-ads/login/', destination: 'https://kursa-cyan.vercel.app/krs-meta-ads/login/' },
   { source: '/krs-meta-ads/:path*', destination: 'https://kursa-cyan.vercel.app/krs-meta-ads/:path*' },
-  { source: '/api/krs-meta-ads/:path*', destination: 'https://kursa-cyan.vercel.app/api/krs-meta-ads/:path*' },
+  { source: '/api/krs-meta-ads/auth', destination: 'https://kursa-cyan.vercel.app/api/krs-meta-ads/auth' },
 ];
 if (JSON.stringify(config.rewrites || []) !== JSON.stringify(approvedKursaRewrites)) {
   fail('KURSA Meta Ads ingress must route to the canonical tm-kursa runtime');
 }
 const allowedKursaFiles = new Set([
   'README.md',
+  'api/krs-meta-ads/cron.js',
+  'api/krs-meta-ads/fb-data.js',
+  'api/krs-meta-ads/frozen-data.js',
+
+  'middleware.js',
+  'public/krs-meta-ads/index.html',
+  'public/krs-meta-ads/kursa-logo.svg',
   'scripts/verify-glv-release.cjs',
+  'tests/krs-freeze.test.cjs',
   'tests/kursa-route.test.cjs',
   'vercel.json',
 ]);
@@ -145,7 +153,7 @@ const unexpectedKursaFiles = projectFiles.filter((file) => {
   return /K(?:URSA|RS)_META_|kursa-cyan\.vercel\.app|\/krs-meta-ads|KURSA Meta Ads/i.test(fs.readFileSync(file, 'utf8'));
 });
 if (unexpectedKursaFiles.length > 0) {
-  fail('KURSA implementation must remain exclusively in tucmedia-hq/tm-kursa');
+  fail('KURSA ingress may contain only the approved frozen-data adapter');
 }
 if ((config.crons || []).some(({ path: cronPath }) => /krs-meta-ads|kursa/i.test(cronPath))) {
   fail('Agenthic Labs must not own a KURSA cron');

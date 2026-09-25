@@ -13,6 +13,13 @@
     "api/glv-meta-ads/cron.js": {
       "maxDuration": 300,
       "includeFiles": "{lib/glv-promo-format.cjs,public/glv-meta-ads/promo-format.js}"
+    },
+    "api/krs-meta-ads/fb-data.js": {
+      "maxDuration": 60
+    },
+
+    "api/krs-meta-ads/cron.js": {
+      "maxDuration": 10
     }
   },
   "rewrites": [
@@ -29,8 +36,8 @@
       "destination": "https://kursa-cyan.vercel.app/krs-meta-ads/:path*"
     },
     {
-      "source": "/api/krs-meta-ads/:path*",
-      "destination": "https://kursa-cyan.vercel.app/api/krs-meta-ads/:path*"
+      "source": "/api/krs-meta-ads/auth",
+      "destination": "https://kursa-cyan.vercel.app/api/krs-meta-ads/auth"
     }
   ],
   "headers": [
