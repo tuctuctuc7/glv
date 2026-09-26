@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-25 00:10 UTC",
+  "updated_at": "2026-09-26 00:10 UTC",
   "source": {
     "tab": "Daily",
     "phase_calendar_sheet_id": "18oXDGQaE2p8E_G3PGHJwaYsl0CFM0eE9pVd-ju19edY",
@@ -10,7 +10,7 @@
   "currency": "USD",
   "date_range": {
     "start": "2026-01-01",
-    "end": "2026-09-24"
+    "end": "2026-09-25"
   },
   "absolute_metrics": [
     "spend",
@@ -32,12 +32,12 @@
   "phase_contract": {
     "scope": "czsk",
     "reporting_year": 2026,
-    "latest_date": "2026-09-24",
+    "latest_date": "2026-09-25",
     "calendar_authority": "Marketing Ops | Gelavis, Sheet1",
     "bau": "Every CZSK date in the reporting year not covered by Promo or Influ.",
     "overlap_rule": "Promo and Influ must not overlap.",
     "warnings": [
-      "PHASE_FUTURE_INTERVAL_SKIPPED: calendar row 55 after current data coverage 2026-09-24: tba (PHASE_DATE_INVALID: calendar row 55 malformed interval tba)"
+      "PHASE_FUTURE_INTERVAL_SKIPPED: calendar row 55 after current data coverage 2026-09-25: tba (PHASE_DATE_INVALID: calendar row 55 malformed interval tba)"
     ]
   },
   "phases": [
@@ -9617,13 +9617,13 @@
     {
       "date": "2026-09-19",
       "region": "czsk",
-      "revenue": 8000.0,
+      "revenue": 8036.0,
       "spend": 4878.0,
       "purchases": 61,
       "unique_visitors": 2149,
       "new_customers": 30,
       "returning_customers": 31,
-      "new_customer_revenue": 3543.0,
+      "new_customer_revenue": 3559.0,
       "influ_revenue": 0.0
     },
     {
@@ -9653,13 +9653,13 @@
     {
       "date": "2026-09-20",
       "region": "czsk",
-      "revenue": 9241.0,
+      "revenue": 9282.0,
       "spend": 2845.0,
       "purchases": 66,
       "unique_visitors": 1475,
       "new_customers": 28,
       "returning_customers": 38,
-      "new_customer_revenue": 3600.0,
+      "new_customer_revenue": 3616.0,
       "influ_revenue": 0.0
     },
     {
@@ -9689,13 +9689,13 @@
     {
       "date": "2026-09-21",
       "region": "czsk",
-      "revenue": 32994.0,
+      "revenue": 33150.0,
       "spend": 5226.0,
       "purchases": 228,
       "unique_visitors": 3229,
       "new_customers": 69,
       "returning_customers": 159,
-      "new_customer_revenue": 8880.0,
+      "new_customer_revenue": 8921.0,
       "influ_revenue": 0.0
     },
     {
@@ -9725,13 +9725,13 @@
     {
       "date": "2026-09-22",
       "region": "czsk",
-      "revenue": 18030.0,
+      "revenue": 18115.0,
       "spend": 4887.0,
       "purchases": 129,
       "unique_visitors": 3144,
       "new_customers": 54,
       "returning_customers": 75,
-      "new_customer_revenue": 7752.0,
+      "new_customer_revenue": 7788.0,
       "influ_revenue": 0.0
     },
     {
@@ -9761,13 +9761,13 @@
     {
       "date": "2026-09-23",
       "region": "czsk",
-      "revenue": 2765.0,
+      "revenue": 2778.0,
       "spend": 1702.0,
       "purchases": 25,
       "unique_visitors": 1569,
       "new_customers": 16,
       "returning_customers": 9,
-      "new_customer_revenue": 2862.0,
+      "new_customer_revenue": 2875.0,
       "influ_revenue": 0.0
     },
     {
@@ -9797,14 +9797,14 @@
     {
       "date": "2026-09-24",
       "region": "czsk",
-      "revenue": 3120.0,
-      "spend": 1607.0,
+      "revenue": 3134.0,
+      "spend": 1608.0,
       "purchases": 23,
       "unique_visitors": 1389,
       "new_customers": 14,
       "returning_customers": 9,
-      "new_customer_revenue": 1857.0,
-      "influ_revenue": 486.0
+      "new_customer_revenue": 1865.0,
+      "influ_revenue": 488.0
     },
     {
       "date": "2026-09-24",
@@ -9825,6 +9825,42 @@
       "spend": 196.0,
       "purchases": 1,
       "unique_visitors": 50,
+      "new_customers": 0,
+      "returning_customers": 1,
+      "new_customer_revenue": 0.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-09-25",
+      "region": "czsk",
+      "revenue": 2604.0,
+      "spend": 1619.0,
+      "purchases": 20,
+      "unique_visitors": 1413,
+      "new_customers": 11,
+      "returning_customers": 9,
+      "new_customer_revenue": 1417.0,
+      "influ_revenue": 1036.0
+    },
+    {
+      "date": "2026-09-25",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 48,
+      "new_customers": 0,
+      "returning_customers": 0,
+      "new_customer_revenue": 0.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-09-25",
+      "region": "us",
+      "revenue": 69.0,
+      "spend": 175.0,
+      "purchases": 1,
+      "unique_visitors": 51,
       "new_customers": 0,
       "returning_customers": 1,
       "new_customer_revenue": 0.0,
