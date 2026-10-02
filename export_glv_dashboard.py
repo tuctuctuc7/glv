@@ -193,6 +193,18 @@ def infer_segment_start(segment, current_month, reporting_year):
     return None
 
 
+def is_undefined_phase_segment(segment):
+    normalized = re.sub(r"[^a-z0-9]+", " ", str(segment or "").lower()).strip()
+    return normalized in {"tba", "tbd", "todo", "to be announced", "to be defined"}
+
+
+def undefined_phase_warning(source_row, segment, source_label):
+    return (
+        f"PHASE_UNDEFINED_INTERVAL_SKIPPED: calendar row {source_row} "
+        f"{source_label} has undefined interval {segment}; Home data refresh continued"
+    )
+
+
 def future_phase_warning(error, source_row, segment, current_month, reporting_year, latest_czsk):
     if latest_czsk is None:
         return None
@@ -237,6 +249,9 @@ def parse_manual_phase_calendar(rows, reporting_year, latest_czsk=None, warnings
             try:
                 start, end = parse_segment_dates(segment, current_month, reporting_year, source_row)
             except ValueError as error:
+                if is_undefined_phase_segment(segment):
+                    warnings.append(undefined_phase_warning(source_row, segment, source_label))
+                    continue
                 warning = future_phase_warning(
                     error, source_row, segment, current_month, reporting_year, latest_czsk
                 )

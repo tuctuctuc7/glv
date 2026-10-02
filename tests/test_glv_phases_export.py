@@ -139,6 +139,22 @@ class ManualCalendarParserTest(unittest.TestCase):
                 now=dt.datetime(2026, 9, 18, tzinfo=dt.UTC),
             )
 
+    def test_undefined_phase_interval_warns_without_blocking_home_refresh(self):
+        rows = calendar_rows() + [
+            ["", "october (forecast)"],
+            ["", "promo (7-12)"],
+            ["", "influ else (tba)"],
+        ]
+        payload = EXPORTER.build_payload(
+            [daily("2026-10-01")],
+            rows,
+            now=dt.datetime(2026, 10, 2, tzinfo=dt.UTC),
+        )
+        self.assertEqual(payload["date_range"]["end"], "2026-10-01")
+        self.assertEqual(len(payload["phase_contract"]["warnings"]), 1)
+        self.assertIn("PHASE_UNDEFINED_INTERVAL_SKIPPED", payload["phase_contract"]["warnings"][0])
+        self.assertIn("Home data refresh continued", payload["phase_contract"]["warnings"][0])
+
     def test_cross_phase_overlap_is_rejected(self):
         rows = [["", "feb"], ["", "promo (06-14)"], ["", "influ (14-16)"]]
         with self.assertRaisesRegex(ValueError, "PHASE_OVERLAP_PROMO_INFLU.*2026-02-14"):
