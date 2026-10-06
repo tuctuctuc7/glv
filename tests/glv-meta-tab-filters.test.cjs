@@ -32,6 +32,26 @@ test('US advertorials survive aggregate and daily normalization with canonical g
     assert.equal(normalizeCampaign({campaign_id:fixture.id,campaign_name:fixture.name,spend:'7000'}).name,fixture.name);
   }
 });
+test('literal WL_befit_over40 and prefixed campaigns survive live/cache normalization without a rename',()=>{
+ const context=runtime();
+ for(const name of ['WL_befit_over40','WL_BeFiT_OvEr40_Launch','WL_befit_over40_Promo','GLV_401_CZ_WL_befit_over40','TUC_402_CZ_WL_BEFIT_OVER40']){
+  for(const producer of ['fb-data','cron']){
+   const {normalizeCampaign}=require(`../api/glv-meta-ads/${producer}.js`)._test;
+   context.fixture={...normalizeCampaign({campaign_id:'befit',campaign_name:name,spend:'123',date_start:'2026-10-07'}),date_start:'2026-10-07'};
+   for(const fn of ['processAggregateRows','processDaily']){
+    const rows=vm.runInContext(`${fn}([fixture])`,context);
+    assert.equal(rows.length,1,`${producer}/${fn}: ${name}`);
+    assert.equal(rows[0].name,name);
+    assert.equal(rows[0].group,name.includes('_Promo')?'promo':'wl');
+    assert.equal(rows[0].spend,123);
+   }
+  }
+ }
+ for(const name of ['unrelated','befit_over40','wl_befit_over40','WL_Unknown','WL_befit_over400']){
+  context.name=name;
+  assert.equal(vm.runInContext('isValid(name)',context),false,name+' retains scope');
+ }
+});
 test('CZSK exact marker classifier and US BAU fallback are independent',()=>{
   const context=runtime();
   for(const [name,segment,expected] of [

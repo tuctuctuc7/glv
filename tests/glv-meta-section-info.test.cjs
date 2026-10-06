@@ -12,9 +12,9 @@ for (const title of ['Promo Period Split', 'Promo Group Charts', 'Promo Group Ta
     const text = context.copy[title];
     for (const phrase of [
       'WL is a campaign-name group', 'not ad-set or ad names',
-      'Case-sensitive: _Promo takes priority, then _WL; otherwise BAU',
+      'Case-sensitive: _Promo takes priority, then _WL (or a leading WL_befit_over40 launch marker); otherwise BAU',
       'Break down WL influencers', 'case-insensitive', 'kristyna', 'actionkate',
-      'both or neither → Other', 'selected dates and filters',
+      'befit_over40 → befit_over40', 'two or more recognized creators, or none → Other', 'selected dates and filters',
       'A displayed 0 does not prove no activity outside this scope',
     ]) assert.ok(text.includes(phrase), `${title}: ${phrase}`);
     assert.doesNotMatch(text, /whitelist|ActionKate has no|ActionKate had no/i);

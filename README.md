@@ -201,6 +201,8 @@ The `CZSK Triage` tab provides seven independent daily chart presets for funnel 
 
 Meta Ads currency is CZK. Always label it as CZK in reports, Slack summaries, and paid-media decision logic.
 
+CZSK campaign groups preserve case-sensitive `_Promo` precedence over `_WL`, otherwise BAU. The supplied `WL_befit_over40` launch name (including underscore suffixes and case-insensitive creator spelling) is also accepted without the usual `GLV_<number>_` / `TUC_<number>_` prefix; its leading `WL_` remains case-sensitive. This narrow exception does not admit unrelated unprefixed campaigns. The default-off **Break down WL influencers** toggle splits WL into **Kristyna**, **ActionKate**, **befit_over40**, and **Other** across Promo KPIs, charts, accessible data, and both nested-table orientations. Creator substrings are case-insensitive; two or more recognized creators, or none, go once to Other. OFF retains the canonical total WL. US grouping is unchanged. Both live and cron producers retain the raw campaign name, so this presentation change needs no cache schema, refresh, or schedule change. Validate with `npm test`, `npm run qa:meta-ads` (eight widths, both themes and WL info popovers), and `node qa/meta-cache-performance.cjs`; fixtures are synthetic, not live launch data.
+
 ## Media Buyer OS
 
 Route: `/glv-mb-os/`
