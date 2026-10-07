@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-06 00:10 UTC",
+  "updated_at": "2026-10-07 00:10 UTC",
   "source": {
     "tab": "Daily",
     "phase_calendar_sheet_id": "18oXDGQaE2p8E_G3PGHJwaYsl0CFM0eE9pVd-ju19edY",
@@ -10,7 +10,7 @@
   "currency": "USD",
   "date_range": {
     "start": "2026-01-01",
-    "end": "2026-10-05"
+    "end": "2026-10-06"
   },
   "absolute_metrics": [
     "spend",
@@ -32,13 +32,11 @@
   "phase_contract": {
     "scope": "czsk",
     "reporting_year": 2026,
-    "latest_date": "2026-10-05",
+    "latest_date": "2026-10-06",
     "calendar_authority": "Marketing Ops | Gelavis, Sheet1",
     "bau": "Every CZSK date in the reporting year not covered by Promo or Influ.",
     "overlap_rule": "Promo and Influ must not overlap.",
-    "warnings": [
-      "PHASE_UNDEFINED_INTERVAL_SKIPPED: calendar row 56 influ else has undefined interval tba; Home data refresh continued"
-    ]
+    "warnings": []
   },
   "phases": [
     {
@@ -215,6 +213,13 @@
       "phase": "Influ",
       "label": "influ befit10",
       "source_row": 55
+    },
+    {
+      "start_date": "2026-10-15",
+      "end_date": "2026-10-19",
+      "phase": "Influ",
+      "label": "influ zdravi10",
+      "source_row": 56
     },
     {
       "start_date": "2026-10-28",
@@ -10020,19 +10025,19 @@
     {
       "date": "2026-09-30",
       "region": "czsk",
-      "revenue": 3117.0,
+      "revenue": 3143.0,
       "spend": 1396.0,
       "purchases": 24,
       "unique_visitors": 2058,
       "new_customers": 17,
       "returning_customers": 7,
-      "new_customer_revenue": 2291.0,
+      "new_customer_revenue": 2310.0,
       "influ_revenue": 0.0
     },
     {
       "date": "2026-09-30",
       "region": "row",
-      "revenue": 148.0,
+      "revenue": 150.0,
       "spend": 0.0,
       "purchases": 1,
       "unique_visitors": 27,
@@ -10056,13 +10061,13 @@
     {
       "date": "2026-10-01",
       "region": "czsk",
-      "revenue": 2205.0,
+      "revenue": 2223.0,
       "spend": 1423.0,
       "purchases": 20,
       "unique_visitors": 2051,
       "new_customers": 10,
       "returning_customers": 10,
-      "new_customer_revenue": 1246.0,
+      "new_customer_revenue": 1256.0,
       "influ_revenue": 0.0
     },
     {
@@ -10092,13 +10097,13 @@
     {
       "date": "2026-10-02",
       "region": "czsk",
-      "revenue": 2216.0,
+      "revenue": 2234.0,
       "spend": 1606.0,
       "purchases": 17,
       "unique_visitors": 2341,
       "new_customers": 8,
       "returning_customers": 9,
-      "new_customer_revenue": 578.0,
+      "new_customer_revenue": 583.0,
       "influ_revenue": 0.0
     },
     {
@@ -10128,13 +10133,13 @@
     {
       "date": "2026-10-03",
       "region": "czsk",
-      "revenue": 2503.0,
+      "revenue": 2523.0,
       "spend": 1581.0,
       "purchases": 17,
       "unique_visitors": 2386,
       "new_customers": 9,
       "returning_customers": 8,
-      "new_customer_revenue": 1112.0,
+      "new_customer_revenue": 1121.0,
       "influ_revenue": 0.0
     },
     {
@@ -10164,19 +10169,19 @@
     {
       "date": "2026-10-04",
       "region": "czsk",
-      "revenue": 3278.0,
+      "revenue": 3305.0,
       "spend": 1599.0,
       "purchases": 25,
       "unique_visitors": 2378,
       "new_customers": 19,
       "returning_customers": 6,
-      "new_customer_revenue": 2521.0,
+      "new_customer_revenue": 2542.0,
       "influ_revenue": 0.0
     },
     {
       "date": "2026-10-04",
       "region": "row",
-      "revenue": 77.0,
+      "revenue": 78.0,
       "spend": 0.0,
       "purchases": 1,
       "unique_visitors": 46,
@@ -10200,13 +10205,13 @@
     {
       "date": "2026-10-05",
       "region": "czsk",
-      "revenue": 3136.0,
+      "revenue": 3163.0,
       "spend": 1651.0,
       "purchases": 27,
       "unique_visitors": 2669,
       "new_customers": 17,
       "returning_customers": 10,
-      "new_customer_revenue": 1957.0,
+      "new_customer_revenue": 1974.0,
       "influ_revenue": 0.0
     },
     {
@@ -10218,7 +10223,7 @@
       "unique_visitors": 39,
       "new_customers": 0,
       "returning_customers": 0,
-      "new_customer_revenue": 77.0,
+      "new_customer_revenue": 78.0,
       "influ_revenue": 0.0
     },
     {
@@ -10231,6 +10236,42 @@
       "new_customers": 2,
       "returning_customers": 1,
       "new_customer_revenue": 414.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-10-06",
+      "region": "czsk",
+      "revenue": 3766.0,
+      "spend": 1909.0,
+      "purchases": 28,
+      "unique_visitors": 3030,
+      "new_customers": 17,
+      "returning_customers": 11,
+      "new_customer_revenue": 2134.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-10-06",
+      "region": "row",
+      "revenue": 69.0,
+      "spend": 0.0,
+      "purchases": 1,
+      "unique_visitors": 216,
+      "new_customers": 0,
+      "returning_customers": 1,
+      "new_customer_revenue": 0.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-10-06",
+      "region": "us",
+      "revenue": 148.0,
+      "spend": 290.0,
+      "purchases": 2,
+      "unique_visitors": 402,
+      "new_customers": 0,
+      "returning_customers": 2,
+      "new_customer_revenue": 0.0,
       "influ_revenue": 0.0
     }
   ]
