@@ -26,7 +26,60 @@ module.exports=async function(page,viewport,evidenceDir){
  await toggle.focus();await page.keyboard.press('Space');
  assert.equal(await toggle.isChecked(),true);
  assert.deepEqual(await snapshot(),before,'toggle preserves filters, grain, source totals and expansion');
- const labels=['Promo','WL · Kristyna','WL · ActionKate','WL · befit_over40','WL · Other','BAU'];
+ const warning=page.locator('#wl-naming-warning');
+ await warning.waitFor({state:'visible',timeout:2000});
+ assert.match(await warning.textContent(),/breakdown unavailable until each WL campaign identifies exactly one recognized creator/i);
+ assert.match(await warning.textContent(),/Combined WL totals shown/);
+ for(const name of ['GLV_302_CZ_WL_New','GLV_303_CZ_WL_Kristyna_ActionKate','GLV_308_CZ_WL_befit_over40_Kristyna','GLV_309_CZ_WL_befit_over40_ActionKate'])assert.ok((await warning.textContent()).includes(name));
+ const assertCombined=async()=>{
+  const state=await page.evaluate(()=>({
+   groups:activePromoGroups().map(g=>g.label),
+   lines:['promo-spend','promo-roas'].map(key=>charts[key].data.datasets.map(d=>d.label)),
+   pie:charts['promo-pie'].data.labels,
+   accessible:document.querySelector('#promo-chart-table-spend').textContent,
+   kpis:document.querySelector('#kpi-czsk-promo').textContent,
+   table:document.querySelector('#promo-table').textContent,
+   source:aggregate(getPromoKpiRows()),grouped:aggregate(byPromoGroup(getPromoKpiRows())),
+   daily:aggregate(getPromoDailyRows()),periods:aggregate(byDateGroup(getPromoDailyRows()))
+  }));
+  assert.deepEqual(state.groups,['Promo','WL','BAU']);
+  for(const labels of [...state.lines,state.pie])assert.deepEqual(labels,state.groups);
+  for(const text of [state.accessible,state.kpis,state.table]){assert.ok(text.includes('WL'));assert.doesNotMatch(text,/WL ·|Other/);}
+  assert.deepEqual(state.source,state.grouped);assert.deepEqual(state.daily,state.periods);
+  assert.equal(await toggle.isChecked(),true);
+ };
+ await assertCombined();
+ assert.equal(await warning.locator('li').count(),4,'aggregate/daily duplicates are listed once');
+ await page.locator('#promo-mode-days').click();
+ await assertCombined();
+ await page.locator('#promo-mode-groups').click();
+ // Zero and multiple matches are separate failures. A hostile source name is literal, never HTML.
+ await page.evaluate(()=>{
+  const row={...aggregateCampaigns.find(r=>r.id==='other'),id:'hostile-wl',name:'GLV_310_CZ_WL_Unknown_"><svg onload=window.__wlXss=1></svg>'};
+  aggregateCampaigns.push(row);dailyCampaigns.push({...row,date:'2026-08-10'});
+  filterState['tab-czsk-promo-campaign']=new Set(['hostile-wl']);buildAllFilters();renderTab('czsk-promo');
+ });
+ assert.ok((await warning.textContent()).includes('<svg onload=window.__wlXss=1></svg>'));
+ assert.equal(await warning.locator('svg').count(),0);
+ assert.equal(await page.evaluate(()=>window.__wlXss||0),0);
+ await assertCombined();
+ await page.locator('#tab-filters-czsk-promo').scrollIntoViewIfNeeded();
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.evaluate(()=>{document.activeElement?.blur();window.scrollTo(0,0);Object.values(charts).forEach(chart=>{chart.stop();chart.update('none');});});
+ await page.waitForTimeout(1200);
+ await page.screenshot({path:path.join(evidenceDir,`${viewport.name}-wl-naming-warning.png`),fullPage:true});
+ await page.evaluate(()=>{filterState['tab-czsk-promo-campaign']=new Set(['ambiguous']);buildAllFilters();renderTab('czsk-promo');});
+ await assertCombined();
+ assert.ok((await warning.textContent()).includes('GLV_303_CZ_WL_Kristyna_ActionKate'));
+ assert.ok(!(await warning.textContent()).includes('GLV_302_CZ_WL_New'),'excluded campaigns do not block or appear');
+ // Excluded invalid campaigns remain in the source: valid selected scope recovers without resetting ON.
+ await page.evaluate(()=>{
+  filterState['tab-czsk-promo-campaign']=new Set(aggregateCampaigns.filter(r=>!['other','ambiguous','befit-kristyna','befit-kate','hostile-wl'].includes(r.id)).map(r=>r.id));
+  buildAllFilters();renderTab('czsk-promo');
+ });
+ assert.equal(await warning.isVisible(),false);
+ assert.equal(await toggle.isChecked(),true);
+ const labels=['Promo','WL · Kristyna','WL · ActionKate','WL · befit_over40','BAU'];
  for(const grain of ['day','week','month']){
   await page.locator('#tab-grain-czsk-promo').selectOption(grain);
   await page.locator('#chart-metric-promo-spend').selectOption('purchases');
@@ -47,12 +100,11 @@ module.exports=async function(page,viewport,evidenceDir){
   assert.ok(state.lines[1].every(d=>d.metric==='lp2pur'));
   assert.equal(state.lines[1][2].data[0],20,'ratio of sums for Kate');
   assert.equal(state.lines[1][3].data[0],10/80*100,'befit ratio of sums (not mean campaign ratios)');
-  assert.equal(state.lines[1][4].data[0],13/65*100,'all creator pairs and unknown stay Other');
   assert.equal(state.pie.datasets[0].data.reduce((a,b)=>a+b,0),state.total);
   assert.ok(await page.locator('#kpi-czsk-promo').textContent().then(t=>labels.every(label=>t.includes(label))));
   assert.equal(await page.locator('#promo-chart-table-pie tbody tr').count(),labels.length);
   await page.locator('#promo-mode-groups').click();
-  for(const key of ['wl-kristyna','wl-actionkate','wl-befit-over40','wl-other']){
+  for(const key of ['wl-kristyna','wl-actionkate','wl-befit-over40']){
    const button=page.locator('#promo-group-toggle-'+key);
    if(await button.getAttribute('aria-expanded')==='true')await button.click();
    await button.click();assert.equal(await button.getAttribute('aria-expanded'),'true');
@@ -88,7 +140,7 @@ module.exports=async function(page,viewport,evidenceDir){
    await button.focus();
    const popup=page.locator('#'+await button.getAttribute('aria-controls'));
    await popup.waitFor({state:'visible'});
-   assert.match(await popup.textContent(),/befit_over40 → befit_over40; two or more recognized creators, or none → Other/);
+   assert.match(await popup.textContent(),/Every WL campaign must identify exactly one recognized creator/);
    const box=await popup.boundingBox();
    assert.ok(box.x>=0&&box.x+box.width<=viewport.width,`${theme} ${title} popup fits`);
    await page.keyboard.press('Escape');
@@ -107,7 +159,7 @@ module.exports=async function(page,viewport,evidenceDir){
  await toggle.check();
  assert.equal(await page.locator('#promo-group-toggle-wl-actionkate').getAttribute('aria-expanded'),'true');
  await page.evaluate(()=>{filterState['tab-czsk-promo-group']=new Set(['wl']);buildAllFilters();renderTab('czsk-promo');});
- assert.ok(await page.evaluate(()=>getPromoKpiRows().length===8&&getPromoKpiRows().every(r=>r.group==='wl')));
+ assert.ok(await page.evaluate(()=>getPromoKpiRows().length===4&&getPromoKpiRows().every(r=>r.group==='wl')));
  // Campaign subsets and explicit none must feed every surface, with no toggle reset.
  await page.evaluate(()=>{filterState['tab-czsk-promo-campaign']=new Set(['befit']);buildAllFilters();renderTab('czsk-promo');});
  for(const enabled of [true,false,true]){
@@ -131,5 +183,44 @@ module.exports=async function(page,viewport,evidenceDir){
  await page.evaluate(()=>{filterState['tab-czsk-promo-campaign']=new Set();buildAllFilters();renderTab('czsk-promo');});
  assert.equal(await page.evaluate(()=>getPromoKpiRows().length+getPromoDailyRows().length),0);
  assert.equal(await page.evaluate(()=>charts['promo-pie'].data.datasets[0].data.reduce((a,b)=>a+b,0)),0);
- assert.equal(await page.evaluate(()=>window.__promoXss||0),0);
+ assert.equal(await warning.isVisible(),false,'explicit none has no naming blockers');
+ // Daily-only invalid data must prevent a misleading split even with valid aggregate names.
+ await page.evaluate(()=>{
+  filterState['tab-czsk-promo-campaign']=new Set(['c2']);
+  dailyCampaigns=dailyCampaigns.map(r=>r.id==='c2'?{...r,name:'GLV_102_CZ_WL_Unspecified'}:r);
+  buildAllFilters();renderTab('czsk-promo');
+ });
+ assert.equal(await warning.isVisible(),true);
+ await assertCombined();
+ await toggle.uncheck();
+ assert.equal(await warning.isVisible(),false,'OFF remains combined without a split warning');
+ await toggle.check();
+ assert.equal(await warning.isVisible(),true);
+ // A real in-app load replaces the synthetic invalid rows with the server's valid names.
+ await page.evaluate(()=>loadData({force:true}));
+ assert.equal(await toggle.isChecked(),true);
+ assert.equal(await warning.isVisible(),false);
+ assert.deepEqual(await page.evaluate(()=>charts['promo-spend'].data.datasets.map(d=>d.label)),labels);
+ assert.equal(await page.evaluate(()=>byPromoGroup(getPromoKpiRows()).find(r=>r.group==='wl-kristyna').spend),26000);
+ // Promo-only active dates exclude invalid daily names outside the represented Promo scope.
+ await page.evaluate(()=>{
+  filterState['tab-czsk-promo-group']=null;filterState['tab-czsk-promo-campaign']=null;
+  const row={...dailyCampaigns.find(r=>r.id==='c2'),date:'2026-08-09',name:'GLV_102_CZ_WL_Unspecified'};
+  dailyCampaigns.push(row);buildAllFilters();setPromoActiveDaysOnly(false);
+ });
+ assert.equal(await warning.isVisible(),true);
+ await page.evaluate(()=>setPromoActiveDaysOnly(true));
+ assert.equal(await warning.isVisible(),false,'excluded dates do not block');
+ assert.deepEqual(await page.evaluate(()=>charts['promo-spend'].data.datasets.map(d=>d.label)),labels);
+ // Promo precedence, US rows and Lead-gen exclusions do not become naming blockers.
+ await page.evaluate(()=>{
+  const row=aggregateCampaigns.find(r=>r.id==='c2');
+  for(const [id,name,segment] of [['precedence-invalid','GLV_401_CZ_WL_Unspecified_Promo','czsk'],['lead-invalid','GLV_402_CZ_WL_Unspecified_Lead','czsk'],['us-invalid','GLV_403_US_WL_Unspecified','us']]){
+   const extra={...row,id,name,segment,group:promoGroupKey(name)};
+   aggregateCampaigns.push(extra);dailyCampaigns.push({...extra,date:'2026-08-10'});
+  }
+  buildAllFilters();renderTab('czsk-promo');
+ });
+ assert.equal(await warning.isVisible(),false);
+ assert.equal(await page.evaluate(()=>window.__promoXss||window.__wlXss||0),0);
 };
