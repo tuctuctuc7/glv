@@ -1,9 +1,14 @@
 #promoComparison { min-width: 0; overflow: visible; }
+/* Keyboard/screen-reader equivalent without a second visible legend. */
+.promo-focus-control:not(:focus-within) { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.promo-focus-control:focus-within { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.promo-focus-control select { min-height: 44px; max-width: 100%; }
 .promo-controls { display: flex; align-items: end; gap: 12px; min-width: 0; }
 .promo-controls .field { min-width: 180px; }
 #promoMonths .phase-menu-options { left: 0; right: auto; }
 #promoMonths label:has(input:disabled) { opacity: .65; cursor: default; }
 @media (max-width: 700px) {
+  #promoComparison .phase-chart-wrap { height: max(280px, calc(var(--promo-month-count, 2) * 44px)); }
   .promo-controls { flex-wrap: wrap; }
   .promo-controls .field { min-width: 0; width: 100%; }
   #promoMonths { width: 100%; }

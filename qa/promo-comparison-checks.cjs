@@ -29,6 +29,9 @@ module.exports = async function checkPromo(page, evidenceDir) {
   assert.match(await page.locator('#promoEmpty').innerText(),/Select months/);
   await page.locator('#promoMonths input[data-value="*"]').check();
   const all = await read(); assert.ok(all.length >= initial.length); assert.equal(new Set(all.map(d => d.color)).size,all.length);
+  await page.locator('#promoMonths button').press('Escape');
+  await require('./promo-focus-checks.cjs')(page, evidenceDir);
+  await page.locator('#promoMonths button').click();
   await page.locator('#promoMonths input[data-value="none"]').check();
   await page.locator(`#promoMonths input[data-value="${initial[0].month}"]`).check();
   assert.equal((await read())[0].color,initial[0].color);

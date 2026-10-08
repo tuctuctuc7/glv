@@ -1,6 +1,24 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const promo = require('../public/glv/promo-comparison.js');
+test('focus changes styling only, dimming points and strokes and drawing focus last', () => {
+  for (const theme of ['light', 'dark']) {
+    const base = promo.focusStyle('2026-01', null, theme);
+    assert.equal(base.borderColor, promo.color('2026-01', theme));
+    assert.equal(base.borderWidth, 2.5);
+    const focused = promo.focusStyle('2026-01', '2026-01', theme);
+    const dimmed = promo.focusStyle('2026-02', '2026-01', theme);
+    assert.equal(focused.borderWidth, 3.5);
+    assert.ok(focused.order < dimmed.order);
+    assert.equal(dimmed.borderColor, `${promo.color('2026-02', theme)}33`);
+    assert.equal(dimmed.pointBackgroundColor, dimmed.borderColor);
+    assert.equal(dimmed.pointBorderColor, dimmed.borderColor);
+    assert.equal(dimmed.pointHoverBackgroundColor, dimmed.borderColor);
+    assert.equal(dimmed.pointHoverBorderColor, dimmed.borderColor);
+    assert.equal('hidden' in dimmed, false);
+    assert.equal('data' in dimmed, false);
+  }
+});
 test('missing inputs remain null; valid daily ratios and derived revenue are computed', () => {
   const row = {revenue: 100, spend: 20, purchases: 4, new_customers: 2, returning_customers: 2, new_customer_revenue: 60, unique_visitors: 40};
   assert.equal(promo.value(row, 'roas'), 5);

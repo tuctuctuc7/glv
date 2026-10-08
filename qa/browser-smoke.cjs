@@ -191,7 +191,8 @@ async function run() {
       { type: 'line', label: 'Promo' },
       { type: 'line', label: 'Influ' },
     ]);
-    assert.equal(await page.locator('#phaseChartDataBody tr').count(), 9, 'YTD chart should include Jan through Sep');
+    const phaseMonthCount = new Set(require('../public/glv/phases.js').buildPhaseDays(dashboardData.rows, dashboardData.phases, dashboardData.phase_contract.latest_date).map(d => d.month)).size;
+    assert.equal(await page.locator('#phaseChartDataBody tr').count(), phaseMonthCount, 'YTD chart includes every represented month');
     assert.equal(await page.locator('#phaseTable thead th').count(), 17, 'phase table includes final day count');
     assert.deepEqual(await page.locator('#phaseTable thead th').allTextContents(), ['Dimension', 'Spend', 'Revenue', 'Avg daily revenue', 'Share', 'ROAS', 'CAC', 'NC ROAS', 'Purchases', 'Cost per purchase', 'AOV', 'CVR', 'Visitors', 'New customer revenue', 'RC revenue', 'New customer rate', 'Number of days']);
     assert.equal(await page.locator('#phaseTableBody tr').first().locator('td').last().textContent(), '31');
@@ -213,7 +214,7 @@ async function run() {
     assert.match(await page.locator('#phaseChartCaption').textContent(), /Avg daily revenue/);
     assert.match(await page.locator('#phaseChartDataBody tr').first().locator('td').nth(1).textContent(), /^\$[\d,]+$/);
     assert.match(await page.locator('#phaseTableBody tr').first().locator('td').nth(3).textContent(), /^\$[\d,]+$/);
-    assert.equal(await page.locator('#phaseTableBody .phase-kind-month').count(), 9, 'default hierarchy should show each YTD month');
+    assert.equal(await page.locator('#phaseTableBody .phase-kind-month').count(), phaseMonthCount, 'default hierarchy should show each YTD month');
     const firstPhaseDisclosure = page.locator('#phaseTableBody .phase-kind-phase .phase-disclosure').first();
     await firstPhaseDisclosure.click();
     assert.equal(await firstPhaseDisclosure.getAttribute('aria-expanded'), 'true');
