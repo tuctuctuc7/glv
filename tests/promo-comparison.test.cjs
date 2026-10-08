@@ -11,10 +11,11 @@ test('focus changes styling only, dimming points and strokes and drawing focus l
     assert.equal(focused.borderWidth, 3.5);
     assert.ok(focused.order < dimmed.order);
     assert.equal(dimmed.borderColor, `${promo.color('2026-02', theme)}33`);
-    assert.equal(dimmed.pointBackgroundColor, dimmed.borderColor);
-    assert.equal(dimmed.pointBorderColor, dimmed.borderColor);
-    assert.equal(dimmed.pointHoverBackgroundColor, dimmed.borderColor);
-    assert.equal(dimmed.pointHoverBorderColor, dimmed.borderColor);
+    const pointInk = `${promo.color('2026-02', theme)}80`;
+    assert.equal(dimmed.pointBackgroundColor, pointInk);
+    assert.equal(dimmed.pointBorderColor, pointInk);
+    assert.equal(dimmed.pointHoverBackgroundColor, pointInk);
+    assert.equal(dimmed.pointHoverBorderColor, pointInk);
     assert.equal('hidden' in dimmed, false);
     assert.equal('data' in dimmed, false);
   }

@@ -35,8 +35,9 @@
   function focusStyle(month, focusedMonth, theme) {
     const focused = month === focusedMonth;
     const ink = color(month, theme) + (focusedMonth && !focused ? '33' : '');
-    return { borderColor: ink, backgroundColor: ink, pointBackgroundColor: ink,
-      pointBorderColor: ink, pointHoverBackgroundColor: ink, pointHoverBorderColor: ink,
+    const pointInk = color(month, theme) + (focusedMonth && !focused ? '80' : '');
+    return { borderColor: ink, backgroundColor: ink, pointBackgroundColor: pointInk,
+      pointBorderColor: pointInk, pointHoverBackgroundColor: pointInk, pointHoverBorderColor: pointInk,
       borderWidth: focused ? 3.5 : 2.5, order: focused ? -1 : 0 };
   }
   return { build, value, color, focusStyle };

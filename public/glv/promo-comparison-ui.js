@@ -35,7 +35,7 @@ window.renderPromoComparison = (() => {
       focusSelect.value = focusedMonth || '';
       if (!chart) return;
       chart.data.datasets.forEach(d => Object.assign(d, api.focusStyle(d.month, focusedMonth, document.documentElement.dataset.theme)));
-      chart.update('none');
+      chart.update();
     }
     focusSelect.onchange = () => applyFocus(focusSelect.value);
     if (selected === undefined && data.available.length) selected = data.selected;

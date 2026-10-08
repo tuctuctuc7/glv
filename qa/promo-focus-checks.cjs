@@ -7,6 +7,7 @@ module.exports = async function checkFocus(page, evidenceDir) {
       bounds: Object.values(c.scales).map(s => [s.min,s.max]),
       styles: c.data.datasets.map((d,i) => ({month:d.month, color:d.borderColor, point:d.pointBackgroundColor, width:d.borderWidth, visible:c.isDatasetVisible(i)})),
       legend: c.legend.legendItems.map(i => ({index:i.datasetIndex, hidden:i.hidden})),
+      renderedPoints: c.data.datasets.map((d,i) => c.getDatasetMeta(i).data.map(p => ({fill:p.options.backgroundColor, border:p.options.borderColor}))),
       order:c.getSortedVisibleDatasetMetas().map(m => c.data.datasets[m.index].month) };
   });
   const clickLegend = async (index, touch = false) => {
@@ -37,11 +38,15 @@ module.exports = async function checkFocus(page, evidenceDir) {
     for (const d of s.styles) {
       assert.equal(d.visible,true);
       assert.equal(d.width,d.month === month ? 3.5 : 2.5);
-      assert.equal(d.point,d.color);
+      assert.equal(d.point, month && d.month !== month ? d.color.slice(0,7) + '80' : d.color);
       assert.equal(d.color.length,month && d.month !== month ? 9 : 7);
       if (month && d.month !== month) assert.ok(d.color.endsWith('33'));
     }
     if (month) assert.equal(s.order[0],month,'focused dataset drawn last/on top');
+    s.renderedPoints.forEach((points,i) => points.forEach(point => {
+      assert.equal(point.fill,s.styles[i].point,'resolved dot fill matches focus opacity');
+      assert.equal(point.border,s.styles[i].point,'resolved dot border matches focus opacity');
+    }));
   };
   const baseline = await snapshot();
   assert.ok(baseline.values.length >= 3);
