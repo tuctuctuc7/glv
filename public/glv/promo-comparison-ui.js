@@ -2,6 +2,7 @@
 window.renderPromoComparison = (() => {
   let selected;
   let chart;
+  let focusedMonth = null;
   let lastDays = [];
   const $ = id => document.getElementById(id);
   const node = (tag, text) => { const n = document.createElement(tag); if (text != null) n.textContent = text; return n; };
@@ -21,6 +22,22 @@ window.renderPromoComparison = (() => {
     }
     const metric = select.value;
     const data = api.build(days, selected, metric);
+    $('promoComparison').style.setProperty('--promo-month-count', data.series.length);
+    if (!data.selected.includes(focusedMonth)) focusedMonth = null;
+    const focusSelect = $('promoFocus');
+    focusSelect.replaceChildren();
+    const reset = node('option', 'All months equally'); reset.value = ''; focusSelect.append(reset);
+    data.series.forEach(s => { const option = node('option', monthName(s.month)); option.value = s.month; focusSelect.append(option); });
+    focusSelect.value = focusedMonth || '';
+    focusSelect.disabled = !data.series.length;
+    function applyFocus(month) {
+      focusedMonth = month || null;
+      focusSelect.value = focusedMonth || '';
+      if (!chart) return;
+      chart.data.datasets.forEach(d => Object.assign(d, api.focusStyle(d.month, focusedMonth, document.documentElement.dataset.theme)));
+      chart.update('none');
+    }
+    focusSelect.onchange = () => applyFocus(focusSelect.value);
     if (selected === undefined && data.available.length) selected = data.selected;
     const host = $('promoMonths');
     const open = host.querySelector('button')?.getAttribute('aria-expanded') === 'true';
@@ -63,15 +80,22 @@ window.renderPromoComparison = (() => {
       type: 'line',
       data: { labels: data.labels, datasets: data.series.map(s => ({
         label: monthName(s.month), month: s.month, dates: s.dates, data: s.values,
-        borderColor: api.color(s.month, document.documentElement.dataset.theme),
-        backgroundColor: api.color(s.month, document.documentElement.dataset.theme),
         borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 5, spanGaps: false, tension: 0.25,
+        ...api.focusStyle(s.month, focusedMonth, document.documentElement.dataset.theme),
       })) },
       options: {
         animation: false, responsive: true, maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { position: 'bottom', align: 'start', onClick: () => {}, labels: { font, color: text, boxWidth: 18, boxHeight: 2, padding: 16 } },
+          legend: { position: 'bottom', align: 'start',
+            onClick: (_event, item) => {
+              const month = chart.data.datasets[item.datasetIndex].month;
+              applyFocus(focusedMonth === month ? null : month);
+            },
+            labels: { font, color: text, boxWidth: 18, boxHeight: 2, padding: 16,
+              // Draw order changes must not move the legend under the pointer.
+              sort: (a, b) => a.datasetIndex - b.datasetIndex },
+          },
           tooltip: { titleFont: font, bodyFont: font, callbacks: { label: item => `${item.dataset.label} · ${item.dataset.dates[item.dataIndex]}: ${format(metric, item.raw)}` } },
         },
         scales: {

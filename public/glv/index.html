@@ -13,9 +13,9 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f" crossorigin="anonymous" defer></script>
   <script src="/glv/metrics.js?v=nc-rc-metrics-20260920" defer></script>
   <script src="/glv/phases.js?v=nc-rc-metrics-20260920&amp;columns=days" defer></script>
-  <script src="/glv/promo-comparison.js?v=promo-comparison-1" defer></script>
-  <script src="/glv/promo-comparison-ui.js?v=promo-comparison-2" defer></script>
-  <link rel="stylesheet" href="/glv/promo-comparison.css?v=promo-comparison-1" />
+  <script src="/glv/promo-comparison.js?v=promo-focus-1" defer></script>
+  <script src="/glv/promo-comparison-ui.js?v=promo-focus-1" defer></script>
+  <link rel="stylesheet" href="/glv/promo-comparison.css?v=promo-focus-1" />
   <script src="/glv/app.js?v=nc-rc-metrics-20260920&amp;columns=home-order&amp;history-warning=1" defer></script>
   <link rel="stylesheet" href="/glv/section-info.css?v=section-info-20260920-stack-3" />
   <script src="/glv/section-info.js?v=section-info-20260920" defer></script>
@@ -332,6 +332,7 @@
           <p class="historical-scope-note">Only represented Promo dates, in chronological order within each month. Separate windows concatenate; missing and future days are not filled. Independent of the phase and table filters.</p>
           <p id="promoEmpty" class="historical-scope-note" role="status" hidden></p>
           <div class="phase-chart-wrap"><canvas id="promoChart" role="img" aria-label="Daily Promo comparison" aria-describedby="promoChartData"></canvas></div>
+          <label class="promo-focus-control">Highlight month (all lines remain visible)<select id="promoFocus" aria-label="Highlight Promo month"></select></label>
           <table id="promoChartData" class="sr-only"><caption id="promoChartCaption">Daily Promo comparison data</caption><thead><tr><th scope="col">Promo day</th></tr></thead><tbody id="promoChartDataBody"></tbody></table>
         </section>
       </section>

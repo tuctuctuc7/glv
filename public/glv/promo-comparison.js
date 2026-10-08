@@ -31,5 +31,13 @@
       month: g.month, dates: g.days.map(d => d.date), values: Array.from({length}, (_,i) => g.days[i] ? value(g.days[i], metric) : null),
     })) };
   }
-  return { build, value, color };
+  // Styling only: never remove values or hide a dataset when focusing.
+  function focusStyle(month, focusedMonth, theme) {
+    const focused = month === focusedMonth;
+    const ink = color(month, theme) + (focusedMonth && !focused ? '33' : '');
+    return { borderColor: ink, backgroundColor: ink, pointBackgroundColor: ink,
+      pointBorderColor: ink, pointHoverBackgroundColor: ink, pointHoverBorderColor: ink,
+      borderWidth: focused ? 3.5 : 2.5, order: focused ? -1 : 0 };
+  }
+  return { build, value, color, focusStyle };
 }));
