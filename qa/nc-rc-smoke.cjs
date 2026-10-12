@@ -48,7 +48,7 @@ module.exports = async (browser, baseUrl, evidenceDir) => {
   await page.locator('#phaseTableBody [data-phase-toggle="month|2026-01|phase|Influ"]').click();
   for(const row of await page.locator('#phaseTableBody .phase-kind-influ-split').all()) {
    assert.equal(await row.locator('td').nth(ph.indexOf('NC ROAS')).textContent(),'—');
-   assert.equal(await row.locator('td').nth(ph.indexOf('RC revenue')).textContent(),'—');
+   assert.equal(await row.locator('td').nth(ph.indexOf('RC Revenue')).textContent(),'—');
   }
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
   await page.screenshot({path:path.join(evidenceDir,`nc-rc-phases-${width}-${theme}.png`)});

@@ -1146,14 +1146,14 @@ function renderPhaseTable(days) {
       phaseMetricCell('roas', node.metrics.roas),
       phaseMetricCell('cac', node.metrics.cac),
       phaseMetricCell('nc_roas', node.metrics.nc_roas),
+      phaseMetricCell('new_customer_rate', node.metrics.new_customer_rate),
+      phaseMetricCell('new_customer_revenue', node.metrics.new_customer_revenue),
+      phaseMetricCell('returning_customer_revenue', node.metrics.returning_customer_revenue),
+      phaseMetricCell('cvr', node.metrics.cvr),
       phaseMetricCell('purchases', node.metrics.purchases),
       phaseMetricCell('cpa', node.metrics.cpa),
       phaseMetricCell('aov', node.metrics.aov),
-      phaseMetricCell('cvr', node.metrics.cvr),
       phaseMetricCell('unique_visitors', node.metrics.unique_visitors),
-      phaseMetricCell('new_customer_revenue', node.metrics.new_customer_revenue),
-      phaseMetricCell('returning_customer_revenue', node.metrics.returning_customer_revenue),
-      phaseMetricCell('new_customer_rate', node.metrics.new_customer_rate),
       phaseMetricCell('day_count', node.metrics.day_count),
     ];
     values.forEach((value) => row.appendChild(element('td', '', value)));
