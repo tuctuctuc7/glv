@@ -11,7 +11,8 @@ test('approved Pulse is the sole canonical runtime, with release-versioned depen
   const html = read('public/glv/index.html');
   assert.match(html, /<title>GLV Executive Pulse<\/title>/);
   for (const file of ['app.js', 'metrics.js', 'phases.js', 'styles.css']) {
-    assert.ok(html.includes(`/glv/${file}?v=nc-rc-metrics-20260920`), file);
+    const version = ['app.js', 'styles.css'].includes(file) ? 'phase-compact-20261012' : 'nc-rc-metrics-20260920';
+    assert.ok(html.includes(`/glv/${file}?v=${version}`), file);
   }
   for (const file of ['index.html', 'app.js', 'styles.css', 'metrics.js', 'phases.js']) assert.ok(!read(`public/glv/${file}`).includes('/glv-2/'));
   assert.ok(!read('export_glv_dashboard.py').includes('glv-2'));

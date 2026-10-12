@@ -194,7 +194,7 @@ async function run() {
     const phaseMonthCount = new Set(require('../public/glv/phases.js').buildPhaseDays(dashboardData.rows, dashboardData.phases, dashboardData.phase_contract.latest_date).map(d => d.month)).size;
     assert.equal(await page.locator('#phaseChartDataBody tr').count(), phaseMonthCount, 'YTD chart includes every represented month');
     assert.equal(await page.locator('#phaseTable thead th').count(), 17, 'phase table includes final day count');
-    assert.deepEqual(await page.locator('#phaseTable thead th').allTextContents(), ['Dimension', 'Spend', 'Revenue', 'Avg daily revenue', 'Share', 'ROAS', 'CAC', 'NC ROAS', 'Purchases', 'Cost per purchase', 'AOV', 'CVR', 'Visitors', 'New customer revenue', 'RC revenue', 'New customer rate', 'Number of days']);
+    assert.deepEqual(await page.locator('#phaseTable thead th').allTextContents(), ['Dimension', 'Spend', 'Revenue', 'Avg daily revenue', 'Share', 'ROAS', 'CAC', 'NC ROAS', 'NC Rate', 'NC Revenue', 'RC Revenue', 'CVR', 'Purchases', 'Cost per purchase', 'AOV', 'Visitors', 'Number of days']);
     assert.equal(await page.locator('#phaseTableBody tr').first().locator('td').last().textContent(), '31');
     assert.equal(await page.locator('#phaseTable thead th').nth(3).textContent(), 'Avg daily revenue');
     assert.equal(await page.locator('#trendMetric option[value="avg_daily_revenue"]').count(), 0);
@@ -952,6 +952,7 @@ async function run() {
 
     await require('./cac-smoke.cjs')(browser, baseUrl, evidenceDir);
     await require('./nc-rc-smoke.cjs')(browser, baseUrl, evidenceDir);
+    await require('./phase-compact.cjs')(browser, baseUrl, evidenceDir);
     await require('./compact-audit.cjs')(browser, baseUrl, evidenceDir);
     assert.deepEqual(consoleErrors, [], `browser console errors: ${consoleErrors.join(' | ')}`);
     console.log(JSON.stringify({

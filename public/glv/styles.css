@@ -2652,7 +2652,7 @@ body[data-dashboard-view="phases"] .command-bar {
 .phase-influ .phase-disclosure { color: var(--phase-influ); }
 .phase-table-wrap table { min-width: 1480px; }
 .phase-table-wrap th:first-child,
-.phase-table-wrap td:first-child { left: 0; min-width: 235px; position: sticky; text-align: left; z-index: 1; }
+.phase-table-wrap td:first-child { left: 0; min-width: 0; width: 1%; position: sticky; text-align: left; z-index: 1; }
 .phase-table-wrap th:first-child { background: var(--surface-raised); z-index: 4; }
 .phase-table-wrap td:first-child { background: var(--surface); }
 .phase-row.phase-kind-month td { background-color: var(--surface-raised); font-weight: 650; }
