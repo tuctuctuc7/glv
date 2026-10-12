@@ -4,13 +4,14 @@
   else root.PromoFormat = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function() {
   'use strict';
+  const CLASSIFICATION_VERSION = 2;
   const FORMATS = ['Banner','Video','Unknown'];
   const COLORS = {Banner:'#3b82f6',Video:'#a855f7',Unknown:'#f59e0b'};
   function validDate(value) {
     return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value;
   }
   function validPayload(data) {
-    if (!data || data.schema_version !== 1 || data.classification_version !== 1 || data.reconciled !== true || !Array.isArray(data.rows) || !Number.isFinite(Date.parse(data.generated_at)) || !validDate(data.range?.since) || !validDate(data.range?.until) || data.range.since > data.range.until) return false;
+    if (!data || data.schema_version !== 1 || data.classification_version !== CLASSIFICATION_VERSION || data.reconciled !== true || !Array.isArray(data.rows) || !Number.isFinite(Date.parse(data.generated_at)) || !validDate(data.range?.since) || !validDate(data.range?.until) || data.range.since > data.range.until) return false;
     const seen = new Set();
     return data.rows.every(row => {
       if (!row || !['ad_id','ad_name','adset_id','adset_name','campaign_id','campaign_name','reason'].every(k=>typeof row[k] === 'string' && row[k].length > 0) || !FORMATS.includes(row.format) || !validDate(row.date) || row.date < data.range.since || row.date > data.range.until || !['spend','purchases','revenue','impressions'].every(k=>typeof row[k] === 'number' && Number.isFinite(row[k]) && row[k] >= 0)) return false;
@@ -42,5 +43,5 @@
       return group;
     });
   }
-  return { FORMATS, COLORS, validDate, validPayload, monthlyMix };
+  return { CLASSIFICATION_VERSION, FORMATS, COLORS, validDate, validPayload, monthlyMix };
 });
