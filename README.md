@@ -249,6 +249,80 @@ for native chart/table QA at eight widths and both themes, in addition to the
 synthetic suite, `node qa/meta-cache-performance.cjs`, `npm test`, and
 `npm run verify:glv-release`.
 
+### Promo configured source assets (inventory revision 1)
+
+The Assets column is independent of the approved ad-level performance classifier.
+It unions account-scoped image hashes and source video IDs across ads/days within
+months with positive spend or impressions. Carryover-only purchases remain in
+performance totals but do not add media membership. Feed images/videos, story
+media and carousel children are supported; repeated placements, text variants,
+video thumbnails and carousel previews do not add assets. Different top-level
+video IDs are retained as unresolved aliases, not added as separate uploads.
+`N known` means partial source inventory; `—` means unavailable or not applicable
+for Unknown classification. This is **current configuration joined to historical
+ad delivery, not historically delivered unique assets or asset-level performance**.
+Unsupported catalog/generated/customization shapes and unresolved existing posts
+remain partial/unavailable. No post-resolution permission was established.
+
+Schema 1 and classification 2 remain unchanged; refreshed payloads add
+`inventory_version: 1` and normalized per-row `asset_inventory`. Optional metadata
+lookups run after performance reconciliation, in batches of 50 unique ad IDs,
+inside the same 240-second history budget and existing 270-second cron envelope.
+Metadata failure retains performance and unknown inventory. Future inventory
+revisions fail closed. Legacy cached facts retain their original freshness and
+show unavailable inventory; no invented ad-count fallback or cache retimestamping.
+
+**Parent release activation (not performed by this implementation):**
+
+1. Review/deploy the frozen tree with frontend and both serverless dependency
+   bundles together. Reload open tabs. Do not publish private fixture JSON.
+2. A compatible legacy cache hit does **not** fetch inventory. The UI's Refresh
+   history button clears browser memory, not Redis; it is not an inventory backfill
+   switch. Either verify the next successful existing daily cron writer at 00:00
+   UTC, or obtain explicit approval for this targeted production-cache refresh.
+3. For approved immediate activation, run the existing history writer only from
+   the reviewed production revision, with production Meta token and writable Redis
+   configuration securely loaded in the process environment (never print values):
+
+   ```bash
+   node -e 'const c=require("./api/glv-meta-ads/cron.js"); const token=process.env.GLV_META_FB_ACCESS_TOKEN||process.env.FB_ACCESS_TOKEN; if(!token) throw Error("Missing production Meta token"); c._test.refreshPromoFormatCache(token,false).then(s=>console.log(JSON.stringify(s))).catch(()=>{console.error("History refresh failed; inspect privately");process.exitCode=1;});'
+   ```
+
+   This makes real read-only Meta requests and writes only
+   `glv:promo_formats:history:v1` with the existing TTL. It does not run other
+   presets, mutate Meta ads, change the cron schedule, or delete the old cache
+   before successful validation. Do not execute against a guessed environment.
+4. Read back the authenticated production
+   `/api/glv-meta-ads/fb-data?type=promo_formats&date_preset=promo_history`.
+   Require `X-Cache: HIT`, schema 1, classification 2, inventory 1, `reconciled:true`,
+   the requested full history range and fresh `generated_at`. Validate with
+   `PromoFormat.validPayload` and inspect monthly completeness/reasons. Metadata
+   permissions/timeouts can still produce unavailable inventory even when the
+   cache write succeeds; do not declare activation successful on HTTP 200 alone.
+5. Reload the native Promo Creative tab, verify Assets / `known` / dashes and
+   unchanged performance aggregation, and verify the historical caveat. Compare
+   metrics on identical dates; real refreshes can legitimately backfill attribution.
+   Never overwrite real performance with the synthetic browser fixture.
+
+Offline evidence replay (no Meta calls):
+
+```bash
+node qa/promo-assets-fixture.cjs /private/implementation-fixture.json /private/browser-assets-synthetic-metrics.json
+PROMO_FORMAT_LIVE_FIXTURE=/private/browser-assets-synthetic-metrics.json PROMO_FORMAT_QA_DIR=/private/assets-browser node qa/promo-creative-tab.cjs
+node qa/promo-creative-tab.cjs
+node qa/meta-cache-performance.cjs
+npm run qa:meta-ads
+npm test
+npm run verify:glv-release
+```
+
+The supplied private inventory covers 172 ads and 156 delivery-positive ad-month
+memberships. All eight observed months are partial due to unresolved video aliases.
+June has seven image hashes plus three source videos: **10 known**, not 13 proven
+uploads. Browser replay uses real sanitized media references/memberships but
+**synthetic performance and synthetic performance classification**, not observed
+spend/revenue. Keep fixture files and screenshots outside public assets and Git.
+
 ## Media Buyer OS
 
 Route: `/glv-mb-os/`

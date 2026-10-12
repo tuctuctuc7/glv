@@ -8,11 +8,11 @@
   "functions": {
     "api/glv-meta-ads/fb-data.js": {
       "maxDuration": 300,
-      "includeFiles": "{lib/glv-promo-format.cjs,public/glv-meta-ads/promo-format.js}"
+      "includeFiles": "{lib/glv-promo-format.cjs,lib/glv-promo-assets.cjs,public/glv-meta-ads/promo-format.js}"
     },
     "api/glv-meta-ads/cron.js": {
       "maxDuration": 300,
-      "includeFiles": "{lib/glv-promo-format.cjs,public/glv-meta-ads/promo-format.js}"
+      "includeFiles": "{lib/glv-promo-format.cjs,lib/glv-promo-assets.cjs,public/glv-meta-ads/promo-format.js}"
     },
     "api/krs-meta-ads/fb-data.js": {
       "maxDuration": 60

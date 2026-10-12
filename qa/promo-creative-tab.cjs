@@ -6,6 +6,14 @@ const out=process.env.PROMO_FORMAT_QA_DIR||'/tmp/glv-promo-creative-browser';fs.
 const fact=(id,date,format,spend,purchases)=>({ad_id:id,ad_name:id==='unknown'?'<img src=x onerror=window.__formatXss=1>':id,adset_id:'s-'+id,adset_name:format==='Unknown'?'EGC':format,campaign_id:'c1',campaign_name:'TUC_008_CZSK_Sales_Promo',date,format,reason:format==='Unknown'?'no_approved_mapping':'current_adset_label',spend,purchases,revenue:purchases*100,impressions:spend*10});
 const fixture={schema_version:1,classification_version:2,reconciled:true,generated_at:new Date().toISOString(),range:{since:'2026-03-01',until:'2026-09-20'},rows:[fact('a','2026-03-10','Banner',300,1),fact('b','2026-03-10','Video',100,3),fact('a','2026-09-15','Banner',90,4),fact('b','2026-09-15','Video',10,1),fact('carry','2026-09-16','Video',0,1),fact('unknown','2026-09-17','Unknown',0,2)]};
 const real=process.env.PROMO_FORMAT_LIVE_FIXTURE ? JSON.parse(fs.readFileSync(process.env.PROMO_FORMAT_LIVE_FIXTURE,'utf8')) : null;
+const {parseCreative}=require('../lib/glv-promo-assets.cjs');
+fixture.inventory_version=1;
+for (const row of fixture.rows) {
+  if(row.ad_id==='unknown') continue; // Missing inventory is independent of classification.
+  row.asset_inventory=parseCreative(row.format==='Banner' ? {asset_feed_spec:{images:[{hash:'shared-image'},{hash:'second-image'}]}} : {object_story_spec:{video_data:{video_id:'101',image_hash:'thumbnail'}},video_id:'202'},'synthetic-account');
+}
+// Dedicated regression month: no thumbnail may become a known Banner asset.
+fixture.rows.push({...fact('missing-video','2026-06-10','Video',100,2),asset_inventory:parseCreative({image_hash:'thumb',object_story_spec:{video_data:{image_hash:'thumb'}}},'synthetic-account')});
 let payload=real||fixture, malformed=false;
 function campaignRows() {
   const map=new Map();
@@ -29,6 +37,9 @@ const server=http.createServer((req,res)=>{
    page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
    await page.route('https://api.frankfurter.dev/**',r=>r.fulfill({json:{rates:{USD:0.044}}}));
    await page.goto(`http://127.0.0.1:${server.address().port}/glv-meta-ads/`,{waitUntil:'networkidle'});
+   if(payload.rows.some(row=>row.reason==='synthetic_performance_classification')) {
+    await page.locator('#promo-format-title').evaluate(el=>{el.textContent+=' — QA: synthetic performance';});
+   }
    await page.waitForFunction(()=>document.getElementById('loading').style.display==='none');
    assert.equal(await page.locator('#promo-format-section').count(),1,'native format section exists');
    assert.deepEqual(await page.evaluate(()=>({datePreset,customRange})),{datePreset:'last_30d',customRange:null});
@@ -42,11 +53,16 @@ const server=http.createServer((req,res)=>{
    for(const d of state.spend)assert.deepEqual(d.data,expected.map(m=>m.formats[d.label].spendShare));
    for(const d of state.purchases)assert.deepEqual(d.data,expected.map(m=>m.formats[d.label].purchaseShare));
    const table=await page.locator('#promo-format-table tbody tr').evaluateAll(rows=>rows.map(row=>[...row.cells].map(cell=>cell.textContent.trim())));
+   if(!real) {
+    const june=table.filter(row=>row[0].includes('Jun 2026'));
+    assert.equal(june.length,3);
+    assert.ok(june.every(row=>row[2]==='—'),'unresolved video thumbnail renders unavailable, never 1 known');
+   }
    let rowIndex=0;
    const pct=n=>n===null?'—':n.toFixed(1)+'%';
    for(const month of expected){
     const entries=[['Total',month.total],...Object.entries(month.formats).filter(([name,data])=>name!=='Unknown'||data.ads)];
-    for(const [format,data] of entries){const row=table[rowIndex++];assert.equal(row[1],format);assert.equal(row[2],String(data.ads));assert.equal(row[4],pct(data.spendShare));assert.equal(row[6],pct(data.purchaseShare));}
+    for(const [format,data] of entries){const row=table[rowIndex++];assert.equal(row[1],format);assert.equal(row[2],data.assets===null?'—':String(data.assets)+(data.asset_status==='partial'?' known':''));assert.equal(row[4],pct(data.spendShare));assert.equal(row[6],pct(data.purchaseShare));}
    }
    assert.equal(await page.evaluate(()=>window.__formatXss),undefined);
    assert.equal(await page.locator('#promo-format-unknown img').count(),0);
