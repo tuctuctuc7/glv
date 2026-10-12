@@ -8,7 +8,7 @@ const range = { since:'2026-09-01', until:'2026-09-20' };
 const sharedPath = '../public/glv-meta-ads/promo-format.js';
 const shared = () => fs.existsSync(require('node:path').join(__dirname,sharedPath)) ? require(sharedPath) : {};
 const fact = (overrides={}) => ({ad_id:'a',ad_name:'PAC403',adset_id:'s',adset_name:'Video',campaign_id:march,campaign_name:'TUC_008_CZSK_Promo',date:'2026-09-02',format:'Video',reason:'current_adset_label',spend:100,purchases:2,revenue:400,impressions:50,...overrides});
-const payload = rows => ({schema_version:1,classification_version:1,range,generated_at:new Date().toISOString(),reconciled:true,rows});
+const payload = rows => ({schema_version:1,classification_version:2,range,generated_at:new Date().toISOString(),reconciled:true,rows});
 
 test('strict schema rejects legacy/invalid facts instead of invented zeros; month shares include Unknown', () => {
   const { validPayload, monthlyMix } = shared();
@@ -88,7 +88,7 @@ test('authenticated shared data handler serves versioned format cache; cron adds
   const cron=require('../api/glv-meta-ads/cron.js');
   const oldFetch=global.fetch, oldEnv={...process.env};
   const today=new Date().toISOString().slice(0,10);
-  const cached=payload([fact()]); cached.range={since:'2026-03-01',until:today};
+  const cached={...payload([fact({ad_name:'CC10',adset_name:'AS_Promo',campaign_id:'120247470134450687',format:'Unknown',reason:'no_approved_mapping'})]),classification_version:1}; cached.range={since:'2026-03-01',until:today};
   process.env.GLV_META_FB_ACCESS_TOKEN='private-test-token';process.env.KV_REST_API_URL='https://redis.test';process.env.KV_REST_API_TOKEN='cache-test-token';
   delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
   global.fetch=async url=>{assert.match(url,/redis\.test\/get\/glv%3Apromo_formats%3Ahistory%3Av1/);return {ok:true,json:async()=>({result:JSON.stringify(cached)})};};
@@ -96,6 +96,8 @@ test('authenticated shared data handler serves versioned format cache; cron adds
   try {
     await handler({method:'GET',query:{type:'promo_formats',time_range:JSON.stringify(range)}},{setHeader:(k,v)=>headers[k]=v,status:n=>{status=n;return {json:v=>body=v};},json:v=>body=v});
     assert.equal(status,200);assert.equal(headers['X-Cache'],'HIT');assert.equal(body.rows.length,1);
+    assert.equal(body.classification_version,2);assert.equal(body.rows[0].format,'Banner');
+    assert.equal(body.generated_at,cached.generated_at);assert.equal(body.rows[0].spend,cached.rows[0].spend);
     assert.equal(typeof cron._test.refreshPromoFormatCache,'function');
     const config=JSON.parse(fs.readFileSync(require('node:path').join(__dirname,'../vercel.json'),'utf8'));
     assert.deepEqual(config.crons,[{path:'/api/glv-meta-ads/cron',schedule:'0 0 * * *'}]);
@@ -206,6 +208,51 @@ test('provider configuration packages both shared dependencies and allows bounde
     assert.equal(config.functions[file].maxDuration,300);
     for(const dep of ['lib/glv-promo-format.cjs','public/glv-meta-ads/promo-format.js'])assert.ok(config.functions[file].includeFiles.includes(dep));
   }
+});
+
+test('stored v1/v2 names reclassify immediately without changing metrics or freshness; browser requires v2', () => {
+  const now=new Date('2026-10-12T16:00:00Z');
+  const rows=['CC10','CC11','CC12','CC13','CC14','CC15','PAC 432','PAC 433','PAC 434','PAC 435'].flatMap((name,i)=>[
+    fact({ad_id:String(i),ad_name:name,adset_name:'AS_Promo',campaign_id:'120247470134450687',date:'2026-06-10',format:'Unknown',reason:'no_approved_mapping'}),
+    fact({ad_id:String(i),ad_name:name,adset_name:'AS_Promo',campaign_id:'120247470134450687',date:'2026-09-10',spend:0,impressions:0,format:'Unknown',reason:'no_approved_mapping'})
+  ]);
+  const old={...payload(rows),classification_version:1,range:{since:'2026-03-01',until:'2026-10-11'},generated_at:now.toISOString()};
+  assert.equal(shared().validPayload(old),false,'old browser/session payload must be rejected');
+  const before=JSON.stringify(old);
+  const next=api().sliceCachedFormats(old,old.range,now);
+  assert.ok(next);assert.equal(next.classification_version,2);
+  assert.equal(next.generated_at,old.generated_at);assert.equal(shared().validPayload(next),true);
+  assert.equal(next.rows.filter(r=>r.format==='Unknown').length,0);
+  assert.equal(JSON.stringify(old),before,'do not mutate Redis source object');
+  const raw=r=>{const {format,reason,...rest}=r;return rest;};
+  assert.deepEqual(next.rows.map(raw),old.rows.map(raw),'all metrics, dates and provenance are identical');
+  for(const month of shared().monthlyMix(next.rows))for(const key of ['spend','purchases','revenue','impressions'])assert.equal(month.total[key],month.formats.Banner[key]+month.formats.Video[key]);
+  const staleLabels={...next,rows:next.rows.map(r=>({...r,format:'Video',reason:'old_rule'}))};
+  assert.deepEqual(api().sliceCachedFormats(staleLabels,old.range,now),next,'recompute even same-revision cached labels');
+  for(const classification_version of [0,3,999])assert.equal(api().sliceCachedFormats({...old,classification_version},old.range,now),null);
+  for(const change of [{campaign_name:'TUC_013_US_Sales_Promo'},{campaign_name:'TUC_013_CZSK_Sales'},{adset_name:''},{spend:null}])assert.equal(api().sliceCachedFormats({...old,rows:[{...rows[0],...change}]},old.range,now),null);
+  assert.equal(api().sliceCachedFormats({...old,generated_at:'2026-10-10T00:00:00Z'},old.range,now),null);
+  assert.equal(api().sliceCachedFormats({...old,rows:[rows[0],rows[0]]},old.range,now),null);
+  const conflict=api().sliceCachedFormats({...old,rows:[{...rows[0],adset_name:'Banner Video'}]},old.range,now);
+  assert.equal(conflict.rows[0].reason,'conflicting_adset_labels');
+  const override=api().sliceCachedFormats({...old,rows:[{...rows[0],adset_name:'Video'}]},old.range,now);
+  assert.equal(override.rows[0].format,'Video');
+});
+
+test('June approved codes are exact tokens scoped to original campaign, with current adset precedence', () => {
+  const june='120247470134450687';
+  const classify=(name,adset='AS_Promo',campaign_id=june)=>api().classifyFormat({name,campaign_id},{name:adset});
+  for(const code of ['CC10','CC11','CC12','CC13','CC14','CC15','PAC433','PAC432','PAC434','PAC435']){
+    const expected=['PAC432','PAC434','PAC435'].includes(code)?'Video':'Banner';
+    for(const name of [code,`prefix_${code}_suffix`,code.replace('PAC','PAC '),code.replace('PAC','PAC_')]){
+      assert.deepEqual(classify(name),{format:expected,reason:'approved_original_mapping'},name);
+      for(const campaign of [march,'120244677479270687','new-campaign'])assert.equal(classify(name,'AS',campaign).format,'Unknown',name);
+      assert.equal(classify(name,'AS_Video').format,'Video');
+      assert.equal(classify(name,'AS_Banner').format,'Banner');
+      assert.equal(classify(name,'AS_Banners_Videos').format,'Unknown');
+    }
+  }
+  for(const name of ['CC100','CC150','XCC10','CC10x','PAC4330','XPAC433','PAC433x','433','432','CC 10','PAC-433','PAC432 PAC433'])assert.equal(classify(name).format,'Unknown',name);
 });
 
 test('current distinct adset labels dominate scoped original-campaign mappings; conflicts stay Unknown', () => {

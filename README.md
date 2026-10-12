@@ -203,6 +203,48 @@ Meta Ads currency is CZK. Always label it as CZK in reports, Slack summaries, an
 
 CZSK campaign groups preserve case-sensitive `_Promo` precedence over `_WL`, otherwise BAU. The supplied `WL_befit_over40` launch name (including underscore suffixes and case-insensitive creator spelling) is also accepted without the usual `GLV_<number>_` / `TUC_<number>_` prefix; its leading `WL_` remains case-sensitive. This narrow exception does not admit unrelated unprefixed campaigns. The default-off **Break down WL influencers** toggle splits WL into **Kristyna**, **ActionKate**, and **befit_over40** across Promo KPIs, charts, accessible data, and both nested-table orientations. Every WL campaign must identify exactly one of these creators (case-insensitive substrings). Missing or ambiguous creator names in the selected KPI/daily scope produce a visible naming-validation warning listing affected campaigns. Until corrected or excluded by filters, all surfaces show complete combined WL totals rather than an incomplete creator split; the toggle stays ON and retries automatically after filters or data change. There is no Other group. OFF retains the canonical total WL. US grouping is unchanged. Both live and cron producers retain the raw campaign name, so this presentation change needs no cache schema, refresh, or schedule change. Validate with `npm test`, `npm run qa:meta-ads` (eight widths, both themes and WL info popovers), and `node qa/meta-cache-performance.cjs`; fixtures are synthetic, not live launch data.
 
+### Promo Creative classification revision 2
+
+The independent CZSK Promo Creative history keeps the native dynamic monthly
+Banner / Video chart and table. Current direct-object CZSK `_Promo` campaign
+eligibility still gates ingestion; explicit current ad-set Banner/Video labels
+win, and conflicting ad-set labels remain Unknown. Tom's June fallback is scoped
+to original campaign `120247470134450687`: complete `CC10`–`CC15` and `PAC433`
+identifiers are Banner; `PAC432`, `PAC434`, `PAC435` are Video. PAC separators
+may be spaces or underscores. Numeric substrings, `CC100`, `PAC4330`, and reuse
+in other campaigns do not inherit this rule. Reporting dates do not change
+original identity, including later zero-delivery purchase rows.
+
+Activation contract: schema remains 1; classification revision is now 2. The
+existing `glv:promo_formats:history:v1` Redis key stores reconciled source facts,
+not authoritative format labels. On every read, the server accepts only known
+revision 1/2 facts after full schema, metric, duplicate, campaign-scope, range,
+and existing 25-hour freshness validation; it recomputes all returned labels
+from the stored direct-object names using the current classifier. It preserves
+all metrics, IDs, dates, attribution and `generated_at`, without writing Redis
+or claiming a new Meta extraction. Unsupported future revisions and invalid or
+stale facts miss and use the existing live read path. The scheduled writer emits
+revision 2 without changing the cron schedule. Future schema/rule changes must
+explicitly review this revision allowlist, not blindly accept arbitrary versions.
+
+The browser accepts only revision 2, and the shared validator asset is
+cache-busted. Session caching is in-memory only; rejected API revisions are not
+cached. **Release activation requires the backend and frontend together, then a
+page reload for already-open tabs.** A fresh compatible server cache displays
+June immediately—no overnight refresh or Redis mutation is needed. After release,
+the parent must verify the authenticated history endpoint returns revision 2,
+the native June chart/table resolves correctly, and extraction freshness is
+unchanged on a cache hit. If the source cache is stale/incomplete, use the existing
+live read or separately approved refresh and verify its result; do not relabel
+stale data as fresh. No production refresh was performed as part of this edit.
+
+Read-only private evidence can be collected with
+`node qa/promo-format-live.cjs 2026-06-01 2026-06-30`; do not commit its output.
+Run `PROMO_FORMAT_LIVE_FIXTURE=/private/path/revision-2.json node qa/promo-format.cjs`
+for native chart/table QA at eight widths and both themes, in addition to the
+synthetic suite, `node qa/meta-cache-performance.cjs`, `npm test`, and
+`npm run verify:glv-release`.
+
 ## Media Buyer OS
 
 Route: `/glv-mb-os/`

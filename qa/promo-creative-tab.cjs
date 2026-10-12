@@ -4,7 +4,7 @@ const { monthlyMix }=require('../public/glv-meta-ads/promo-format.js');
 const root=path.resolve(__dirname,'../public');
 const out=process.env.PROMO_FORMAT_QA_DIR||'/tmp/glv-promo-creative-browser';fs.mkdirSync(out,{recursive:true});
 const fact=(id,date,format,spend,purchases)=>({ad_id:id,ad_name:id==='unknown'?'<img src=x onerror=window.__formatXss=1>':id,adset_id:'s-'+id,adset_name:format==='Unknown'?'EGC':format,campaign_id:'c1',campaign_name:'TUC_008_CZSK_Sales_Promo',date,format,reason:format==='Unknown'?'no_approved_mapping':'current_adset_label',spend,purchases,revenue:purchases*100,impressions:spend*10});
-const fixture={schema_version:1,classification_version:1,reconciled:true,generated_at:new Date().toISOString(),range:{since:'2026-03-01',until:'2026-09-20'},rows:[fact('a','2026-03-10','Banner',300,1),fact('b','2026-03-10','Video',100,3),fact('a','2026-09-15','Banner',90,4),fact('b','2026-09-15','Video',10,1),fact('carry','2026-09-16','Video',0,1),fact('unknown','2026-09-17','Unknown',0,2)]};
+const fixture={schema_version:1,classification_version:2,reconciled:true,generated_at:new Date().toISOString(),range:{since:'2026-03-01',until:'2026-09-20'},rows:[fact('a','2026-03-10','Banner',300,1),fact('b','2026-03-10','Video',100,3),fact('a','2026-09-15','Banner',90,4),fact('b','2026-09-15','Video',10,1),fact('carry','2026-09-16','Video',0,1),fact('unknown','2026-09-17','Unknown',0,2)]};
 const real=process.env.PROMO_FORMAT_LIVE_FIXTURE ? JSON.parse(fs.readFileSync(process.env.PROMO_FORMAT_LIVE_FIXTURE,'utf8')) : null;
 let payload=real||fixture, malformed=false;
 function campaignRows() {
@@ -50,7 +50,12 @@ const server=http.createServer((req,res)=>{
    }
    assert.equal(await page.evaluate(()=>window.__formatXss),undefined);
    assert.equal(await page.locator('#promo-format-unknown img').count(),0);
-   assert.match(await page.locator('#promo-format-status').textContent(),/Unknown/);
+   if(payload.rows.some(row=>row.format==='Unknown'))assert.match(await page.locator('#promo-format-status').textContent(),/Unknown/);
+   else {
+    assert.equal(await page.locator('#promo-format-status').isVisible(),false);
+    assert.deepEqual(state.spend.map(d=>d.label),['Banner','Video']);
+    assert.match(await page.locator('#promo-format-summary').textContent(),/All .* activity-bearing ads classified/);
+   }
    const geometry=await page.locator('#promo-format-section .chart-card').evaluateAll(cards=>cards.map(c=>({x:c.getBoundingClientRect().x,y:c.getBoundingClientRect().y})));
    assert.equal(Math.abs(geometry[0].y-geometry[1].y)<2,width>1000);
    for(const theme of ['dark','light']){
@@ -96,7 +101,8 @@ const server=http.createServer((req,res)=>{
       if(width>720) await button.hover(); else await button.tap();
       assert.equal(await popup.isVisible(),true,'WL definition opens on hover/tap');
       assert.match(await popup.innerText(),/WL is a campaign-name group based on substrings, not ad-set or ad names/);
-      assert.match(await popup.innerText(),/both or neither → Other/);
+      assert.match(await popup.innerText(),/Every WL campaign must identify exactly one recognized creator/);
+      assert.match(await popup.innerText(),/combined WL totals are shown with a naming-validation warning/);
       assert.match(await popup.innerText(),/A displayed 0 does not prove no activity outside this scope/);
       await page.keyboard.press('Escape');
       assert.equal(await popup.isVisible(),false);
@@ -142,6 +148,12 @@ const server=http.createServer((req,res)=>{
     assert.equal(await page.locator('#promo-format-section .promo-format-table-wrap').isVisible(),false);
     payload=fixture;await page.evaluate(()=>promoFormatHistory());
    }
+   const validFixture=payload;payload={...payload,classification_version:1};
+   await page.evaluate(()=>promoFormatHistory());
+   assert.match(await page.locator('#promo-format-status').textContent(),/schema unavailable/,'obsolete labels cannot enter browser cache');
+   assert.equal(await page.locator('#promo-format-table tbody tr').count(),0);
+   payload=validFixture;await page.evaluate(()=>promoFormatHistory());
+   assert.equal(await page.evaluate(()=>promoFormatPayload.classification_version),2,'valid retry recovers immediately');
    malformed=true;await page.evaluate(()=>loadData({force:true}));
    await page.waitForFunction(()=>Boolean(promoFormatError));
    assert.match(await page.locator('#promo-format-status').textContent(),/unavailable/i);

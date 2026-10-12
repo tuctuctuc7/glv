@@ -6,7 +6,7 @@ const requests=[];
 let failedTypes=new Set(),empty=false,malformed=false,historyDelay=delay,fxDelay=delay,fxValue=0.044;
 let historyStamp='2026-09-21T00:00:00Z';
 const row={id:'c1',name:'TUC_008_CZSK_Sales_Promo',amount_spent:'100',impressions:'1000',reach:'800','actions:omni_purchase':'2','action_values:omni_purchase':'300',date_start:'2026-09-10',date_stop:'2026-09-10'};
-const formats={schema_version:1,classification_version:1,reconciled:true,generated_at:'2026-09-21T00:00:00Z',range:{since:'2026-03-01',until:'2026-09-20'},rows:[{ad_id:'a',ad_name:'a',adset_id:'s',adset_name:'Banner',campaign_id:'c1',campaign_name:row.name,date:'2026-09-10',format:'Banner',reason:'current_adset_label',spend:100,purchases:2,revenue:300,impressions:1000}]};
+const formats={schema_version:1,classification_version:2,reconciled:true,generated_at:'2026-09-21T00:00:00Z',range:{since:'2026-03-01',until:'2026-09-20'},rows:[{ad_id:'a',ad_name:'a',adset_id:'s',adset_name:'Banner',campaign_id:'c1',campaign_name:row.name,date:'2026-09-10',format:'Banner',reason:'current_adset_label',spend:100,purchases:2,revenue:300,impressions:1000}]};
 const server=http.createServer((req,res)=>{
  const u=new URL(req.url,'http://localhost');
  if(u.pathname==='/api/glv-meta-ads/fb-data'){
