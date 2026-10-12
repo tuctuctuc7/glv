@@ -7,9 +7,9 @@
 .promo-controls .field { min-width: 180px; }
 #promoMonths .phase-menu-options { left: 0; right: auto; }
 #promoMonths label:has(input:disabled) { opacity: .65; cursor: default; }
-@media (max-width: 700px) {
+@media (max-width: 720px) {
   #promoComparison .phase-chart-wrap { height: max(280px, calc(var(--promo-month-count, 2) * 44px)); }
-  .promo-controls { flex-wrap: wrap; }
+  .promo-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: end; gap: 8px; width: 100%; }
   .promo-controls .field { min-width: 0; width: 100%; }
   #promoMonths { width: 100%; }
   #promoMonths .phase-menu-trigger { width: 100%; text-align: left; }

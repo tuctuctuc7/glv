@@ -129,6 +129,10 @@ Currency for the business KPI dashboard JSON is USD.
 
 The seven Home/Phases section titles have independent information buttons (`section-info.js` / `section-info.css`, version `section-info-20260920`). Existing live explanatory nodes move into fixed, scrollable popovers; filter/grain/split updates retain their original node IDs. Historical fetch errors and Promo empty states remain inline. Hover/focus opens, click/tap pins or toggles, and Escape restores trigger focus. Collapsible titles keep separate sibling buttons. Run `npm run qa:section-info` for all seven sections at 1440/390/320 in both themes; evidence is saved under `/tmp/glv-section-info-evidence`.
 
+### Mobile control layout QA
+
+`node qa/mobile-controls.cjs` (also included in `npm run qa:browser`) verifies Home/Phases header alignment, 44px mobile logo/tab/theme targets, one-row Hierarchy/Months and Promo Months/Metric at 320/390px, keyboard/touch menus and selection, and the sticky header in both themes. It also checks that the Phase table scroll viewport reaches both card inner edges at 320/390/1440px; the existing compact-table matrix protects pinned rows/columns, column order, and intrinsic dimension width. Evidence defaults to `/tmp/glv-mobile-controls-evidence`. CSS assets use `mobile-controls-20261012`; desktop control geometry is unchanged.
+
 ### Build, test, and run locally
 
 ```bash
