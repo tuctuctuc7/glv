@@ -114,7 +114,7 @@ Derived metrics are calculated after date and region aggregation:
 - NC ROAS = NC revenue / existing Spend (ad spend, the same denominator scope as ROAS). Sum matching available NC/spend rows first; nonpositive summed spend is unavailable.
 - RC revenue = revenue minus NC revenue, summed only over rows with both inputs. Explicit zero and negative residuals are preserved; negative residuals flag source discrepancies, not a clamped estimate.
 - Partial inputs report an available subset, analogous to Home availability-aware metrics. Historical 2025 NC is unknown: historical-only new metrics remain unavailable and mixed periods never subtract current NC from all-history revenue.
-- Included surfaces: both Home chart selectors, chart series/tooltips/accessible data, Audit summary and detail, market comparison and total, working-source CSV columns, Phases metric dropdown/chart/accessible data and all supported hierarchy aggregates/day rows. CAC stays immediately after ROAS, NC ROAS follows CAC; RC revenue follows NC revenue. Home NC rate remains after AOV; Phases days stays last and Avg daily revenue stays zero-decimal.
+- Included surfaces: both Home chart selectors, chart series/tooltips/accessible data, Audit summary and detail, market comparison and total, working-source CSV columns, Phases metric dropdown/chart/accessible data and all supported hierarchy aggregates/day rows. Home Audit order is dimension/date, Spend, Revenue, ROAS, CAC, NC ROAS, NC rate, NC revenue, RC revenue, CVR, Purchases, Cost per purchase, AOV, Visitors. The short Home headers retain full definitions in section information and header titles. Phases days stays last and Avg daily revenue stays zero-decimal.
 - Excluded deliberately: the existing eight executive cards remain unchanged; no ninth/tenth card. CSV remains working-source raw market-day scope (no historical rows), with derived columns appended. Code/no-code descendants have neither NC nor cost attribution, so both metrics remain null; the split chart retains disclosed Influ total. Named-influencer and Meta dashboards are outside this business-dashboard scope and unchanged; no invented allocations. Source JSON, exporter, existing formulas and auth/routes are unchanged.
 - ROAS = revenue / spend
 - Cost per purchase = spend / purchases
@@ -134,6 +134,8 @@ The seven Home/Phases section titles have independent information buttons (`sect
 `node qa/mobile-controls.cjs` (also included in `npm run qa:browser`) verifies Home/Phases header alignment, 44px mobile logo/tab/theme targets, one-row Hierarchy/Months and Promo Months/Metric at 320/390px, keyboard/touch menus and selection, and the sticky header in both themes. It also checks that the Phase table scroll viewport reaches both card inner edges at 320/390/1440px; the existing compact-table matrix protects pinned rows/columns, column order, and intrinsic dimension width. Evidence defaults to `/tmp/glv-mobile-controls-evidence`. CSS assets use `mobile-controls-20261012`; desktop control geometry is unchanged.
 
 ### Build, test, and run locally
+
+Home Audit uses intrinsic column widths and 10px metric-side padding, without reducing fonts or truncating values (`home-compact-20261013` CSS/app assets). `qa/home-compact.cjs`, included in full browser QA, records table/per-column geometry, screenshots, sticky axes and internal scroll at 1440/390/320 in both themes. Run it with `--baseline` before density edits to retain comparison evidence.
 
 ```bash
 npm ci

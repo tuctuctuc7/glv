@@ -9,14 +9,14 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/glv/apple-touch-icon.png" />
   <title>GLV Executive Pulse</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="stylesheet" href="/glv/styles.css?v=mobile-controls-20261012&amp;ui=filter-type-1" />
+  <link rel="stylesheet" href="/glv/styles.css?v=home-compact-20261013&amp;ui=filter-type-1" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f" crossorigin="anonymous" defer></script>
   <script src="/glv/metrics.js?v=nc-rc-metrics-20260920" defer></script>
   <script src="/glv/phases.js?v=nc-rc-metrics-20260920&amp;columns=days" defer></script>
   <script src="/glv/promo-comparison.js?v=promo-focus-2" defer></script>
   <script src="/glv/promo-comparison-ui.js?v=promo-focus-2" defer></script>
   <link rel="stylesheet" href="/glv/promo-comparison.css?v=mobile-controls-20261012" />
-  <script src="/glv/app.js?v=phase-compact-20261012&amp;columns=home-order&amp;history-warning=1" defer></script>
+  <script src="/glv/app.js?v=home-compact-20261013&amp;columns=home-order&amp;history-warning=1" defer></script>
   <link rel="stylesheet" href="/glv/section-info.css?v=section-info-20260920-stack-3" />
   <script src="/glv/section-info.js?v=section-info-20260920" defer></script>
 </head>
@@ -246,13 +246,13 @@
                 <th scope="col">Revenue</th>
                 <th scope="col">ROAS</th>
                 <th scope="col" title="Total spend / total new customers. Blank when new customers are not positive or inputs are unavailable.">CAC</th><th scope="col">NC ROAS</th>
+                <th scope="col" title="New customer rate: new customers / (new + returning customers).">NC rate</th>
+                <th scope="col" title="New customer revenue from available source inputs.">NC revenue</th><th scope="col" title="Returning customer revenue: revenue minus NC revenue on matching available rows; negative source discrepancies are preserved.">RC revenue</th>
+                <th scope="col">CVR</th>
                 <th scope="col">Purchases</th>
                 <th scope="col">Cost per purchase</th>
                 <th scope="col">AOV</th>
-                <th scope="col">New customer rate</th>
-                <th scope="col">CVR</th>
                 <th scope="col">Visitors</th>
-                <th scope="col">New customer revenue</th><th scope="col" title="Revenue minus NC revenue on matching available rows; negative source discrepancies are preserved.">RC revenue</th>
               </tr>
             </thead>
             <tbody id="metricsTableBody"></tbody>

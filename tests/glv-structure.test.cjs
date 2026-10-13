@@ -119,7 +119,7 @@ test('pinned Chart.js dependency has subresource integrity protection', () => {
 test('detail table exposes the approved audit metrics and no row-limit control', () => {
   has(/<table[^>]*id="metricsTable"/, 'missing detail table');
   has(/<caption[^>]*id="metricsTableCaption"[^>]*>GLV business performance by day</i, 'detail table must describe its default daily grain');
-  for (const label of ['Date', 'Spend', 'Revenue', 'ROAS', 'Purchases', 'Cost per purchase', 'AOV', 'CVR', 'Visitors', 'New customer revenue', 'New customer rate']) {
+  for (const label of ['Date', 'Spend', 'Revenue', 'ROAS', 'Purchases', 'Cost per purchase', 'AOV', 'CVR', 'Visitors', 'NC revenue', 'NC rate']) {
     has(new RegExp(`<th[^>]*[^>]*>${label}<`, 'i'), `missing ${label} header`);
   }
   assert.doesNotMatch(html, /<th[^>]*>New customers</i);
