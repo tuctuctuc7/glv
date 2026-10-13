@@ -323,9 +323,9 @@ async function run() {
     assert.match(await page.locator('#tableSubtitle').textContent(), /Summary \+ 28 day rows/);
     const auditGeometry = await page.locator('#auditTableWrap').evaluate((node) => ({ clientHeight: node.clientHeight, scrollHeight: node.scrollHeight, clientWidth: node.clientWidth, scrollWidth: node.scrollWidth }));
     assert.ok(auditGeometry.scrollHeight > auditGeometry.clientHeight, `audit trail should scroll vertically: ${JSON.stringify(auditGeometry)}`);
-    assert.ok(auditGeometry.scrollWidth > auditGeometry.clientWidth, `audit trail should scroll horizontally: ${JSON.stringify(auditGeometry)}`);
+    assert.equal(auditGeometry.scrollWidth, auditGeometry.clientWidth, `compact desktop audit must fit without unnecessary horizontal scrolling: ${JSON.stringify(auditGeometry)}`);
     const auditWidths = await page.locator('#metricsTable thead th').evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().width)));
-    assert.ok(Math.max(...auditWidths) - Math.min(...auditWidths) <= 1, `audit columns should be equal width: ${auditWidths}`);
+    assert.ok(auditWidths.reduce((a,b)=>a+b,0) < 1400 && Math.max(...auditWidths)-Math.min(...auditWidths)>20, `audit columns must size to content rather than waste equal-width space: ${auditWidths}`);
     const auditHeaderContract = await page.locator('#metricsTable thead th').evaluateAll((nodes) => nodes.map((node) => {
       const style = getComputedStyle(node);
       return { height: Math.round(node.getBoundingClientRect().height), whiteSpace: style.whiteSpace, textOverflow: style.textOverflow };
@@ -392,14 +392,14 @@ async function run() {
     const january2025 = page.locator('#metricsTableBody tr').filter({ has: page.locator('td:first-child', { hasText: '2025-01' }) });
     assert.equal(await january2025.count(), 1, 'January 2025 audit row must be present once');
     const januaryCells = await january2025.locator('td').allTextContents();
-    assert.equal(januaryCells[10], '—', '2025 CVR must remain unavailable');
-    assert.equal(januaryCells[11], '—', '2025 Visitors must remain unavailable');
-    assert.equal(januaryCells[12], '—', '2025 New customer revenue must remain unavailable');
+    assert.equal(januaryCells[9], '—', '2025 CVR must remain unavailable');
+    assert.equal(januaryCells[13], '—', '2025 Visitors must remain unavailable');
+    assert.equal(januaryCells[7], '—', '2025 New customer revenue must remain unavailable');
     assert.equal(januaryCells[5], '—', '2025 NC ROAS must remain unavailable');
-    assert.equal(januaryCells[13], '—', '2025 RC revenue must remain unavailable');
+    assert.equal(januaryCells[8], '—', '2025 RC revenue must remain unavailable');
     const workingSummary = dashboardMetrics.aggregateRows(dashboardData.rows);
     const expectedWorkingCvr = `${(workingSummary.cvr * 100).toFixed(2)}%`;
-    assert.equal((await page.locator('#metricsTableBody .summary-row td').nth(10).textContent()).trim(), expectedWorkingCvr, 'mixed-period CVR must use only rows with visitor data');
+    assert.equal((await page.locator('#metricsTableBody .summary-row td').nth(9).textContent()).trim(), expectedWorkingCvr, 'mixed-period CVR must use only rows with visitor data');
 
     await page.locator('#grain').selectOption('year');
     assert.deepEqual(await page.evaluate(() => window.Chart.getChart('trendChart').data.labels), ['2025', '2026'], 'Year chart must expose 2025 and the working-source year');
@@ -955,6 +955,7 @@ async function run() {
     await require('./mobile-controls.cjs')(browser, baseUrl, evidenceDir);
     await require('./phase-compact.cjs')(browser, baseUrl, evidenceDir);
     await require('./compact-audit.cjs')(browser, baseUrl, evidenceDir);
+    await require('./home-compact.cjs')(browser, baseUrl, evidenceDir);
     assert.deepEqual(consoleErrors, [], `browser console errors: ${consoleErrors.join(' | ')}`);
     console.log(JSON.stringify({
       passed: true,

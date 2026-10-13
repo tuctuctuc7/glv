@@ -946,14 +946,14 @@ function renderTable(view) {
     formatAuditMetric('roas', summary.roas),
     formatMetric('cac', summary.cac),
     formatAuditMetric('nc_roas', summary.nc_roas),
+    formatMetric('new_customer_rate', summary.new_customer_rate),
+    formatAuditMetric('new_customer_revenue', summary.new_customer_revenue),
+    formatAuditMetric('returning_customer_revenue', summary.returning_customer_revenue),
+    formatMetric('cvr', summary.cvr),
     formatMetric('purchases', summary.purchases),
     formatMetric('cpa', summary.cpa),
     formatMetric('aov', summary.aov),
-    formatMetric('new_customer_rate', summary.new_customer_rate),
-    formatMetric('cvr', summary.cvr),
     formatMetric('unique_visitors', summary.unique_visitors),
-    formatAuditMetric('new_customer_revenue', summary.new_customer_revenue),
-    formatAuditMetric('returning_customer_revenue', summary.returning_customer_revenue),
   ].forEach((value) => summaryRow.appendChild(element('td', '', value)));
   body.appendChild(summaryRow);
   rows.forEach((row) => {
@@ -964,15 +964,15 @@ function renderTable(view) {
       formatAuditMetric('revenue', row.revenue),
       formatAuditMetric('roas', row.roas),
       formatMetric('cac', row.cac),
-    formatAuditMetric('nc_roas', row.nc_roas),
+      formatAuditMetric('nc_roas', row.nc_roas),
+      formatMetric('new_customer_rate', row.new_customer_rate),
+      formatAuditMetric('new_customer_revenue', row.new_customer_revenue),
+      formatAuditMetric('returning_customer_revenue', row.returning_customer_revenue),
+      formatMetric('cvr', row.cvr),
       formatMetric('purchases', row.purchases),
       formatMetric('cpa', row.cpa),
       formatMetric('aov', row.aov),
-      formatMetric('new_customer_rate', row.new_customer_rate),
-      formatMetric('cvr', row.cvr),
       formatMetric('unique_visitors', row.unique_visitors),
-      formatAuditMetric('new_customer_revenue', row.new_customer_revenue),
-    formatAuditMetric('returning_customer_revenue', row.returning_customer_revenue),
     ];
     values.forEach((value) => tr.appendChild(element('td', '', value)));
     body.appendChild(tr);

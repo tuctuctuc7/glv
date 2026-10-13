@@ -18,7 +18,7 @@ module.exports = async (browser, baseUrl, evidenceDir) => {
   await page.locator('#grain').selectOption('day'); await page.locator('#auditGrain').selectOption('day');
   const headers=await page.locator('#metricsTable thead th').allTextContents();
   assert.equal(headers[headers.indexOf('CAC')+1],'NC ROAS');
-  assert.equal(headers[headers.indexOf('New customer revenue')+1],'RC revenue');
+  assert.equal(headers[headers.indexOf('NC revenue')+1],'RC revenue');
   for (const id of ['trendMetric','trendMetricSecondary']) for (const [key,values] of [['nc_roas',[2,1,null]],['returning_customer_revenue',[300,300,-10]]]) {
    await page.locator('#'+id).selectOption(key);
    const series=await page.evaluate(id=>Chart.getChart('trendChart').data.datasets.find(d=>d.yAxisID===(id==='trendMetric'?'y':'y1')).data,id);

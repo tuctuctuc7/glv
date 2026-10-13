@@ -1443,18 +1443,20 @@ html[data-theme="light"] .region-card {
 .audit-table-wrap { max-height: 627px; }
 
 #metricsTable {
-  table-layout: fixed;
-  width: 1430px;
+  table-layout: auto;
+  min-width: 0;
+  width: max-content;
 }
 
 #metricsTable th,
 #metricsTable td {
   box-sizing: border-box;
   height: 37px;
-  max-width: 130px;
-  min-width: 130px;
-  overflow: hidden;
-  width: 130px;
+  min-width: 0;
+  padding-left: 10px;
+  padding-right: 10px;
+  overflow: visible;
+  width: auto;
 }
 
 #metricsTable th {
@@ -1464,7 +1466,9 @@ html[data-theme="light"] .region-card {
   white-space: normal;
 }
 
-#metricsTable td { text-overflow: ellipsis; }
+#metricsTable td { white-space: nowrap; }
+#metricsTable th:first-child,
+#metricsTable td:first-child { padding-left: 20px; padding-right: 16px; }
 
 .table-scroll-hint {
   color: var(--text-tertiary);
