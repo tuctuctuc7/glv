@@ -44,8 +44,35 @@ test('concept rows have no secondary label and the table has no capped vertical 
  assert.doesNotMatch(css,/max-height:(520px|62vh)/);
  assert.doesNotMatch(ui,/<small>\$\{escapeHtml\(row.campaign_name\)/);
 });
+test('AI parent-name tokens share one explicit identity before ordinary code extraction',()=>{
+ const names=['AI_UGC','AI_Cartoon','AI UGC','AI Cartoon','ai_ugc','aI cArToOn','V_AI_UGC_01','V_AI_Cartoon_02','(AI UGC)','AI_UGC-TalkingHead','AI _ UGC','AI_UGC AI_Cartoon CC12 PAC34'];
+ const identity=C.identity(names[0]);
+ assert.equal(identity.label,'AI Videos');assert.equal(identity.warning,'');
+ for(const name of names)assert.deepEqual(C.identity(name),identity,name);
+ for(const name of ['AI','UGC','Cartoon','XAI_UGC','AI_UGCx','AI_Cartoons','AIUGC','AI unrelated UGC','AI_Cartoon2','éAI_UGC','AI_UGCé']){
+  assert.notEqual(C.identity(name).key,identity.key,name);assert.ok(C.identity(name).warning,name);
+ }
+ assert.equal(C.identity('CC12 AI_UGCx').label,'CC12');
+});
 // Synthetic test facts only, never observed client performance.
 const fact=(extra={})=>({campaign_id:'c1',campaign_name:'TUC_1_CZSK_Promo',ad_name:'B_CC01',ad_id:'a',adset_id:'s1',date:'2026-03-01',spend:100,purchases:2,revenue:300,impressions:1000,link_clicks:50,landing_page_views:40,checkouts:10,...extra});
+test('AI Videos sums daily parent facts once across ad sets with unchanged totals and shares',()=>{
+ const ai=[fact({ad_name:'V_AI_UGC_01'}),fact({ad_id:'b',adset_id:'s2',ad_name:'AI Cartoon',spend:300,purchases:4,revenue:900,impressions:500,link_clicks:20,landing_page_views:10,checkouts:5}),fact({ad_id:'c',ad_name:'AI UGC AI_Cartoon CC12',spend:0,purchases:1,revenue:200,impressions:0,link_clicks:0,landing_page_views:0,checkouts:0}),fact({ad_name:'V_AI_UGC_01',date:'2026-03-02'})];
+ const ordinary=[fact({ad_id:'d'}),fact({ad_id:'e',ad_name:'V_cc_01'}),fact({ad_id:'f',ad_name:'unknown'}),fact({ad_id:'g',ad_name:'Not AI',adset_name:'AI_Cartoon'})];
+ const other=fact({campaign_id:'c2',ad_name:'AI_UGC'}),excluded=fact({campaign_id:'excluded',ad_name:'AI_UGC',spend:9999});
+ const selected=[...ai,...ordinary,other],rows=C.aggregate([...selected,excluded],['c1','c2']);
+ assert.equal(rows.filter(r=>r.label==='AI Videos').length,2);
+ const r=rows.find(r=>r.label==='AI Videos'&&r.campaign_id==='c1');assert.equal(r.warning,'');
+ const sum=k=>ai.reduce((s,f)=>s+f[k],0),total=k=>selected.reduce((s,f)=>s+f[k],0);
+ for(const k of C.inputs){assert.equal(r[k],sum(k),k);assert.equal(rows.reduce((s,f)=>s+f[k],0),total(k),k+' conserved');}
+ for(const [key,a,b,scale] of [['roas','revenue','spend',1],['ctr','link_clicks','impressions',100],['costLP','spend','landing_page_views',1],['lpCheckout','checkouts','landing_page_views',100],['checkoutPurchase','purchases','checkouts',100],['cvr','purchases','landing_page_views',100]])assert.equal(r[key],sum(a)/sum(b)*scale,key);
+ assert.equal(r.spendShare,sum('spend')/total('spend')*100);assert.equal(r.purchaseShare,sum('purchases')/total('purchases')*100);
+ for(const k of ['spendShare','purchaseShare'])assert.ok(Math.abs(rows.reduce((s,f)=>s+f[k],0)-100)<1e-10);
+ const withoutShares=({spendShare,purchaseShare,...row})=>row;
+ assert.deepEqual(rows.filter(r=>r.campaign_id==='c1'&&r.label!=='AI Videos').map(withoutShares),C.aggregate(ordinary,['c1']).map(withoutShares));
+ const zero=C.aggregate([fact({ad_name:'AI_UGC',spend:0,purchases:0,impressions:0,landing_page_views:0,checkouts:0})],['c1'])[0];
+ for(const k of ['roas','ctr','costLP','lpCheckout','checkoutPurchase','cvr','spendShare','purchaseShare'])assert.equal(zero[k],null,k);
+});
 test('concept aggregates across ad sets, preserves campaign identity and all ratios',()=>{
  const rows=C.aggregate([fact(),fact({ad_id:'b',adset_id:'s2',ad_name:'V_cc_01',spend:300}),fact({campaign_id:'c2'})],['c1','c2']);
  assert.equal(rows.length,2);const r=rows[0];

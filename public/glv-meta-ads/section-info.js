@@ -8,7 +8,7 @@
     'Filters': 'These campaign and grain controls apply only to this tab. Table-level campaign controls narrow their own table further.',
     'Daily Performance Chart': 'Uses the dashboard dates and this tab’s campaign filters. Select metrics and daily, weekly or monthly grain. Ratios are recalculated from aggregated inputs.',
     'Daily Campaign Table': 'Campaign performance within the dashboard dates and this tab’s filters. Narrow this table and choose its sort independently.',
-    'Creative Concept Evaluation': 'Click a metric header to sort descending, then ascending. Unavailable ratios remain last.',
+    'Creative Concept Evaluation': 'AI Videos combines AI UGC and AI Cartoon parent ads within each campaign using ad-level totals, not asset breakdowns. Click a metric header to sort descending, then ascending. Unavailable ratios remain last.',
     'Creative Evaluation': 'Ad-level creative performance within the dashboard dates and this tab’s campaign filters. Type and sort controls affect this table only.',
     'Promo Period Split': wlDefinition + ' Promo only restricts the group views to dates with Promo spend; it does not affect the independent Creative tab.',
     'Promo Group Charts': wlDefinition + ' Metrics and this tab’s grain control the group charts. Ratios are calculated from summed inputs.',

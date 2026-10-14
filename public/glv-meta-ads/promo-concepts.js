@@ -3,6 +3,8 @@
   const inputs=['spend','purchases','revenue','impressions','link_clicks','landing_page_views','checkouts'];
   const eligible=r=>/^(TUC|GLV)_\d+_/.test(r.campaign_name)&&r.campaign_name.includes('_CZSK_')&&!r.campaign_name.includes('_US_')&&r.campaign_name.includes('_Promo');
   function identity(name){
+    // One ad-level concept; campaign scope is applied by aggregate below.
+    if(/(?<![\p{L}\p{N}])AI[ _]+(?:UGC|Cartoon)(?![\p{L}\p{N}])/iu.test(name))return {label:'AI Videos',key:'special:ai-videos',warning:''};
     const codes=[...new Set((name.match(/(?<![A-Za-z0-9])(?:CC|PAC)[ _]*\d+(?![A-Za-z0-9])/gi)||[]).map(s=>s.replace(/[ _]/g,'').toUpperCase()))];
     return codes.length===1?{label:codes[0],key:'code:'+codes[0],warning:''}:{label:name,key:'name:'+name,warning:codes.length?'Conflicting codes — full ad name':'Unmapped — full ad name'};
   }
