@@ -104,6 +104,42 @@ const metaIconPath = routePath('glv-meta-ads', 'agenthic-logo.svg');
 if (!metaHtml.includes('/glv-meta-ads/agenthic-logo.svg') || !fs.existsSync(metaIconPath) || sha256(fs.readFileSync(metaIconPath)) !== approvedIconHash) {
   fail('canonical Meta Ads dashboard is missing its approved route-local icon');
 }
+
+const madFiles = fs.readdirSync(path.join(root, 'public', 'mad')).sort();
+if (JSON.stringify(madFiles) !== JSON.stringify(['app.js', 'index.html', 'styles.css'])) {
+  fail('MAD product website must ship only its approved static files');
+}
+const madHtml = fs.readFileSync(routePath('mad', 'index.html'), 'utf8');
+const madScript = fs.readFileSync(routePath('mad', 'app.js'), 'utf8');
+const madStyles = fs.readFileSync(routePath('mad', 'styles.css'), 'utf8');
+if (!madHtml.includes('<title>AGENTHIC CONTROL — Meta Ads, without the fog.</title>')
+    || !madHtml.includes('Synthetic demonstration data. No client data is displayed.')
+    || !madHtml.includes('href="/mad/styles.css"')
+    || !madHtml.includes('src="/mad/app.js"')) {
+  fail('MAD product website identity, assets, or privacy disclosure is missing');
+}
+if (!madHtml.includes('href="mailto:hello@agenthic.com" data-email-brief')
+    || !madHtml.includes('role="tabpanel"')
+    || !madHtml.includes('aria-controls="role-panel"')
+    || !madHtml.includes('aria-pressed="true" data-market="all"')
+    || !madHtml.includes('role="status" aria-live="polite" data-market-status')
+    || !madHtml.includes('id="dialog-success-title"')
+    || !madScript.includes("dialog.setAttribute('aria-labelledby', 'dialog-success-title')")
+    || !madStyles.includes('.section-light :focus-visible, .contact-dialog :focus-visible { outline-color: #273126; }')
+    || !madStyles.includes('color: #4f5651; font-size: 11px;')
+    || /<aside class="window-sidebar"[^>]*>(?:(?!<\/aside>)[\s\S])*<button/i.test(madHtml)) {
+  fail('MAD product website conversion, accessibility, or interaction contract is missing');
+}
+if (/['"]\/mad(?:\/|['"])/.test(middlewareSource)) {
+  fail('MAD product website must remain outside client authentication middleware');
+}
+const madRuntime = `${madHtml}\n${madScript}\n${madStyles}`;
+if (/\/api\//.test(madRuntime)
+    || /\b(?:GLV|KRS|KURSA|ELMICH)\b/i.test(madRuntime)
+    || /(?:src|href)=["']https?:\/\//i.test(madHtml)
+    || /url\(\s*["']?https?:\/\//i.test(madStyles)) {
+  fail('MAD product website must not expose client identities, APIs, or remote runtime dependencies');
+}
 const config = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
 if (!(config.headers || []).some(entry => entry.source === '/glv/:path*'
     && entry.headers.some(header => header.key === 'Cache-Control' && header.value === 'no-store'))) {
@@ -169,5 +205,5 @@ console.log(JSON.stringify({
   coverageEnd,
   expectedAtLeast: yesterdayUtc,
   canonicalSnapshotSha256: sha256(canonicalBytes),
-  routes: { glv: 'GLV Executive Pulse', meta: 'GLV Meta Ads Pulse' },
+  routes: { glv: 'GLV Executive Pulse', meta: 'GLV Meta Ads Pulse', mad: 'AGENTHIC CONTROL' },
 }));
