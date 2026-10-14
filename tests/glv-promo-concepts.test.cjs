@@ -73,6 +73,22 @@ test('AI Videos sums daily parent facts once across ad sets with unchanged total
  const zero=C.aggregate([fact({ad_name:'AI_UGC',spend:0,purchases:0,impressions:0,landing_page_views:0,checkouts:0})],['c1'])[0];
  for(const k of ['roas','ctr','costLP','lpCheckout','checkoutPurchase','cvr','spendShare','purchaseShare'])assert.equal(zero[k],null,k);
 });
+test('Total sums selected concept inputs and recomputes unequal-weight ratios without counting AI twice',()=>{
+ const facts=[fact({ad_name:'AI_UGC'}),fact({ad_name:'AI Cartoon',ad_id:'b',spend:300,purchases:9,revenue:450,impressions:200,link_clicks:10,landing_page_views:10,checkouts:5}),fact({campaign_id:'c2',ad_name:'CC02',spend:20}),fact({campaign_id:'excluded',spend:9999})];
+ for(const selected of [['c1'],['c1','c2'],[],['missing']]){
+  const rows=C.aggregate(facts,selected),total=C.total(rows),raw=facts.filter(r=>selected.includes(r.campaign_id));
+  if(!raw.length){assert.equal(total,null);continue;}
+  assert.equal(total.label,'Total');const sum=k=>raw.reduce((s,r)=>s+r[k],0);
+  for(const k of C.inputs)assert.equal(total[k],sum(k),k);
+  for(const [key,a,b,scale] of [['roas','revenue','spend',1],['ctr','link_clicks','impressions',100],['costLP','spend','landing_page_views',1],['lpCheckout','checkouts','landing_page_views',100],['checkoutPurchase','purchases','checkouts',100],['cvr','purchases','landing_page_views',100]])assert.equal(total[key],sum(a)/sum(b)*scale,key);
+  assert.equal(total.spendShare,100);assert.equal(total.purchaseShare,100);
+  assert.equal(rows.filter(r=>r.label==='AI Videos').length,1);
+  assert.equal(rows.length,selected.length);
+ }
+ const zero=C.total(C.aggregate([fact(Object.fromEntries(C.inputs.map(k=>[k,0])))],['c1']));
+ for(const k of ['roas','ctr','costLP','lpCheckout','checkoutPurchase','cvr','spendShare','purchaseShare'])assert.equal(zero[k],null,k);
+ assert.equal(C.total([]),null);
+});
 test('concept aggregates across ad sets, preserves campaign identity and all ratios',()=>{
  const rows=C.aggregate([fact(),fact({ad_id:'b',adset_id:'s2',ad_name:'V_cc_01',spend:300}),fact({campaign_id:'c2'})],['c1','c2']);
  assert.equal(rows.length,2);const r=rows[0];

@@ -9,6 +9,12 @@
     return codes.length===1?{label:codes[0],key:'code:'+codes[0],warning:''}:{label:name,key:'name:'+name,warning:codes.length?'Conflicting codes — full ad name':'Unmapped — full ad name'};
   }
   const ratio=(a,b,scale=1)=>b>0?a/b*scale:null;
+  const metrics=(g,totals)=>({...g,spendShare:ratio(g.spend,totals.spend,100),purchaseShare:ratio(g.purchases,totals.purchases,100),roas:ratio(g.revenue,g.spend),ctr:ratio(g.link_clicks,g.impressions,100),costLP:ratio(g.spend,g.landing_page_views),lpCheckout:ratio(g.checkouts,g.landing_page_views,100),checkoutPurchase:ratio(g.purchases,g.checkouts,100),cvr:ratio(g.purchases,g.landing_page_views,100)});
+  function total(rows){
+    if(!rows.length)return null;
+    const sum=Object.fromEntries(inputs.map(k=>[k,rows.reduce((s,r)=>s+r[k],0)]));
+    return metrics({label:'Total',...sum},sum);
+  }
   function aggregate(rows,selected){
     const groups=new Map(), totals={spend:0,purchases:0};
     for(const r of rows.filter(r=>eligible(r)&&selected.includes(r.campaign_id))){
@@ -16,7 +22,7 @@
       if(!groups.has(key))groups.set(key,{key,...id,campaign_id:r.campaign_id,campaign_name:r.campaign_name,...Object.fromEntries(inputs.map(k=>[k,0]))});
       const g=groups.get(key);for(const k of inputs)g[k]+=r[k];totals.spend+=r.spend;totals.purchases+=r.purchases;
     }
-    return [...groups.values()].map(g=>({...g,spendShare:ratio(g.spend,totals.spend,100),purchaseShare:ratio(g.purchases,totals.purchases,100),roas:ratio(g.revenue,g.spend),ctr:ratio(g.link_clicks,g.impressions,100),costLP:ratio(g.spend,g.landing_page_views),lpCheckout:ratio(g.checkouts,g.landing_page_views,100),checkoutPurchase:ratio(g.purchases,g.checkouts,100),cvr:ratio(g.purchases,g.landing_page_views,100)}));
+    return [...groups.values()].map(g=>metrics(g,totals));
   }
   function campaigns(rows){
     const map=new Map();for(const r of rows.filter(eligible)){
@@ -26,5 +32,5 @@
   }
   function selection(rows,current){if(current!==null)return current;const delivered=campaigns(rows).filter(c=>c.last);return delivered.length?[delivered[0].id]:null;}
   function sort(rows,key,direction){return rows.map((r,i)=>({r,i})).sort((a,b)=>a.r[key]===null?(b.r[key]===null?a.i-b.i:1):b.r[key]===null?-1:(direction==='asc'?1:-1)*(a.r[key]-b.r[key])||a.i-b.i).map(x=>x.r);}
-  return {inputs,eligible,identity,aggregate,campaigns,selection,sort};
+  return {inputs,eligible,identity,aggregate,total,campaigns,selection,sort};
 });

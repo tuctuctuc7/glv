@@ -19,10 +19,10 @@ module.exports=async function(page,width,theme){
   await page.evaluate(({count,original})=>{conceptPayload={...original,rows:Array.from({length:count},(_,i)=>({...original.rows[0],ad_id:`qa${i}`,ad_name:`PAC${100+i}`}))};renderPromoConcepts();},{count,original});
   const geometry=await page.evaluate(()=>{
    const wrap=document.querySelector('.concept-scroll'),table=wrap.querySelector('table'),rows=[...table.querySelectorAll('tbody tr')],r=wrap.getBoundingClientRect();
-   return {count:rows.length,height:r.height,scrollHeight:wrap.scrollHeight,clientHeight:wrap.clientHeight,scrollWidth:wrap.scrollWidth,clientWidth:wrap.clientWidth,maxHeight:getComputedStyle(wrap).maxHeight,secondary:rows.some(row=>row.cells[0].children.length!==1),allVisible:rows.every(row=>{const b=row.getBoundingClientRect();return b.height>0&&b.top>=r.top&&b.bottom<=r.bottom+1;}),rowHeight:rows[0].getBoundingClientRect().height};
+   return {count:rows.filter(row=>!row.classList.contains('subtotal-row')).length,totalCount:rows.filter(row=>row.classList.contains('subtotal-row')).length,firstLabel:rows[0].cells[0].textContent,height:r.height,scrollHeight:wrap.scrollHeight,clientHeight:wrap.clientHeight,scrollWidth:wrap.scrollWidth,clientWidth:wrap.clientWidth,maxHeight:getComputedStyle(wrap).maxHeight,secondary:rows.some(row=>row.cells[0].children.length!==1),allVisible:rows.every(row=>{const b=row.getBoundingClientRect();return b.height>0&&b.top>=r.top&&b.bottom<=r.bottom+1;}),rowHeight:rows[0].getBoundingClientRect().height};
   });
   fs.writeFileSync(`${dir}/${width}-${theme}-${count}-geometry.json`,JSON.stringify(geometry,null,2));
-  if(!baseline){assert.equal(geometry.count,count);assert.equal(geometry.secondary,false);assert.equal(geometry.maxHeight,'none');assert.ok(geometry.scrollHeight<=geometry.clientHeight+1);assert.equal(geometry.allVisible,true);if(width===1440){assert.ok(geometry.scrollWidth<=geometry.clientWidth+1);assert.ok(geometry.rowHeight<=36);}}
+  if(!baseline){assert.equal(geometry.count,count);assert.equal(geometry.totalCount,1);assert.equal(geometry.firstLabel,'Total');assert.equal(geometry.secondary,false);assert.equal(geometry.maxHeight,'none');assert.ok(geometry.scrollHeight<=geometry.clientHeight+1);assert.equal(geometry.allVisible,true);if(width===1440){assert.ok(geometry.scrollWidth<=geometry.clientWidth+1);assert.ok(geometry.rowHeight<=36);}}
   if(!baseline){
    const viewport=page.viewportSize();
    // Ordinary viewport, real document scroll, unchanged fixed navigation.
