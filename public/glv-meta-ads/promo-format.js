@@ -15,6 +15,7 @@
   }
   function validPayload(data) {
     if (!data || data.schema_version !== 1 || data.classification_version !== CLASSIFICATION_VERSION || data.reconciled !== true || !Array.isArray(data.rows) || !Number.isFinite(Date.parse(data.generated_at)) || !validDate(data.range?.since) || !validDate(data.range?.until) || data.range.since > data.range.until) return false;
+    if (data.funnel_version !== undefined && (data.funnel_version !== 1 || !data.rows.every(row=>row && ['link_clicks','landing_page_views','checkouts'].every(k=>typeof row[k]==='number'&&Number.isFinite(row[k])&&row[k]>=0)))) return false;
     if (data.inventory_version !== undefined && data.inventory_version !== 1) return false;
     const seen = new Set();
     return data.rows.every(row => {
@@ -64,5 +65,6 @@
       return group;
     });
   }
-  return { CLASSIFICATION_VERSION, FORMATS, COLORS, validDate, validPayload, monthlyMix };
+  const validConceptPayload=data=>validPayload(data)&&data.funnel_version===1&&data.rows.every(r=>/^(TUC|GLV)_\d+_/.test(r.campaign_name)&&r.campaign_name.includes('_CZSK_')&&!r.campaign_name.includes('_US_')&&r.campaign_name.includes('_Promo'));
+  return { CLASSIFICATION_VERSION, FORMATS, COLORS, validDate, validPayload, validConceptPayload, monthlyMix };
 });

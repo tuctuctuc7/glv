@@ -40,19 +40,30 @@ test('refresh discovers current campaign scope, reads archived ad daily facts, a
       assert.equal(u.searchParams.has('use_unified_attribution_setting'), false);
       const filters = JSON.parse(u.searchParams.get('filtering'));
       assert.ok(filters.some(f => f.value.includes('ARCHIVED') && f.value.includes('DELETED')));
-      const common = { campaign_id:march, campaign_name:'obsolete name', date_start:'2026-09-02', spend:'0', impressions:'0', actions:[{action_type:'omni_purchase',value:'2'},{action_type:'purchase',value:'999'}], action_values:[{action_type:'omni_purchase',value:'400'}] };
+      const common = { campaign_id:march, campaign_name:'obsolete name', date_start:'2026-09-02', spend:'0', impressions:'0', actions:[{action_type:'omni_purchase',value:'2'},{action_type:'purchase',value:'999'},{action_type:'link_click',value:'12'},{action_type:'landing_page_view',value:'8'},{action_type:'initiate_checkout',value:'3'},{action_type:'omni_initiated_checkout',value:'999'}], action_values:[{action_type:'omni_purchase',value:'400'}] };
       return {ok:true,json:async () => ({data:[u.searchParams.get('level') === 'ad' ? {...common,ad_id:'a',adset_id:'s',ad_name:'obsolete'} : common]})};
     }
     const fields = u.searchParams.get('fields');
     return {ok:true,json:async () => fields.includes('adset_id') ? {a:{id:'a',name:'PAC403',campaign_id:march,adset_id:'s',effective_status:'ARCHIVED'}} : fields.includes('campaign_id') ? {s:{id:'s',name:'EGC',campaign_id:march}} : {[march]:{id:march,name:'TUC_008_CZSK_Sales_Promo_6y-bday'}}};
   };
   const result = await fetchPromoFormats('private-test-token', range, fetcher);
+  assert.equal(result.funnel_version,1);
+  assert.deepEqual([result.rows[0].link_clicks,result.rows[0].landing_page_views,result.rows[0].checkouts],[12,8,3]);
   assert.equal(result.schema_version, 1);
   assert.equal(result.rows.length, 1);
   assert.deepEqual([result.rows[0].format,result.rows[0].spend,result.rows[0].purchases], ['Video',0,2]);
   assert.equal(result.rows[0].date, '2026-09-02');
   assert.equal(result.reconciled, true);
   assert.equal(calls.filter(u=>u.pathname.endsWith('/insights')).length, 2);
+  // Synthetic campaign/ad mismatches must fail before any success-shaped payload.
+  for(const type of ['link_click','landing_page_view','initiate_checkout']){
+    const mismatched=async (url,options)=>{
+      const response=await fetcher(url,options),data=await response.json(),u=new URL(url);
+      if(u.searchParams.get('level')==='campaign')data.data[0].actions.find(a=>a.action_type===type).value='9999';
+      return {...response,json:async()=>data};
+    };
+    await assert.rejects(()=>fetchPromoFormats('private-test-token',range,mismatched),/reconciliation failed/);
+  }
 });
 
 test('history refresh has an overall deadline rather than a fresh budget per page', async () => {
@@ -98,6 +109,15 @@ test('authenticated shared data handler serves versioned format cache; cron adds
     assert.equal(status,200);assert.equal(headers['X-Cache'],'HIT');assert.equal(body.rows.length,1);
     assert.equal(body.classification_version,2);assert.equal(body.rows[0].format,'Banner');
     assert.equal(body.generated_at,cached.generated_at);assert.equal(body.rows[0].spend,cached.rows[0].spend);
+    const response={setHeader:(k,v)=>headers[k]=v,status:n=>{status=n;return {json:v=>body=v};},json:v=>body=v};
+    await handler({method:'GET',query:{type:'promo_concepts',time_range:JSON.stringify(range)}},response);
+    assert.equal(headers['X-Cache'],'MISS');assert.equal(status,502,'legacy facts cannot fabricate zero funnel inputs');
+    cached.funnel_version=1;for(const row of cached.rows)Object.assign(row,{link_clicks:12,landing_page_views:8,checkouts:3});
+    status=200;
+    await handler({method:'GET',query:{type:'promo_concepts',time_range:JSON.stringify(range)}},response);
+    assert.equal(status,200);assert.equal(headers['X-Cache'],'HIT');assert.equal(body.funnel_version,1);
+    assert.equal(headers['Cache-Control'],'private, no-store');assert.equal(body.rows[0].checkouts,3);
+    assert.equal(body.generated_at,cached.generated_at,'shared facts keep original extraction freshness');
     assert.equal(typeof cron._test.refreshPromoFormatCache,'function');
     const config=JSON.parse(fs.readFileSync(require('node:path').join(__dirname,'../vercel.json'),'utf8'));
     assert.deepEqual(config.crons,[{path:'/api/glv-meta-ads/cron',schedule:'0 0 * * *'}]);

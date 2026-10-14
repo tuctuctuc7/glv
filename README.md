@@ -325,6 +325,67 @@ uploads. Browser replay uses real sanitized media references/memberships but
 **synthetic performance and synthetic performance classification**, not observed
 spend/revenue. Keep fixture files and screenshots outside public assets and Git.
 
+### Promo Creative concept evaluation (funnel revision 1)
+
+The new table below the existing Promo Creative charts is independent of their
+month filters and of global date/tab filters. It requests
+`/api/glv-meta-ads/fb-data?type=promo_concepts&date_preset=promo_history` from
+March 2026 through the latest complete day. No existing chart changes.
+Campaign selection defaults to the most recent positive spend/impression day;
+zero-delivery purchase carryover cannot make an old campaign the default.
+Explicit selections (including None) survive reload in the same browser tab.
+Only campaign IDs enter sessionStorage; performance facts remain in memory.
+
+Concepts use exact, case-normalized CC/PAC tokens (space/underscore separators),
+grouped within campaign identity across ad sets. Different campaigns never merge.
+Missing/conflicting tokens retain full ad names with a warning and stay in totals.
+The ten sortable columns are Spend, Purchases, ROAS, Revenue, CTR, LP Views,
+Cost / LP, LP → Checkout, Checkout → Purchase and CVR. First click is descending,
+second ascending; unavailable ratios sort last. Spend/purchase shares use all
+selected eligible concepts, including unmapped and carryover outcomes. Ratios
+use summed inputs: CTR = link clicks / impressions; CVR = purchases / LP views.
+The section info lists every formula, attribution and CZK currency.
+
+Source rows add `link_clicks`, `landing_page_views`, `checkouts` and
+`funnel_version:1`. Actions use `link_click`, `landing_page_view`,
+`initiate_checkout`, and `omni_purchase` (purchase value from `action_values`).
+Aliases are not added together. Meta omission of an action in a successful
+source row means zero; missing legacy funnel fields are **not** manufactured
+zeros. The concept validator rejects legacy, null, malformed and future funnel
+versions. Every funnel metric reconciles ad totals to campaign/day totals before
+success. Schema 1, classification 2, inventory 1, configured-asset counts and the
+single existing daily cron/300-second platform limit remain unchanged.
+
+**Activation / readback (not executed by this implementation):**
+
+1. Release backend dependencies and cache-busted frontend together, then reload
+   open tabs. Do not publish private evidence or synthetic fixtures.
+2. Both resources share `glv:promo_formats:history:v1` server facts but have separate
+   browser memory keys, generation guards and refresh controls. Legacy cache
+   remains usable for existing format/inventory views; concepts require funnel 1
+   and take the read-only live fallback when it is absent. The concept refresh
+   button invalidates only its browser memory; it never writes or deletes Redis.
+3. Prefer the next successful existing daily cron to populate funnel 1. Immediate
+   server-cache activation needs separate approval: use the existing targeted
+   `refreshPromoFormatCache` procedure above from the reviewed production revision.
+   Do not create another cron, increase the platform limit or retimestamp old data.
+4. Read back both authenticated history URLs. For concepts require `X-Cache:HIT`,
+   `PromoFormat.validConceptPayload(payload)`, schema 1, classification 2, funnel 1,
+   inventory 1, `reconciled:true`, complete requested range and fresh extraction.
+   Verify format/inventory totals and statuses on identical source facts; attribution
+   backfill can legitimately change metrics after a real extraction.
+5. Verify native ten-column values/sorts, most-recent-delivery default, multiselect
+   and explicit None persistence, independent filters, info formulas, both themes
+   and narrow-screen scrolling. A successful write/HTTP 200 alone is not activation.
+
+Local gates: `npm test`, `node qa/promo-concepts.cjs`,
+`node qa/promo-creative-tab.cjs`, `npm run qa:meta-ads`,
+`node qa/meta-cache-performance.cjs`, `npm run verify:glv-release` and
+`git diff --check`. Browser fixtures are explicitly synthetic and are not evidence
+of observed performance. Read-only source validation must verify account identity,
+use a bounded date range, inspect action aliases, reconcile real concept inputs,
+and keep its facts and screenshots under a private directory outside this repo.
+
 ## Media Buyer OS
 
 Route: `/glv-mb-os/`

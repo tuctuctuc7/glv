@@ -7,16 +7,18 @@ let failedTypes=new Set(),empty=false,malformed=false,historyDelay=delay,fxDelay
 let historyStamp='2026-09-21T00:00:00Z';
 const row={id:'c1',name:'TUC_008_CZSK_Sales_Promo',amount_spent:'100',impressions:'1000',reach:'800','actions:omni_purchase':'2','action_values:omni_purchase':'300',date_start:'2026-09-10',date_stop:'2026-09-10'};
 const formats={schema_version:1,classification_version:2,reconciled:true,generated_at:'2026-09-21T00:00:00Z',range:{since:'2026-03-01',until:'2026-09-20'},rows:[{ad_id:'a',ad_name:'a',adset_id:'s',adset_name:'Banner',campaign_id:'c1',campaign_name:row.name,date:'2026-09-10',format:'Banner',reason:'current_adset_label',spend:100,purchases:2,revenue:300,impressions:1000}]};
+formats.funnel_version=1;
+for(const row of formats.rows)Object.assign(row,{link_clicks:50,landing_page_views:40,checkouts:10});
 const server=http.createServer((req,res)=>{
  const u=new URL(req.url,'http://localhost');
  if(u.pathname==='/api/glv-meta-ads/fb-data'){
   const type=u.searchParams.get('type');requests.push({type,scope:u.searchParams.get('time_range')||u.searchParams.get('date_preset'),start:performance.now()});
   const range=JSON.parse(u.searchParams.get('time_range')||'null');
   const amount=range?Number(range.since.slice(-2))*100:100;
-  const wait=type==='promo_formats'?historyDelay:range?.since==='2026-09-01'?600:delay;
+  const wait=type.startsWith('promo_')?historyDelay:range?.since==='2026-09-01'?600:delay;
   const fail=failedTypes.has(type),isEmpty=empty,isMalformed=malformed;
   const historyPayload={...formats,generated_at:historyStamp,rows:isEmpty?[]:formats.rows};
-  return setTimeout(()=>{res.setHeader('Content-Type','application/json');res.statusCode=fail?503:200;res.end(JSON.stringify(fail?{error:'Fixture offline'}:isMalformed?{rows:null}:type==='promo_formats'?historyPayload:{rows:type==='ads'||isEmpty?[]:[{...row,amount_spent:String(amount)}]}));},wait);
+  return setTimeout(()=>{res.setHeader('Content-Type','application/json');res.statusCode=fail?503:200;res.end(JSON.stringify(fail?{error:'Fixture offline'}:isMalformed?{rows:null}:type.startsWith('promo_')?historyPayload:{rows:type==='ads'||isEmpty?[]:[{...row,amount_spent:String(amount)}]}));},wait);
  }
  let file=path.join(root,u.pathname);if(fs.existsSync(file)&&fs.statSync(file).isDirectory())file=path.join(file,'index.html');if(!file.startsWith(root)||!fs.existsSync(file))return res.writeHead(404).end();
  res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png'})[path.extname(file)]||'application/octet-stream');fs.createReadStream(file).pipe(res);
@@ -57,12 +59,12 @@ const server=http.createServer((req,res)=>{
   report.independentMainMs=independent.ms;
   // A force refresh starts new independent generations, not just new main rows.
   historyDelay=1100;fxDelay=1000;fxValue=0.066;historyStamp='2026-09-20T00:00:00Z';
-  await page.evaluate(async()=>{await loadData({force:true});window.oldIndependent=Promise.all([loadPromoFormats(),fetchUsdRate()]);});
+  await page.evaluate(async()=>{await loadData({force:true});window.oldIndependent=Promise.all([loadPromoFormats(),loadPromoConcepts(),fetchUsdRate()]);});
   historyDelay=delay;fxDelay=delay;fxValue=0.077;historyStamp='2026-09-22T00:00:00Z';
   await page.evaluate(()=>loadData({force:true}));
   await page.waitForFunction(()=>usdRate===0.077&&promoFormatPayload.generated_at==='2026-09-22T00:00:00Z');
   await page.evaluate(()=>window.oldIndependent);
-  assert.deepEqual(await page.evaluate(()=>[usdRate,promoFormatPayload.generated_at]),[0.077,'2026-09-22T00:00:00Z'],'old FX/history must not overwrite forced newer generations');
+  assert.deepEqual(await page.evaluate(()=>[usdRate,promoFormatPayload.generated_at,conceptPayload.generated_at]),[0.077,'2026-09-22T00:00:00Z','2026-09-22T00:00:00Z'],'old FX/history must not overwrite forced newer generations');
   const race=await page.evaluate(async()=>{
    customRange={since:'2026-09-01',until:'2026-09-10'};datePreset=null;updateDateLabel();const old=loadData();
    await new Promise(r=>setTimeout(r,30));
@@ -79,7 +81,7 @@ const server=http.createServer((req,res)=>{
   });
   assert.deepEqual(retained,{visible:true,rows:1,history:true},'same-range refresh keeps content visible while updating');
   await page.evaluate(()=>window.pendingRefresh);
-  assert.equal(requests.length-refreshStart,5,'explicit refresh invalidates every resource including rate and history');
+  assert.equal(requests.length-refreshStart,6,'explicit refresh invalidates main data, rate and both independent histories');
   const hidden=await page.evaluate(()=>{
    customRange={since:'2026-09-03',until:'2026-09-10'};updateDateLabel();window.pendingRange=loadData();
    document.querySelector('[data-tab="czsk-promo"]').click();
@@ -89,6 +91,8 @@ const server=http.createServer((req,res)=>{
   await page.evaluate(()=>window.pendingRange);
   const historyStart=requests.length;await page.evaluate(()=>promoFormatHistory());
   assert.equal(requests.length-historyStart,1,'history refresh only invalidates independent history');
+  const conceptStart=requests.length;await page.evaluate(()=>refreshPromoConceptHistory());
+  assert.deepEqual(requests.slice(conceptStart).map(r=>[r.type,r.scope]),[['promo_concepts','promo_history']],'concept refresh never refetches charts or scoped data');
   const dedupStart=requests.length;
   await page.evaluate(async()=>{customRange={since:'2026-09-04',until:'2026-09-10'};await Promise.all([loadData(),loadData()]);});
   assert.equal(requests.length-dedupStart,3,'concurrent same-scope loads coalesce all three scoped requests');
@@ -108,7 +112,7 @@ const server=http.createServer((req,res)=>{
   assert.match(await page.locator('#error').textContent(),/schema unavailable/);
   assert.equal(await page.locator('#promo-format-table tbody tr').count(),0);
   const schemaRetry=requests.length;await page.evaluate(()=>loadData());
-  assert.equal(requests.length-schemaRetry,4,'malformed payloads never enter successful cache');
+  assert.equal(requests.length-schemaRetry,5,'malformed payloads never enter successful cache');
   empty=true;await page.evaluate(()=>loadData({force:true}));
   assert.match(await page.locator('#kpi-czsk').textContent(),/No campaign activity/);
   const emptyStart=requests.length;await page.evaluate(()=>loadData());assert.equal(requests.length,emptyStart,'valid empty response is reusable');
@@ -120,17 +124,17 @@ const server=http.createServer((req,res)=>{
   await page.clock.setSystemTime(new Date('2026-09-25T12:00:00Z'));
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await page.waitForFunction(()=>document.getElementById('loading').style.display==='none'&&renderedScope.startsWith('2026-09-25'));
-  assert.equal(requests.length-rolloverStart,5,'UTC rollover invalidates all cached resources when page resumes');
+  assert.equal(requests.length-rolloverStart,6,'UTC rollover invalidates all cached resources when page resumes');
   const duplicateStart=requests.length;
   await page.evaluate(()=>{window.dispatchEvent(new Event('focus'));window.dispatchEvent(new Event('pageshow'));document.dispatchEvent(new Event('visibilitychange'));});
   assert.equal(requests.length,duplicateStart,'same UTC day resume must not fetch');
   await page.clock.setSystemTime(new Date('2026-09-26T00:01:00Z'));
   await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   await page.waitForFunction(()=>document.getElementById('loading').style.display==='none'&&renderedScope.startsWith('2026-09-26'));
-  assert.equal(requests.length-duplicateStart,5,'visibility resume refreshes UTC-relative scopes');
+  assert.equal(requests.length-duplicateStart,6,'visibility resume refreshes UTC-relative scopes');
   await page.clock.setSystemTime(new Date('2026-09-26T00:07:00Z'));
   const expiredStart=requests.length;await page.evaluate(()=>loadData());
-  assert.equal(requests.length-expiredStart,5,'expired data refetches at the next load');
+  assert.equal(requests.length-expiredStart,6,'expired data refetches at the next load');
   assert.deepEqual(errors,[]);
   if(process.env.PERF_REPORT)fs.writeFileSync(process.env.PERF_REPORT,JSON.stringify({...report,expandedQaPassed:true},null,2));
   console.log('PASS cache concurrency, race, refresh visibility, retry/schema/empty recovery, UTC rollover');
