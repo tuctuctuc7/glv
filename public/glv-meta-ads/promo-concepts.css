@@ -8,7 +8,7 @@
 #promo-concept-table{width:100%;table-layout:auto}
 #promo-concept-table th,#promo-concept-table td{width:auto;min-width:0;max-width:none;padding:6px 8px;white-space:nowrap}
 #promo-concept-table th{position:sticky;top:128px;z-index:2;background:var(--surface)}
-#promo-concept-table th:first-child,#promo-concept-table td:first-child{position:sticky;left:0;background:var(--surface);width:100px;min-width:100px;max-width:100px;white-space:normal;overflow-wrap:anywhere}
+#promo-concept-table th:first-child,#promo-concept-table td:first-child{position:sticky;left:0;width:100px;min-width:100px;max-width:100px;white-space:normal;overflow-wrap:anywhere}
 #promo-concept-table th:first-child{z-index:3}
 #promo-concept-table td:first-child{z-index:1}
 #promo-concept-table th button{font:inherit;cursor:pointer;color:inherit;border:0;background:none;padding:0;white-space:normal;scroll-margin-block:180px}
