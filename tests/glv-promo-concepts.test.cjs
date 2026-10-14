@@ -33,6 +33,17 @@ test('canonical case, boundaries, full-name fallback and all-selected share deno
  assert.equal(rows.reduce((s,r)=>s+r.spendShare,0),100);assert.equal(rows.reduce((s,r)=>s+r.purchaseShare,0),100);
  assert.equal(C.selection([fact({spend:0,impressions:0})],null),null);
 });
+test('concept campaigns reuse the dashboard filter component and shared handlers',()=>{
+ const fs=require('node:fs'),html=fs.readFileSync('public/glv-meta-ads/index.html','utf8'),ui=fs.readFileSync('public/glv-meta-ads/promo-concepts-ui.js','utf8');
+ assert.doesNotMatch(html,/<details id="promo-concept-campaigns"/);
+ assert.match(ui,/tabFilterMarkup\('promo-concept','Campaign name'\)/);
+ assert.match(html,/key==='promo-concept'/);
+});
+test('concept rows have no secondary label and the table has no capped vertical viewport',()=>{
+ const fs=require('node:fs'),css=fs.readFileSync('public/glv-meta-ads/promo-concepts.css','utf8'),ui=fs.readFileSync('public/glv-meta-ads/promo-concepts-ui.js','utf8');
+ assert.doesNotMatch(css,/max-height:(520px|62vh)/);
+ assert.doesNotMatch(ui,/<small>\$\{escapeHtml\(row.campaign_name\)/);
+});
 // Synthetic test facts only, never observed client performance.
 const fact=(extra={})=>({campaign_id:'c1',campaign_name:'TUC_1_CZSK_Promo',ad_name:'B_CC01',ad_id:'a',adset_id:'s1',date:'2026-03-01',spend:100,purchases:2,revenue:300,impressions:1000,link_clicks:50,landing_page_views:40,checkouts:10,...extra});
 test('concept aggregates across ad sets, preserves campaign identity and all ratios',()=>{

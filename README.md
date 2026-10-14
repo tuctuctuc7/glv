@@ -336,6 +336,24 @@ zero-delivery purchase carryover cannot make an old campaign the default.
 Explicit selections (including None) survive reload in the same browser tab.
 Only campaign IDs enter sessionStorage; performance facts remain in memory.
 
+The campaign picker reuses `tabFilterMarkup` and the dashboard's search,
+checkbox, Select all/Clear, Escape and outside-click handlers/styles (44px
+controls). The first table column displays only the concept label; campaign
+identity and unmapped warnings remain in escaped title/accessible context,
+without merging identical codes across campaigns. All selected rows render in
+normal page flow, with no vertical cap or pagination. Shares are inline;
+desktop headers wrap to fit, and narrower layouts scroll horizontally.
+`qa/concept-compact-checks.cjs`, called by the concept QA matrix, compares native
+computed styles and exercises 19/50-row expansion, keyboard search/selection,
+and campaign identity in both themes. Normal-viewport last-row hit tests cover
+both row counts at every width/theme, with fixed navigation unchanged. Existing
+76px mobile body padding keeps the final row above the bottom navigation; no
+extra production spacing is needed. Synthetic before/after evidence lives
+outside the repository under `/tmp/glv-concept-before` and `/tmp/glv-concept-after`.
+Use `*-bottom-viewport.png` for reachability and `1440-*-19.png` for complete
+19-row desktop shares; these captures do not hide app chrome. Older mobile
+section-only captures are not viewport/reachability evidence.
+
 Concepts use exact, case-normalized CC/PAC tokens (space/underscore separators),
 grouped within campaign identity across ad sets. Different campaigns never merge.
 Missing/conflicting tokens retain full ad names with a warning and stay in totals.

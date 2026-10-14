@@ -1,32 +1,28 @@
 #promo-concept-section{min-width:0}
 #promo-concept-section .concept-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 #promo-concept-section .concept-heading h2{margin:0}
-#promo-concept-campaigns{position:relative;margin:12px 0;max-width:100%;font-size:12px}
-#promo-concept-campaigns summary{cursor:pointer;padding:10px;border:1px solid var(--border);border-radius:6px;width:fit-content}
-#promo-concept-options{max-height:240px;overflow:auto}
-#promo-concept-options label{display:flex;gap:8px;align-items:center;min-height:36px;padding:6px;overflow-wrap:anywhere}
-#promo-concept-campaigns .concept-menu{border:1px solid var(--border);padding:8px;border-radius:6px;max-width:100%}
-#promo-concept-section button{font:inherit;cursor:pointer;color:inherit}
-/* Reserve the pinned label and page header when revealing sort targets. */
-#promo-concept-section .concept-scroll{max-height:520px;overflow:auto;overscroll-behavior:contain;scroll-padding-left:150px;scroll-margin-block:180px}
+/* Use the dashboard's component without overriding its controls or typography. */
+#promo-concept-campaigns{margin:12px 0;max-width:420px}
+/* Full-height normal page flow; only narrow layouts need horizontal scrolling. */
+#promo-concept-section .concept-scroll{max-height:none;overflow:visible;scroll-padding-left:100px;scroll-padding-right:24px;scroll-margin-block:180px}
 #promo-concept-table{width:100%;table-layout:auto}
-#promo-concept-table th,#promo-concept-table td{width:auto;min-width:0;max-width:none;padding:9px 10px;white-space:nowrap}
-#promo-concept-table th{position:sticky;top:0;z-index:2;background:var(--surface)}
-#promo-concept-table th:first-child,#promo-concept-table td:first-child{position:sticky;left:0;background:var(--surface);width:150px;min-width:150px;max-width:150px;white-space:normal;overflow-wrap:anywhere}
+#promo-concept-table th,#promo-concept-table td{width:auto;min-width:0;max-width:none;padding:6px 8px;white-space:nowrap}
+#promo-concept-table th{position:sticky;top:128px;z-index:2;background:var(--surface)}
+#promo-concept-table th:first-child,#promo-concept-table td:first-child{position:sticky;left:0;background:var(--surface);width:100px;min-width:100px;max-width:100px;white-space:normal;overflow-wrap:anywhere}
 #promo-concept-table th:first-child{z-index:3}
 #promo-concept-table td:first-child{z-index:1}
-#promo-concept-table th button{border:0;background:none;padding:0;white-space:nowrap;scroll-margin-block:180px}
-/* Keep header widths stable when the sort indicator changes. */
+#promo-concept-table th button{font:inherit;cursor:pointer;color:inherit;border:0;background:none;padding:0;white-space:normal;scroll-margin-block:180px}
+/* Reserve indicator space without widening every metric header. */
 #promo-concept-table th button:after{content:' ';display:inline-block;width:1em}
 #promo-concept-table th[aria-sort=descending] button:after{content:'↓'}
 #promo-concept-table th[aria-sort=ascending] button:after{content:'↑'}
-#promo-concept-table small{display:block;font-size:11px;color:var(--muted);margin-top:3px}
-#promo-concept-table .concept-warning{color:var(--amber)}
+#promo-concept-table small{display:inline;font-size:11px;color:var(--muted);margin-left:6px}
 #promo-concept-section :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+@media(max-width:1100px){
+ #promo-concept-section .concept-scroll{overflow-x:auto}
+ #promo-concept-table th{top:0}
+ #promo-concept-table th button{white-space:nowrap}
+}
 @media(max-width:720px){
- #promo-concept-section button,#promo-concept-campaigns summary,#promo-concept-options label{min-height:44px}
  #promo-concept-table th button{min-height:44px}
- /* Leave enough room for the longest metric at 320px; wrap names, not metrics. */
- #promo-concept-section .concept-scroll{max-height:62vh;scroll-padding-left:110px}
- #promo-concept-table th:first-child,#promo-concept-table td:first-child{min-width:110px;max-width:110px;width:110px}
 }

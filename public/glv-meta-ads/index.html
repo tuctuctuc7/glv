@@ -316,8 +316,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 <link rel="stylesheet" href="/glv-meta-ads/promo-format.css?v=promo-creative-20260921">
 <script src="/glv-meta-ads/promo-format.js?v=concept-funnel-v1-20261014"></script>
 <script src="/glv-meta-ads/promo-concepts.js?v=concept-funnel-v1-20261014"></script>
-<script src="/glv-meta-ads/promo-concepts-ui.js?v=concept-funnel-v1-20261014"></script>
-<link rel="stylesheet" href="/glv-meta-ads/promo-concepts.css?v=concept-funnel-v1-20261014">
+<script src="/glv-meta-ads/promo-concepts-ui.js?v=concept-compact-20261014"></script>
+<link rel="stylesheet" href="/glv-meta-ads/promo-concepts.css?v=concept-compact-20261014">
 <script src="/glv-meta-ads/promo-format-ui.js?v=source-assets-v1-20261012"></script>
 <script src="/glv-meta-ads/session-cache.js?v=meta-cache-20260922"></script>
 <link rel="stylesheet" href="/glv-meta-ads/section-info.css?v=promo-creative-20260921">
@@ -587,7 +587,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
     <div class="concept-heading"><h2 class="section-title" id="promo-concept-title">Creative Concept Evaluation</h2><button type="button" class="metric-select" onclick="refreshPromoConceptHistory()">Refresh concepts</button></div>
     <p class="promo-note" id="promo-concept-range">March 2026 → latest complete day · CZK</p>
     <div class="promo-format-methodology"><p>Independent CZSK _Promo history, unaffected by global dates or other tab filters. Campaigns default to the most recently delivered Promo campaign (spend or impressions), not the newest name or ID. Selection persists for this browser tab, including None.</p><p>Exact CC/PAC tokens combine ads across ad sets within one campaign; identical codes in different campaigns stay separate. Missing or conflicting codes use the full ad name and remain in totals. These are ad-performance concepts, not counts of unique assets.</p><p>All ratios use summed inputs. Spend and purchase shares divide by all selected eligible outcomes, including unmapped and zero-delivery carryover purchases. ROAS = revenue / spend; CTR = link clicks / impressions; Cost / LP = spend / landing-page views; LP → Checkout = checkouts / landing-page views; Checkout → Purchase = purchases / checkouts; CVR = purchases / landing-page views. Rates and shares are percentages. Zero denominators show —. Revenue/purchases use omni_purchase only; checkouts use initiate_checkout, without summing aliases. Meta default attribution; amounts in CZK.</p></div>
-    <details id="promo-concept-campaigns"><summary id="promo-concept-count">Campaigns</summary><div class="concept-menu"><button type="button" id="promo-concept-all">All</button> <button type="button" id="promo-concept-none">None</button><div id="promo-concept-options"></div></div></details>
+    <div id="promo-concept-campaigns" class="tab-filter-section"></div>
     <p class="promo-note" id="promo-concept-status" role="status">Loading concept facts…</p>
     <div class="data-table-wrap concept-scroll" tabindex="0" role="region" aria-label="Creative concept metrics"><table class="data-table" id="promo-concept-table"><caption class="sr-only">Creative concept evaluation, selected CZSK Promo campaigns; amounts in CZK</caption><thead><tr></tr></thead><tbody></tbody></table></div>
   </section>
@@ -1689,6 +1689,7 @@ function clearAll(key){document.querySelectorAll(`#filter-options-${key} input`)
 function onFilterChange(key,intent){
   const checked=[...document.querySelectorAll(`#filter-options-${key} input:checked`)].map(c=>c.value);
   const all=[...document.querySelectorAll(`#filter-options-${key} input`)].map(c=>c.value);
+  if(key==='promo-concept'){chooseConceptCampaigns(intent?checked:[...checked,...(conceptSelection||[]).filter(id=>!all.includes(id))]);return;}
   filterState[key]=intent==='all'||(intent!=='none'&&all.length>0&&checked.length===all.length)?null:new Set(checked);
   updateFilterLabel(key);
   const tab=TAB_KEYS.find(tab=>['group','campaign'].some(kind=>tabFilterKey(tab,kind)===key));
