@@ -36,7 +36,7 @@ assert.ok(carousels.length>=2);
 const reused=carousels.filter(a=>a.creative.id===carousels[0].creative.id);
 assert.ok(reused.length>=2);
 assert.equal(new Set(reused.flatMap(a=>inventory.get(a.ad_id).assets.map(a=>a.key))).size,6);
-const payload={schema_version:1,classification_version:2,inventory_version:1,reconciled:true,generated_at:fixture.summary.generated_at,range:fixture.summary.range,rows};
+const payload={schema_version:1,classification_version:2,inventory_version:2,reconciled:true,generated_at:fixture.summary.generated_at,range:fixture.summary.range,rows};
 assert.equal(validPayload(payload),true);
 if(process.argv[3]) fs.writeFileSync(process.argv[3],JSON.stringify(payload),{mode:0o600});
 console.log(JSON.stringify({verifiedAds:inventory.size,monthlyRows:rows.length,months:months.map(m=>({month:m.month,images:m.formats.Banner.assets,videos:m.formats.Video.assets,known:m.total.assets,status:m.total.asset_status})),performance:'synthetic QA only; not live performance evidence'},null,2));

@@ -7,10 +7,10 @@ const fact=(id,date,format,spend,purchases)=>({ad_id:id,ad_name:id==='unknown'?'
 const fixture={schema_version:1,classification_version:2,reconciled:true,generated_at:new Date().toISOString(),range:{since:'2026-03-01',until:'2026-09-20'},rows:[fact('a','2026-03-10','Banner',300,1),fact('b','2026-03-10','Video',100,3),fact('a','2026-09-15','Banner',90,4),fact('b','2026-09-15','Video',10,1),fact('carry','2026-09-16','Video',0,1),fact('unknown','2026-09-17','Unknown',0,2)]};
 const real=process.env.PROMO_FORMAT_LIVE_FIXTURE ? JSON.parse(fs.readFileSync(process.env.PROMO_FORMAT_LIVE_FIXTURE,'utf8')) : null;
 const {parseCreative}=require('../lib/glv-promo-assets.cjs');
-fixture.inventory_version=1;
+fixture.inventory_version=2;
 for (const row of fixture.rows) {
   if(row.ad_id==='unknown') continue; // Missing inventory is independent of classification.
-  row.asset_inventory=parseCreative(row.format==='Banner' ? {asset_feed_spec:{images:[{hash:'shared-image'},{hash:'second-image'}]}} : {object_story_spec:{video_data:{video_id:'101',image_hash:'thumbnail'}},video_id:'202'},'synthetic-account');
+  row.asset_inventory=parseCreative(row.format==='Banner' ? {media_sourcing_spec:{images:[{hash:'shared-image'},{hash:'second-image'}]},object_story_spec:{link_data:{image_hash:'shared-image'}}} : {object_story_spec:{video_data:{video_id:'101',image_hash:'thumbnail'}},video_id:'202'},'synthetic-account');
 }
 // Dedicated regression month: no thumbnail may become a known Banner asset.
 fixture.rows.push({...fact('missing-video','2026-06-10','Video',100,2),asset_inventory:parseCreative({image_hash:'thumb',object_story_spec:{video_data:{image_hash:'thumb'}}},'synthetic-account')});
@@ -168,7 +168,12 @@ const server=http.createServer((req,res)=>{
    await page.evaluate(()=>promoFormatHistory());
    assert.match(await page.locator('#promo-format-status').textContent(),/schema unavailable/,'obsolete labels cannot enter browser cache');
    assert.equal(await page.locator('#promo-format-table tbody tr').count(),0);
+   payload={...validFixture,inventory_version:1};
+   await page.evaluate(()=>promoFormatHistory());
+   assert.match(await page.locator('#promo-format-status').textContent(),/schema unavailable/,'obsolete inventory cannot enter browser cache');
+   assert.equal(await page.locator('#promo-format-table tbody tr').count(),0);
    payload=validFixture;await page.evaluate(()=>promoFormatHistory());
+   assert.equal(await page.evaluate(()=>promoFormatPayload.inventory_version),2,'inventory retry recovers immediately');
    assert.equal(await page.evaluate(()=>promoFormatPayload.classification_version),2,'valid retry recovers immediately');
    malformed=true;await page.evaluate(()=>loadData({force:true}));
    await page.waitForFunction(()=>Boolean(promoFormatError));

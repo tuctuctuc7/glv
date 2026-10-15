@@ -19,7 +19,7 @@ test('missing story video identity never promotes its thumbnail through validati
   const {parseCreative}=require('../lib/glv-promo-assets.cjs');
   const inventory=parseCreative({image_hash:'thumb',object_story_spec:{video_data:{image_hash:'thumb'}}},'account');
   const row=fact({asset_inventory:inventory});
-  const payload={schema_version:1,classification_version:2,inventory_version:1,reconciled:true,generated_at:'2026-06-12T00:00:00Z',range:{since:'2026-06-01',until:'2026-06-11'},rows:[row]};
+  const payload={schema_version:1,classification_version:2,inventory_version:2,reconciled:true,generated_at:'2026-06-12T00:00:00Z',range:{since:'2026-06-01',until:'2026-06-11'},rows:[row]};
   assert.equal(require('../public/glv-meta-ads/promo-format.js').validPayload(payload),true);
   const month=monthlyMix(payload.rows)[0];
   assert.equal(month.formats.Banner.assets,null);
@@ -51,7 +51,7 @@ for (const [label,creative] of Object.entries({
   assert.deepEqual(inventory.assets,[]);
   assert.equal(inventory.configured_media_complete,false);
   assert.ok(inventory.unknown_reasons.length);
-  const payload={schema_version:1,classification_version:2,inventory_version:1,reconciled:true,generated_at:'2026-06-12T00:00:00Z',range:{since:'2026-06-01',until:'2026-06-11'},rows:[fact({asset_inventory:inventory})]};
+  const payload={schema_version:1,classification_version:2,inventory_version:2,reconciled:true,generated_at:'2026-06-12T00:00:00Z',range:{since:'2026-06-01',until:'2026-06-11'},rows:[fact({asset_inventory:inventory})]};
   assert.equal(require('../public/glv-meta-ads/promo-format.js').validPayload(payload),true);
   const month=monthlyMix(payload.rows)[0];
   for(const target of [month.total,month.formats.Banner,month.formats.Video]) {
@@ -131,7 +131,7 @@ test('refresh ingests bounded creative inventory and denied metadata never erase
       return {ok:true,json:async()=>data};
     };
     const result=await fetchPromoFormats('test',{since:'2026-06-01',until:'2026-06-11'},fetcher);
-    assert.equal(result.inventory_version,1);
+    assert.equal(result.inventory_version,2);
     assert.equal(inventoryCalls,1);
     assert.equal(result.rows[0].spend,10);
     assert.equal(monthlyMix(result.rows)[0].formats.Banner.assets,denied?null:1);
@@ -180,7 +180,7 @@ test('empty carousel previews are not source assets and malformed alternate IDs 
     assert.equal(parsed.configured_media_complete,false);
   }
   const parsed=parseCreative({image_hash:'a',video_id:{toString:null,hostile:'<img onerror=alert(1)>'},asset_feed_spec:{images:[{hash:'a'}]}},'account');
-  assert.equal(require('../public/glv-meta-ads/promo-format.js').validPayload({schema_version:1,classification_version:2,inventory_version:1,reconciled:true,generated_at:'2026-06-12T00:00:00Z',range:{since:'2026-06-01',until:'2026-06-11'},rows:[fact({asset_inventory:parsed})]}),true);
+  assert.equal(require('../public/glv-meta-ads/promo-format.js').validPayload({schema_version:1,classification_version:2,inventory_version:2,reconciled:true,generated_at:'2026-06-12T00:00:00Z',range:{since:'2026-06-01',until:'2026-06-11'},rows:[fact({asset_inventory:parsed})]}),true);
   assert.equal(parsed.configured_media_complete,false);
   assert.equal(monthlyMix([fact({asset_inventory:parsed})])[0].total.spend,100);
 });

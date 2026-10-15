@@ -259,7 +259,7 @@ The Assets column is independent of the approved ad-level performance classifier
 It unions account-scoped image hashes and source video IDs across ads/days within
 months with positive spend or impressions. Carryover-only purchases remain in
 performance totals but do not add media membership. Feed images/videos, story
-media and carousel children are supported; repeated placements, text variants,
+media, multi-media sourcing lists and carousel children are supported; repeated placements, text variants,
 video thumbnails and carousel previews do not add assets. Different top-level
 video IDs are retained as unresolved aliases, not added as separate uploads.
 `N known` means partial source inventory; `—` means unavailable or not applicable
@@ -269,11 +269,13 @@ Unsupported catalog/generated/customization shapes and unresolved existing posts
 remain partial/unavailable. No post-resolution permission was established.
 
 Schema 1 and classification 2 remain unchanged; refreshed payloads add
-`inventory_version: 1` and normalized per-row `asset_inventory`. Optional metadata
+`inventory_version: 2` and normalized per-row `asset_inventory.version: 2`. Optional metadata
 lookups run after performance reconciliation, in batches of 50 unique ad IDs,
 inside the same 240-second history budget and existing 270-second cron envelope.
 Metadata failure retains performance and unknown inventory. Future inventory
-revisions fail closed. Legacy cached facts retain their original freshness and
+revisions and old inventory revision 1 fail closed in the shared API/cache validator
+and browser. Both format and concept API paths refetch obsolete inventories;
+versionless legacy performance facts retain their original freshness and
 show unavailable inventory; no invented ad-count fallback or cache retimestamping.
 
 **Parent release activation (not performed by this implementation):**
@@ -296,9 +298,16 @@ show unavailable inventory; no invented ad-count fallback or cache retimestampin
    `glv:promo_formats:history:v1` with the existing TTL. It does not run other
    presets, mutate Meta ads, change the cron schedule, or delete the old cache
    before successful validation. Do not execute against a guessed environment.
+   The writer now GETs the exact key within the same bounded budget and requires
+   byte-identical content before reporting `readback_verified:true`. Its safe
+   summary includes inventory revision, freshness and monthly counts/status.
+   Alternatively invoke the authenticated existing `/api/glv-meta-ads/cron` once
+   after release (default completed-day cutoff; no `include_today=1`); its existing
+   270-second budget and daily schedule are unchanged. Do not retry blindly after
+   a timeout: check the cache before another expensive history pull.
 4. Read back the authenticated production
    `/api/glv-meta-ads/fb-data?type=promo_formats&date_preset=promo_history`.
-   Require `X-Cache: HIT`, schema 1, classification 2, inventory 1, `reconciled:true`,
+   Require `X-Cache: HIT`, schema 1, classification 2, inventory 2, `reconciled:true`,
    the requested full history range and fresh `generated_at`. Validate with
    `PromoFormat.validPayload` and inspect monthly completeness/reasons. Metadata
    permissions/timeouts can still produce unavailable inventory even when the

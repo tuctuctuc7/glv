@@ -258,8 +258,15 @@ async function refreshPromoFormatCache(token, includeToday = false, fetcher = bo
   const range = formatRange({date_preset:'promo_history',include_today:includeToday ? '1' : '0'});
   const payload = await fetchPromoFormats(token,range,fetcher);
   if (!validPayload(payload)) throw new Error('Invalid Promo format refresh');
-  await redisCommand(fetcher, 'SET',CACHE_KEY,JSON.stringify(payload),'EX',String(TTL));
-  return {type:'promo_formats',...range,rows:payload.rows.length,unknownAds:new Set(payload.rows.filter(r=>r.format==='Unknown').map(r=>r.ad_id)).size};
+  const serialized = JSON.stringify(payload);
+  await redisCommand(fetcher, 'SET',CACHE_KEY,serialized,'EX',String(TTL));
+  // Same deadline and exact key: SET acknowledgement alone is not activation.
+  const readback = await redisCommand(fetcher, 'GET',CACHE_KEY);
+  if (readback?.result !== serialized) throw new Error('Promo inventory cache readback mismatch');
+  const {monthlyMix} = require('../../public/glv-meta-ads/promo-format.js');
+  return {type:'promo_formats',...range,rows:payload.rows.length,unknownAds:new Set(payload.rows.filter(r=>r.format==='Unknown').map(r=>r.ad_id)).size,
+    inventory_version:payload.inventory_version,generated_at:payload.generated_at,readback_verified:true,
+    months:monthlyMix(payload.rows).map(m=>({month:m.month,images:m.formats.Banner.assets,videos:m.formats.Video.assets,total:m.total.assets,status:m.total.asset_status}))};
 }
 
 async function runRefresh(token, includeToday, {timeoutMs = 270000} = {}) {
