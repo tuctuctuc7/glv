@@ -4,7 +4,7 @@ const path = require('node:path');
 const headers = ['Dimension','Spend','Revenue','Avg daily revenue','Share','ROAS','CAC','NC ROAS','NC Rate','NC Revenue','RC Revenue','CVR','Purchases','Cost per purchase','AOV','Visitors','Number of days'];
 module.exports = async (browser, baseUrl, evidenceDir) => {
  const results=[];
- for(const width of [1440,390,320]) for(const theme of ['dark','light']) {
+ for(const width of [2560,1920,1440,1024,768,390,320]) for(const theme of ['dark','light']) {
   const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'});
   const page=await context.newPage();
   await page.goto(baseUrl,{waitUntil:'networkidle'});
@@ -30,14 +30,16 @@ module.exports = async (browser, baseUrl, evidenceDir) => {
      const clips=cells.some(c=>c.firstElementChild.getBoundingClientRect().right>c.getBoundingClientRect().right-1);
      const touch=[...document.querySelectorAll('#phaseTable .phase-disclosure')].every(b=>b.getBoundingClientRect().height>=44);
      const head=document.querySelector('#phaseTable th').getBoundingClientRect();wrap.scrollLeft=350;wrap.scrollTop=180;
-     return {firstWidth:first.width,needed,clips,touch,stickyX:Math.abs(cells[0].getBoundingClientRect().x-first.x)<1,stickyY:Math.abs(document.querySelector('#phaseTable th').getBoundingClientRect().y-head.y)<1,scroll:wrap.scrollLeft>0,overflow:document.documentElement.scrollWidth>innerWidth+1};
+     return {table:document.querySelector('#phaseTable').getBoundingClientRect().width,viewport:wrap.clientWidth,firstWidth:first.width,needed,clips,touch,stickyX:Math.abs(cells[0].getBoundingClientRect().x-first.x)<1,stickyY:Math.abs(document.querySelector('#phaseTable th').getBoundingClientRect().y-head.y)<1,scroll:wrap.scrollLeft>0,overflow:document.documentElement.scrollWidth>innerWidth+1};
     });
     results.push({width,theme,hierarchy,split,expanded,...geometry});
     fs.writeFileSync(path.join(evidenceDir,process.env.PHASE_BASELINE?'phase-before.json':'phase-after.json'),JSON.stringify(results,null,2));
     if(!process.env.PHASE_BASELINE) {
      assert.deepEqual(actualHeaders,headers);
      assert.ok(geometry.firstWidth<=geometry.needed+2,JSON.stringify(results.at(-1)));
-     assert.ok(!geometry.clips&&!geometry.overflow&&geometry.stickyX&&geometry.stickyY&&geometry.scroll);
+     assert.ok(!geometry.clips&&!geometry.overflow&&geometry.stickyX&&geometry.stickyY);
+     assert.ok(geometry.table>=geometry.viewport-1);
+     assert.equal(geometry.scroll,geometry.table>geometry.viewport+1);
      if(width<720) assert.ok(geometry.touch);
      const mismatch=await page.evaluate(()=>{
       const days=phases.buildPhaseDays(state.data.rows,state.data.phases,state.data.phase_contract.latest_date);

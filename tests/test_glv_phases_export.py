@@ -48,6 +48,62 @@ def daily(date="2026-09-10", region="CZ+SK", revenue="200", influ="80"):
 
 
 class ManualCalendarParserTest(unittest.TestCase):
+    def test_named_campaign_filter_persists_on_refresh_and_preserves_provenance(self):
+        rows = [["", "october"], ["", "promo (7-14)"],
+                ["", "influ KRISTÝNA (15-19)"], ["", "influ zdravi10 (15-19)"],
+                ["", "influ befit10 (22-26)"], ["", "influ guest (7-14)"],
+                ["", "promo gummies (28.10. - 4.11.)"]]
+        for _ in range(2):
+            payload = EXPORTER.build_payload([daily('2026-10-14')], rows)
+            self.assertEqual(len(payload['phase_campaigns']), 3)
+            self.assertEqual([e['source_row'] for e in payload['phase_campaigns']], [4, 5, 6])
+            self.assertEqual([e['label'] for e in payload['phases'] if e['start_date'].startswith('2026-10')],
+                             ['promo', 'influ kristýna', 'promo gummies'])
+            self.assertIn('exact influ kristyna', payload['phase_contract']['influ_rule'])
+
+    def test_exact_creator_matching_and_legacy_generic_contract(self):
+        for label in ['influ KRISTÝNA', 'INFLU kristyna', 'influ  kristyna']:
+            self.assertTrue(EXPORTER.is_phase_interval({'phase': 'Influ', 'label': label}), label)
+        for label in ['influ notkristyna', 'influ kristyna2', 'influ kristyna guest', 'influ befit10']:
+            self.assertFalse(EXPORTER.is_phase_interval({'phase': 'Influ', 'label': label}), label)
+
+    def test_only_exact_frozen_generic_intervals_qualify(self):
+        frozen = [('2026-01-15', '2026-01-19'), ('2026-02-19', '2026-02-22'),
+                  ('2026-03-12', '2026-03-16')]
+        for start, end in frozen:
+            self.assertTrue(EXPORTER.is_phase_interval(dict(phase='Influ', label='influ', start_date=start, end_date=end)))
+        for start, end in [('2026-01-15', '2026-01-20'), ('2026-10-22', '2026-10-26'),
+                           ('2027-01-15', '2027-01-19')]:
+            self.assertFalse(EXPORTER.is_phase_interval(dict(phase='Influ', label='influ', start_date=start, end_date=end)))
+        payload = EXPORTER.build_payload([daily('2026-10-14')], [
+            ['', 'october'], ['', 'promo (7-14)'], ['', 'influ (1-26)'],
+            ['', 'influ kristyna (15-19)'], ['', 'november'], ['', 'influ (1-5)']])
+        self.assertEqual([(e['start_date'], e['end_date'], e['label'], e['source_row'])
+                          for e in payload['phase_campaigns']],
+                         [('2026-10-01', '2026-10-26', 'influ', 3),
+                          ('2026-11-01', '2026-11-05', 'influ', 6)])
+        self.assertFalse(any(e['label'] == 'influ' and e['start_date'] >= '2026-10-01'
+                             for e in payload['phases']))
+
+    def test_true_kristyna_promo_overlap_fails_atomically(self):
+        rows = [["", "october"], ["", "promo (7-15)"], ["", "influ Kristýna (15-19)"]]
+        with tempfile.TemporaryDirectory() as directory:
+            target = pathlib.Path(directory) / 'snapshot.json'
+            target.write_text('last-valid')
+            with self.assertRaisesRegex(ValueError, 'PHASE_OVERLAP_PROMO_INFLU'):
+                EXPORTER.export_snapshot(lambda: EXPORTER.build_payload([daily('2026-10-14')], rows), [target])
+            self.assertEqual(target.read_text(), 'last-valid')
+
+    def test_real_refreshed_october_schedule(self):
+        import json
+        payload = json.loads((ROOT / 'public/glv/glv_dashboard.json').read_text())
+        october = [e for e in payload['phases'] if e['start_date'].startswith('2026-10')]
+        self.assertEqual({(e['start_date'], e['end_date'], e['phase']) for e in october}, {
+            ('2026-10-07', '2026-10-14', 'Promo'),
+            ('2026-10-15', '2026-10-19', 'Influ'),
+            ('2026-10-28', '2026-11-04', 'Promo')})
+        self.assertEqual({e['label'] for e in payload['phase_campaigns']}, {'influ befit10', 'influ zdravi10'})
+
     def test_january_2026_supplement_survives_export_without_changing_other_months(self):
         payload = EXPORTER.build_payload([daily()], calendar_rows())
         january = [e for e in payload['phases'] if e['start_date'].startswith('2026-01')]
@@ -156,7 +212,7 @@ class ManualCalendarParserTest(unittest.TestCase):
         self.assertIn("Home data refresh continued", payload["phase_contract"]["warnings"][0])
 
     def test_cross_phase_overlap_is_rejected(self):
-        rows = [["", "feb"], ["", "promo (06-14)"], ["", "influ (14-16)"]]
+        rows = [["", "feb"], ["", "promo (06-14)"], ["", "influ kristyna (14-16)"]]
         with self.assertRaisesRegex(ValueError, "PHASE_OVERLAP_PROMO_INFLU.*2026-02-14"):
             EXPORTER.parse_manual_phase_calendar(rows, 2026)
 

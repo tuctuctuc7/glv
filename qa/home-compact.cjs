@@ -3,7 +3,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 module.exports=async(browser,baseUrl,evidenceDir,{baseline=false}={})=>{
  const results=[];
- for(const width of [1440,390,320]) for(const theme of ['dark','light']) {
+ for(const width of [2560,1920,1440,1024,768,390,320]) for(const theme of ['dark','light']) {
   const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce'});
   await page.goto(baseUrl+'?period=all',{waitUntil:'networkidle'});
   await page.evaluate(t=>setTheme(t),theme);
@@ -15,7 +15,7 @@ module.exports=async(browser,baseUrl,evidenceDir,{baseline=false}={})=>{
    const clipped=[...t.querySelectorAll('td')].filter(n=>n.scrollWidth>n.clientWidth+1).map(n=>n.textContent);
    return {table:t.getBoundingClientRect().width,viewport:w.clientWidth,columns,clipped,overflow:document.documentElement.scrollWidth-innerWidth,bodyFont:getComputedStyle(t.querySelector('td')).fontSize};
   });
-  if(!baseline){assert.deepEqual(geometry.clipped,[]);assert.ok(geometry.overflow<=1);assert.ok(geometry.table<1500);}
+  if(!baseline){assert.deepEqual(geometry.clipped,[]);assert.ok(geometry.overflow<=1);assert.ok(geometry.table>=geometry.viewport-1,'table fills available scrollport');if(width>=1440)assert.ok(Math.abs(geometry.table-geometry.viewport)<=1,'no unnecessary desktop scroll');}
   await page.locator('#auditTable').screenshot({path:path.join(evidenceDir,`home-${baseline?'before':'after'}-${width}-${theme}.png`)});
   const sticky=await page.evaluate(()=>{
    const w=document.querySelector('#auditTableWrap'),h=document.querySelector('#metricsTable th'),d=document.querySelector('#metricsTableBody tr:nth-child(3) td');

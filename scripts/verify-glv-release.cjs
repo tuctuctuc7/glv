@@ -56,11 +56,12 @@ if (!canonicalHtml.includes('<title>GLV Executive Pulse</title>') || !canonicalH
   fail('canonical GLV no longer has the approved Executive Pulse identity');
 }
 for (const file of ['app.js', 'metrics.js', 'phases.js', 'styles.css']) {
-  const version = ['styles.css', 'app.js'].includes(file) ? 'home-compact-20261013' : 'nc-rc-metrics-20260920';
+  const version = file === 'styles.css' ? 'table-fill-20261015' : file === 'phases.js' ? 'kristyna-calendar-20261015' : file === 'app.js' ? 'home-compact-20261013' : 'nc-rc-metrics-20260920';
   if (!canonicalHtml.includes(`/glv/${file}?v=${version}`)) fail(`unversioned canonical asset: ${file}`);
 }
 for (const file of ['section-info.js', 'section-info.css']) {
-  if (!canonicalHtml.includes(`/glv/${file}?v=section-info-20260920`)) fail(`unversioned section info asset: ${file}`);
+  const version = file === 'section-info.js' ? 'kristyna-calendar-20261015' : 'section-info-20260920';
+  if (!canonicalHtml.includes(`/glv/${file}?v=${version}`)) fail(`unversioned section info asset: ${file}`);
 }
 for (const file of ['index.html', 'app.js', 'metrics.js', 'phases.js', 'styles.css']) {
   if (fs.readFileSync(routePath('glv', file), 'utf8').includes('/glv-2/')) fail(`stale overlap URL in ${file}`);

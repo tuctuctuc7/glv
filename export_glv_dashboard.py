@@ -8,6 +8,7 @@ import os
 import re
 import tempfile
 import urllib.request
+import unicodedata
 
 from dotenv import load_dotenv
 import gspread
@@ -122,6 +123,24 @@ def month_from_label(label):
     return MONTHS.get(token)
 
 
+# Frozen generic intervals from baseline 9de71e1; not creator attribution.
+LEGACY_GENERIC_INFLU_INTERVALS = frozenset({
+    ("2026-01-15", "2026-01-19"),
+    ("2026-02-19", "2026-02-22"),
+    ("2026-03-12", "2026-03-16"),
+})
+
+
+def is_phase_interval(entry):
+    """Only Kristyna qualifies, except exact frozen historical generic intervals."""
+    if entry["phase"] == "Promo":
+        return True
+    label = " ".join("".join(c for c in unicodedata.normalize("NFD", entry.get("label", "influ"))
+                             if unicodedata.category(c) != "Mn").lower().split())
+    return label == "influ kristyna" or (label == "influ" and
+        (entry.get("start_date"), entry.get("end_date")) in LEGACY_GENERIC_INFLU_INTERVALS)
+
+
 def validate_phase_schedule(schedule):
     by_date = {}
     for entry in schedule:
@@ -131,7 +150,8 @@ def validate_phase_schedule(schedule):
             raise ValueError(f"PHASE_RANGE_INVALID: calendar row {entry['source_row']} {start}..{end}")
         cursor = start
         while cursor <= end:
-            by_date.setdefault(cursor.isoformat(), []).append(entry)
+            if is_phase_interval(entry):
+                by_date.setdefault(cursor.isoformat(), []).append(entry)
             cursor += dt.timedelta(days=1)
     for day, entries in sorted(by_date.items()):
         phases = {entry["phase"] for entry in entries}
@@ -332,12 +352,14 @@ def build_payload(records, calendar_rows, now=None):
     reporting_year = infer_reporting_year(records)
     latest_czsk_date = latest_czsk_daily_date(records)
     phase_warnings = []
-    schedule = supplement_phase_calendar(
+    calendar = supplement_phase_calendar(
         parse_manual_phase_calendar(
             calendar_rows, reporting_year, latest_czsk=latest_czsk_date, warnings=phase_warnings
         ), reporting_year,
         january_present=any(month_from_label(str(row[1])) == 1 for row in calendar_rows if len(row) > 1),
     )
+    schedule = [entry for entry in calendar if is_phase_interval(entry)]
+    logged_campaigns = [entry for entry in calendar if not is_phase_interval(entry)]
     rows = []
     for record in records:
         day = date_iso(record.get("Date"))
@@ -366,7 +388,7 @@ def build_payload(records, calendar_rows, now=None):
     if not dates:
         raise ValueError("DAILY_SCOPE_EMPTY: no dashboard rows")
     latest_czsk = latest_czsk_date.isoformat()
-    if max(entry["end_date"] for entry in schedule) < latest_czsk:
+    if max(entry["end_date"] for entry in calendar) < latest_czsk:
         raise ValueError(
             f"PHASE_CALENDAR_STALE: latest interval ends before CZSK Daily coverage {latest_czsk}"
         )
@@ -398,9 +420,12 @@ def build_payload(records, calendar_rows, now=None):
             "calendar_authority": "Marketing Ops | Gelavis, Sheet1",
             "bau": "Every CZSK date in the reporting year not covered by Promo or Influ.",
             "overlap_rule": "Promo and Influ must not overlap.",
+            "influ_rule": "Named Influ campaigns qualify only for exact influ kristyna (case/diacritics insensitive). Only the frozen generic intervals Jan 15–19, Feb 19–22 and Mar 12–16, 2026 retain historical classification; new generic labels do not qualify and no creator identity is inferred.",
+            "other_influ_rule": "Other Influ campaigns, including new generic labels, are provenance only: BAU unless covered by a qualifying Influ or Promo interval. Same-phase overlaps count each represented date once.",
             "warnings": phase_warnings,
         },
         "phases": schedule,
+        "phase_campaigns": logged_campaigns,
         "rows": rows,
     }
 
