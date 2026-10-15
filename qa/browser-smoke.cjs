@@ -956,6 +956,7 @@ async function run() {
     await require('./phase-compact.cjs')(browser, baseUrl, evidenceDir);
     await require('./compact-audit.cjs')(browser, baseUrl, evidenceDir);
     await require('./home-compact.cjs')(browser, baseUrl, evidenceDir);
+    await require('./table-fill.cjs')(browser, baseUrl, evidenceDir);
     assert.deepEqual(consoleErrors, [], `browser console errors: ${consoleErrors.join(' | ')}`);
     console.log(JSON.stringify({
       passed: true,

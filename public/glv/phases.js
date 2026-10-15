@@ -44,8 +44,15 @@
         source_row: Number(entry.source_row || index + 1),
       };
     });
+    // Frozen generic intervals from baseline 9de71e1; not creator attribution.
+    const legacyGeneric = new Set(['2026-01-15/2026-01-19', '2026-02-19/2026-02-22', '2026-03-12/2026-03-16']);
+    const eligible = normalized.filter(entry => {
+      const label = entry.label.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\s+/g, ' ').trim();
+      return entry.phase === 'Promo' || label === 'influ kristyna' ||
+        (label === 'influ' && legacyGeneric.has(`${entry.start_date}/${entry.end_date}`));
+    });
     const dates = new Map();
-    normalized.forEach((entry) => {
+    eligible.forEach((entry) => {
       for (let cursor = parseIsoDate(entry.start_date); cursor <= parseIsoDate(entry.end_date); cursor = new Date(cursor.getTime() + 86_400_000)) {
         const day = cursor.toISOString().slice(0, 10);
         if (!dates.has(day)) dates.set(day, []);
@@ -58,7 +65,7 @@
         throw new Error(`Promo and Influ overlap on ${day}; source rows ${entries.map((entry) => entry.source_row).join(', ')}.`);
       }
     }
-    return normalized;
+    return eligible;
   }
 
   // Represented dates include zero-revenue days, but never calendar gaps.

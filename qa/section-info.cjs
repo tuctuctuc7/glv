@@ -41,6 +41,12 @@ const titles = ['executiveKpiTitle','trendTitle','detailTitle','marketComparison
    const box=await panel.boundingBox(); assert.ok(box.x>=7 && box.x+box.width<=width-7 && box.y>=7 && box.y+box.height<=901,'viewport containment');
    const after=await page.locator(`#${id}`).boundingBox(); assert.equal(before.height,after.height);
    assert.ok((await panel.innerText()).length>80);
+   if (id === 'phaseChartTitle' || id === 'phaseTableTitle') {
+    const text = await panel.innerText();
+    assert.match(text, /only Kristyna defines Influ/);
+    assert.match(text, /Other influencers remain BAU/);
+    assert.match(text, /Only frozen generic intervals Jan 15–19, Feb 19–22 and Mar 12–16, 2026 retain historical classification; new generic labels do not qualify/);
+   }
    const typography = await panel.evaluate(el => [...el.querySelectorAll('*')].filter(node => node.textContent.trim()).map(node => { const s = getComputedStyle(node); return [s.fontFamily, s.fontSize, s.lineHeight]; }));
    const expectedTypography = await panel.evaluate(el => { const s = getComputedStyle(el); return [s.fontFamily, s.fontSize, s.lineHeight]; });
    for (const actual of typography) assert.deepEqual(actual, expectedTypography, `${id}: all info text must share typography`);

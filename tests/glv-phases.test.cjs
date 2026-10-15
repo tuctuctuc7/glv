@@ -3,6 +3,45 @@ const assert = require('node:assert/strict');
 
 const phases = require('../public/glv/phases.js');
 
+test('other influencers are BAU alone, Influ with Kristyna, Promo with Promo; no duplicate days', () => {
+  const interval = (label, start, end, phase = 'Influ') => ({label, phase, start_date: `2026-10-${start}`, end_date: `2026-10-${end}`});
+  const windows = [interval('influ befit10', '01', '26'), interval('promo', '07', '14', 'Promo'),
+    interval('influ KRISTÝNA', '15', '19'), interval('influ kristyna', '16', '18'),
+    interval('influ notkristyna', '22', '26')];
+  const rows = ['01', '07', '14', '15', '16', '19', '22', '26'].map(day => ({date: `2026-10-${day}`, region: 'czsk', revenue: 100, influ_revenue: 0}));
+  const days = phases.buildPhaseDays(rows, windows, '2026-10-26');
+  assert.deepEqual(days.map(d => d.phase), ['BAU', 'Promo', 'Promo', 'Influ', 'Influ', 'Influ', 'BAU', 'BAU']);
+  assert.equal(phases.aggregatePhaseGroups(days).reduce((sum, group) => sum + group.day_count, 0), rows.length);
+  assert.equal(phases.aggregatePhaseGroups(days).reduce((sum, group) => sum + group.revenue, 0), 800);
+});
+
+test('only exact frozen generic intervals survive; new generic dates remain BAU', () => {
+  const generic = (start, end) => ({phase: 'Influ', label: 'influ', start_date: start, end_date: end});
+  const frozen = [generic('2026-01-15', '2026-01-19'), generic('2026-02-19', '2026-02-22'), generic('2026-03-12', '2026-03-16')];
+  assert.deepEqual(phases.validateSchedule(frozen).map(e => [e.start_date, e.end_date]), frozen.map(e => [e.start_date, e.end_date]));
+  assert.equal(phases.validateSchedule([generic('2026-01-15', '2026-01-20'), generic('2027-01-15', '2027-01-19')]).length, 0);
+  const windows = [generic('2026-10-01', '2026-10-26'), generic('2026-11-01', '2026-11-05'),
+    {...generic('2026-10-07', '2026-10-14'), phase: 'Promo', label: 'promo'},
+    {...generic('2026-10-15', '2026-10-19'), label: 'influ kristyna'}];
+  const rows = ['2026-10-01', '2026-10-07', '2026-10-15', '2026-10-22', '2026-11-01'].map(date => ({date, region: 'czsk', revenue: 100, influ_revenue: 0}));
+  assert.deepEqual(phases.buildPhaseDays(rows, windows, '2026-11-05').map(d => d.phase), ['BAU', 'Promo', 'Influ', 'BAU', 'BAU']);
+});
+
+test('real refreshed October schedule is inclusive, with no manufactured future daily rows', () => {
+  const data = require('../public/glv/glv_dashboard.json');
+  // Synthetic dates probe the actual schedule; performance is not asserted as observed.
+  const probes = Array.from({length: 31}, (_, i) => ({date: `2026-10-${String(i + 1).padStart(2, '0')}`, region: 'czsk', revenue: 0, influ_revenue: 0}));
+  for (const day of phases.buildPhaseDays(probes, data.phases, '2026-10-31')) {
+    const n = Number(day.date.slice(-2));
+    assert.equal(day.phase, n >= 7 && n <= 14 || n >= 28 ? 'Promo' : n >= 15 && n <= 19 ? 'Influ' : 'BAU', day.date);
+  }
+  const actual = phases.buildPhaseDays(data.rows, data.phases, data.phase_contract.latest_date);
+  assert.ok(actual.every(day => day.date <= data.phase_contract.latest_date));
+  const legacy = data.phases.filter(e => e.phase === 'Influ' && e.label === 'influ');
+  assert.deepEqual(legacy.map(e => [e.start_date, e.end_date]), [
+    ['2026-01-15', '2026-01-19'], ['2026-02-19', '2026-02-22'], ['2026-03-12', '2026-03-16']]);
+});
+
 test('frozen real calendar classifies every January 2026 date at inclusive boundaries', () => {
   const data = require('../public/glv/glv_dashboard.json');
   const days = phases.buildPhaseDays(data.rows, data.phases, data.phase_contract.latest_date);
@@ -94,7 +133,7 @@ test('classification is CZSK-only, covers YTD, and preserves disjoint Influ date
 test('Promo and Influ overlap is rejected rather than assigned by row order', () => {
   assert.throws(() => phases.validateSchedule([
     ...schedule,
-    { start_date: '2026-02-14', end_date: '2026-02-19', phase: 'Influ', label: 'influ guest', source_row: 99 },
+    { start_date: '2026-02-14', end_date: '2026-02-19', phase: 'Influ', label: 'influ kristyna', source_row: 99 },
   ]), /Promo.*Influ.*overlap.*2026-02-14/i);
 });
 

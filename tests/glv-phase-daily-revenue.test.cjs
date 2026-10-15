@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const p = require('../public/glv/phases.js');
-const schedule = [{ phase: 'Influ', start_date: '2026-01-02', end_date: '2026-02-20' }];
+const schedule = [{ phase: 'Influ', label: 'influ kristyna', start_date: '2026-01-02', end_date: '2026-02-20' }];
 const row = (date, revenue, influ_revenue = 0, region = 'czsk') => ({ date, revenue, influ_revenue, region });
 const rows = [row('2026-01-01', 900), row('2026-01-02', 120, 60), row('2026-01-03', 0), row('2026-02-01', 300, 30), row('2026-02-02', 999), row('2026-01-02', 999, 0, 'us')];
 const days = () => p.buildPhaseDays(rows, schedule, '2026-02-01');

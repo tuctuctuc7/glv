@@ -1445,7 +1445,7 @@ html[data-theme="light"] .region-card {
 #metricsTable {
   table-layout: auto;
   min-width: 0;
-  width: max-content;
+  width: 100%;
 }
 
 #metricsTable th,
@@ -1468,7 +1468,7 @@ html[data-theme="light"] .region-card {
 
 #metricsTable td { white-space: nowrap; }
 #metricsTable th:first-child,
-#metricsTable td:first-child { padding-left: 20px; padding-right: 16px; }
+#metricsTable td:first-child { padding-left: 20px; padding-right: 16px; width: 1%; }
 
 .table-scroll-hint {
   color: var(--text-tertiary);
@@ -1932,7 +1932,7 @@ tbody tr:last-child td {
 
 .data-panel { overflow: hidden; padding-bottom: 0; }
 .compact-table-wrap { margin-top: 14px; }
-.compact-table-wrap table { min-width: 1080px; }
+.compact-table-wrap table { min-width: 0; }
 .compact-table-wrap th,
 .compact-table-wrap td { padding-bottom: 10px; padding-top: 10px; }
 .compact-table-wrap td:first-child { font-weight: 650; }
@@ -2654,7 +2654,7 @@ body[data-dashboard-view="phases"] .command-bar {
 .phase-multiselect :focus-visible { outline: 2px solid var(--phase-influ); outline-offset: 2px; }
 .phase-bau .phase-disclosure, .phase-bau .phase-leaf-label { color: var(--phase-bau); }
 .phase-influ .phase-disclosure { color: var(--phase-influ); }
-.phase-table-wrap table { min-width: 1480px; }
+.phase-table-wrap table { min-width: 0; }
 .phase-table-wrap th:first-child,
 .phase-table-wrap td:first-child { left: 0; min-width: 0; width: 1%; position: sticky; text-align: left; z-index: 1; }
 .phase-table-wrap th:first-child { background: var(--surface-raised); z-index: 4; }
