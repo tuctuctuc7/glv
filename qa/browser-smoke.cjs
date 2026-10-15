@@ -278,7 +278,8 @@ async function run() {
           headers: [...w.querySelectorAll('th')].map(n => ({ top: n.getBoundingClientRect().top - box.top, background: getComputedStyle(n).backgroundColor, position: getComputedStyle(n).position })) };
       });
       assert.equal(geometry.overflow, false, `Phases overflow at ${width}: ${JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('#phasesView *')].filter(n => { const r = n.getBoundingClientRect(); return r.right > innerWidth && !n.closest('.table-wrap'); }).map(n => [n.tagName, n.className, n.getBoundingClientRect().width])))}`);
-      assert.ok(geometry.vertical > 0 && geometry.horizontal > 0);
+      assert.ok(geometry.vertical > 0);
+      if (width < 720) assert.ok(geometry.horizontal > 0, 'mobile retains internal metric scrolling');
       assert.ok(geometry.bottomOvershoot <= 1, `Scroll area must stay inside the panel: ${JSON.stringify(geometry)}`);
       assert.ok(width > 720 ? geometry.rowHeight <= 40 : geometry.rowHeight >= 44, `Compact desktop / touch-sized mobile rows: ${JSON.stringify(geometry)}`);
       assert.ok(geometry.headers.every(h => h.position === 'sticky' && Math.abs(h.top) < 3 && !h.background.includes('rgba')), JSON.stringify(geometry));

@@ -21,6 +21,12 @@ module.exports = async (browser, baseUrl, evidenceDir) => {
     },expanded);
     await page.evaluate(()=>document.fonts.ready);
     const actualHeaders=await page.locator('#phaseTable th').allTextContents();
+    const headerLines=await page.locator('#phaseTable th').evaluateAll(cells=>[3,13,16].map(i=>{
+     const cell=cells[i], walker=document.createTreeWalker(cell,NodeFilter.SHOW_TEXT), lines=new Map();
+     while(walker.nextNode()) { const node=walker.currentNode; for(let j=0;j<node.length;j++) { const r=document.createRange();r.setStart(node,j);r.setEnd(node,j+1);const b=r.getBoundingClientRect();if(b.width)lines.set(b.y,(lines.get(b.y)||'')+node.textContent[j]); } }
+     return [...lines.values()].map(s=>s.trim());
+    }));
+    if(!process.env.PHASE_BASELINE) assert.deepEqual(headerLines,[['Avg daily','revenue'],['Cost per','purchase'],['Number of','days']]);
     const geometry=await page.evaluate(()=>{
      const wrap=document.querySelector('.phase-table-wrap');wrap.scrollLeft=0;wrap.scrollTop=0;
      const cells=[...document.querySelectorAll('#phaseTableBody td:first-child')];
@@ -28,9 +34,15 @@ module.exports = async (browser, baseUrl, evidenceDir) => {
      const needed=Math.max(range.getBoundingClientRect().width+parseFloat(hs.paddingLeft)+parseFloat(hs.paddingRight),...cells.map(c=>{const s=getComputedStyle(c);return parseFloat(s.paddingLeft)+c.firstElementChild.getBoundingClientRect().width+parseFloat(s.paddingRight);}));
      const first=cells[0].getBoundingClientRect();
      const clips=cells.some(c=>c.firstElementChild.getBoundingClientRect().right>c.getBoundingClientRect().right-1);
+     const metricClips=[...document.querySelectorAll('#phaseTable th, #phaseTableBody td:not(:first-child)')].some(c=>{
+      const box=c.getBoundingClientRect(), walker=document.createTreeWalker(c,NodeFilter.SHOW_TEXT);
+      while(walker.nextNode()){const r=document.createRange();r.selectNodeContents(walker.currentNode);if([...r.getClientRects()].some(b=>b.left<box.left-1||b.right>box.right+1||b.top<box.top-1||b.bottom>box.bottom+1))return true;}return false;
+     });
+     const table=document.querySelector('#phaseTable'), oldWidth=table.style.width;
+     table.style.width='min-content';const intrinsic=table.getBoundingClientRect().width;table.style.width=oldWidth;
      const touch=[...document.querySelectorAll('#phaseTable .phase-disclosure')].every(b=>b.getBoundingClientRect().height>=44);
      const head=document.querySelector('#phaseTable th').getBoundingClientRect();wrap.scrollLeft=350;wrap.scrollTop=180;
-     return {table:document.querySelector('#phaseTable').getBoundingClientRect().width,viewport:wrap.clientWidth,firstWidth:first.width,needed,clips,touch,stickyX:Math.abs(cells[0].getBoundingClientRect().x-first.x)<1,stickyY:Math.abs(document.querySelector('#phaseTable th').getBoundingClientRect().y-head.y)<1,scroll:wrap.scrollLeft>0,overflow:document.documentElement.scrollWidth>innerWidth+1};
+     return {table:document.querySelector('#phaseTable').getBoundingClientRect().width,viewport:wrap.clientWidth,firstWidth:first.width,needed,clips,metricClips,intrinsic,touch,stickyX:Math.abs(cells[0].getBoundingClientRect().x-first.x)<1,stickyY:Math.abs(document.querySelector('#phaseTable th').getBoundingClientRect().y-head.y)<1,scroll:wrap.scrollLeft>0,overflow:document.documentElement.scrollWidth>innerWidth+1};
     });
     results.push({width,theme,hierarchy,split,expanded,...geometry});
     fs.writeFileSync(path.join(evidenceDir,process.env.PHASE_BASELINE?'phase-before.json':'phase-after.json'),JSON.stringify(results,null,2));
@@ -39,6 +51,9 @@ module.exports = async (browser, baseUrl, evidenceDir) => {
      assert.ok(geometry.firstWidth<=geometry.needed+2,JSON.stringify(results.at(-1)));
      assert.ok(!geometry.clips&&!geometry.overflow&&geometry.stickyX&&geometry.stickyY);
      assert.ok(geometry.table>=geometry.viewport-1);
+     assert.equal(geometry.metricClips,false,'headers and metric values must not clip');
+     assert.ok(Math.abs(geometry.table-Math.max(geometry.viewport,geometry.intrinsic))<2,'only intrinsic content minimum may overflow');
+     if(width>=1920) assert.equal(geometry.scroll,false,'wide desktop must fit every hierarchy');
      assert.equal(geometry.scroll,geometry.table>geometry.viewport+1);
      if(width<720) assert.ok(geometry.touch);
      const mismatch=await page.evaluate(()=>{

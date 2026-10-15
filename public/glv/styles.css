@@ -2643,6 +2643,8 @@ body[data-dashboard-view="phases"] .command-bar {
 .phase-row.phase-kind-phase td:first-child { background: var(--surface-raised); }
 .phase-table-wrap { margin-top: 12px; margin-bottom: 0; height: 520px; /* Inherit .table-wrap's padding-aware expanded max-width. */ overflow: auto; isolation: isolate; border-radius: 0 0 12px 12px; }
 .phase-table-wrap th { position: sticky; top: 0; z-index: 3; background: var(--surface-raised); }
+/* Explicit two-line labels retain full text and intrinsic value widths. */
+.phase-table-wrap .phase-header-line { display: block; }
 .phase-table-wrap td { padding-top: 2px; padding-bottom: 2px; }
 .phase-global-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; min-width: 0; }
 .phase-multiselect { position: relative; min-width: 0; }
