@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-22 00:10 UTC",
+  "updated_at": "2026-10-22 06:29 UTC",
   "source": {
     "tab": "Daily",
     "phase_calendar_sheet_id": "18oXDGQaE2p8E_G3PGHJwaYsl0CFM0eE9pVd-ju19edY",
@@ -10677,13 +10677,13 @@
     {
       "date": "2026-10-18",
       "region": "czsk",
-      "revenue": 4653.0,
+      "revenue": 4721.0,
       "spend": 1960.0,
-      "purchases": 41,
+      "purchases": 42,
       "unique_visitors": 1913,
-      "new_customers": 23,
+      "new_customers": 24,
       "returning_customers": 18,
-      "new_customer_revenue": 2476.0,
+      "new_customer_revenue": 2544.0,
       "influ_revenue": 1626.0
     },
     {
@@ -10749,13 +10749,13 @@
     {
       "date": "2026-10-20",
       "region": "czsk",
-      "revenue": 1203.0,
+      "revenue": 1810.0,
       "spend": 1636.0,
-      "purchases": 5,
+      "purchases": 10,
       "unique_visitors": 1819,
-      "new_customers": 2,
-      "returning_customers": 3,
-      "new_customer_revenue": 376.0,
+      "new_customers": 5,
+      "returning_customers": 5,
+      "new_customer_revenue": 533.0,
       "influ_revenue": 118.0
     },
     {
@@ -10785,13 +10785,13 @@
     {
       "date": "2026-10-21",
       "region": "czsk",
-      "revenue": 0.0,
+      "revenue": 2529.0,
       "spend": 1448.0,
-      "purchases": 0,
+      "purchases": 18,
       "unique_visitors": 1602,
-      "new_customers": 0,
-      "returning_customers": 0,
-      "new_customer_revenue": 0.0,
+      "new_customers": 11,
+      "returning_customers": 7,
+      "new_customer_revenue": 2011.0,
       "influ_revenue": 0.0
     },
     {
@@ -10809,13 +10809,13 @@
     {
       "date": "2026-10-21",
       "region": "us",
-      "revenue": 0.0,
+      "revenue": 276.0,
       "spend": 799.0,
-      "purchases": 0,
+      "purchases": 3,
       "unique_visitors": 148,
-      "new_customers": 0,
-      "returning_customers": 0,
-      "new_customer_revenue": 0.0,
+      "new_customers": 1,
+      "returning_customers": 2,
+      "new_customer_revenue": 138.0,
       "influ_revenue": 0.0
     }
   ]
