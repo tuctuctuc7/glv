@@ -56,11 +56,11 @@ if (!canonicalHtml.includes('<title>GLV Executive Pulse</title>') || !canonicalH
   fail('canonical GLV no longer has the approved Executive Pulse identity');
 }
 for (const file of ['app.js', 'metrics.js', 'phases.js', 'styles.css']) {
-  const version = file === 'styles.css' ? 'phase-headers-20261015' : file === 'phases.js' ? 'kristyna-calendar-20261015' : file === 'app.js' ? 'home-compact-20261013' : 'nc-rc-metrics-20260920';
+  const version = file === 'styles.css' ? 'phase-headers-20261015' : file === 'phases.js' ? 'promo-events-20261029' : file === 'app.js' ? 'promo-events-20261029' : 'nc-rc-metrics-20260920';
   if (!canonicalHtml.includes(`/glv/${file}?v=${version}`)) fail(`unversioned canonical asset: ${file}`);
 }
 for (const file of ['section-info.js', 'section-info.css']) {
-  const version = file === 'section-info.js' ? 'kristyna-calendar-20261015' : 'section-info-20260920';
+  const version = file === 'section-info.js' ? 'promo-events-20261029' : 'section-info-20260920';
   if (!canonicalHtml.includes(`/glv/${file}?v=${version}`)) fail(`unversioned section info asset: ${file}`);
 }
 for (const file of ['index.html', 'app.js', 'metrics.js', 'phases.js', 'styles.css']) {

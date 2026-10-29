@@ -48,6 +48,16 @@ def daily(date="2026-09-10", region="CZ+SK", revenue="200", influ="80"):
 
 
 class ManualCalendarParserTest(unittest.TestCase):
+    def test_promo_event_export_survives_refresh_and_keeps_sources(self):
+        rows = [["", "october"], ["", "promo gummies (28.10. - 4.11.)"],
+                ["", "november"], ["", "promo gummies (28.10. - 4.11.)"]]
+        payload = EXPORTER.build_payload([daily('2026-10-28')], rows)
+        event = next(e for e in payload['promo_events'] if e['start_date'] == '2026-10-28')
+        self.assertEqual(event['id'], 'promo:2026-10-28/2026-11-04')
+        self.assertEqual(event['label'], 'VB2')
+        self.assertEqual(len(event['sources']), 2)
+        self.assertEqual(event['sources'][0]['label'], 'promo gummies')
+
     def test_named_campaign_filter_persists_on_refresh_and_preserves_provenance(self):
         rows = [["", "october"], ["", "promo (7-14)"],
                 ["", "influ KRISTÝNA (15-19)"], ["", "influ zdravi10 (15-19)"],

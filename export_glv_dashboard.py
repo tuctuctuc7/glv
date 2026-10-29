@@ -425,9 +425,32 @@ def build_payload(records, calendar_rows, now=None):
             "warnings": phase_warnings,
         },
         "phases": schedule,
+        "promo_events": build_promo_events(schedule),
         "phase_campaigns": logged_campaigns,
         "rows": rows,
     }
+
+
+def build_promo_events(schedule):
+    """Stable date identities; ambiguous historical stages remain separate events."""
+    groups = {}
+    for entry in schedule:
+        if entry["phase"] != "Promo":
+            continue
+        start, end = entry["start_date"], entry["end_date"]
+        key = f"promo:{start}/{end}"
+        label = dt.date.fromisoformat(start).strftime("%B")
+        if (start, end) == ("2026-10-07", "2026-10-14"):
+            label = "Menopause"
+        elif (start, end) == ("2026-10-28", "2026-11-04"):
+            label = "VB2"
+        groups.setdefault(key, {"id": key, "start_date": start, "end_date": end,
+                                "label": label, "sources": []})["sources"].append(dict(entry))
+    events = sorted(groups.values(), key=lambda e: e["start_date"])
+    for previous, current in zip(events, events[1:]):
+        if current["start_date"] <= previous["end_date"]:
+            raise ValueError("PROMO_EVENT_OVERLAP: ambiguous event ranges")
+    return events
 
 
 def fetch_calendar_rows():

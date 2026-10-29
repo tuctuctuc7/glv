@@ -4,6 +4,9 @@ window.renderPromoComparison = (() => {
   let chart;
   let focusedMonth = null;
   let lastDays = [];
+  let eventList = null;
+  const modes = {month:{}, promo:{}};
+  let mode = 'month';
   const $ = id => document.getElementById(id);
   const node = (tag, text) => { const n = document.createElement(tag); if (text != null) n.textContent = text; return n; };
   const names = {revenue:'Revenue', avg_daily_revenue:'Avg daily revenue', spend:'Spend', roas:'ROAS', nc_roas:'NC ROAS', cac:'CAC', purchases:'Purchases', cpa:'Cost per purchase', aov:'AOV', cvr:'CVR', unique_visitors:'Visitors', new_customer_revenue:'New customer revenue', returning_customer_revenue:'RC revenue', new_customer_rate:'New customer rate'};
@@ -12,7 +15,13 @@ window.renderPromoComparison = (() => {
     if (value == null) return '—';
     return formatMetric(key, value, compact);
   }
-  function render(days) {
+  function render(days, events = eventList) {
+    modes[mode] = {selected, focusedMonth};
+    const nextMode = events ? 'promo' : 'month';
+    if (nextMode !== mode) { mode = nextMode; ({selected, focusedMonth = null} = modes[mode]); }
+    eventList = events;
+    const monthName = key => events ? promoEventLabel(events.find(e => e.id === key)) : new Intl.DateTimeFormat('en-US', {month:'long', year:'numeric', timeZone:'UTC'}).format(new Date(`${key}-01T00:00:00Z`));
+    const unit = events ? 'Promos' : 'Months';
     lastDays = days;
     const api = window.GlvPromoComparison;
     const select = $('promoMetric');
@@ -21,13 +30,16 @@ window.renderPromoComparison = (() => {
       select.onchange = () => render(lastDays);
     }
     const metric = select.value;
-    const data = api.build(days, selected, metric);
+    const data = events ? api.buildEvents(days, events, selected, metric) : api.build(days, selected, metric);
+    $('promoComparison').dataset.mode = events ? 'promo' : 'month';
     $('promoComparison').style.setProperty('--promo-month-count', data.series.length);
     if (!data.selected.includes(focusedMonth)) focusedMonth = null;
     const focusSelect = $('promoFocus');
     focusSelect.replaceChildren();
-    const reset = node('option', 'All months equally'); reset.value = ''; focusSelect.append(reset);
+    const reset = node('option', events ? 'All promos equally' : 'All months equally'); reset.value = ''; focusSelect.append(reset);
     data.series.forEach(s => { const option = node('option', monthName(s.month)); option.value = s.month; focusSelect.append(option); });
+    focusSelect.setAttribute('aria-label', events ? 'Highlight Promo event' : 'Highlight Promo month');
+    focusSelect.parentElement.firstChild.textContent = events ? 'Highlight promo (all lines remain visible)' : 'Highlight month (all lines remain visible)';
     focusSelect.value = focusedMonth || '';
     focusSelect.disabled = !data.series.length;
     function applyFocus(month) {
@@ -43,11 +55,11 @@ window.renderPromoComparison = (() => {
     const open = host.querySelector('button')?.getAttribute('aria-expanded') === 'true';
     const focus = host.contains(document.activeElement) ? document.activeElement.dataset.value : undefined;
     host.replaceChildren();
-    const trigger = node('button', `Months: ${selected === null ? 'All' : data.selected.length ? `${data.selected.length} selected` : 'None'}`);
+    const trigger = node('button', `${unit}: ${selected === null ? 'All' : data.selected.length ? `${data.selected.length} selected` : 'None'}`);
     trigger.className = 'phase-menu-trigger'; trigger.type = 'button';
     trigger.setAttribute('aria-expanded', String(open)); trigger.setAttribute('aria-controls','promoMonthOptions');
     const menu = node('div'); menu.id = 'promoMonthOptions'; menu.className = 'phase-menu-options'; menu.hidden = !open;
-    menu.setAttribute('role','group'); menu.setAttribute('aria-label','Promo comparison months');
+    menu.setAttribute('role','group'); menu.setAttribute('aria-label',`Promo comparison ${unit.toLowerCase()}`);
     trigger.onclick = () => { menu.hidden = !menu.hidden; trigger.setAttribute('aria-expanded',String(!menu.hidden)); };
     function option(value, label, checked, disabled, action) {
       const row = node('label'); const input = node('input'); input.type = 'checkbox'; input.dataset.value = value; input.checked = checked; input.disabled = disabled;
@@ -61,7 +73,7 @@ window.renderPromoComparison = (() => {
     host.append(trigger,menu);
     host.onkeydown = e => { if (e.key === 'Escape') { menu.hidden = true; trigger.setAttribute('aria-expanded','false'); trigger.focus(); } };
     if (focus !== undefined) [...menu.querySelectorAll('input')].find(n => n.dataset.value === focus)?.focus();
-    const caption = `CZSK Promo only · daily ${names[metric]} · ${data.selected.map(monthName).join(', ') || 'no months selected'}`;
+    const caption = `CZSK Promo only · daily ${names[metric]} · ${data.selected.map(monthName).join(', ') || `no ${unit.toLowerCase()} selected`}`;
     $('promoChart').setAttribute('aria-label',caption);
     $('promoChartCaption').textContent = caption;
     const header = $('promoChartData').querySelector('thead tr'); header.replaceChildren();
@@ -70,7 +82,7 @@ window.renderPromoComparison = (() => {
     data.labels.forEach((label,i) => { const tr = node('tr'); const th = node('th',label); th.scope = 'row'; tr.append(th); data.series.forEach(s => tr.append(node('td',s.dates[i] ? `${s.dates[i]}: ${format(metric,s.values[i])}` : '—'))); body.append(tr); });
     const hasValues = data.series.some(s => s.values.some(v => v !== null));
     $('promoEmpty').hidden = hasValues;
-    $('promoEmpty').textContent = !data.available.length ? 'No represented CZSK Promo days in the loaded data.' : !data.selected.length ? 'Select months to compare Promo days.' : 'No available values for this metric in the selected Promo days.';
+    $('promoEmpty').textContent = !data.available.length ? 'No represented CZSK Promo days in the loaded data.' : !data.selected.length ? `Select ${unit.toLowerCase()} to compare Promo days.` : 'No available values for this metric in the selected Promo days.';
     if (chart) chart.destroy(); chart = null;
     const canvas = $('promoChart'); canvas.hidden = !hasValues;
     if (!window.Chart || !hasValues) return;
