@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-28 01:10 UTC",
+  "updated_at": "2026-10-29 01:10 UTC",
   "source": {
     "tab": "Daily",
     "phase_calendar_sheet_id": "18oXDGQaE2p8E_G3PGHJwaYsl0CFM0eE9pVd-ju19edY",
@@ -10,7 +10,7 @@
   "currency": "USD",
   "date_range": {
     "start": "2026-01-01",
-    "end": "2026-10-27"
+    "end": "2026-10-28"
   },
   "absolute_metrics": [
     "spend",
@@ -32,7 +32,7 @@
   "phase_contract": {
     "scope": "czsk",
     "reporting_year": 2026,
-    "latest_date": "2026-10-27",
+    "latest_date": "2026-10-28",
     "calendar_authority": "Marketing Ops | Gelavis, Sheet1",
     "bau": "Every CZSK date in the reporting year not covered by Promo or Influ.",
     "overlap_rule": "Promo and Influ must not overlap.",
@@ -11032,6 +11032,42 @@
       "new_customers": 0,
       "returning_customers": 1,
       "new_customer_revenue": 0.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-10-28",
+      "region": "czsk",
+      "revenue": 22630.0,
+      "spend": 8865.0,
+      "purchases": 167,
+      "unique_visitors": 5054,
+      "new_customers": 36,
+      "returning_customers": 131,
+      "new_customer_revenue": 5490.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-10-28",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 235,
+      "new_customers": 0,
+      "returning_customers": 0,
+      "new_customer_revenue": 0.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-10-28",
+      "region": "us",
+      "revenue": 493.0,
+      "spend": 835.0,
+      "purchases": 4,
+      "unique_visitors": 216,
+      "new_customers": 3,
+      "returning_customers": 1,
+      "new_customer_revenue": 414.0,
       "influ_revenue": 0.0
     }
   ]
