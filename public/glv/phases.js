@@ -317,7 +317,9 @@
     }));
     return named.map(e => {
       const peers = named.filter(other => other.label === e.label);
-      return {...e, label: peers.length > 1 ? `${e.label} ${peers.indexOf(e) + 1}` : e.label};
+      const stage = peers.indexOf(e);
+      const historicalStage = /^2026-(06|08)-/.test(e.start_date) && peers.length === 2;
+      return {...e, label: historicalStage ? `${e.label} ${stage === 0 ? 'Private' : 'Public'}` : peers.length > 1 ? `${e.label} ${stage + 1}` : e.label};
     });
   }
 

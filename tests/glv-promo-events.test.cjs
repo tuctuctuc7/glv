@@ -13,8 +13,8 @@ test('By promo UI has accessible mode and separate selection, planned BFCM is no
 test('event names are compact and repeated historical stages stay distinct',()=>{
  const source=require('../public/glv/glv_dashboard.json');
  const events=phases.buildPromoEvents(source.phases);
- assert.deepEqual(events.filter(e=>e.start_date.startsWith('2026-06')).map(e=>e.label),['June 1','June 2']);
- assert.deepEqual(events.filter(e=>e.start_date.startsWith('2026-08')).map(e=>e.label),['August 1','August 2']);
+ assert.deepEqual(events.filter(e=>e.start_date.startsWith('2026-06')).map(e=>e.label),['June Private','June Public']);
+ assert.deepEqual(events.filter(e=>e.start_date.startsWith('2026-08')).map(e=>e.label),['August Private','August Public']);
  assert.ok(events.every(e=>!/[()–]|2026/.test(e.label)));
  const app=require('node:fs').readFileSync('public/glv/app.js','utf8');
  assert.match(app,/kind:'event', phase:'Promo', label:e.label/);
