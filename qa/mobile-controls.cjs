@@ -35,8 +35,8 @@ module.exports = async (browser, baseUrl, evidenceDir) => {
     if (!process.env.MOBILE_BASELINE) {
       assert.ok(Math.abs(geometry.leftGap)<=1 && Math.abs(geometry.rightGap)<=1,JSON.stringify(results.at(-1)));
       if(width<720) {
-        assert.ok(geometry.months.y >= geometry.hierarchy.y + geometry.hierarchy.height, 'Unified mobile panel stacks table controls');
-        assert.ok(geometry.metric.y >= geometry.promoMonths.y + geometry.promoMonths.height, 'Unified mobile panel stacks comparison controls');
+        assert.ok(geometry.months.y >= geometry.hierarchy.y + geometry.hierarchy.height, 'Table header wraps filters below hierarchy');
+        assert.equal(geometry.metric.y, geometry.promoMonths.y, 'Comparison header keeps its controls in one row');
         for(const r of [geometry.hierarchy,geometry.months,geometry.promoMonths,geometry.metric]) {assert.equal(r.height,44);assert.ok(r.x>=0&&r.right<=width);}
       }
     }

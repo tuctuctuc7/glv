@@ -902,9 +902,21 @@ async function run() {
     assert.equal(await mobile.locator('.pull-refresh-spinner').isVisible(), true, 'refresh spinner should be visible while loading');
     assert.equal(await mobile.locator('#dashboardContent').isVisible(), true, 'refresh should preserve the current dashboard while loading');
     assert.deepEqual(await mobile.evaluate(() => window.__pullRefreshHaptics), [10, 14], 'release should produce the refresh haptic');
+    // Capture the transient success state in-page: slow protocol round-trips
+    // can otherwise read the idle label after observing success (baseline race).
+    await mobile.evaluate(() => {
+      const indicator = document.querySelector('#pullRefreshIndicator');
+      const observer = new MutationObserver(() => {
+        if (indicator.dataset.state === 'success') {
+          window.__refreshSuccessText = document.querySelector('#pullRefreshText').textContent.trim();
+          observer.disconnect();
+        }
+      });
+      observer.observe(indicator, {attributes:true, subtree:true, childList:true, characterData:true});
+    });
     releaseRefresh();
-    await mobile.waitForFunction(() => document.querySelector('#pullRefreshIndicator')?.dataset.state === 'success', null, { polling: 20, timeout: 3_000 });
-    assert.equal((await mobile.locator('#pullRefreshText').textContent()).trim(), 'Updated');
+    await mobile.waitForFunction(() => window.__refreshSuccessText !== undefined, null, { polling: 20, timeout: 10_000 });
+    assert.equal(await mobile.evaluate(() => window.__refreshSuccessText), 'Updated');
     assert.deepEqual(await mobile.evaluate(() => window.__pullRefreshHaptics), [10, 14, 8], 'successful refresh should produce completion haptic feedback');
     await mobile.waitForFunction(() => document.querySelector('#pullRefreshIndicator')?.dataset.state === 'idle', null, { polling: 20, timeout: 3_000 });
     assert.equal(await mobile.locator('#appSurface').evaluate((element) => element.style.transform), '', 'page surface should settle back after refresh');
@@ -951,6 +963,9 @@ async function run() {
     assert.equal(await errorPage.locator('#dashboardContent').isVisible(), false);
     await errorContext.close();
 
+    // Main smoke assertions are complete; release their pages before the
+    // independent viewport matrices to keep the full suite bounded on CI hosts.
+    for (const openContext of browser.contexts()) await openContext.close();
     await require('./cac-smoke.cjs')(browser, baseUrl, evidenceDir);
     await require('./nc-rc-smoke.cjs')(browser, baseUrl, evidenceDir);
     await require('./mobile-controls.cjs')(browser, baseUrl, evidenceDir);
