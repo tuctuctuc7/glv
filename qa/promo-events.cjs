@@ -18,7 +18,7 @@ fs.mkdirSync(out,{recursive:true});
  const libs='/home/tom/.cache/hermes-browser-libs/root';
  const browser=await chromium.launch({executablePath:'/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome',headless:true,args:['--no-sandbox'],env:{...process.env,LD_LIBRARY_PATH:`${libs}/usr/lib/x86_64-linux-gnu:${libs}/usr/lib`,FONTCONFIG_PATH:`${libs}/etc/fonts`,XDG_DATA_DIRS:`${libs}/usr/share`}});
  try {
- for(const width of [1440,390,320]) for(const theme of ['dark','light']) {
+ for(const width of [1440,430,390,375,320]) for(const theme of ['dark','light']) {
   const page=await browser.newPage({viewport:{width,height:1000},reducedMotion:'reduce'});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(process.env.GLV_QA_URL || `http://127.0.0.1:${server.address().port}/glv/`,{waitUntil:'networkidle'});
@@ -31,6 +31,17 @@ fs.mkdirSync(out,{recursive:true});
   await page.screenshot({path:`${out}/${width}-${theme}-month.png`,fullPage:true});
   await page.click('[data-phase-mode="promo"]');
   assert.equal(await page.locator('[data-phase-mode="promo"]').getAttribute('aria-pressed'),'true');
+  const geometry=await page.evaluate(()=>{
+   const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height,cy:r.y+r.height/2};};
+   return {title:rect('#phaseTableTitle'),info:rect('#phaseTableTitle-info-button'),filter:rect('#phaseEvents > button'),subtitle:rect('#phaseTableSubtitle'),label:rect('.phase-table-heading .eyebrow'),mode:rect('#phaseMode'),overview:rect('.phase-overview'),segments:[...document.querySelectorAll('#phaseMode button')].map(b=>b.getBoundingClientRect().width)};
+  });
+  assert.ok(geometry.title.right<=geometry.info.x && geometry.info.right<=geometry.filter.x,JSON.stringify(geometry));
+  assert.ok(Math.abs(geometry.title.cy-geometry.filter.cy)<=2,JSON.stringify(geometry));
+  assert.ok(geometry.label.bottom<=geometry.title.y && geometry.subtitle.y>=geometry.filter.bottom,JSON.stringify(geometry));
+  if(width<=720){
+   assert.ok(Math.abs(geometry.mode.width-geometry.overview.width)<=2,JSON.stringify(geometry));
+   assert.ok(Math.abs(geometry.segments[0]-geometry.segments[1])<=1);
+  }
   assert.equal(await page.locator('#phaseMonths').isVisible(),false);
   assert.equal(await page.locator('#phaseFilter').isVisible(),false);
   assert.equal(await page.locator('#promoPlanned').isVisible(),true);
@@ -55,6 +66,21 @@ fs.mkdirSync(out,{recursive:true});
   await disclosure.click();
   assert.equal(await page.locator(`tr[data-phase-node="${vb}|2026-10-28"]`).count(),0);
   await page.click('#phaseEvents > button');
+  const values=await page.locator('#phaseEvents input').evaluateAll(inputs=>inputs.map(i=>i.dataset.value));
+  for(const value of values){
+   const input=page.locator(`#phaseEvents input[data-value="${value}"]`);
+   await input.scrollIntoViewIfNeeded();
+   assert.ok(await input.evaluate(i=>{const r=i.getBoundingClientRect(),m=i.closest('.phase-menu-options').getBoundingClientRect();return m.left>=0 && m.right<=innerWidth && document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===i;}),`checkbox hit target ${value}`);
+   await input.uncheck(); await input.check();
+  }
+  await page.uncheck('#phaseEvents input[data-value="*"]');
+  assert.equal(await page.locator('#phaseEvents > button').innerText(),'Promos: None');
+  assert.equal(await page.locator('#phaseTableBody tr[data-phase-node]').count(),0);
+  await page.check(`#phaseEvents input[data-value="${vb}"]`);
+  assert.equal(await page.locator('#phaseEvents > button').innerText(),'Promos: 1 selected');
+  assert.equal(await page.locator('#phaseTableBody tr[data-phase-node]').count(),1);
+  await page.check('#phaseEvents input[data-value="*"]');
+  assert.equal(await page.locator('#phaseEvents > button').innerText(),'Promos: All');
   await page.uncheck(`#phaseEvents input[data-value="${vb}"]`);
   assert.equal(await page.locator(`tr[data-phase-node="${vb}"]`).count(),0);
   await page.check(`#phaseEvents input[data-value="${vb}"]`);
