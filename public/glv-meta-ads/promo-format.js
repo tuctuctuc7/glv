@@ -27,13 +27,40 @@
       seen.add(key); return true;
     });
   }
+  // Reporting-date windows, not Meta campaign identity or Business KPI scope.
+  // 2026 dates supplied by Tom and confirmed in the read-only phase calendar.
+  // Outside a named window keep a month bucket: carryover is never discarded.
+  const PROMO_WINDOWS = [
+    {id:'2026-06-15_2026-06-17',start:'2026-06-15',end:'2026-06-17',label:'Jun Private'},
+    {id:'2026-06-18_2026-06-23',start:'2026-06-18',end:'2026-06-23',label:'Jun Public'},
+    {id:'2026-08-18_2026-08-19',start:'2026-08-18',end:'2026-08-19',label:'Aug Private'},
+    {id:'2026-08-20_2026-08-26',start:'2026-08-20',end:'2026-08-26',label:'Aug Public'},
+    {id:'2026-10-07_2026-10-14',start:'2026-10-07',end:'2026-10-14',label:'Oct Menopause'},
+    {id:'2026-10-28_2026-11-04',start:'2026-10-28',end:'2026-11-04',label:'Oct/Nov VB2'},
+  ];
+  function monthPeriod(row) {
+    const month=row.date.slice(0,7);
+    return {id:month,month,label:new Date(month+'-01T00:00:00Z').toLocaleDateString('en-US',{month:'short',year:'numeric',timeZone:'UTC'}),sort:month+'-01'};
+  }
+  function promoPeriod(row) {
+    const event=PROMO_WINDOWS.find(event=>row.date>=event.start && row.date<=event.end);
+    return event ? {...event,sort:event.start} : monthPeriod(row);
+  }
   function monthlyMix(rows) {
+    // Retain the existing monthly diagnostic contract for cron/offline audits.
+    return aggregateMix(rows,monthPeriod).map(({month,total,formats})=>({month,total,formats}));
+  }
+  function promoMix(rows) {
+    return aggregateMix(rows.filter(row=>['spend','purchases','revenue','impressions'].some(key=>row[key]>0)),promoPeriod);
+  }
+  function aggregateMix(rows,periodFor) {
     const months = new Map();
     const empty = () => ({spend:0,purchases:0,revenue:0,impressions:0,ads:new Set(),assetKeys:new Set(),assetIncomplete:false});
     for (const row of rows) {
-      const month=row.date.slice(0,7);
-      if (!months.has(month)) months.set(month,{month,total:empty(),formats:Object.fromEntries(FORMATS.map(f=>[f,empty()]))});
-      const group=months.get(month);
+      const period=periodFor(row);
+      if (!months.has(period.id)) months.set(period.id,{...period,total:empty(),formats:Object.fromEntries(FORMATS.map(f=>[f,empty()]))});
+      const group=months.get(period.id);
+      if (period.sort < group.sort) group.sort=period.sort;
       // Carryover purchases remain in performance, not media membership.
       if (row.spend > 0 || row.impressions > 0) {
         const inventory=row.asset_inventory;
@@ -51,7 +78,7 @@
         target.ads.add(row.ad_id);
       }
     }
-    return [...months.values()].sort((a,b)=>a.month.localeCompare(b.month)).map(group=>{
+    return [...months.values()].sort((a,b)=>a.sort.localeCompare(b.sort)||a.id.localeCompare(b.id)).map(group=>{
       for (const target of [group.total,...Object.values(group.formats)]) {
         target.ads=target.ads.size;
         target.assets=target.assetKeys.size || (target.assetIncomplete ? null : 0);
@@ -67,5 +94,5 @@
     });
   }
   const validConceptPayload=data=>validPayload(data)&&data.funnel_version===1&&data.rows.every(r=>/^(TUC|GLV)_\d+_/.test(r.campaign_name)&&r.campaign_name.includes('_CZSK_')&&!r.campaign_name.includes('_US_')&&r.campaign_name.includes('_Promo'));
-  return { INVENTORY_VERSION, CLASSIFICATION_VERSION, FORMATS, COLORS, validDate, validPayload, validConceptPayload, monthlyMix };
+  return { INVENTORY_VERSION, CLASSIFICATION_VERSION, FORMATS, COLORS, validDate, validPayload, validConceptPayload, monthlyMix, promoMix };
 });
