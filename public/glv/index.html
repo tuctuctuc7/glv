@@ -12,13 +12,13 @@
   <link rel="stylesheet" href="/glv/styles.css?v=phase-headers-20261015&amp;ui=filter-type-1" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f" crossorigin="anonymous" defer></script>
   <script src="/glv/metrics.js?v=nc-rc-metrics-20260920" defer></script>
-  <script src="/glv/phases.js?v=kristyna-calendar-20261015&amp;columns=days" defer></script>
-  <script src="/glv/promo-comparison.js?v=promo-focus-2" defer></script>
-  <script src="/glv/promo-comparison-ui.js?v=promo-focus-2" defer></script>
-  <link rel="stylesheet" href="/glv/promo-comparison.css?v=mobile-controls-20261012" />
-  <script src="/glv/app.js?v=home-compact-20261013&amp;columns=home-order&amp;history-warning=1" defer></script>
+  <script src="/glv/phases.js?v=promo-events-20261029" defer></script>
+  <script src="/glv/promo-comparison.js?v=promo-events-20261029" defer></script>
+  <script src="/glv/promo-comparison-ui.js?v=promo-events-20261029" defer></script>
+  <link rel="stylesheet" href="/glv/promo-comparison.css?v=promo-events-20261029" />
+  <script src="/glv/app.js?v=promo-events-20261029" defer></script>
   <link rel="stylesheet" href="/glv/section-info.css?v=section-info-20260920-stack-3" />
-  <script src="/glv/section-info.js?v=kristyna-calendar-20261015" defer></script>
+  <script src="/glv/section-info.js?v=promo-events-20261029" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#mainContent">Skip to dashboard content</a>
@@ -279,6 +279,7 @@
             <h1 id="phasesTitle">Phase performance</h1>
             <p id="phaseRange" class="range-label">Year to date · loading</p>
           </div>
+          <div id="phaseMode" class="phase-mode" role="group" aria-label="Phase grouping"><button type="button" data-phase-mode="month" aria-pressed="true">By month</button><button type="button" data-phase-mode="promo" aria-pressed="false">By promo</button></div>
           <div class="phase-global-controls">
             <div id="phaseFilter" class="phase-multiselect"></div>
             <label class="comparison-control phase-split-control" for="phaseInfluSplit"><input id="phaseInfluSplit" type="checkbox" /><span class="switch" aria-hidden="true"></span><span>Split Influ code / no code</span></label>
@@ -314,6 +315,7 @@
             <div class="phase-table-controls">
               <label class="field field-compact"><span>Hierarchy</span><select id="phaseHierarchy"><option value="month-phase" selected>Month → phase → days</option><option value="phase-month">Phase → month → days</option></select></label>
               <div id="phaseMonths" class="phase-multiselect"></div>
+              <div id="phaseEvents" class="phase-multiselect" hidden></div>
             </div>
           </div>
           <p class="historical-scope-note" role="note">NC ROAS = NC revenue / existing Spend (ad spend), using matching available rows and positive total spend. RC revenue = revenue − NC revenue only where both inputs exist; negative source discrepancies are preserved. Partial inputs report the available subset, not the whole period; 2025 NC is unavailable. Code/no-code has no attributed NC or cost; both new metrics remain unavailable. Share uses full-month CZSK revenue before phase filtering; cross-month code groups use full selected months. Avg daily revenue divides revenue by distinct represented phase dates, including zero-revenue days; cross-month totals use all eligible days. Code/no-code rows expose Revenue, Avg daily revenue and Share, using the same Influ days.</p>
@@ -324,12 +326,13 @@
             </tr></thead><tbody id="phaseTableBody"></tbody></table>
           </div>
         </section>
+        <p id="promoPlanned" class="historical-scope-note" hidden>BFCM · dates pending · not included in results</p>
         <section id="promoComparison" class="panel phase-chart-panel" aria-labelledby="promoTitle">
           <div class="panel-heading phase-panel-heading">
             <div><span class="eyebrow">CZSK · Promo only</span><span class="section-title" id="promoTitle">Promo comparison</span><span class="panel-subtitle">Daily values by Promo day · not cumulative</span></div>
             <div class="promo-controls"><div id="promoMonths" class="phase-multiselect"></div><label class="field field-compact"><span>Metric</span><select id="promoMetric" aria-label="Promo comparison metric"></select></label></div>
           </div>
-          <p class="historical-scope-note">Only represented Promo dates, in chronological order within each month. Separate windows concatenate; missing and future days are not filled. Independent of the phase and table filters.</p>
+          <p class="historical-scope-note">By month: represented Promo dates concatenate within each month. By promo: Day 1 is the event start; missing actual dates stay gaps and future dates are not padded. Full event ranges are independent of month and table filters.</p>
           <p id="promoEmpty" class="historical-scope-note" role="status" hidden></p>
           <div class="phase-chart-wrap"><canvas id="promoChart" role="img" aria-label="Daily Promo comparison" aria-describedby="promoChartData"></canvas></div>
           <label class="promo-focus-control">Highlight month (all lines remain visible)<select id="promoFocus" aria-label="Highlight Promo month"></select></label>

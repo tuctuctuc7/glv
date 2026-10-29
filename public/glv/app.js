@@ -1112,9 +1112,18 @@ function phaseNodeVisible(node, byId) {
   return true;
 }
 
+let phaseMode = 'month';
+function promoEventLabel(event) {
+  const short = date => formatDate(date, {month:'short', day:'numeric'});
+  return `${event.label} (${short(event.start_date)} – ${short(event.end_date)}, ${event.start_date.slice(0,4)})`;
+}
 function renderPhaseTable(days) {
   const hierarchy = $('phaseHierarchy').value;
-  const nodes = phases.buildHierarchy(days, hierarchy, $('phaseInfluSplit').checked, { phases: state.phaseSelection, months: state.phaseMonths });
+  const nodes = phaseMode === 'promo' ? phases.promoEventRows(days, phases.buildPromoEvents(state.data.phases))
+    .filter(e => state.phaseEvents == null || state.phaseEvents.includes(e.id)).flatMap(e => [
+      {id:e.id, depth:0, kind:'event', phase:'Promo', label:promoEventLabel(e), metrics:e.metrics, expandable:e.rows.length > 0},
+      ...e.rows.map(d => ({id:`${e.id}|${d.date}`, parentId:e.id, depth:1, kind:'day', phase:'Promo', label:d.date, metrics:phases.aggregateRows([d])})),
+    ]) : phases.buildHierarchy(days, hierarchy, $('phaseInfluSplit').checked, { phases: state.phaseSelection, months: state.phaseMonths });
   if (!state.phaseExpansionInitialized) {
     nodes.filter((node) => node.depth === 0).forEach((node) => state.phaseExpanded.add(node.id));
     state.phaseExpansionInitialized = true;
@@ -1159,7 +1168,7 @@ function renderPhaseTable(days) {
     values.forEach((value) => row.appendChild(element('td', '', value)));
     body.appendChild(row);
   });
-  $('phaseTableSubtitle').textContent = $('phaseInfluSplit').checked
+  $('phaseTableSubtitle').textContent = phaseMode === 'promo' ? 'Promo → represented days · full event dates · CZSK' : $('phaseInfluSplit').checked
     ? (hierarchy === 'month-phase' ? 'Month → phase → code/no code → days' : 'Phase → code/no code → month → days')
     : (hierarchy === 'month-phase' ? 'Month → phase → days' : 'Phase → month → days');
 }
@@ -1208,9 +1217,22 @@ function renderPhases() {
   renderPhaseMenu('phaseFilter', 'Phases', phases.PHASES, 'phaseSelection');
   renderPhaseMenu('phaseMonths', 'Months', [...new Set(days.map(day => day.month))].sort(), 'phaseMonths', phaseMonthLabel);
   $('phaseRange').textContent = `${formatDate(days[0].date)} – ${formatDate(days[days.length - 1].date)} · ${days.length} working days · CZSK only`;
-  renderPhaseChart(days);
+  const promo = phaseMode === 'promo';
+  const events = promo ? phases.buildPromoEvents(state.data.phases) : [];
+  $('phaseMode').querySelectorAll('button').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.phaseMode === phaseMode));
+    button.onclick = () => { phaseMode = button.dataset.phaseMode; renderPhases(); };
+  });
+  document.querySelector('.phase-global-controls').hidden = promo;
+  document.querySelector('.phase-chart-panel').hidden = promo;
+  $('phaseHierarchy').closest('label').hidden = promo;
+  $('phaseMonths').hidden = promo;
+  $('phaseEvents').hidden = !promo;
+  $('promoPlanned').hidden = !promo;
+  if (promo) renderPhaseMenu('phaseEvents', 'Promos', events.map(e => e.id), 'phaseEvents', id => promoEventLabel(events.find(e => e.id === id)));
+  else renderPhaseChart(days);
   renderPhaseTable(days);
-  window.renderPromoComparison(days);
+  window.renderPromoComparison(days, promo ? events : null);
   $('screenReaderStatus').textContent = `Phases view updated for CZSK, year to date through ${formatDate(days[days.length - 1].date)}.`;
 }
 

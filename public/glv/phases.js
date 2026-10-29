@@ -297,7 +297,39 @@
     return { months, phases: active, series };
   }
 
+  // Event identity is date-based, never a mutable calendar label or sheet row.
+  function buildPromoEvents(schedule) {
+    const groups = new Map();
+    validateSchedule(schedule);
+    schedule.filter(s => s.phase === 'Promo').forEach(s => {
+      const key = `${s.start_date}/${s.end_date}`;
+      if (!groups.has(key)) groups.set(key, {id: `promo:${key}`, start_date: s.start_date, end_date: s.end_date, sources: []});
+      groups.get(key).sources.push(s);
+    });
+    const events = [...groups.values()].sort((a,b) => a.start_date.localeCompare(b.start_date));
+    events.forEach((event,i) => {
+      if (i && event.start_date <= events[i-1].end_date) throw new Error('Ambiguous Promo event overlap.');
+    });
+    return events.map(e => ({...e,
+      label: e.start_date === '2026-10-07' && e.end_date === '2026-10-14' ? 'Menopause' :
+        e.start_date === '2026-10-28' && e.end_date === '2026-11-04' ? 'VB2' :
+        new Intl.DateTimeFormat('en-US', {month:'long', timeZone:'UTC'}).format(parseIsoDate(e.start_date)),
+    }));
+  }
+
+  function promoEventRows(days, events) {
+    const source = (days || []).filter(d => d.region === 'czsk' && d.phase === 'Promo');
+    const seen = new Set();
+    source.forEach(d => { if (seen.has(d.date)) throw new Error(`Duplicate CZSK day: ${d.date}`); seen.add(d.date); });
+    return events.map(event => {
+      const rows = source.filter(d => d.date >= event.start_date && d.date <= event.end_date).sort((a,b) => a.date.localeCompare(b.date));
+      return {...event, rows, metrics: aggregateRows(rows)};
+    });
+  }
+
   return {
+    promoEventRows,
+    buildPromoEvents,
     ABSOLUTE_METRICS,
     PHASES,
     aggregatePhaseGroups,
