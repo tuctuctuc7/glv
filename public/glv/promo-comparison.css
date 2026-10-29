@@ -22,7 +22,7 @@
   #phaseEvents .phase-menu-trigger { max-width: 116px; }
 }
 #phaseEvents .phase-menu-options label, #promoMonths .phase-menu-options label { white-space: normal; }
-#promoPlanned { padding: 8px 0; }
+
 #promoComparison { min-width: 0; overflow: visible; }
 /* Keyboard/screen-reader equivalent without a second visible legend. */
 .promo-focus-control:not(:focus-within) { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

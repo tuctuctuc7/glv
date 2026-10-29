@@ -44,8 +44,16 @@ fs.mkdirSync(out,{recursive:true});
   }
   assert.equal(await page.locator('#phaseMonths').isVisible(),false);
   assert.equal(await page.locator('#phaseFilter').isVisible(),false);
-  assert.equal(await page.locator('#promoPlanned').isVisible(),true);
-  assert.match(await page.locator('#phaseTableBody').innerText(),/VB2 \(Oct 28 – Nov 4, 2026\)/);
+  assert.equal(await page.locator('#promoPlanned').count(),0);
+  assert.doesNotMatch(await page.locator('body').innerText(),/BFCM/);
+  assert.equal(await page.locator('#phaseTable th').first().textContent(),'Promo');
+  const labels=await page.locator('#phaseTableBody td:first-child').allTextContents();
+  assert.ok(labels.includes('VB2') && labels.includes('Menopause') && labels.includes('June 1') && labels.includes('June 2'));
+  assert.ok(labels.every(t=>!/[()–]|2026/.test(t)));
+  const density=await page.evaluate(()=>{const c=document.querySelector('#phaseTable th').getBoundingClientRect().width;const w=document.querySelector('#phaseTable').parentElement.clientWidth;return {column:c,scrollport:w,metricSpace:w-c,font:getComputedStyle(document.querySelector('.phase-disclosure')).fontSize};});
+  assert.ok(density.column<125,JSON.stringify(density));
+  assert.equal(density.font,'11px');
+  console.log(JSON.stringify({width,theme,density}));
   const actual=await page.evaluate(()=>{
    const days=GlvPhases.buildPhaseDays(state.data.rows,state.data.phases,state.data.phase_contract.latest_date);
    const events=GlvPhases.promoEventRows(days,GlvPhases.buildPromoEvents(state.data.phases));
@@ -85,6 +93,45 @@ fs.mkdirSync(out,{recursive:true});
   assert.equal(await page.locator(`tr[data-phase-node="${vb}"]`).count(),0);
   await page.check(`#phaseEvents input[data-value="${vb}"]`);
   await page.press(`#phaseEvents input[data-value="${vb}"]`,'Escape');
+  // Exercise arbitrary 2/3 selections, resolved Chart.js elements, focus and rerenders.
+  const old=values.find(v=>v.startsWith('promo:2026-01'));
+  const meno='promo:2026-10-07/2026-10-14';
+  async function inspectColors(ids, focused=null) {
+   const resolved=await page.evaluate(()=>{
+    const c=Chart.getChart(document.getElementById('promoChart'));
+    return {ids:c.data.datasets.map(d=>d.month),legend:c.legend.legendItems.map(l=>l.strokeStyle),datasets:c.data.datasets.map((d,i)=>({id:d.month,line:c.getDatasetMeta(i).dataset.options.borderColor,point:c.getDatasetMeta(i).data.find((p,j)=>d.data[j]!=null)?.options.backgroundColor,hidden:!c.isDatasetVisible(i),values:d.data,dates:d.dates}))};
+   });
+   assert.deepEqual(resolved.ids,ids);
+   const expected=await page.evaluate(({ids,theme})=>GlvPromoComparison.eventColors(ids,theme),{ids,theme:await page.locator('html').getAttribute('data-theme')});
+   assert.equal(new Set(Object.values(expected)).size,ids.length);
+   for(const [i,d] of resolved.datasets.entries()) {
+    assert.equal(d.line,expected[d.id]+(focused&&focused!==d.id?'33':''));
+    assert.equal(d.point,expected[d.id]+(focused&&focused!==d.id?'80':''));
+    assert.equal(resolved.legend[i],d.line); assert.equal(d.hidden,false);
+   }
+   return resolved.datasets.map(d=>({id:d.id,values:d.values,dates:d.dates}));
+  }
+  await inspectColors([meno,vb]);
+  for(const ids of [[old,vb],[old,meno,vb]]) {
+   await page.click('#promoMonths > button');
+   await page.check('#promoMonthOptions input[data-value="none"]');
+   for(const id of ids) await page.check(`#promoMonthOptions input[data-value="${id}"]`);
+   await page.press('#promoMonthOptions input[data-value="none"]','Escape');
+   const original=await inspectColors(ids);
+   // Real canvas legend activation, again resets without hiding any series.
+   const box=await page.evaluate(()=>{const c=Chart.getChart(document.getElementById('promoChart'));return c.legend.legendHitBoxes[1];});
+   await page.locator('#promoChart').click({position:{x:box.left+box.width/2,y:box.top+box.height/2}});
+   await page.waitForFunction(id=>document.getElementById('promoFocus').value===id,ids[1]);
+   assert.deepEqual(await inspectColors(ids,ids[1]),original);
+   await page.selectOption('#promoMetric','roas'); await inspectColors(ids,ids[1]);
+   await page.selectOption('#promoMetric','revenue');
+   await page.click('#themeToggle'); await inspectColors(ids,ids[1]);
+   await page.click('#themeToggle'); assert.deepEqual(await inspectColors(ids,ids[1]),original);
+   await page.locator('#promoChart').click({position:{x:box.left+box.width/2,y:box.top+box.height/2}});
+   await page.waitForFunction(()=>document.getElementById('promoFocus').value==='');
+   assert.deepEqual(await inspectColors(ids),original);
+   await page.locator('#promoChart').screenshot({path:`${out}/${width}-${theme}-${ids.length}-colors.png`});
+  }
   await page.selectOption('#promoMetric','roas');
   await page.selectOption('#promoMetric','revenue');
   await page.click('#promoMonths > button');

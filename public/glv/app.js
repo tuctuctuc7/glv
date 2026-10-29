@@ -1119,9 +1119,10 @@ function promoEventLabel(event) {
 }
 function renderPhaseTable(days) {
   const hierarchy = $('phaseHierarchy').value;
+  $('phaseTable').querySelector('th').textContent = phaseMode === 'promo' ? 'Promo' : 'Dimension';
   const nodes = phaseMode === 'promo' ? phases.promoEventRows(days, phases.buildPromoEvents(state.data.phases))
     .filter(e => state.phaseEvents == null || state.phaseEvents.includes(e.id)).flatMap(e => [
-      {id:e.id, depth:0, kind:'event', phase:'Promo', label:promoEventLabel(e), metrics:e.metrics, expandable:e.rows.length > 0},
+      {id:e.id, depth:0, kind:'event', phase:'Promo', label:e.label, description:promoEventLabel(e), metrics:e.metrics, expandable:e.rows.length > 0},
       ...e.rows.map(d => ({id:`${e.id}|${d.date}`, parentId:e.id, depth:1, kind:'day', phase:'Promo', label:d.date, metrics:phases.aggregateRows([d])})),
     ]) : phases.buildHierarchy(days, hierarchy, $('phaseInfluSplit').checked, { phases: state.phaseSelection, months: state.phaseMonths });
   if (!state.phaseExpansionInitialized) {
@@ -1136,12 +1137,13 @@ function renderPhaseTable(days) {
     row.dataset.phaseNode = node.id;
     const dimension = element('td', 'phase-dimension');
     dimension.style.setProperty('--phase-depth', node.depth);
+    if (node.description) dimension.title = node.description;
     if (node.expandable) {
       const button = element('button', 'phase-disclosure', phaseNodeLabel(node));
       button.type = 'button';
       button.dataset.phaseToggle = node.id;
       button.setAttribute('aria-expanded', String(state.phaseExpanded.has(node.id)));
-      button.setAttribute('aria-label', `${state.phaseExpanded.has(node.id) ? 'Collapse' : 'Expand'} ${phaseNodeLabel(node)}`);
+      button.setAttribute('aria-label', `${state.phaseExpanded.has(node.id) ? 'Collapse' : 'Expand'} ${node.description || phaseNodeLabel(node)}`);
       dimension.appendChild(button);
     } else {
       dimension.appendChild(element('span', 'phase-leaf-label', phaseNodeLabel(node)));
@@ -1228,7 +1230,6 @@ function renderPhases() {
   $('phaseHierarchy').closest('label').hidden = promo;
   $('phaseMonths').hidden = promo;
   $('phaseEvents').hidden = !promo;
-  $('promoPlanned').hidden = !promo;
   if (promo) renderPhaseMenu('phaseEvents', 'Promos', events.map(e => e.id), 'phaseEvents', id => promoEventLabel(events.find(e => e.id === id)));
   else renderPhaseChart(days);
   renderPhaseTable(days);

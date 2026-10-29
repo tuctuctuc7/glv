@@ -310,11 +310,15 @@
     events.forEach((event,i) => {
       if (i && event.start_date <= events[i-1].end_date) throw new Error('Ambiguous Promo event overlap.');
     });
-    return events.map(e => ({...e,
+    const named = events.map(e => ({...e,
       label: e.start_date === '2026-10-07' && e.end_date === '2026-10-14' ? 'Menopause' :
         e.start_date === '2026-10-28' && e.end_date === '2026-11-04' ? 'VB2' :
         new Intl.DateTimeFormat('en-US', {month:'long', timeZone:'UTC'}).format(parseIsoDate(e.start_date)),
     }));
+    return named.map(e => {
+      const peers = named.filter(other => other.label === e.label);
+      return {...e, label: peers.length > 1 ? `${e.label} ${peers.indexOf(e) + 1}` : e.label};
+    });
   }
 
   function promoEventRows(days, events) {
