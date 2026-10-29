@@ -3,8 +3,24 @@
 .phase-mode button[aria-pressed="true"] { background: var(--border); color: var(--text-primary); font-weight: 600; }
 .phase-mode button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .phase-global-controls[hidden], .phase-chart-panel[hidden], .phase-multiselect[hidden], .phase-table-controls label[hidden] { display: none !important; }
-#phaseEvents .phase-menu-options { max-width: min(380px, calc(100vw - 48px)); }
-@media (max-width: 720px) { #phaseEvents .phase-menu-options { left: 0; right: auto; } }
+/* Promo controls share the title row; month controls retain their own layout. */
+.phase-table-heading:has(#phaseEvents:not([hidden])) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 8px; }
+.phase-table-heading:has(#phaseEvents:not([hidden])) > div:first-child { display: contents; }
+.phase-table-heading:has(#phaseEvents:not([hidden])) .eyebrow { grid-column: 1 / -1; grid-row: 1; }
+.phase-table-heading:has(#phaseEvents:not([hidden])) .section-info-title { grid-column: 1; grid-row: 2; margin: 0; }
+.phase-table-heading:has(#phaseEvents:not([hidden])) .phase-table-controls { grid-column: 2; grid-row: 2; display: block; width: auto; }
+.phase-table-heading:has(#phaseEvents:not([hidden])) .panel-subtitle { grid-column: 1 / -1; grid-row: 3; margin-top: 0; }
+#phaseEvents .phase-menu-trigger { max-width: 128px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* This control is on the right, unlike the left-column comparison filter. */
+#phaseEvents .phase-menu-options { left: auto; right: 0; width: 380px; max-width: calc(100vw - 64px); }
+#phaseEvents .phase-menu-options input { flex-shrink: 0; }
+@media (max-width: 720px) {
+  .phase-mode { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; align-self: stretch; padding: 0; gap: 0; border-radius: 8px; overflow: hidden; }
+  .phase-mode button { border-radius: 0; }
+  .phase-mode button:focus-visible { outline-offset: -3px; }
+  .phase-table-heading:has(#phaseEvents:not([hidden])) #phaseTableTitle { font-size: clamp(16px, 4.6vw, 20px); white-space: nowrap; }
+  #phaseEvents .phase-menu-trigger { max-width: 116px; }
+}
 #phaseEvents .phase-menu-options label, #promoMonths .phase-menu-options label { white-space: normal; }
 #promoPlanned { padding: 8px 0; }
 #promoComparison { min-width: 0; overflow: visible; }
