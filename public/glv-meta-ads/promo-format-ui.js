@@ -21,7 +21,7 @@ async function loadPromoFormats() {
     promoFormatPayload=data;promoFormatError='';
   } catch (error) {
     if(sequence!==promoFormatSequence)return;
-    promoFormatPayload=null;promoFormatError=error.message;
+    promoFormatError=error.message;
   }
   refreshPromoFormats();
 }
@@ -39,14 +39,16 @@ function refreshPromoFormats() {
   status.classList.toggle('format-warning',Boolean(promoFormatError));
   if(!promoFormatPayload){status.textContent=promoFormatError?`Format data unavailable — ${promoFormatError}`:'Loading ad-level format facts…';return;}
   const range=promoFormatPayload.range;
+  const freshnessWarning=promoHistoryWarning(promoFormatPayload,promoFormatError);
   document.getElementById('promo-format-range').textContent=`${range.since} → ${range.until} · By promo · independent history`;
-  if(!periods.length){status.textContent='No Promo ad activity in this history range.';return;}
+  if(!periods.length){status.textContent=(freshnessWarning?freshnessWarning+' ':'')+'No Promo ad activity in this history range.';status.classList.toggle('format-warning',Boolean(freshnessWarning));return;}
   const unknownRows=rows.filter(row=>row.format==='Unknown');
   const unknownCount=new Set(unknownRows.map(row=>row.ad_id)).size;
   status.textContent=unknownCount?`Unknown: ${unknownCount} ads retained in totals and shares. Review unmapped or conflicting labels below.`:`All ${new Set(rows.map(row=>row.ad_id)).size} activity-bearing ads classified. Carryover purchases included.`;
-  status.classList.toggle('format-warning',unknownCount>0);
-  status.hidden=unknownCount===0;
-  if(!unknownCount)document.getElementById('promo-format-summary').textContent=status.textContent;
+  if(freshnessWarning)status.textContent=freshnessWarning+' '+status.textContent;
+  status.classList.toggle('format-warning',unknownCount>0||Boolean(freshnessWarning));
+  status.hidden=unknownCount===0&&!freshnessWarning;
+  if(!unknownCount&&!freshnessWarning)document.getElementById('promo-format-summary').textContent=status.textContent;
   const formats=PromoFormat.FORMATS.filter(format=>format!=='Unknown'||unknownCount);
   const percent=value=>value===null?'—':value.toFixed(1)+'%';
   const value=(key,n)=>n===null?'—':formatChartVal(key,n);

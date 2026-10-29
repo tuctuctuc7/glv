@@ -233,11 +233,14 @@ Activation contract: schema remains 1; classification revision is now 2. The
 existing `glv:promo_formats:history:v1` Redis key stores reconciled source facts,
 not authoritative format labels. On every read, the server accepts only known
 revision 1/2 facts after full schema, metric, duplicate, campaign-scope, range,
-and existing 25-hour freshness validation; it recomputes all returned labels
+validation; it recomputes all returned labels
 from the stored direct-object names using the current classifier. It preserves
 all metrics, IDs, dates, attribution and `generated_at`, without writing Redis
 or claiming a new Meta extraction. Unsupported future revisions and invalid or
-stale facts miss and use the existing live read path. The scheduled writer emits
+malformed facts miss. Compatible older facts remain available with explicit stale
+status, original extraction time, and actual coverage (never invented later days).
+History page reads are cache-only with a five-second Redis budget: a miss returns
+503, not a multi-minute Meta request. The scheduled writer emits
 revision 2 without changing the cron schedule. Future schema/rule changes must
 explicitly review this revision allowlist, not blindly accept arbitrary versions.
 
@@ -249,8 +252,8 @@ June immediately—no overnight refresh or Redis mutation is needed. After relea
 the parent must verify the authenticated history endpoint returns revision 2,
 the native June chart/table resolves correctly, and extraction freshness is
 unchanged on a cache hit. If the source cache is stale/incomplete, use the existing
-live read or separately approved refresh and verify its result; do not relabel
-stale data as fresh. No production refresh was performed as part of this edit.
+scheduled writer or separately approved refresh and verify its result; do not
+relabel stale data as fresh. Browser refresh does not invoke a Meta extraction.
 
 Read-only private evidence can be collected with
 `node qa/promo-format-live.cjs 2026-06-01 2026-06-30`; do not commit its output.
@@ -258,6 +261,13 @@ Run `PROMO_FORMAT_LIVE_FIXTURE=/private/path/revision-2.json node qa/promo-forma
 for native chart/table QA at eight widths and both themes, in addition to the
 synthetic suite, `node qa/meta-cache-performance.cjs`, `npm test`, and
 `npm run verify:glv-release`.
+
+The history producer queries ad insights in disjoint calendar-month windows,
+then reconciles all performance/funnel inputs against the full-range campaign/day
+source before publishing. Current direct-object names still gate scope; archived
+and carryover-only outcomes remain included. All pages and chunks share the same
+240-second deadline; a failed chunk leaves the prior cache intact. Errors identify
+request class and numeric HTTP/Meta codes without exposing tokens or raw URLs.
 
 ### Promo configured source assets (inventory revision 1)
 
@@ -301,7 +311,9 @@ show unavailable inventory; no invented ad-count fallback or cache retimestampin
    ```
 
    This makes real read-only Meta requests and writes only
-   `glv:promo_formats:history:v1` with the existing TTL. It does not run other
+   `glv:promo_formats:history:v1` without an expiry. Before fetching, it removes
+   the legacy key expiry and verifies TTL -1, retaining last-good facts on failure.
+   It does not run other
    presets, mutate Meta ads, change the cron schedule, or delete the old cache
    before successful validation. Do not execute against a guessed environment.
    The writer now GETs the exact key within the same bounded budget and requires
@@ -395,18 +407,18 @@ single existing daily cron/300-second platform limit remain unchanged.
 
 1. Release backend dependencies and cache-busted frontend together, then reload
    open tabs. Do not publish private evidence or synthetic fixtures.
-2. Both resources share `glv:promo_formats:history:v1` server facts but have separate
-   browser memory keys, generation guards and refresh controls. Legacy cache
-   remains usable for existing format/inventory views; concepts require funnel 1
-   and take the read-only live fallback when it is absent. The concept refresh
-   button invalidates only its browser memory; it never writes or deletes Redis.
+2. Both resources share `glv:promo_formats:history:v1` server facts and one browser
+   history request/memory entry, with generation guards and local refresh controls.
+   Legacy cache remains usable for format/inventory views; concepts require funnel
+   1 and return unavailable when it is absent, without a live fallback. Refresh
+   retains last-good visible facts on failure and never writes or deletes Redis.
 3. Prefer the next successful existing daily cron to populate funnel 1. Immediate
    server-cache activation needs separate approval: use the existing targeted
    `refreshPromoFormatCache` procedure above from the reviewed production revision.
    Do not create another cron, increase the platform limit or retimestamp old data.
 4. Read back both authenticated history URLs. For concepts require `X-Cache:HIT`,
    `PromoFormat.validConceptPayload(payload)`, schema 1, classification 2, funnel 1,
-   inventory 1, `reconciled:true`, complete requested range and fresh extraction.
+   inventory 2, `reconciled:true`, complete requested range and fresh extraction.
    Verify format/inventory totals and statuses on identical source facts; attribution
    backfill can legitimately change metrics after a real extraction.
 5. Verify native ten-column values/sorts, most-recent-delivery default, multiselect
