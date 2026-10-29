@@ -1225,13 +1225,25 @@ function renderPhases() {
     button.setAttribute('aria-pressed', String(button.dataset.phaseMode === phaseMode));
     button.onclick = () => { phaseMode = button.dataset.phaseMode; renderPhases(); };
   });
-  document.querySelector('.phase-global-controls').hidden = promo;
   document.querySelector('.phase-chart-panel').hidden = promo;
-  $('phaseHierarchy').closest('label').hidden = promo;
-  $('phaseMonths').hidden = promo;
-  $('phaseEvents').hidden = !promo;
-  if (promo) renderPhaseMenu('phaseEvents', 'Promos', events.map(e => e.id), 'phaseEvents', id => promoEventLabel(events.find(e => e.id === id)));
-  else renderPhaseChart(days);
+  const allEvents = promo ? events : phases.buildPromoEvents(state.data.phases);
+  renderPhaseMenu('phaseEvents', 'Promos', allEvents.map(e => e.id), 'phaseEvents', id => promoEventLabel(allEvents.find(e => e.id === id)));
+  // Keep controls and their saved selections in place; only applicability changes.
+  ['phaseFilter', 'phaseMonths', 'phaseEvents'].forEach(id => {
+    const disabled = id === 'phaseEvents' ? !promo : promo;
+    const host = $(id);
+    host.setAttribute('aria-disabled', String(disabled));
+    host.querySelectorAll('button, input').forEach(control => { control.disabled = disabled; });
+    if (disabled) {
+      host.querySelector('.phase-menu-options').hidden = true;
+      host.querySelector('button').setAttribute('aria-expanded', 'false');
+    }
+  });
+  ['phaseHierarchy', 'phaseMetric', 'phaseInfluSplit'].forEach(id => {
+    $(id).disabled = promo;
+    $(id).closest('label').setAttribute('aria-disabled', String(promo));
+  });
+  if (!promo) renderPhaseChart(days);
   renderPhaseTable(days);
   window.renderPromoComparison(days, promo ? events : null);
   $('screenReaderStatus').textContent = `Phases view updated for CZSK, year to date through ${formatDate(days[days.length - 1].date)}.`;

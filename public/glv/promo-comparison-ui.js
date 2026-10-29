@@ -107,6 +107,11 @@ window.renderPromoComparison = (() => {
               applyFocus(focusedMonth === month ? null : month);
             },
             labels: { font, color: text, boxWidth: 18, boxHeight: 2, padding: 16,
+              // Compact event names fit narrow legends; dates remain in tooltips and accessible data.
+              generateLabels: chart => window.Chart.defaults.plugins.legend.labels.generateLabels(chart).map(item => ({
+                ...item,
+                text: events ? events.find(e => e.id === chart.data.datasets[item.datasetIndex].month).label : item.text,
+              })),
               // Draw order changes must not move the legend under the pointer.
               sort: (a, b) => a.datasetIndex - b.datasetIndex },
           },
