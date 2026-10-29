@@ -18,6 +18,16 @@
     const f = n => { const k=(n+hue/30)%12; return Math.round(255*(l-a*Math.max(-1,Math.min(k-3,9-k,1)))).toString(16).padStart(2,'0'); };
     return `#${f(0)}${f(8)}${f(4)}`;
   }
+  // Selected-order palette: strongest hue separation first, independent of event IDs.
+  // Month colors retain their existing stable calendar mapping.
+  const eventPalettes = {
+    dark: ['#75baff','#ffae66','#ed91d5','#70d6a0','#d3a0ff','#72dce5','#e6cc70','#ff8da1','#b6c5ff','#99d478','#e3b49a','#a5cbd2','#d5bfff','#b9b16a','#ffb7bd','#8ae0c5'],
+    light: ['#2464ad','#a45113','#a12c89','#187346','#8044b5','#087b87','#806811','#b33350','#5655ae','#48781a','#885740','#416d78','#715190','#6e681b','#a23e43','#136f60'],
+  };
+  function eventColors(selected, theme = 'dark') {
+    const palette = eventPalettes[theme === 'light' ? 'light' : 'dark'];
+    return Object.fromEntries(selected.map((id, i) => [id, palette[i % palette.length]]));
+  }
   const finite = v => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v));
   const ratio = (n,d) => finite(n) && finite(d) && Number(d) > 0 ? Number(n) / Number(d) : null;
   function value(row, metric) {
@@ -42,10 +52,10 @@
     })) };
   }
   // Styling only: never remove values or hide a dataset when focusing.
-  function focusStyle(month, focusedMonth, theme) {
+  function focusStyle(month, focusedMonth, theme, baseColor = color(month, theme)) {
     const focused = month === focusedMonth;
-    const ink = color(month, theme) + (focusedMonth && !focused ? '33' : '');
-    const pointInk = color(month, theme) + (focusedMonth && !focused ? '80' : '');
+    const ink = baseColor + (focusedMonth && !focused ? '33' : '');
+    const pointInk = baseColor + (focusedMonth && !focused ? '80' : '');
     return { borderColor: ink, backgroundColor: ink, pointBackgroundColor: pointInk,
       pointBorderColor: pointInk, pointHoverBackgroundColor: pointInk, pointHoverBorderColor: pointInk,
       borderWidth: focused ? 3.5 : 2.5, order: focused ? -1 : 0 };
@@ -66,5 +76,5 @@
         return {month:g.id, dates, values};
       })};
   }
-  return { buildEvents, build, value, color, focusStyle };
+  return { buildEvents, build, value, color, eventColors, focusStyle };
 }));

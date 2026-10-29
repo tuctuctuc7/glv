@@ -31,6 +31,8 @@ window.renderPromoComparison = (() => {
     }
     const metric = select.value;
     const data = events ? api.buildEvents(days, events, selected, metric) : api.build(days, selected, metric);
+    const theme = document.documentElement.dataset.theme;
+    const colors = events ? api.eventColors(data.selected, theme) : {};
     $('promoComparison').dataset.mode = events ? 'promo' : 'month';
     $('promoComparison').style.setProperty('--promo-month-count', data.series.length);
     if (!data.selected.includes(focusedMonth)) focusedMonth = null;
@@ -46,7 +48,7 @@ window.renderPromoComparison = (() => {
       focusedMonth = month || null;
       focusSelect.value = focusedMonth || '';
       if (!chart) return;
-      chart.data.datasets.forEach(d => Object.assign(d, api.focusStyle(d.month, focusedMonth, document.documentElement.dataset.theme)));
+      chart.data.datasets.forEach(d => Object.assign(d, api.focusStyle(d.month, focusedMonth, theme, colors[d.month])));
       chart.update();
     }
     focusSelect.onchange = () => applyFocus(focusSelect.value);
@@ -93,7 +95,7 @@ window.renderPromoComparison = (() => {
       data: { labels: data.labels, datasets: data.series.map(s => ({
         label: monthName(s.month), month: s.month, dates: s.dates, data: s.values,
         borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 5, spanGaps: false, tension: 0.25,
-        ...api.focusStyle(s.month, focusedMonth, document.documentElement.dataset.theme),
+        ...api.focusStyle(s.month, focusedMonth, theme, colors[s.month]),
       })) },
       options: {
         animation: false, responsive: true, maintainAspectRatio: false,

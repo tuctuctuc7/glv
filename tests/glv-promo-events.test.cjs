@@ -5,9 +5,37 @@ const comparison=require('../public/glv/promo-comparison.js');
 test('By promo UI has accessible mode and separate selection, planned BFCM is not performance',()=>{
  const fs=require('node:fs'); const html=fs.readFileSync('public/glv/index.html','utf8');
  assert.match(html,/id="phaseMode"/); assert.match(html,/By month/); assert.match(html,/By promo/);
- assert.match(html,/BFCM · dates pending/);
+ assert.doesNotMatch(html,/BFCM|promoPlanned/);
+ assert.doesNotMatch(fs.readFileSync('public/glv/section-info.js','utf8'),/BFCM/);
  assert.notEqual(comparison.color('promo:2026-10-07/2026-10-14'),comparison.color('promo:2026-10-28/2026-11-04'));
  assert.match(fs.readFileSync('public/glv/app.js','utf8'),/promoEventRows/);
+});
+test('event names are compact and repeated historical stages stay distinct',()=>{
+ const source=require('../public/glv/glv_dashboard.json');
+ const events=phases.buildPromoEvents(source.phases);
+ assert.deepEqual(events.filter(e=>e.start_date.startsWith('2026-06')).map(e=>e.label),['June 1','June 2']);
+ assert.deepEqual(events.filter(e=>e.start_date.startsWith('2026-08')).map(e=>e.label),['August 1','August 2']);
+ assert.ok(events.every(e=>!/[()–]|2026/.test(e.label)));
+ const app=require('node:fs').readFileSync('public/glv/app.js','utf8');
+ assert.match(app,/kind:'event', phase:'Promo', label:e.label/);
+});
+test('selected event palette separates arbitrary pairs/triples and stays aligned through focus',()=>{
+ const ids=['promo:2026-01-06/2026-01-14','promo:2026-10-07/2026-10-14','promo:2026-10-28/2026-11-04'];
+ for(const theme of ['light','dark']) {
+  const colors=comparison.eventColors(ids,theme);
+  assert.equal(new Set(Object.values(colors)).size,3);
+  assert.deepEqual(Object.values(comparison.eventColors(ids.slice(1),theme)),Object.values(colors).slice(0,2));
+  for(const id of ids) {
+   const normal=comparison.focusStyle(id,null,theme,colors[id]);
+   const focused=comparison.focusStyle(id,ids[1],theme,colors[id]);
+   assert.equal(normal.borderColor,colors[id]);
+   assert.equal(focused.borderColor,colors[id]+(id===ids[1]?'':'33'));
+   assert.equal(focused.pointBackgroundColor,colors[id]+(id===ids[1]?'':'80'));
+  }
+  const all=phases.buildPromoEvents(require('../public/glv/glv_dashboard.json').phases).map(e=>e.id);
+  assert.equal(new Set(Object.values(comparison.eventColors(all,theme))).size,all.length);
+ }
+ assert.notDeepEqual(comparison.eventColors(ids,'light'),comparison.eventColors(ids,'dark'));
 });
 test('event comparison keeps sparse calendar ordinals without future padding',()=>{
  assert.equal(typeof comparison.buildEvents,'function');
