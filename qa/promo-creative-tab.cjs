@@ -1,10 +1,13 @@
 const { chromium } = require('playwright-core');
 const http=require('node:http'), fs=require('node:fs'), path=require('node:path'), assert=require('node:assert/strict');
-const { monthlyMix }=require('../public/glv-meta-ads/promo-format.js');
+const { promoMix }=require('../public/glv-meta-ads/promo-format.js');
 const root=path.resolve(__dirname,'../public');
 const out=process.env.PROMO_FORMAT_QA_DIR||'/tmp/glv-promo-creative-browser';fs.mkdirSync(out,{recursive:true});
 const fact=(id,date,format,spend,purchases)=>({ad_id:id,ad_name:id==='unknown'?'<img src=x onerror=window.__formatXss=1>':id,adset_id:'s-'+id,adset_name:format==='Unknown'?'EGC':format,campaign_id:'c1',campaign_name:'TUC_008_CZSK_Sales_Promo',date,format,reason:format==='Unknown'?'no_approved_mapping':'current_adset_label',spend,purchases,revenue:purchases*100,impressions:spend*10});
 const fixture={schema_version:1,classification_version:2,reconciled:true,generated_at:new Date().toISOString(),range:{since:'2026-03-01',until:'2026-09-20'},rows:[fact('a','2026-03-10','Banner',300,1),fact('b','2026-03-10','Video',100,3),fact('a','2026-09-15','Banner',90,4),fact('b','2026-09-15','Video',10,1),fact('carry','2026-09-16','Video',0,1),fact('unknown','2026-09-17','Unknown',0,2)]};
+// Synthetic date-window facts: no client performance is embedded.
+fixture.range.until='2026-11-04';
+for(const date of ['2026-04-20','2026-05-13','2026-07-21','2026-06-15','2026-06-18','2026-08-18','2026-08-20','2026-10-07','2026-10-14','2026-10-28','2026-10-31','2026-11-01','2026-11-04']) fixture.rows.push(fact('event-'+date,date,date.endsWith('01')?'Banner':'Video',50,2));
 const real=process.env.PROMO_FORMAT_LIVE_FIXTURE ? JSON.parse(fs.readFileSync(process.env.PROMO_FORMAT_LIVE_FIXTURE,'utf8')) : null;
 const {parseCreative}=require('../lib/glv-promo-assets.cjs');
 fixture.inventory_version=2;
@@ -32,7 +35,7 @@ const server=http.createServer((req,res)=>{
  const browser=await chromium.launch({executablePath:'/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome',headless:true,args:['--no-sandbox'],env:{...process.env,LD_LIBRARY_PATH:`${libs}/usr/lib/x86_64-linux-gnu:${libs}/usr/lib`,FONTCONFIG_PATH:`${libs}/etc/fonts`}});
  const errors=[],results=[];let sectionCases=0;
  try {
-  for(const width of [1440,1001,1000,800,721,720,390,320]){
+  for(const width of (process.env.PROMO_FORMAT_QA_WIDTHS ? process.env.PROMO_FORMAT_QA_WIDTHS.split(',').map(Number) : [1440,1001,1000,800,721,720,390,320])){
    const page=await browser.newPage({viewport:{width,height:1100},reducedMotion:'reduce',hasTouch:width<=720});
    page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
    await page.route('https://api.frankfurter.dev/**',r=>r.fulfill({json:{rates:{USD:0.044}}}));
@@ -46,9 +49,11 @@ const server=http.createServer((req,res)=>{
    assert.equal(await page.locator('#panel-czsk-promo #promo-format-section').count(),0);
    assert.equal(await page.locator('.tab-btn').count(),6);
    await page.locator('[data-tab="czsk-promo-creative"]').click();
-   const expected=monthlyMix(payload.rows);
+   const expected=promoMix(payload.rows);
    assert.equal(await page.locator('#promo-format-table tbody tr').count(),expected.reduce((n,m)=>n+3+(m.formats.Unknown.ads?1:0),0));
    const state=await page.evaluate(()=>({labels:charts['promo-format-spend'].data.labels,spend:charts['promo-format-spend'].data.datasets.map(d=>({label:d.label,data:d.data})),purchases:charts['promo-format-purchases'].data.datasets.map(d=>({label:d.label,data:d.data})),overflow:document.documentElement.scrollWidth>innerWidth+1,instances:Object.keys(Chart.instances).length,sticky:getComputedStyle(document.querySelector('#promo-format-table thead th')).position}));
+   assert.deepEqual(state.labels,expected.map(g=>g.label));
+   if(!real){assert.equal(state.labels.filter(label=>label==='Oct/Nov VB2').length,1);assert.ok(!state.labels.includes('BFCM'));assert.ok(!state.labels.includes('Nov 2026'));}
    assert.equal(state.overflow,false);assert.equal(state.sticky,'sticky');
    for(const d of state.spend)assert.deepEqual(d.data,expected.map(m=>m.formats[d.label].spendShare));
    for(const d of state.purchases)assert.deepEqual(d.data,expected.map(m=>m.formats[d.label].purchaseShare));
@@ -62,7 +67,7 @@ const server=http.createServer((req,res)=>{
    const pct=n=>n===null?'—':n.toFixed(1)+'%';
    for(const month of expected){
     const entries=[['Total',month.total],...Object.entries(month.formats).filter(([name,data])=>name!=='Unknown'||data.ads)];
-    for(const [format,data] of entries){const row=table[rowIndex++];assert.equal(row[1],format);assert.equal(row[2],data.assets===null?'—':String(data.assets)+(data.asset_status==='partial'?' known':''));assert.equal(row[4],pct(data.spendShare));assert.equal(row[6],pct(data.purchaseShare));}
+    for(const [format,data] of entries){const row=table[rowIndex++];assert.equal(row[0],month.label);assert.equal(row[1],format);assert.equal(row[2],data.assets===null?'—':String(data.assets)+(data.asset_status==='partial'?' known':''));assert.equal(row[4],pct(data.spendShare));assert.equal(row[6],pct(data.purchaseShare));}
    }
    assert.equal(await page.evaluate(()=>window.__formatXss),undefined);
    assert.equal(await page.locator('#promo-format-unknown img').count(),0);
@@ -148,11 +153,27 @@ const server=http.createServer((req,res)=>{
    await page.evaluate(()=>loadData());
    assert.equal(await page.evaluate(()=>JSON.stringify(charts['promo-format-spend'].data)),baseline,'other tab dates/filters/grain cannot change creative history');
    if(!real){
-    payload={...fixture,range:{since:'2026-03-01',until:'2026-10-02'},rows:[...fixture.rows,fact('next','2026-10-01','Video',100,2)]};
+    payload={...fixture,range:{since:'2026-03-01',until:'2026-11-05'},rows:[...fixture.rows,fact('next','2026-10-01','Video',100,2)]};
     await page.evaluate(()=>promoFormatHistory());
-    assert.equal(await page.evaluate(()=>charts['promo-format-spend'].data.labels.at(-1)),'Oct 2026');
-    assert.match(await page.locator('#promo-format-range').textContent(),/2026-10-02/);
+    assert.ok(await page.evaluate(()=>charts['promo-format-spend'].data.labels.includes('Oct 2026')));
+    assert.match(await page.locator('#promo-format-range').textContent(),/2026-11-05/);
+    // New ordinary November facts remain monthly; no future event is inferred.
+    payload={...fixture,range:{since:'2026-03-01',until:'2026-11-22'},rows:[...fixture.rows,fact('nov-new','2026-11-20','Banner',80,3),fact('nov-residual','2026-11-05','Video',20,1)]};
+    await page.evaluate(()=>promoFormatHistory());
+    const labels=await page.evaluate(()=>charts['promo-format-spend'].data.labels);
+    assert.deepEqual(labels.slice(-2),['Oct/Nov VB2','Nov 2026']);
+    const ticks=await page.evaluate(()=>charts['promo-format-spend'].scales.x.ticks.map(t=>t.label));
+    assert.ok(ticks.includes('Oct/Nov VB2')&&ticks.includes('Nov 2026'),'period slots must remain labeled at every width');
+    assert.equal(await page.locator('#promo-format-table tbody tr.subtotal-row').filter({hasText:'Nov 2026'}).count(),1);
+    for(const theme of ['dark','light']){
+      await page.evaluate(t=>setTheme(t),theme);
+      await page.waitForTimeout(500);
+      await page.evaluate(()=>{for(const key of PROMO_FORMAT_CHART_KEYS){charts[key]?.stop();charts[key]?.update('none');}});
+      assert.ok(await page.evaluate(()=>charts['promo-format-spend'].getDatasetMeta(0).data.some(bar=>Math.abs(bar.base-bar.y)>1)),'rendered bars exist after theme change');
+      await page.locator('#promo-format-section').screenshot({path:`${out}/${width}-${theme}-november-arrival.png`,style:'.sticky-header,.skip-link{visibility:hidden!important}'});
+    }
     payload=fixture;await page.evaluate(()=>promoFormatHistory());
+    assert.ok(!await page.evaluate(()=>charts['promo-format-spend'].data.labels.includes('BFCM')));
    }
    if(!real){
     payload={...fixture,rows:fixture.rows.filter(row=>row.format!=='Unknown')};
@@ -194,9 +215,9 @@ const server=http.createServer((req,res)=>{
    await page.waitForFunction(()=>Boolean(promoFormatPayload && charts['promo-format-spend']));
    for(const grain of ['week','month','day']){
     await page.evaluate(grain=>setTabGrain('czsk-promo',grain),grain);
-    assert.equal(await page.evaluate(()=>charts['promo-format-spend'].data.labels.length),expected.length,'format view remains monthly');
+    assert.equal(await page.evaluate(()=>charts['promo-format-spend'].data.labels.length),expected.length,'format view remains event-grouped');
    }
-   results.push({width,pass:true,months:expected.length});await page.close();
+   results.push({width,pass:true,periods:expected.length});await page.close();
   }
   assert.deepEqual(errors,[]);fs.writeFileSync(`${out}/results.json`,JSON.stringify({results,errors,sectionCases,themes:['dark','light']},null,2));console.log(JSON.stringify({results,errors,sectionCases,evidence:out}));
  } finally {await browser.close();server.close();}
