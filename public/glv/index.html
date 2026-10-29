@@ -15,7 +15,7 @@
   <script src="/glv/phases.js?v=phase-controls-20261029" defer></script>
   <script src="/glv/promo-comparison.js?v=promo-compact-contrast-20261029" defer></script>
   <script src="/glv/promo-comparison-ui.js?v=phase-controls-20261029" defer></script>
-  <link rel="stylesheet" href="/glv/promo-comparison.css?v=phase-controls-20261029" />
+  <link rel="stylesheet" href="/glv/promo-comparison.css?v=phase-scope-20261029" />
   <script src="/glv/app.js?v=phase-controls-20261029" defer></script>
   <link rel="stylesheet" href="/glv/section-info.css?v=section-info-20260920-stack-3" />
   <script src="/glv/section-info.js?v=promo-compact-contrast-20261029" defer></script>
@@ -280,11 +280,15 @@
             <p id="phaseRange" class="range-label">Year to date · loading</p>
           </div>
         </section>
-        <section id="phaseControls" class="panel phase-controls" aria-label="Phase controls">
+        <div id="phaseControls" class="phase-controls" role="group" aria-label="Phase controls">
           <div id="phaseMode" class="phase-mode" role="group" aria-label="Phase grouping"><button type="button" data-phase-mode="month" aria-pressed="true">By month</button><button type="button" data-phase-mode="promo" aria-pressed="false">By promo</button></div>
-          <div class="phase-controls-grid">
-            <div class="field"><span>Phase filter</span><div id="phaseFilter" class="phase-multiselect"></div></div>
-            <label class="comparison-control phase-split-control" for="phaseInfluSplit"><input id="phaseInfluSplit" type="checkbox" /><span class="switch" aria-hidden="true"></span><span>Split Influ code / no code</span></label>
+          <div id="phaseFilter" class="phase-multiselect"></div>
+          <label class="comparison-control phase-split-control" for="phaseInfluSplit"><input id="phaseInfluSplit" type="checkbox" /><span class="switch" aria-hidden="true"></span><span>Split Influ code / no code</span></label>
+        </div>
+
+        <section class="panel phase-chart-panel" aria-labelledby="phaseChartTitle">
+          <div class="panel-heading phase-panel-heading">
+            <div><span class="eyebrow">Monthly YTD</span><span class="section-title" id="phaseChartTitle">Performance by phase</span><span class="panel-subtitle">One line per phase · through latest loaded working day</span></div>
             <label class="field field-compact phase-metric-field"><span>Phase chart metric</span><select id="phaseMetric">
               <option value="none">None</option>
               <option value="revenue" selected>Revenue</option>
@@ -299,18 +303,6 @@
               <option value="aov">AOV</option>
               <option value="new_customer_rate">New customer rate</option>
             </select></label>
-
-              <label class="field field-compact"><span>Hierarchy</span><select id="phaseHierarchy"><option value="month-phase" selected>Month → phase → days</option><option value="phase-month">Phase → month → days</option></select></label>
-              <div id="phaseMonths" class="phase-multiselect"></div>
-              <div class="field"><span>Promo table filter</span><div id="phaseEvents" class="phase-multiselect"></div></div>
-
-            <div class="promo-controls"><span class="phase-control-scope">Promo comparison</span><div id="promoMonths" class="phase-multiselect"></div><label class="field field-compact"><span>Comparison metric</span><select id="promoMetric" aria-label="Promo comparison metric"></select></label></div>
-          </div>
-        </section>
-
-        <section class="panel phase-chart-panel" aria-labelledby="phaseChartTitle">
-          <div class="panel-heading phase-panel-heading">
-            <div><span class="eyebrow">Monthly YTD</span><span class="section-title" id="phaseChartTitle">Performance by phase</span><span class="panel-subtitle">One line per phase · through latest loaded working day</span></div>
           </div>
           <div class="phase-chart-wrap"><canvas id="phaseChart" role="img" aria-label="Monthly year-to-date performance by BAU, Promo and Influ" aria-describedby="phaseChartData"></canvas></div>
           <p id="phaseSplitNotice" class="historical-scope-note" role="status" hidden>Code/no-code is available for Revenue and Avg daily revenue only. This chart shows Influ total; no cost, order or customer attribution is inferred.</p>
@@ -320,6 +312,9 @@
         <section class="panel phase-table-panel" aria-labelledby="phaseTableTitle">
           <div class="panel-heading phase-table-heading">
             <div><span class="eyebrow">Expandable audit trail</span><span class="section-title" id="phaseTableTitle">Phase detail</span><span id="phaseTableSubtitle" class="panel-subtitle">Month → phase → days</span></div>
+            <div class="phase-table-controls"><label class="field field-compact"><span>Hierarchy</span><select id="phaseHierarchy"><option value="month-phase" selected>Month → phase → days</option><option value="phase-month">Phase → month → days</option></select></label>
+              <div id="phaseMonths" class="phase-multiselect"></div>
+              <div class="field"><span>Promo table filter</span><div id="phaseEvents" class="phase-multiselect"></div></div></div>
           </div>
           <p class="historical-scope-note" role="note">NC ROAS = NC revenue / existing Spend (ad spend), using matching available rows and positive total spend. RC revenue = revenue − NC revenue only where both inputs exist; negative source discrepancies are preserved. Partial inputs report the available subset, not the whole period; 2025 NC is unavailable. Code/no-code has no attributed NC or cost; both new metrics remain unavailable. Share uses full-month CZSK revenue before phase filtering; cross-month code groups use full selected months. Avg daily revenue divides revenue by distinct represented phase dates, including zero-revenue days; cross-month totals use all eligible days. Code/no-code rows expose Revenue, Avg daily revenue and Share, using the same Influ days.</p>
           <p class="table-scroll-hint">Swipe horizontally to inspect every metric →</p>
@@ -332,6 +327,7 @@
         <section id="promoComparison" class="panel phase-chart-panel" aria-labelledby="promoTitle">
           <div class="panel-heading phase-panel-heading">
             <div><span class="eyebrow">CZSK · Promo only</span><span class="section-title" id="promoTitle">Promo comparison</span><span class="panel-subtitle">Daily values by Promo day · not cumulative</span></div>
+            <div class="promo-controls"><div id="promoMonths" class="phase-multiselect"></div><label class="field field-compact"><span>Comparison metric</span><select id="promoMetric" aria-label="Promo comparison metric"></select></label></div>
           </div>
           <p class="historical-scope-note">By month: represented Promo dates concatenate within each month. By promo: Day 1 is the event start; missing actual dates stay gaps and future dates are not padded. Full event ranges are independent of month and table filters.</p>
           <p id="promoEmpty" class="historical-scope-note" role="status" hidden></p>

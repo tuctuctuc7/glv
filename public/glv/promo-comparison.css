@@ -3,41 +3,29 @@
 .phase-mode button[aria-pressed="true"] { background: var(--border); color: var(--text-primary); font-weight: 600; }
 .phase-mode button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .phase-global-controls[hidden], .phase-chart-panel[hidden], .phase-multiselect[hidden], .phase-table-controls label[hidden] { display: none !important; }
-/* One stable Home-style panel; disabled controls retain their layout/state. */
-.phase-controls { padding: 20px; overflow: visible; }
-.phase-controls > .phase-mode { width: 240px; display: grid; grid-template-columns: 1fr 1fr; }
-.phase-controls-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: end; margin-top: 16px; }
-.phase-controls-grid > *, .phase-controls .field { min-width: 0; width: 100%; }
-.phase-controls .phase-menu-trigger { width: 100%; max-width: none !important; text-align: left; min-height: 44px; }
-.phase-controls .promo-controls { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; }
-.phase-control-scope { font-size: 13px; color: var(--text-secondary); align-self: center; }
-.phase-controls [aria-disabled="true"] { opacity: .45; }
-.phase-controls :disabled, .phase-controls [aria-disabled="true"] { cursor: not-allowed; }
-.phase-controls .phase-menu-options { left: 0; right: auto; max-width: min(380px, calc(100vw - 80px)); }
-.phase-controls .phase-menu-options label { font: 400 12px/1.5 var(--font-sans); text-transform: none; letter-spacing: normal; }
-@media (max-width: 720px) {
-  .phase-controls { padding: 16px; }
-  .phase-controls > .phase-mode { width: 100%; }
-  .phase-controls-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-  .phase-controls .promo-controls { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-}
-/* Legacy table heading selectors no longer match controls in the panel. */
-.phase-table-heading:has(#phaseEvents:not([hidden])) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 8px; }
-.phase-table-heading:has(#phaseEvents:not([hidden])) > div:first-child { display: contents; }
-.phase-table-heading:has(#phaseEvents:not([hidden])) .eyebrow { grid-column: 1 / -1; grid-row: 1; }
-.phase-table-heading:has(#phaseEvents:not([hidden])) .section-info-title { grid-column: 1; grid-row: 2; margin: 0; }
-.phase-table-heading:has(#phaseEvents:not([hidden])) .phase-table-controls { grid-column: 2; grid-row: 2; display: block; width: auto; }
-.phase-table-heading:has(#phaseEvents:not([hidden])) .panel-subtitle { grid-column: 1 / -1; grid-row: 3; margin-top: 0; }
-#phaseEvents .phase-menu-trigger { max-width: 128px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* This control is on the right, unlike the left-column comparison filter. */
+/* Only shared Phases controls belong in this unboxed utility strip. */
+.phase-controls { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.phase-controls > .phase-mode { flex: 0 0 240px; display: grid; grid-template-columns: 1fr 1fr; }
+.phase-controls .phase-split-control { margin-left: auto; }
+.phases-view [aria-disabled="true"] { opacity: .45; }
+.phases-view :disabled, .phases-view [aria-disabled="true"] { cursor: not-allowed; }
+#phaseFilter .phase-menu-options, #phaseMonths .phase-menu-options { left: 0; right: auto; }
+.phase-table-heading { flex-wrap: wrap; gap: 12px; }
+.phase-table-controls .field { min-width: 0; }
+.phase-table-controls select { max-width: 100%; }
+#phaseEvents .phase-menu-trigger { white-space: nowrap; }
 #phaseEvents .phase-menu-options { left: auto; right: 0; width: 380px; max-width: calc(100vw - 64px); }
 #phaseEvents .phase-menu-options input { flex-shrink: 0; }
 @media (max-width: 720px) {
-  .phase-mode { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; align-self: stretch; padding: 0; gap: 0; border-radius: 8px; overflow: hidden; }
+  .phase-controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .phase-controls > .phase-mode { width: 100%; }
+  .phase-controls .phase-split-control { margin-left: 0; }
+  .phase-mode { padding: 0; gap: 0; border-radius: 8px; overflow: hidden; }
   .phase-mode button { border-radius: 0; }
   .phase-mode button:focus-visible { outline-offset: -3px; }
-  .phase-table-heading:has(#phaseEvents:not([hidden])) #phaseTableTitle { font-size: clamp(16px, 4.6vw, 20px); white-space: nowrap; }
-  #phaseEvents .phase-menu-trigger { max-width: 116px; }
+  .phase-controls .phase-menu-trigger { width: 100%; text-align: left; }
+  .phase-table-controls > .field:first-child { grid-column: 1 / -1; }
+  .phase-table-controls .phase-menu-trigger { text-align: left; }
 }
 #phaseEvents .phase-menu-options label, #promoMonths .phase-menu-options label { white-space: normal; }
 
