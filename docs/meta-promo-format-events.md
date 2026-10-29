@@ -8,7 +8,7 @@ facts from March 2026 through the latest completed day. Current CZSK `_Promo`
 campaign eligibility, format classification, attribution, inventory revisions,
 cache freshness and the scheduled refresh remain unchanged.
 
-`promoFormatRows` → `PromoFormat.promoMix` → both stacked share charts and the
+`promoFormatRows` → `PromoFormat.promoMix` → delivery-positive display filter → both stacked share charts and the
 accessible totals/format table. There are no Format Mix date/campaign/grain
 filters or CSV export in this route. Global and other-tab filters remain
 independent; the Concept Evaluation table retains its campaign selection and
@@ -34,9 +34,13 @@ retain their reporting date and are never reassigned to an inferred launch.
   display names from the business dashboard; no campaign identity is inferred.
 - Out-of-window rows remain in their reporting month. A residual `Oct 2026`
   or `Nov 2026` slot excludes every row assigned to a named event; it is not a
-  repeated month total. Removing it would lose carryover/out-of-window metrics.
+  repeated month total. Raw aggregation retains these metrics, but the display
+  includes a period only when total spend or impressions is positive.
 - Empty/zero-only periods are not generated. Actual carryover-only outcomes are
-  retained. Windows are explicitly 2026, not a recurring annual schedule.
+  retained in raw aggregation. Both charts and the table omit no-delivery
+  periods, including Private stages and residual months, without reassignment.
+  Delivery-positive periods retain all their carryover. The section information
+  discloses the filter. Windows are explicitly 2026, not a recurring annual schedule.
 - Ratios derive from summed inputs; Unknown stays in denominators. Assets are
   the unique configured-source union across the entire event's delivery-positive
   rows, including both months, not the sum of monthly unique counts. Existing
@@ -55,6 +59,8 @@ performance was fetched or committed.
 ## Verification
 
 - `node --test tests/meta-format-events.test.cjs`
+- `node qa/promo-labels.cjs` (draw count/content, geometry, scroll-end capture)
+- `PROMO_LABEL_EDGE_CASES=1 node qa/promo-labels.cjs` (6% threshold, 100%, null denominator, impressions-only delivery)
 - `npm test`
 - `PROMO_FORMAT_QA_DIR=/tmp/glv-format-event-browser node qa/promo-creative-tab.cjs`
 - Optional focused widths: `PROMO_FORMAT_QA_WIDTHS=1440,390,320`.
@@ -64,5 +70,13 @@ Browser fixtures are synthetic. QA covers both themes, independent history
 refresh, unrelated-tab filters, schema failures/recovery, chart/table parity,
 October/November boundaries, all historical stages, ordinary November data
 arrival, absence of speculative BFCM slots, and narrow-screen event labels. Dependencies are cache-busted
-with `promo-events-20261029`. No backend refresh or deployment is required for
+with `promo-labels-20261029` for the display assets. Labels >=6% are drawn
+directly in both stacks; smaller shares remain in tooltips/table. Category width
+and an internal keyboard-focusable scroller prevent the text-width culling that
+previously suppressed labels (36px bars versus 39px text plus padding in Chromium).
+The 18px height guard also suppressed meaningful small shares; 280px plots keep
+6% labels readable without distorting bar values. QA intercepts real canvas
+fillText calls after theme changes, not just dataset values. Private fixture replay
+uses PROMO_FORMAT_LIVE_FIXTURE; never commit those facts or screenshots.
+No backend refresh or deployment is required for
 local verification; production authentication remains enforced.

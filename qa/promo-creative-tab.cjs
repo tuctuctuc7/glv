@@ -49,7 +49,7 @@ const server=http.createServer((req,res)=>{
    assert.equal(await page.locator('#panel-czsk-promo #promo-format-section').count(),0);
    assert.equal(await page.locator('.tab-btn').count(),6);
    await page.locator('[data-tab="czsk-promo-creative"]').click();
-   const expected=promoMix(payload.rows);
+   const expected=promoMix(payload.rows).filter(p=>p.total.spend>0||p.total.impressions>0);
    assert.equal(await page.locator('#promo-format-table tbody tr').count(),expected.reduce((n,m)=>n+3+(m.formats.Unknown.ads?1:0),0));
    const state=await page.evaluate(()=>({labels:charts['promo-format-spend'].data.labels,spend:charts['promo-format-spend'].data.datasets.map(d=>({label:d.label,data:d.data})),purchases:charts['promo-format-purchases'].data.datasets.map(d=>({label:d.label,data:d.data})),overflow:document.documentElement.scrollWidth>innerWidth+1,instances:Object.keys(Chart.instances).length,sticky:getComputedStyle(document.querySelector('#promo-format-table thead th')).position}));
    assert.deepEqual(state.labels,expected.map(g=>g.label));
