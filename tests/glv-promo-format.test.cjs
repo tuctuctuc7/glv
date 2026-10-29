@@ -111,7 +111,7 @@ test('authenticated shared data handler serves versioned format cache; cron adds
     assert.equal(body.generated_at,cached.generated_at);assert.equal(body.rows[0].spend,cached.rows[0].spend);
     const response={setHeader:(k,v)=>headers[k]=v,status:n=>{status=n;return {json:v=>body=v};},json:v=>body=v};
     await handler({method:'GET',query:{type:'promo_concepts',time_range:JSON.stringify(range)}},response);
-    assert.equal(headers['X-Cache'],'MISS');assert.equal(status,502,'legacy facts cannot fabricate zero funnel inputs');
+    assert.equal(headers['X-Cache'],'MISS');assert.equal(status,503,'legacy facts cannot fabricate zero funnel inputs');
     cached.funnel_version=1;for(const row of cached.rows)Object.assign(row,{link_clicks:12,landing_page_views:8,checkouts:3});
     status=200;
     await handler({method:'GET',query:{type:'promo_concepts',time_range:JSON.stringify(range)}},response);
@@ -186,7 +186,7 @@ test('cron starts its bounded history refresh before the sequential presets', as
   global.fetch=async(url,options={})=>{
     if(String(url).startsWith('https://redis.test')){
       const command=JSON.parse(options.body);
-      if(command[0]==='GET') return {ok:true,json:async()=>({result:storedHistory})};
+      if(command[0]==='GET') {historyStarted=true;return {ok:true,json:async()=>({result:storedHistory})};}
       if(command[1]==='glv:promo_formats:history:v1') {historyWritten=true;storedHistory=command[2];}
       return {ok:true,json:async()=>({result:'OK'})};
     }
@@ -221,7 +221,7 @@ test('partial Meta responses, paging faults, and reconciliation errors fail clos
   await assert.rejects(()=>run(values),/Incomplete Promo pagination/);
   values=responses();values[2].data.push({...values[2].data[0]});
   await assert.rejects(()=>run(values),/Duplicate Promo ad date/);
-  await assert.rejects(()=>api().fetchPromoFormats('private-test-token',range,async()=>{throw Error('https://provider.test/?access_token=private-test-token');}),error=>error.message==='Promo Meta network request failed');
+  await assert.rejects(()=>api().fetchPromoFormats('private-test-token',range,async()=>{throw Error('https://provider.test/?access_token=private-test-token');}),error=>error.message==='Promo Meta network request failed (campaign insights)');
 });
 
 test('provider configuration packages both shared dependencies and allows bounded history requests', () => {

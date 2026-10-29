@@ -316,9 +316,9 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 <link rel="stylesheet" href="/glv-meta-ads/promo-format.css?v=promo-creative-20260921">
 <script src="/glv-meta-ads/promo-format.js?v=promo-events-20261029"></script>
 <script src="/glv-meta-ads/promo-concepts.js?v=concept-total-20261014"></script>
-<script src="/glv-meta-ads/promo-concepts-ui.js?v=concept-total-20261014"></script>
+<script src="/glv-meta-ads/promo-concepts-ui.js?v=history-cache-20261029"></script>
 <link rel="stylesheet" href="/glv-meta-ads/promo-concepts.css?v=concept-total-color-20261014">
-<script src="/glv-meta-ads/promo-format-ui.js?v=promo-events-20261029"></script>
+<script src="/glv-meta-ads/promo-format-ui.js?v=history-cache-20261029"></script>
 <script src="/glv-meta-ads/session-cache.js?v=meta-cache-20260922"></script>
 <link rel="stylesheet" href="/glv-meta-ads/section-info.css?v=promo-creative-20260921">
 </head>
@@ -2043,19 +2043,29 @@ async function fetchUsdRate(){
     }finally{clearTimeout(timer);}
   });
 }
+function promoHistoryWarning(payload,error=''){
+  const aged=Date.now()-Date.parse(payload.generated_at)>25*3600000;
+  const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  if(!error&&!aged&&payload.range.until>=yesterday&&payload.freshness?.status!=='stale')return '';
+  return `Last-good data · generated ${payload.generated_at} · coverage ${payload.range.since} → ${payload.range.until}. ${error?'Refresh failed: '+error:'Scheduled refresh pending.'}`;
+}
 async function apiFetch(type,scope=requestScope()){
-  const qs=new URLSearchParams({type});
+  // Both sections consume the same reconciled history and in-flight request.
+  const qs=new URLSearchParams({type:type==='promo_concepts'?'promo_formats':type});
   if(type==='promo_formats'||type==='promo_concepts')qs.set('date_preset','promo_history');
   else if(scope.customRange)qs.set('time_range',JSON.stringify(scope.customRange));
   else qs.set('date_preset',scope.datePreset);
   // URL is the exact type + range/preset scope; history never inherits tab dates.
   const url=`/api/glv-meta-ads/fb-data?${qs}`;
-  return responseCache.get(url,async()=>{
+  const result=await responseCache.get(url,async()=>{
     const r=await fetch(url,{cache:'no-store'});const json=await r.json();
     if(!r.ok)throw new Error(json.error||`HTTP ${r.status}`);
-    if(type==='promo_concepts'?!PromoFormat.validConceptPayload(json):type==='promo_formats'?!PromoFormat.validPayload(json):!Array.isArray(json.rows))throw new Error('Refresh required: data schema unavailable');
+    if(type==='promo_concepts'||type==='promo_formats'){if(!PromoFormat.validPayload(json))throw new Error('Refresh required: data schema unavailable');}
+    else if(!Array.isArray(json.rows))throw new Error('Refresh required: data schema unavailable');
     return json;
   });
+  if(type==='promo_concepts'&&!PromoFormat.validConceptPayload(result))throw new Error('Refresh required: concept schema unavailable');
+  return result;
 }
 function setStatus(msg){const el=document.getElementById('loading-msg');if(el)el.textContent=msg;}
 let loadSequence=0,renderedScope='',sourceErrors={},requestedDay='';

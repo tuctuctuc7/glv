@@ -38,7 +38,7 @@ test('cron inventory publication reads back exact revision and content before su
         if(url==='https://redis.test') {
           const command=JSON.parse(options.body);
           if(command[0]==='SET'){written=command[2];data={result:'OK'};}
-          else {assert.equal(command[0],'GET');read=true;data={result:stale?JSON.stringify({...JSON.parse(written),inventory_version:1}):written};}
+          else {assert.equal(command[0],'GET');read=Boolean(written);data={result:written?(stale?JSON.stringify({...JSON.parse(written),inventory_version:1}):written):null};}
         }
         return {ok:true,json:async()=>data};
       };

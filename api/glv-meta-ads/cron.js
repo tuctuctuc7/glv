@@ -1,7 +1,7 @@
 // GLV Meta Ads daily cron — runs at 00:00 UTC (07:00 GMT+7)
 // Scheduled runs end yesterday; authorized manual runs may include today's partial data.
 
-const { fetchPromoFormats, formatRange, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
+const { fetchPromoFormats, formatRange, sliceCachedFormats, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
 const { validPayload } = require('../../public/glv-meta-ads/promo-format.js');
 const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
@@ -256,10 +256,22 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
 
 async function refreshPromoFormatCache(token, includeToday = false, fetcher = boundedFetcher(Date.now() + 270000)) {
   const range = formatRange({date_preset:'promo_history',include_today:includeToday ? '1' : '0'});
+  // Migrate an existing last-good snapshot before a potentially failing pull.
+  // SET without EX only fixes expiry after a successful replacement.
+  const previous = await redisCommand(fetcher,'GET',CACHE_KEY);
+  let prior;
+  try { prior=JSON.parse(previous?.result); } catch {}
+  if (prior?.range && sliceCachedFormats(prior,prior.range,new Date(),{allowStale:true})) {
+    await redisCommand(fetcher,'PERSIST',CACHE_KEY);
+    const ttl=await redisCommand(fetcher,'TTL',CACHE_KEY);
+    if (ttl?.result !== -1) throw new Error('Promo last-good cache retention was not verified');
+  }
   const payload = await fetchPromoFormats(token,range,fetcher);
   if (!validPayload(payload)) throw new Error('Invalid Promo format refresh');
   const serialized = JSON.stringify(payload);
-  await redisCommand(fetcher, 'SET',CACHE_KEY,serialized,'EX',String(TTL));
+  // Keep the last reconciled history through producer outages. Freshness is
+  // explicit in the read API, not implemented by deleting the only good copy.
+  await redisCommand(fetcher, 'SET',CACHE_KEY,serialized);
   // Same deadline and exact key: SET acknowledgement alone is not activation.
   const readback = await redisCommand(fetcher, 'GET',CACHE_KEY);
   if (readback?.result !== serialized) throw new Error('Promo inventory cache readback mismatch');

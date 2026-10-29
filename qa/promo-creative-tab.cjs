@@ -188,11 +188,11 @@ const server=http.createServer((req,res)=>{
    const validFixture=payload;payload={...payload,classification_version:1};
    await page.evaluate(()=>promoFormatHistory());
    assert.match(await page.locator('#promo-format-status').textContent(),/schema unavailable/,'obsolete labels cannot enter browser cache');
-   assert.equal(await page.locator('#promo-format-table tbody tr').count(),0);
+   assert.ok(await page.locator('#promo-format-table tbody tr').count()>0,'invalid refresh retains last-good rows');
    payload={...validFixture,inventory_version:1};
    await page.evaluate(()=>promoFormatHistory());
    assert.match(await page.locator('#promo-format-status').textContent(),/schema unavailable/,'obsolete inventory cannot enter browser cache');
-   assert.equal(await page.locator('#promo-format-table tbody tr').count(),0);
+   assert.ok(await page.locator('#promo-format-table tbody tr').count()>0,'invalid refresh retains last-good rows');
    payload=validFixture;await page.evaluate(()=>promoFormatHistory());
    assert.equal(await page.evaluate(()=>promoFormatPayload.inventory_version),2,'inventory retry recovers immediately');
    assert.equal(await page.evaluate(()=>promoFormatPayload.classification_version),2,'valid retry recovers immediately');
@@ -200,8 +200,8 @@ const server=http.createServer((req,res)=>{
    await page.waitForFunction(()=>Boolean(promoFormatError));
    assert.match(await page.locator('#promo-format-status').textContent(),/unavailable/i);
    assert.equal(await page.locator('#promo-format-status').isVisible(),true);
-   assert.equal(await page.locator('#promo-format-table tbody tr').count(),0);
-   assert.equal(await page.evaluate(()=>Boolean(charts['promo-format-spend'])),false);
+   assert.ok(await page.locator('#promo-format-table tbody tr').count()>0,'invalid refresh retains last-good rows');
+   assert.equal(await page.evaluate(()=>Boolean(charts['promo-format-spend'])),true,'last-good chart remains visible');
    malformed=false;await page.evaluate(()=>loadData());
    await page.waitForFunction(()=>Boolean(promoFormatPayload && charts['promo-format-spend']));
    assert.equal(await page.evaluate(()=>Boolean(charts['promo-format-spend'])),true);

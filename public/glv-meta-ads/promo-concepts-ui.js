@@ -1,20 +1,20 @@
 /* Independent concept history: no global date/filter dependency. */
-let conceptPayload=null,conceptSequence=0,conceptSelection=null,conceptSort={key:null,direction:'desc'};
+let conceptPayload=null,conceptError='',conceptSequence=0,conceptSelection=null,conceptSort={key:null,direction:'desc'};
 try{const saved=JSON.parse(sessionStorage.getItem('glv-promo-concept-selection-v1'));if(Array.isArray(saved)&&saved.every(id=>typeof id==='string'))conceptSelection=saved;}catch{}
 const conceptColumns=[['spend','Spend · CZK'],['purchases','Purchases'],['roas','ROAS'],['revenue','Revenue · CZK'],['ctr','CTR'],['landing_page_views','LP Views'],['costLP','Cost / LP · CZK'],['lpCheckout','LP → Checkout'],['checkoutPurchase','Checkout → Purchase'],['cvr','CVR']];
 async function loadPromoConcepts(){
   const sequence=++conceptSequence;
-  try{const data=await apiFetch('promo_concepts');if(sequence!==conceptSequence)return;conceptPayload=data;conceptSelection=PromoConcepts.selection(data.rows,conceptSelection);renderPromoConcepts();}
-  catch(error){if(sequence!==conceptSequence)return;conceptPayload=null;renderPromoConcepts();document.getElementById('promo-concept-status').textContent=`Concept data unavailable — ${error.message}. Retry Refresh concepts.`;}
+  try{const data=await apiFetch('promo_concepts');if(sequence!==conceptSequence)return;if(!PromoFormat.validConceptPayload(data))throw new Error('Refresh required: concept schema unavailable');conceptPayload=data;conceptError='';conceptSelection=PromoConcepts.selection(data.rows,conceptSelection);renderPromoConcepts();}
+  catch(error){if(sequence!==conceptSequence)return;conceptError=error.message;renderPromoConcepts();}
 }
-function refreshPromoConceptHistory(){responseCache.invalidate('/api/glv-meta-ads/fb-data?type=promo_concepts&date_preset=promo_history');return loadPromoConcepts();}
+function refreshPromoConceptHistory(){responseCache.invalidate('/api/glv-meta-ads/fb-data?type=promo_formats&date_preset=promo_history');return loadPromoConcepts();}
 function chooseConceptCampaigns(ids){conceptSelection=ids;try{sessionStorage.setItem('glv-promo-concept-selection-v1',JSON.stringify(ids));}catch{}renderPromoConcepts();}
 function renderPromoConcepts(){
   const section=document.getElementById('promo-concept-section'),body=section.querySelector('tbody'),status=document.getElementById('promo-concept-status');body.replaceChildren();
   const head=section.querySelector('thead tr');
   head.innerHTML='<th scope="col">Concept</th>'+conceptColumns.map(([key,label])=>`<th scope="col" aria-sort="${conceptSort.key===key?(conceptSort.direction==='desc'?'descending':'ascending'):'none'}"><button type="button" data-sort="${key}">${label}</button></th>`).join('');
   head.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{conceptSort={key:b.dataset.sort,direction:conceptSort.key===b.dataset.sort&&conceptSort.direction==='desc'?'asc':'desc'};renderPromoConcepts();const target=section.querySelector(`[data-sort="${b.dataset.sort}"]`);target.focus({preventScroll:true});target.scrollIntoView({block:'nearest',inline:'nearest'});}));
-  if(!conceptPayload){status.textContent='Loading concept facts…';return;}
+  if(!conceptPayload){status.textContent=conceptError?`Concept data unavailable — ${conceptError}`:'Loading concept facts…';return;}
   const campaigns=PromoConcepts.campaigns(conceptPayload.rows),selected=conceptSelection||[];
   document.getElementById('promo-concept-range').textContent=`${conceptPayload.range.since} → ${conceptPayload.range.until} · Independent history · CZK`;
   const filter=document.getElementById('promo-concept-campaigns');
@@ -28,6 +28,9 @@ function renderPromoConcepts(){
   const missing=selected.filter(id=>!campaigns.some(c=>c.id===id)).length,warnings=rows.filter(r=>r.warning).length;
   status.textContent=!rows.length?(selected.length?'No activity for selected campaigns.':'No campaigns selected.'):`${rows.length} concepts · ${warnings?`${warnings} unmapped/conflicting full-name groups retained in totals.`:'Carryover purchases included.'}`;
   if(missing)status.textContent+=` ${missing} selected campaign IDs unavailable; selection retained.`;
+  const freshnessWarning=promoHistoryWarning(conceptPayload,conceptError);
+  if(freshnessWarning)status.textContent=freshnessWarning+' '+status.textContent;
+  status.classList.toggle('format-warning',Boolean(freshnessWarning));
   const percent=n=>n===null?'—':n.toFixed(2)+'%',number=n=>n===null?'—':n.toLocaleString('en-US',{maximumFractionDigits:2});
   const total=PromoConcepts.total(rows);
   for(const row of total?[total,...rows]:rows){const tr=document.createElement('tr');if(row===total)tr.className='subtotal-row';tr.innerHTML=(row===total?'<td><strong>Total</strong></td>':`<td title="${escapeHtml(row.campaign_name+' · '+row.campaign_id+(row.warning?' · '+row.warning:''))}" aria-label="${escapeHtml(row.label+' · '+row.campaign_name+' · '+row.campaign_id+(row.warning?' · '+row.warning:''))}"><strong>${escapeHtml(row.label)}</strong></td>`)+conceptColumns.map(([key])=>{let value=['ctr','lpCheckout','checkoutPurchase','cvr'].includes(key)?percent(row[key]):key==='roas'?(row[key]===null?'—':row[key].toFixed(2)+'x'):number(row[key]);if(key==='spend'||key==='purchases')value+=`<small>${percent(row[key==='spend'?'spendShare':'purchaseShare'])} share</small>`;return `<td>${value}</td>`;}).join('');body.append(tr);}

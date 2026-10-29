@@ -1,7 +1,7 @@
 // GLV Meta Ads Dashboard — FB Graph API proxy with Upstash Redis cache
 // Requires env vars: GLV_META_FB_ACCESS_TOKEN, KV_REST_API_URL, KV_REST_API_TOKEN
 
-const { fetchPromoFormats, formatRange, sliceCachedFormats, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
+const { formatRange, sliceCachedFormats, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
 const { validPayload, validConceptPayload } = require('../../public/glv-meta-ads/promo-format.js');
 const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
@@ -23,16 +23,26 @@ function resolveRedisConfig(env = process.env) {
 }
 
 async function redisGet(key) {
+  const controller = new AbortController();
+  let timer;
   try {
     const redis = resolveRedisConfig();
     if (!redis) return null;
-    const r = await fetch(`${redis.url}/get/${encodeURIComponent(key)}`, {
-      headers: { Authorization: `Bearer ${redis.token}` },
-    });
-    const { result } = await r.json();
-    return result ? JSON.parse(result) : null;
+    return await Promise.race([
+      new Promise(resolve=>{timer=setTimeout(()=>{controller.abort();resolve(null);},5000);}),
+      (async()=>{
+        const r = await fetch(`${redis.url}/get/${encodeURIComponent(key)}`, {
+          headers: { Authorization: `Bearer ${redis.token}` }, signal:controller.signal,
+        });
+        if(!r.ok)return null;
+        const { result } = await r.json();
+        return result ? JSON.parse(result) : null;
+      })(),
+    ]);
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -153,10 +163,13 @@ module.exports = async (req, res) => {
     try { range = formatRange(req.query); }
     catch { return res.status(400).json({error:'Invalid Promo date range or preset'}); }
     try {
-      let cached = sliceCachedFormats(await redisGet(CACHE_KEY), range);
+      let cached = sliceCachedFormats(await redisGet(CACHE_KEY), range, new Date(), {allowStale:true});
       if(type === 'promo_concepts' && !validConceptPayload(cached)) cached=null;
-      res.setHeader('X-Cache', cached ? 'HIT' : 'MISS');
-      const payload = cached || await fetchPromoFormats(token, range);
+      res.setHeader('X-Cache', cached ? (cached.freshness.status==='stale'?'STALE':'HIT') : 'MISS');
+      // Only the existing shared cron produces history. Page views must never
+      // multiply multi-minute Meta pulls when a refresh has failed.
+      if (!cached) return res.status(503).json({status:'unavailable',error:'Promo history cache unavailable. Awaiting the scheduled shared refresh; no live history rebuild was started.'});
+      const payload = cached;
       if (!cachedPayloadUsable(type,payload)) throw new Error('Invalid Promo data');
       return res.json(payload);
     } catch (error) {
