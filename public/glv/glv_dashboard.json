@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-29 01:10 UTC",
+  "updated_at": "2026-10-30 01:10 UTC",
   "source": {
     "tab": "Daily",
     "phase_calendar_sheet_id": "18oXDGQaE2p8E_G3PGHJwaYsl0CFM0eE9pVd-ju19edY",
@@ -10,7 +10,7 @@
   "currency": "USD",
   "date_range": {
     "start": "2026-01-01",
-    "end": "2026-10-28"
+    "end": "2026-10-29"
   },
   "absolute_metrics": [
     "spend",
@@ -32,7 +32,7 @@
   "phase_contract": {
     "scope": "czsk",
     "reporting_year": 2026,
-    "latest_date": "2026-10-28",
+    "latest_date": "2026-10-29",
     "calendar_authority": "Marketing Ops | Gelavis, Sheet1",
     "bau": "Every CZSK date in the reporting year not covered by Promo or Influ.",
     "overlap_rule": "Promo and Influ must not overlap.",
@@ -215,6 +215,210 @@
       "phase": "Promo",
       "label": "promo gummies",
       "source_row": 60
+    }
+  ],
+  "promo_events": [
+    {
+      "id": "promo:2026-01-06/2026-01-14",
+      "start_date": "2026-01-06",
+      "end_date": "2026-01-14",
+      "label": "January",
+      "sources": [
+        {
+          "start_date": "2026-01-06",
+          "end_date": "2026-01-14",
+          "phase": "Promo",
+          "label": "promo",
+          "source_row": 4
+        }
+      ]
+    },
+    {
+      "id": "promo:2026-02-06/2026-02-14",
+      "start_date": "2026-02-06",
+      "end_date": "2026-02-14",
+      "label": "February",
+      "sources": [
+        {
+          "start_date": "2026-02-06",
+          "end_date": "2026-02-14",
+          "phase": "Promo",
+          "label": "promo",
+          "source_row": 9
+        }
+      ]
+    },
+    {
+      "id": "promo:2026-03-23/2026-03-30",
+      "start_date": "2026-03-23",
+      "end_date": "2026-03-30",
+      "label": "March",
+      "sources": [
+        {
+          "start_date": "2026-03-23",
+          "end_date": "2026-03-30",
+          "phase": "Promo",
+          "label": "promo",
+          "source_row": 14
+        }
+      ]
+    },
+    {
+      "id": "promo:2026-04-20/2026-04-29",
+      "start_date": "2026-04-20",
+      "end_date": "2026-04-29",
+      "label": "April",
+      "sources": [
+        {
+          "start_date": "2026-04-20",
+          "end_date": "2026-04-29",
+          "phase": "Promo",
+          "label": "promo",
+          "source_row": 19
+        }
+      ]
+    },
+    {
+      "id": "promo:2026-05-13/2026-05-20",
+      "start_date": "2026-05-13",
+      "end_date": "2026-05-20",
+      "label": "May",
+      "sources": [
+        {
+          "start_date": "2026-05-13",
+          "end_date": "2026-05-20",
+          "phase": "Promo",
+          "label": "promo",
+          "source_row": 24
+        }
+      ]
+    },
+    {
+      "id": "promo:2026-06-15/2026-06-17",
+      "start_date": "2026-06-15",
+      "end_date": "2026-06-17",
+      "label": "June",
+      "sources": [
+        {
+          "start_date": "2026-06-15",
+          "end_date": "2026-06-17",
+          "phase": "Promo",
+          "label": "promo retention",
+          "source_row": 29
+        }
+      ]
+    },
+    {
+      "id": "promo:2026-06-18/2026-06-23",
+      "start_date": "2026-06-18",
+      "end_date": "2026-06-23",
+      "label": "June",
+      "sources": [
+        {
+          "start_date": "2026-06-18",
+          "end_date": "2026-06-23",
+          "phase": "Promo",
+          "label": "promo acquisition",
+          "source_row": 30
+        }
+      ]
+    },
+    {
+      "id": "promo:2026-07-21/2026-07-30",
+      "start_date": "2026-07-21",
+      "end_date": "2026-07-30",
+      "label": "July",
+      "sources": [
+        {
+          "start_date": "2026-07-21",
+          "end_date": "2026-07-30",
+          "phase": "Promo",
+          "label": "promo",
+          "source_row": 35
+        }
+      ]
+    },
+    {
+      "id": "promo:2026-08-18/2026-08-19",
+      "start_date": "2026-08-18",
+      "end_date": "2026-08-19",
+      "label": "August",
+      "sources": [
+        {
+          "start_date": "2026-08-18",
+          "end_date": "2026-08-19",
+          "phase": "Promo",
+          "label": "promo private",
+          "source_row": 40
+        }
+      ]
+    },
+    {
+      "id": "promo:2026-08-20/2026-08-26",
+      "start_date": "2026-08-20",
+      "end_date": "2026-08-26",
+      "label": "August",
+      "sources": [
+        {
+          "start_date": "2026-08-20",
+          "end_date": "2026-08-26",
+          "phase": "Promo",
+          "label": "promo public",
+          "source_row": 41
+        }
+      ]
+    },
+    {
+      "id": "promo:2026-09-14/2026-09-22",
+      "start_date": "2026-09-14",
+      "end_date": "2026-09-22",
+      "label": "September",
+      "sources": [
+        {
+          "start_date": "2026-09-14",
+          "end_date": "2026-09-22",
+          "phase": "Promo",
+          "label": "promo",
+          "source_row": 47
+        }
+      ]
+    },
+    {
+      "id": "promo:2026-10-07/2026-10-14",
+      "start_date": "2026-10-07",
+      "end_date": "2026-10-14",
+      "label": "Menopause",
+      "sources": [
+        {
+          "start_date": "2026-10-07",
+          "end_date": "2026-10-14",
+          "phase": "Promo",
+          "label": "promo menopauza10",
+          "source_row": 52
+        }
+      ]
+    },
+    {
+      "id": "promo:2026-10-28/2026-11-04",
+      "start_date": "2026-10-28",
+      "end_date": "2026-11-04",
+      "label": "VB2",
+      "sources": [
+        {
+          "start_date": "2026-10-28",
+          "end_date": "2026-11-04",
+          "phase": "Promo",
+          "label": "promo gummies",
+          "source_row": 53
+        },
+        {
+          "start_date": "2026-10-28",
+          "end_date": "2026-11-04",
+          "phase": "Promo",
+          "label": "promo gummies",
+          "source_row": 60
+        }
+      ]
     }
   ],
   "phase_campaigns": [
@@ -10857,13 +11061,13 @@
     {
       "date": "2026-10-23",
       "region": "czsk",
-      "revenue": 1793.0,
+      "revenue": 1790.0,
       "spend": 1579.0,
       "purchases": 14,
       "unique_visitors": 1736,
       "new_customers": 10,
       "returning_customers": 4,
-      "new_customer_revenue": 1437.0,
+      "new_customer_revenue": 1435.0,
       "influ_revenue": 280.0
     },
     {
@@ -10893,13 +11097,13 @@
     {
       "date": "2026-10-24",
       "region": "czsk",
-      "revenue": 1666.0,
+      "revenue": 1664.0,
       "spend": 1414.0,
       "purchases": 13,
       "unique_visitors": 1815,
       "new_customers": 9,
       "returning_customers": 4,
-      "new_customer_revenue": 1289.0,
+      "new_customer_revenue": 1287.0,
       "influ_revenue": 0.0
     },
     {
@@ -10929,13 +11133,13 @@
     {
       "date": "2026-10-25",
       "region": "czsk",
-      "revenue": 2518.0,
+      "revenue": 2514.0,
       "spend": 1534.0,
       "purchases": 21,
       "unique_visitors": 1742,
       "new_customers": 14,
       "returning_customers": 7,
-      "new_customer_revenue": 1806.0,
+      "new_customer_revenue": 1804.0,
       "influ_revenue": 140.0
     },
     {
@@ -10965,13 +11169,13 @@
     {
       "date": "2026-10-26",
       "region": "czsk",
-      "revenue": 1887.0,
+      "revenue": 1885.0,
       "spend": 1532.0,
       "purchases": 15,
       "unique_visitors": 1922,
       "new_customers": 12,
       "returning_customers": 3,
-      "new_customer_revenue": 1421.0,
+      "new_customer_revenue": 1419.0,
       "influ_revenue": 59.0
     },
     {
@@ -11001,13 +11205,13 @@
     {
       "date": "2026-10-27",
       "region": "czsk",
-      "revenue": 1402.0,
+      "revenue": 1400.0,
       "spend": 1460.0,
       "purchases": 13,
       "unique_visitors": 2134,
       "new_customers": 6,
       "returning_customers": 7,
-      "new_customer_revenue": 688.0,
+      "new_customer_revenue": 687.0,
       "influ_revenue": 0.0
     },
     {
@@ -11037,13 +11241,13 @@
     {
       "date": "2026-10-28",
       "region": "czsk",
-      "revenue": 22630.0,
+      "revenue": 22884.0,
       "spend": 8865.0,
-      "purchases": 167,
+      "purchases": 170,
       "unique_visitors": 5054,
       "new_customers": 36,
-      "returning_customers": 131,
-      "new_customer_revenue": 5490.0,
+      "returning_customers": 134,
+      "new_customer_revenue": 5483.0,
       "influ_revenue": 0.0
     },
     {
@@ -11067,6 +11271,42 @@
       "unique_visitors": 216,
       "new_customers": 3,
       "returning_customers": 1,
+      "new_customer_revenue": 414.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-10-29",
+      "region": "czsk",
+      "revenue": 16997.0,
+      "spend": 6489.0,
+      "purchases": 128,
+      "unique_visitors": 3850,
+      "new_customers": 51,
+      "returning_customers": 77,
+      "new_customer_revenue": 6192.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-10-29",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 219,
+      "new_customers": 0,
+      "returning_customers": 0,
+      "new_customer_revenue": 0.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-10-29",
+      "region": "us",
+      "revenue": 697.0,
+      "spend": 818.0,
+      "purchases": 6,
+      "unique_visitors": 301,
+      "new_customers": 4,
+      "returning_customers": 2,
       "new_customer_revenue": 414.0,
       "influ_revenue": 0.0
     }
