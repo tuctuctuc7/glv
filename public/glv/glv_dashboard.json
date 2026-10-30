@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-30 01:10 UTC",
+  "updated_at": "2026-10-30 17:15 UTC",
   "source": {
     "tab": "Daily",
     "phase_calendar_sheet_id": "18oXDGQaE2p8E_G3PGHJwaYsl0CFM0eE9pVd-ju19edY",
@@ -38,7 +38,9 @@
     "overlap_rule": "Promo and Influ must not overlap.",
     "influ_rule": "Named Influ campaigns qualify only for exact influ kristyna (case/diacritics insensitive). Only the frozen generic intervals Jan 15\u201319, Feb 19\u201322 and Mar 12\u201316, 2026 retain historical classification; new generic labels do not qualify and no creator identity is inferred.",
     "other_influ_rule": "Other Influ campaigns, including new generic labels, are provenance only: BAU unless covered by a qualifying Influ or Promo interval. Same-phase overlaps count each represented date once.",
-    "warnings": []
+    "warnings": [
+      "PHASE_FUTURE_INTERVAL_SKIPPED: calendar row 61 after current data coverage 2026-10-29: 18.-29./30. (PHASE_DATE_INVALID: calendar row 61 malformed interval 18.-29./30.)"
+    ]
   },
   "phases": [
     {
@@ -215,6 +217,13 @@
       "phase": "Promo",
       "label": "promo gummies",
       "source_row": 60
+    },
+    {
+      "start_date": "2026-10-28",
+      "end_date": "2026-11-04",
+      "phase": "Promo",
+      "label": "promo gummies",
+      "source_row": 66
     }
   ],
   "promo_events": [
@@ -417,6 +426,13 @@
           "phase": "Promo",
           "label": "promo gummies",
           "source_row": 60
+        },
+        {
+          "start_date": "2026-10-28",
+          "end_date": "2026-11-04",
+          "phase": "Promo",
+          "label": "promo gummies",
+          "source_row": 66
         }
       ]
     }
