@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-01 01:10 UTC",
+  "updated_at": "2026-11-02 01:10 UTC",
   "source": {
     "tab": "Daily",
     "phase_calendar_sheet_id": "18oXDGQaE2p8E_G3PGHJwaYsl0CFM0eE9pVd-ju19edY",
@@ -10,7 +10,7 @@
   "currency": "USD",
   "date_range": {
     "start": "2026-01-01",
-    "end": "2026-10-31"
+    "end": "2026-11-01"
   },
   "absolute_metrics": [
     "spend",
@@ -32,15 +32,13 @@
   "phase_contract": {
     "scope": "czsk",
     "reporting_year": 2026,
-    "latest_date": "2026-10-31",
+    "latest_date": "2026-11-01",
     "calendar_authority": "Marketing Ops | Gelavis, Sheet1",
     "bau": "Every CZSK date in the reporting year not covered by Promo or Influ.",
     "overlap_rule": "Promo and Influ must not overlap.",
     "influ_rule": "Named Influ campaigns qualify only for exact influ kristyna (case/diacritics insensitive). Only the frozen generic intervals Jan 15\u201319, Feb 19\u201322 and Mar 12\u201316, 2026 retain historical classification; new generic labels do not qualify and no creator identity is inferred.",
     "other_influ_rule": "Other Influ campaigns, including new generic labels, are provenance only: BAU unless covered by a qualifying Influ or Promo interval. Same-phase overlaps count each represented date once.",
-    "warnings": [
-      "PHASE_FUTURE_INTERVAL_SKIPPED: calendar row 61 after current data coverage 2026-10-31: 18.-29./30. (PHASE_DATE_INVALID: calendar row 61 malformed interval 18.-29./30.)"
-    ]
+    "warnings": []
   },
   "phases": [
     {
@@ -219,11 +217,11 @@
       "source_row": 60
     },
     {
-      "start_date": "2026-10-28",
-      "end_date": "2026-11-04",
+      "start_date": "2026-11-25",
+      "end_date": "2026-11-30",
       "phase": "Promo",
-      "label": "promo gummies",
-      "source_row": 66
+      "label": "promo bf",
+      "source_row": 61
     }
   ],
   "promo_events": [
@@ -426,13 +424,21 @@
           "phase": "Promo",
           "label": "promo gummies",
           "source_row": 60
-        },
+        }
+      ]
+    },
+    {
+      "id": "promo:2026-11-25/2026-11-30",
+      "start_date": "2026-11-25",
+      "end_date": "2026-11-30",
+      "label": "November",
+      "sources": [
         {
-          "start_date": "2026-10-28",
-          "end_date": "2026-11-04",
+          "start_date": "2026-11-25",
+          "end_date": "2026-11-30",
           "phase": "Promo",
-          "label": "promo gummies",
-          "source_row": 66
+          "label": "promo bf",
+          "source_row": 61
         }
       ]
     }
@@ -11365,13 +11371,13 @@
     {
       "date": "2026-10-31",
       "region": "czsk",
-      "revenue": 8185.0,
+      "revenue": 8341.0,
       "spend": 3487.0,
-      "purchases": 68,
+      "purchases": 69,
       "unique_visitors": 3133,
-      "new_customers": 30,
+      "new_customers": 31,
       "returning_customers": 38,
-      "new_customer_revenue": 3794.0,
+      "new_customer_revenue": 3949.0,
       "influ_revenue": 0.0
     },
     {
@@ -11396,6 +11402,42 @@
       "new_customers": 6,
       "returning_customers": 2,
       "new_customer_revenue": 1104.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-11-01",
+      "region": "czsk",
+      "revenue": 10318.0,
+      "spend": 4348.0,
+      "purchases": 77,
+      "unique_visitors": 3917,
+      "new_customers": 32,
+      "returning_customers": 45,
+      "new_customer_revenue": 4226.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-11-01",
+      "region": "row",
+      "revenue": 0.0,
+      "spend": 0.0,
+      "purchases": 0,
+      "unique_visitors": 371,
+      "new_customers": 0,
+      "returning_customers": 0,
+      "new_customer_revenue": 0.0,
+      "influ_revenue": 0.0
+    },
+    {
+      "date": "2026-11-01",
+      "region": "us",
+      "revenue": 222.0,
+      "spend": 1126.0,
+      "purchases": 3,
+      "unique_visitors": 675,
+      "new_customers": 1,
+      "returning_customers": 2,
+      "new_customer_revenue": 74.0,
       "influ_revenue": 0.0
     }
   ]
