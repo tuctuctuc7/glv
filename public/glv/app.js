@@ -1,4 +1,5 @@
 const METRIC_CONFIG = {
+  cpv: { label: 'Cost per Visitor', type: 'money', color: 'var(--blue)', description: 'Spend / Visitors from matching available rows; nonpositive Visitors are unavailable.' },
   nc_roas: { label: 'NC ROAS', type: 'ratio', color: 'var(--cyan)', description: 'NC revenue / existing ad spend, using matching available rows. Nonpositive spend is unavailable.' },
   returning_customer_revenue: { label: 'RC revenue', type: 'money', color: 'var(--purple)', description: 'Revenue minus NC revenue on matching available rows. Negative source discrepancies are preserved.' },
   avg_daily_revenue: { label: 'Avg daily revenue', type: 'money', color: 'var(--accent)', description: 'Phase revenue divided by distinct represented phase dates, including zero-revenue days.' },
@@ -73,6 +74,14 @@ function formatMetric(key, value, compact = false) {
   if (config.type === 'percent') return `${(number * 100).toFixed(2)}%`;
   if (config.type === 'ratio') return `${number.toFixed(2)}x`;
   return compact ? compactNumber(number) : number.toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
+
+// CPV commonly sits below $2: compact whole-dollar ticks hide differences.
+// Keep extra precision for sub-cent scales; other metrics retain their formatter.
+function formatAxisMetric(key, value) {
+  return key === 'cpv'
+    ? Number(value).toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 8 })
+    : formatMetric(key, value, true);
 }
 
 function formatDelta(value) {
@@ -521,6 +530,7 @@ function renderMarketComparison(regions) {
       formatMetric('nc_roas', data.nc_roas),
       formatMetric('new_customer_revenue', data.new_customer_revenue, true),
       formatMetric('returning_customer_revenue', data.returning_customer_revenue, true),
+      formatMetric('cpv', data.cpv),
     ]);
     row.firstChild.dataset.market = data.region;
     body.appendChild(row);
@@ -548,6 +558,7 @@ function renderMarketComparison(regions) {
     formatMetric('nc_roas', acquisitionTotals.nc_roas),
     formatMetric('new_customer_revenue', acquisitionTotals.new_customer_revenue, true),
     formatMetric('returning_customer_revenue', acquisitionTotals.returning_customer_revenue, true),
+      formatMetric('cpv', acquisitionTotals.cpv),
   ]);
   body.appendChild(totalRow);
 }
@@ -868,7 +879,7 @@ function renderChart(view) {
     pointHoverRadius: 4,
     pointBackgroundColor: colors.surface,
     fill: false,
-    spanGaps: !['cac', 'nc_roas', 'returning_customer_revenue'].includes(secondaryKey),
+    spanGaps: !['cac', 'cpv', 'nc_roas', 'returning_customer_revenue'].includes(secondaryKey),
     tension: 0.28,
     yAxisID: 'y1',
   });
@@ -903,7 +914,7 @@ function renderChart(view) {
           display: key !== 'none',
           beginAtZero: true,
           grid: { color: colors.grid },
-          ticks: { color: colors.text, font: { size: 9 }, callback: (value) => formatMetric(key, value, true) },
+          ticks: { color: colors.text, font: { size: 9 }, callback: (value) => formatAxisMetric(key, value) },
           border: { display: false },
         },
         y1: {
@@ -911,7 +922,7 @@ function renderChart(view) {
           beginAtZero: true,
           position: 'right',
           grid: { drawOnChartArea: false },
-          ticks: { color: colors.rolling, font: { size: 9 }, callback: (value) => formatMetric(secondaryKey, value, true) },
+          ticks: { color: colors.rolling, font: { size: 9 }, callback: (value) => formatAxisMetric(secondaryKey, value) },
           border: { display: false },
         },
       },
@@ -954,6 +965,7 @@ function renderTable(view) {
     formatMetric('cpa', summary.cpa),
     formatMetric('aov', summary.aov),
     formatMetric('unique_visitors', summary.unique_visitors),
+      formatMetric('cpv', summary.cpv),
   ].forEach((value) => summaryRow.appendChild(element('td', '', value)));
   body.appendChild(summaryRow);
   rows.forEach((row) => {
@@ -973,6 +985,7 @@ function renderTable(view) {
       formatMetric('cpa', row.cpa),
       formatMetric('aov', row.aov),
       formatMetric('unique_visitors', row.unique_visitors),
+      formatMetric('cpv', row.cpv),
     ];
     values.forEach((value) => tr.appendChild(element('td', '', value)));
     body.appendChild(tr);
@@ -1097,7 +1110,7 @@ function renderPhaseChart(days) {
       },
       scales: {
         x: { grid: { display: false }, ticks: { color: textColor }, border: { color: gridColor } },
-        y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: (value) => formatMetric(metric, value, true) }, border: { display: false } },
+        y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: (value) => formatAxisMetric(metric, value) }, border: { display: false } },
       },
     },
   });
@@ -1165,6 +1178,7 @@ function renderPhaseTable(days) {
       phaseMetricCell('cpa', node.metrics.cpa),
       phaseMetricCell('aov', node.metrics.aov),
       phaseMetricCell('unique_visitors', node.metrics.unique_visitors),
+      phaseMetricCell('cpv', node.metrics.cpv),
       phaseMetricCell('day_count', node.metrics.day_count),
     ];
     values.forEach((value) => row.appendChild(element('td', '', value)));
@@ -1245,7 +1259,7 @@ function renderPhases() {
   });
   if (!promo) renderPhaseChart(days);
   renderPhaseTable(days);
-  window.renderPromoComparison(days, promo ? events : null);
+  window.renderPromoComparison(days, promo ? phases.buildPromoCohorts(state.data.phases) : null);
   $('screenReaderStatus').textContent = `Phases view updated for CZSK, year to date through ${formatDate(days[days.length - 1].date)}.`;
 }
 
@@ -1303,7 +1317,7 @@ async function exportCsv() {
   const sourcePayload = new TextEncoder().encode(JSON.stringify(state.data.rows));
   const digest = await crypto.subtle.digest('SHA-256', sourcePayload);
   const checksum = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-  const headers = ['date', 'region', 'spend_usd', 'revenue_usd', 'purchases', 'market_day_unique_visitors', 'new_customers', 'returning_customers', 'new_customer_revenue_usd', 'returning_customer_revenue_usd', 'nc_roas'];
+  const headers = ['date', 'region', 'spend_usd', 'revenue_usd', 'purchases', 'market_day_unique_visitors', 'new_customers', 'returning_customers', 'new_customer_revenue_usd', 'returning_customer_revenue_usd', 'nc_roas', 'cost_per_visitor_usd'];
   const lines = [
     `# source_updated_at=${state.data.updated_at || 'unknown'}`,
     `# exported_at=${new Date().toISOString()}`,
@@ -1316,7 +1330,7 @@ async function exportCsv() {
     headers.join(','),
   ];
   [...view.currentRows].sort((a, b) => a.date.localeCompare(b.date) || a.region.localeCompare(b.region)).forEach((row) => {
-    lines.push([row.date, row.region, row.spend, row.revenue, row.purchases, row.unique_visitors, row.new_customers, row.returning_customers, row.new_customer_revenue, metrics.metricValue(row, 'returning_customer_revenue'), metrics.metricValue(row, 'nc_roas')].join(','));
+    lines.push([row.date, row.region, row.spend, row.revenue, row.purchases, row.unique_visitors, row.new_customers, row.returning_customers, row.new_customer_revenue, metrics.metricValue(row, 'returning_customer_revenue'), metrics.metricValue(row, 'nc_roas'), metrics.metricValue(row, 'cpv')].join(','));
   });
   const blob = new Blob([`${lines.join('\n')}\n`], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);

@@ -4,7 +4,7 @@
   if (root) root.GlvMetrics = api;
 }(typeof globalThis !== 'undefined' ? globalThis : this, () => {
   const ABSOLUTE_METRICS = ['spend', 'revenue', 'purchases', 'unique_visitors', 'new_customers', 'returning_customers', 'new_customer_revenue'];
-  const LOWER_IS_BETTER = new Set(['cpa', 'cac']);
+  const LOWER_IS_BETTER = new Set(['cpa', 'cac', 'cpv']);
   const HIGHER_IS_BETTER = new Set(['revenue', 'roas', 'purchases', 'aov', 'cvr', 'unique_visitors']);
 
   function finiteNumber(value) {
@@ -57,12 +57,16 @@
     const returningCustomers = customerRows.reduce((sum, row) => sum + Number(row.returning_customers), 0);
 
     // Match inputs per row: unknown historical NC must not dilute current NC.
+    const cpvRows = sourceRows.filter(row => ['spend', 'unique_visitors'].every(key => hasFiniteMetric(row, key) && ['number', 'string'].includes(typeof row[key]) && String(row[key]).trim() !== ''));
+    const cpvSpend = cpvRows.reduce((sum, row) => sum + Number(row.spend), 0);
+    const cpvVisitors = cpvRows.reduce((sum, row) => sum + Number(row.unique_visitors), 0);
     const ncRows = sourceRows.filter(row => ['new_customer_revenue', 'spend'].every(key => hasFiniteMetric(row, key)));
     const rcRows = sourceRows.filter(row => ['new_customer_revenue', 'revenue'].every(key => hasFiniteMetric(row, key)));
     const ncSpend = ncRows.reduce((sum, row) => sum + Number(row.spend), 0);
     const ncRevenue = ncRows.reduce((sum, row) => sum + Number(row.new_customer_revenue), 0);
     return {
       ...totals,
+      cpv: cpvRows.length && cpvVisitors > 0 ? cpvSpend / cpvVisitors : null,
       nc_roas: ncRows.length && ncSpend > 0 ? ncRevenue / ncSpend : null,
       returning_customer_revenue: rcRows.length ? rcRows.reduce((sum, row) => sum + Number(row.revenue) - Number(row.new_customer_revenue), 0) : null,
       roas: ratioFromRows(sourceRows, 'revenue', 'spend'),
@@ -77,7 +81,7 @@
 
   function metricValue(row, key) {
     if (!row) return null;
-    if (['nc_roas', 'returning_customer_revenue'].includes(key)) {
+    if (['cpv', 'nc_roas', 'returning_customer_revenue'].includes(key)) {
       if (Object.prototype.hasOwnProperty.call(row, key)) return hasFiniteMetric(row, key) ? Number(row[key]) : null;
       return aggregateRows([row])[key];
     }
@@ -202,7 +206,7 @@
     const current = aggregateRows(currentRows);
     const previous = aggregateRows(previousRows);
     const changes = {};
-    [...ABSOLUTE_METRICS, 'nc_roas', 'returning_customer_revenue', 'roas', 'cpa', 'cac', 'aov', 'cvr', 'new_customer_rate'].forEach((key) => {
+    [...ABSOLUTE_METRICS, 'cpv', 'nc_roas', 'returning_customer_revenue', 'roas', 'cpa', 'cac', 'aov', 'cvr', 'new_customer_rate'].forEach((key) => {
       changes[key] = percentageChange(current[key], previous[key]);
     });
     return { current, previous, changes };

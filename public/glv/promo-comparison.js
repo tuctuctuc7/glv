@@ -31,7 +31,8 @@
   const finite = v => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v));
   const ratio = (n,d) => finite(n) && finite(d) && Number(d) > 0 ? Number(n) / Number(d) : null;
   function value(row, metric) {
-    const ratios = {roas:['revenue','spend'], nc_roas:['new_customer_revenue','spend'], cac:['spend','new_customers'], cpa:['spend','purchases'], aov:['revenue','purchases'], cvr:['purchases','unique_visitors']};
+    if (metric === 'cpv' && ['spend', 'unique_visitors'].some(key => !['number', 'string'].includes(typeof row[key]) || String(row[key]).trim() === '')) return null;
+    const ratios = {cpv:['spend','unique_visitors'], roas:['revenue','spend'], nc_roas:['new_customer_revenue','spend'], cac:['spend','new_customers'], cpa:['spend','purchases'], aov:['revenue','purchases'], cvr:['purchases','unique_visitors']};
     if (ratios[metric]) return ratio(...ratios[metric].map(k => row[k]));
     if (metric === 'new_customer_rate') return ratio(row.new_customers, finite(row.new_customers) && finite(row.returning_customers) ? Number(row.new_customers) + Number(row.returning_customers) : null);
     if (metric === 'returning_customer_revenue') return finite(row.revenue) && finite(row.new_customer_revenue) ? Number(row.revenue) - Number(row.new_customer_revenue) : null;

@@ -17,7 +17,7 @@ module.exports = async function verifyCac(browser, baseUrl, evidenceDir) {
     await page.route('**/glv_dashboard.json', route => route.fulfill({ json: fixture }));
     await page.goto(`${baseUrl}?period=custom&from=2026-09-01&to=2026-09-03&grain=day&auditGrain=day`, { waitUntil: 'networkidle' });
     await page.locator('#dashboardContent').waitFor({ state: 'visible' });
-    assert.deepEqual(await page.locator('#metricsTable thead th').allTextContents(), ['Date', 'Spend', 'Revenue', 'ROAS', 'CAC', 'NC ROAS', 'NC rate', 'NC revenue', 'RC revenue', 'CVR', 'Purchases', 'Cost per purchase', 'AOV', 'Visitors']);
+    assert.deepEqual(await page.locator('#metricsTable thead th').allTextContents(), ['Date', 'Spend', 'Revenue', 'ROAS', 'CAC', 'NC ROAS', 'NC rate', 'NC revenue', 'RC revenue', 'CVR', 'Purchases', 'Cost per purchase', 'AOV', 'Visitors', 'Cost per Visitor']);
     assert.deepEqual(await page.locator('#metricsTableBody tr td:nth-child(7)').allTextContents(), ['29.41%', '50.00%', '0.00%', '20.00%']);
     for (const id of ['trendMetric', 'trendMetricSecondary']) {
       assert.equal(await page.locator(`#${id} option`).first().getAttribute('value'), 'none');

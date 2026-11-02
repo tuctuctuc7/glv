@@ -81,12 +81,16 @@
         ? source.reduce((sum, row) => sum + Number(row[key]), 0) : null;
     });
     // Match inputs per row: unknown historical NC must not dilute current NC.
+    const cpvRows = source.filter(row => ['spend', 'unique_visitors'].every(key => finite(row[key]) && ['number', 'string'].includes(typeof row[key]) && String(row[key]).trim() !== ''));
+    const cpvSpend = cpvRows.reduce((sum, row) => sum + Number(row.spend), 0);
+    const cpvVisitors = cpvRows.reduce((sum, row) => sum + Number(row.unique_visitors), 0);
     const ncRows = source.filter(row => ['new_customer_revenue', 'spend'].every(key => finite(row[key])));
     const rcRows = source.filter(row => ['new_customer_revenue', 'revenue'].every(key => finite(row[key])));
     const ncSpend = ncRows.reduce((sum, row) => sum + Number(row.spend), 0);
     const ncRevenue = ncRows.reduce((sum, row) => sum + Number(row.new_customer_revenue), 0);
     return {
       ...totals,
+      cpv: cpvRows.length && cpvVisitors > 0 ? cpvSpend / cpvVisitors : null,
       nc_roas: ncRows.length && ncSpend > 0 ? ncRevenue / ncSpend : null,
       returning_customer_revenue: rcRows.length ? rcRows.reduce((sum, row) => sum + Number(row.revenue) - Number(row.new_customer_revenue), 0) : null,
       day_count: distinctDayCount(source),
@@ -159,7 +163,7 @@
   }
 
   function unavailableRevenueMetrics(revenue, days) {
-    const metrics = Object.fromEntries([...ABSOLUTE_METRICS, 'roas', 'cpa', 'aov', 'cvr', 'new_customer_rate', 'cac', 'nc_roas', 'returning_customer_revenue'].map((key) => [key, null]));
+    const metrics = Object.fromEntries([...ABSOLUTE_METRICS, 'roas', 'cpa', 'aov', 'cvr', 'new_customer_rate', 'cac', 'cpv', 'nc_roas', 'returning_customer_revenue'].map((key) => [key, null]));
     metrics.revenue = revenue;
     metrics.day_count = distinctDayCount(days);
     metrics.avg_daily_revenue = ratio(revenue, distinctDayCount(days));
@@ -271,7 +275,7 @@
 
   function metricValue(metrics, key) {
     if (key === 'none') return null;
-    if (metrics && ['nc_roas', 'returning_customer_revenue'].includes(key) && !Object.prototype.hasOwnProperty.call(metrics, key)) return aggregateRows([metrics])[key];
+    if (metrics && ['cpv', 'nc_roas', 'returning_customer_revenue'].includes(key) && !Object.prototype.hasOwnProperty.call(metrics, key)) return aggregateRows([metrics])[key];
     return finite(metrics?.[key]) ? Number(metrics[key]) : null;
   }
 
@@ -323,12 +327,30 @@
     });
   }
 
+  // Comparison-only cohorts; audit table keeps the original event identities.
+  function buildPromoCohorts(schedule) {
+    const groups = new Map();
+    buildPromoEvents(schedule).forEach(event => {
+      const combined = /^2026-(06|08)-/.test(event.start_date);
+      const key = combined ? event.start_date.slice(0, 7) : event.id;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(event);
+    });
+    return [...groups.values()].map(events => ({
+      ...events[0],
+      id: events.length > 1 ? `promo:${events[0].start_date}/${events.at(-1).end_date}` : events[0].id,
+      end_date: events.at(-1).end_date,
+      label: events.length > 1 ? events[0].label.replace(/ (Private|Public|\d+)$/, '') : events[0].label,
+      sources: events.flatMap(e => e.sources), events,
+    }));
+  }
+
   function promoEventRows(days, events) {
     const source = (days || []).filter(d => d.region === 'czsk' && d.phase === 'Promo');
     const seen = new Set();
     source.forEach(d => { if (seen.has(d.date)) throw new Error(`Duplicate CZSK day: ${d.date}`); seen.add(d.date); });
     return events.map(event => {
-      const rows = source.filter(d => d.date >= event.start_date && d.date <= event.end_date).sort((a,b) => a.date.localeCompare(b.date));
+      const rows = source.filter(d => (event.events || [event]).some(range => d.date >= range.start_date && d.date <= range.end_date)).sort((a,b) => a.date.localeCompare(b.date));
       return {...event, rows, metrics: aggregateRows(rows)};
     });
   }
@@ -336,6 +358,7 @@
   return {
     promoEventRows,
     buildPromoEvents,
+    buildPromoCohorts,
     ABSOLUTE_METRICS,
     PHASES,
     aggregatePhaseGroups,

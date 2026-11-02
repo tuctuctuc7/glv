@@ -168,7 +168,7 @@ async function run() {
     assert.match(await page.locator('#trendDataCaption').textContent(), /Revenue and ROAS by day/);
     assert.equal(await page.locator('#metricsTableBody tr').count(), 29);
     assert.match(await page.locator('#metricsTableBody tr').first().textContent(), /Selected period/);
-    assert.equal(await page.locator('#metricsTable thead th').count(), 14);
+    assert.equal(await page.locator('#metricsTable thead th').count(), 15);
     assert.doesNotMatch(await page.locator('#metricsTable thead').textContent(), /New customers|Returning customers/);
     assert.match(await page.locator('#executiveKpis').textContent(), /New customer rate/);
     assert.doesNotMatch(await page.locator('#executiveKpis').textContent(), /Visitors/);
@@ -193,8 +193,8 @@ async function run() {
     ]);
     const phaseMonthCount = new Set(require('../public/glv/phases.js').buildPhaseDays(dashboardData.rows, dashboardData.phases, dashboardData.phase_contract.latest_date).map(d => d.month)).size;
     assert.equal(await page.locator('#phaseChartDataBody tr').count(), phaseMonthCount, 'YTD chart includes every represented month');
-    assert.equal(await page.locator('#phaseTable thead th').count(), 17, 'phase table includes final day count');
-    assert.deepEqual(await page.locator('#phaseTable thead th').allTextContents(), ['Dimension', 'Spend', 'Revenue', 'Avg daily revenue', 'Share', 'ROAS', 'CAC', 'NC ROAS', 'NC Rate', 'NC Revenue', 'RC Revenue', 'CVR', 'Purchases', 'Cost per purchase', 'AOV', 'Visitors', 'Number of days']);
+    assert.equal(await page.locator('#phaseTable thead th').count(), 18, 'phase table includes final day count');
+    assert.deepEqual(await page.locator('#phaseTable thead th').allTextContents(), ['Dimension', 'Spend', 'Revenue', 'Avg daily revenue', 'Share', 'ROAS', 'CAC', 'NC ROAS', 'NC Rate', 'NC Revenue', 'RC Revenue', 'CVR', 'Purchases', 'Cost per purchase', 'AOV', 'Visitors', 'Cost per Visitor', 'Number of days']);
     assert.equal(await page.locator('#phaseTableBody tr').first().locator('td').last().textContent(), '31');
     assert.equal(await page.locator('#phaseTable thead th').nth(3).textContent(), 'Avg daily revenue');
     assert.equal(await page.locator('#trendMetric option[value="avg_daily_revenue"]').count(), 0);
@@ -308,8 +308,8 @@ async function run() {
       assert.equal(await page.locator(`#${target}`).isVisible(), true, `${target} should expand`);
       assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
     }
-    assert.equal(await page.locator('#trendMetric option').count(), 14);
-    assert.equal(await page.locator('#trendMetricSecondary option').count(), 14);
+    assert.equal(await page.locator('#trendMetric option').count(), 15);
+    assert.equal(await page.locator('#trendMetricSecondary option').count(), 15);
     await page.locator('#trendMetric').selectOption('roas');
     await page.locator('#trendMetricSecondary').selectOption('revenue');
     assert.deepEqual(await page.evaluate(() => window.Chart.getChart('trendChart').data.datasets.map((dataset) => ({ type: dataset.type, label: dataset.label, filled: dataset.fill === true }))), [
@@ -966,6 +966,7 @@ async function run() {
     // Main smoke assertions are complete; release their pages before the
     // independent viewport matrices to keep the full suite bounded on CI hosts.
     for (const openContext of browser.contexts()) await openContext.close();
+    await require('./cpv-axes.cjs')(browser, baseUrl);
     await require('./cac-smoke.cjs')(browser, baseUrl, evidenceDir);
     await require('./nc-rc-smoke.cjs')(browser, baseUrl, evidenceDir);
     await require('./mobile-controls.cjs')(browser, baseUrl, evidenceDir);
