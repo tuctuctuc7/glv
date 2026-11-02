@@ -30,7 +30,7 @@ module.exports=async(browser,baseUrl,evidenceDir,{baseline=false}={})=>{
    for(const grain of ['day','week','month','year']) {
     await page.locator('#auditGrain').selectOption(grain);
     const result=await page.evaluate(()=>{
-     const keys=['spend','revenue','roas','cac','nc_roas','new_customer_rate','new_customer_revenue','returning_customer_revenue','cvr','purchases','cpa','aov','unique_visitors'];
+     const keys=['spend','revenue','roas','cac','nc_roas','new_customer_rate','new_customer_revenue','returning_customer_revenue','cvr','purchases','cpa','aov','unique_visitors','cpv'];
      const grain=document.querySelector('#auditGrain').value,combined=rowsForGrain(getViewData(),grain);
      const rows=[metrics.aggregateRows(combined.rows),...metrics.groupRows(combined.rows,grain).reverse()];
      const expected=rows.map(r=>keys.map(k=>['spend','revenue','roas','nc_roas','new_customer_revenue','returning_customer_revenue'].includes(k)?formatAuditMetric(k,r[k]):formatMetric(k,r[k])));

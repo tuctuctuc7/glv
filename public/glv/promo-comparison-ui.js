@@ -9,7 +9,7 @@ window.renderPromoComparison = (() => {
   let mode = 'month';
   const $ = id => document.getElementById(id);
   const node = (tag, text) => { const n = document.createElement(tag); if (text != null) n.textContent = text; return n; };
-  const names = {revenue:'Revenue', avg_daily_revenue:'Avg daily revenue', spend:'Spend', roas:'ROAS', nc_roas:'NC ROAS', cac:'CAC', purchases:'Purchases', cpa:'Cost per purchase', aov:'AOV', cvr:'CVR', unique_visitors:'Visitors', new_customer_revenue:'New customer revenue', returning_customer_revenue:'RC revenue', new_customer_rate:'New customer rate'};
+  const names = {revenue:'Revenue', avg_daily_revenue:'Avg daily revenue', spend:'Spend', roas:'ROAS', nc_roas:'NC ROAS', cac:'CAC', purchases:'Purchases', cpa:'Cost per purchase', cpv:'Cost per Visitor', aov:'AOV', cvr:'CVR', unique_visitors:'Visitors', new_customer_revenue:'New customer revenue', returning_customer_revenue:'RC revenue', new_customer_rate:'New customer rate'};
   const monthName = month => new Intl.DateTimeFormat('en-US', {month:'long', year:'numeric', timeZone:'UTC'}).format(new Date(`${month}-01T00:00:00Z`));
   function format(key, value, compact = false) {
     if (value == null) return '—';
@@ -119,7 +119,7 @@ window.renderPromoComparison = (() => {
         },
         scales: {
           x: { grid: { display: false }, ticks: { font, color: text }, border: { color: grid } },
-          y: { beginAtZero: true, grid: { color: grid }, ticks: { font, color: text, callback: value => format(metric, value, true) }, border: { display: false } },
+          y: { beginAtZero: true, grid: { color: grid }, ticks: { font, color: text, callback: value => formatAxisMetric(metric, value) }, border: { display: false } },
         },
       },
     });

@@ -26,6 +26,23 @@ fs.mkdirSync(out,{recursive:true});
   if(await page.locator('html').getAttribute('data-theme')!==theme) await page.click('#themeToggle');
   await page.selectOption('#phaseHierarchy','phase-month');
   await page.click('label[for="phaseInfluSplit"]');
+  await page.selectOption('#phaseMetric','cpv');
+  const phaseCpv = await page.evaluate(() => {
+    const days=GlvPhases.buildPhaseDays(state.data.rows,state.data.phases,state.data.phase_contract.latest_date);
+    const chart=Chart.getChart('phaseChart');
+    return chart.data.datasets.every(d=>d.data.every((v,i)=>{
+      const rows=days.filter(r=>r.month===GlvPhases.monthlySeries(days,'cpv').months[i] && r.phase===d.label);
+      const spend=rows.reduce((s,r)=>s+r.spend,0), visitors=rows.reduce((s,r)=>s+r.unique_visitors,0);
+      return v===(visitors>0?spend/visitors:null);
+    }));
+  });
+  assert.equal(phaseCpv,true);
+  await page.selectOption('#promoMetric','cpv');
+  assert.equal(await page.evaluate(()=>Chart.getChart('promoChart').data.datasets.every(d=>d.data.every((v,i)=>{
+    const row=state.data.rows.find(r=>r.region==='czsk' && r.date===d.dates[i]);return v===(row&&row.unique_visitors>0?row.spend/row.unique_visitors:null);
+  }))),true);
+  await page.selectOption('#promoMetric','revenue');
+  await page.selectOption('#phaseMetric','revenue');
   const before=await page.locator('#phaseTableBody').innerText();
   await page.locator('#phasesTitle').scrollIntoViewIfNeeded();
   await page.screenshot({path:`${out}/${width}-${theme}-month.png`,fullPage:true});
@@ -55,7 +72,7 @@ fs.mkdirSync(out,{recursive:true});
   for(const e of actual.events){
    const cells=await page.locator(`tr[data-phase-node="${e.id}"] td`).allTextContents();
    const number=s=>Number(s.replace(/[^0-9.-]/g,''));
-   assert.equal(number(cells[2]),Math.round(e.revenue));assert.equal(number(cells[1]),Math.round(e.spend));assert.equal(number(cells[16]),e.days);
+   assert.equal(number(cells[2]),Math.round(e.revenue));assert.equal(number(cells[1]),Math.round(e.spend));assert.equal(number(cells[17]),e.days);
   }
   const vb='promo:2026-10-28/2026-11-04';
   const disclosure=page.locator(`button[data-phase-toggle="${vb}"]`);
@@ -128,6 +145,24 @@ fs.mkdirSync(out,{recursive:true});
   await page.click('#promoMonths > button');
   await page.check('#promoMonthOptions input[data-value="*"]');
   await page.press('#promoMonthOptions input[data-value="*"]','Escape');
+  await page.selectOption('#promoMetric','cpv');
+  const cohortEvidence=await page.evaluate(()=>{
+    const chart=Chart.getChart('promoChart');
+    const cohorts=GlvPhases.buildPromoCohorts(state.data.phases);
+    return chart.data.datasets.map(d=>{
+      const cohort=cohorts.find(c=>c.id===d.month);
+      const rows=state.data.rows.filter(r=>r.region==='czsk' && cohort.events.some(e=>r.date>=e.start_date && r.date<=e.end_date));
+      return {label:cohort.label,days:rows.length,spend:rows.reduce((s,r)=>s+r.spend,0),visitors:rows.reduce((s,r)=>s+r.unique_visitors,0),
+        matches:d.data.every((v,i)=>{const row=rows.find(r=>r.date===d.dates[i]);return v===(row&&row.unique_visitors>0?row.spend/row.unique_visitors:null);})};
+    });
+  });
+  assert.equal(cohortEvidence.filter(c=>c.label==='June').length,1);
+  assert.equal(cohortEvidence.filter(c=>c.label==='August').length,1);
+  assert.equal(cohortEvidence.filter(c=>['Menopause','VB2'].includes(c.label)).length,2);
+  assert.ok(cohortEvidence.every(c=>c.matches));
+  fs.writeFileSync(`${out}/${width}-${theme}-cpv-cohorts.json`,JSON.stringify(cohortEvidence,null,2));
+  await page.locator('#promoChart').screenshot({path:`${out}/${width}-${theme}-cpv.png`});
+  await page.selectOption('#promoMetric','revenue');
   const focus=await page.locator('#promoFocus option').nth(1).getAttribute('value');
   await page.locator('#promoFocus').focus();await page.selectOption('#promoFocus',focus);
   const chartCheck=await page.evaluate(()=>{

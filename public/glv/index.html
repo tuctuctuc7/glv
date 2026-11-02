@@ -11,14 +11,14 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="/glv/styles.css?v=phase-headers-20261015&amp;ui=filter-type-1" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f" crossorigin="anonymous" defer></script>
-  <script src="/glv/metrics.js?v=nc-rc-metrics-20260920" defer></script>
-  <script src="/glv/phases.js?v=phase-controls-20261029" defer></script>
-  <script src="/glv/promo-comparison.js?v=promo-compact-contrast-20261029" defer></script>
-  <script src="/glv/promo-comparison-ui.js?v=phase-controls-20261029" defer></script>
+  <script src="/glv/metrics.js?v=cpv-cohorts-20261102" defer></script>
+  <script src="/glv/phases.js?v=cpv-cohorts-20261102" defer></script>
+  <script src="/glv/promo-comparison.js?v=cpv-cohorts-20261102" defer></script>
+  <script src="/glv/promo-comparison-ui.js?v=cpv-cohorts-20261102" defer></script>
   <link rel="stylesheet" href="/glv/promo-comparison.css?v=phase-scope-20261029" />
-  <script src="/glv/app.js?v=phase-controls-20261029" defer></script>
+  <script src="/glv/app.js?v=cpv-cohorts-20261102" defer></script>
   <link rel="stylesheet" href="/glv/section-info.css?v=section-info-20260920-stack-3" />
-  <script src="/glv/section-info.js?v=promo-compact-contrast-20261029" defer></script>
+  <script src="/glv/section-info.js?v=cpv-cohorts-20261102" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#mainContent">Skip to dashboard content</a>
@@ -170,7 +170,7 @@
                   <option value="new_customer_revenue">New customer revenue</option><option value="returning_customer_revenue">RC revenue</option>
                   <option value="roas">ROAS</option><option value="cac">CAC</option><option value="nc_roas">NC ROAS</option>
                   <option value="cvr">CVR</option>
-                  <option value="cpa">Cost per purchase</option>
+                  <option value="cpa">Cost per purchase</option><option value="cpv">Cost per Visitor</option>
                   <option value="aov">AOV</option>
                   <option value="new_customer_rate">New customer rate</option>
                 </select>
@@ -186,7 +186,7 @@
                   <option value="new_customer_revenue">New customer revenue</option><option value="returning_customer_revenue">RC revenue</option>
                   <option value="roas" selected>ROAS</option><option value="cac">CAC</option><option value="nc_roas">NC ROAS</option>
                   <option value="cvr">CVR</option>
-                  <option value="cpa">Cost per purchase</option>
+                  <option value="cpa">Cost per purchase</option><option value="cpv">Cost per Visitor</option>
                   <option value="aov">AOV</option>
                   <option value="new_customer_rate">New customer rate</option>
                 </select>
@@ -252,7 +252,7 @@
                 <th scope="col">Purchases</th>
                 <th scope="col">Cost per purchase</th>
                 <th scope="col">AOV</th>
-                <th scope="col">Visitors</th>
+                <th scope="col">Visitors</th><th scope="col">Cost per Visitor</th>
               </tr>
             </thead>
             <tbody id="metricsTableBody"></tbody>
@@ -265,7 +265,7 @@
         <div id="marketComparisonContent" class="section-content">
         <p class="table-scroll-hint">Swipe horizontally to inspect every metric →</p>
         <div class="table-wrap compact-table-wrap" id="marketComparisonWrap" tabindex="0" aria-label="Scrollable market comparison table"><table id="marketComparisonTable"><caption class="sr-only">Market performance comparison</caption><thead><tr>
-          <th scope="col">Market</th><th scope="col" data-segment="revenue">Revenue</th><th scope="col">Share</th><th scope="col">Growth</th><th scope="col">Spend</th><th scope="col" data-segment="volume">Purchases</th><th scope="col">Cost / purchase</th><th scope="col">AOV</th><th scope="col" data-segment="efficiency">CVR</th><th scope="col">ROAS</th><th scope="col">CAC</th><th scope="col">NC ROAS</th><th scope="col">New customer revenue</th><th scope="col">RC revenue</th>
+          <th scope="col">Market</th><th scope="col" data-segment="revenue">Revenue</th><th scope="col">Share</th><th scope="col">Growth</th><th scope="col">Spend</th><th scope="col" data-segment="volume">Purchases</th><th scope="col">Cost / purchase</th><th scope="col">AOV</th><th scope="col" data-segment="efficiency">CVR</th><th scope="col">ROAS</th><th scope="col">CAC</th><th scope="col">NC ROAS</th><th scope="col">New customer revenue</th><th scope="col">RC revenue</th><th scope="col">Cost per Visitor</th>
         </tr></thead><tbody id="marketComparisonBody"></tbody></table></div></div>
       </section>
 
@@ -299,7 +299,7 @@
               <option value="new_customer_revenue">New customer revenue</option><option value="returning_customer_revenue">RC revenue</option>
               <option value="roas">ROAS</option><option value="cac">CAC</option><option value="nc_roas">NC ROAS</option>
               <option value="cvr">CVR</option>
-              <option value="cpa">Cost per purchase</option>
+              <option value="cpa">Cost per purchase</option><option value="cpv">Cost per Visitor</option>
               <option value="aov">AOV</option>
               <option value="new_customer_rate">New customer rate</option>
             </select></label>
@@ -320,7 +320,7 @@
           <p class="table-scroll-hint">Swipe horizontally to inspect every metric →</p>
           <div class="table-wrap phase-table-wrap" tabindex="0" aria-label="Scrollable phase performance table">
             <table id="phaseTable"><caption class="sr-only">CZSK phase performance by expandable hierarchy</caption><thead><tr>
-              <th scope="col">Dimension</th><th scope="col">Spend</th><th scope="col">Revenue</th><th scope="col"><span class="phase-header-line">Avg daily </span>revenue</th><th scope="col">Share</th><th scope="col">ROAS</th><th scope="col">CAC</th><th scope="col"><span class="phase-header-line">NC </span>ROAS</th><th scope="col"><span class="phase-header-line">NC </span>Rate</th><th scope="col"><span class="phase-header-line">NC </span>Revenue</th><th scope="col" title="Revenue minus NC revenue on matching available rows; negative source discrepancies are preserved."><span class="phase-header-line">RC </span>Revenue</th><th scope="col">CVR</th><th scope="col">Purchases</th><th scope="col"><span class="phase-header-line">Cost per </span>purchase</th><th scope="col">AOV</th><th scope="col">Visitors</th><th scope="col" title="Distinct represented dates, matching the Avg daily revenue denominator. Influ code/no-code rows share the same phase days."><span class="phase-header-line">Number of </span>days</th>
+              <th scope="col">Dimension</th><th scope="col">Spend</th><th scope="col">Revenue</th><th scope="col"><span class="phase-header-line">Avg daily </span>revenue</th><th scope="col">Share</th><th scope="col">ROAS</th><th scope="col">CAC</th><th scope="col"><span class="phase-header-line">NC </span>ROAS</th><th scope="col"><span class="phase-header-line">NC </span>Rate</th><th scope="col"><span class="phase-header-line">NC </span>Revenue</th><th scope="col" title="Revenue minus NC revenue on matching available rows; negative source discrepancies are preserved."><span class="phase-header-line">RC </span>Revenue</th><th scope="col">CVR</th><th scope="col">Purchases</th><th scope="col"><span class="phase-header-line">Cost per </span>purchase</th><th scope="col">AOV</th><th scope="col">Visitors</th><th scope="col"><span class="phase-header-line">Cost per </span>Visitor</th><th scope="col" title="Distinct represented dates, matching the Avg daily revenue denominator. Influ code/no-code rows share the same phase days."><span class="phase-header-line">Number of </span>days</th>
             </tr></thead><tbody id="phaseTableBody"></tbody></table>
           </div>
         </section>
