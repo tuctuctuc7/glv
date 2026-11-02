@@ -63,9 +63,10 @@ const out = process.env.GLV_CONTROLS_EVIDENCE || '/tmp/glv-phase-controls-eviden
    const eventMenu=await page.locator('#phaseEvents .phase-menu-options').boundingBox();
    assert.ok(eventMenu.x>=0 && eventMenu.x+eventMenu.width<=width,'event menu remains within viewport');
    const labels=['June Private','June Public','August Private','August Public'];
-   for(const label of labels) assert.ok((await page.locator('#phaseEvents').innerText()).includes(label));
+   for(const label of ['June','August']) assert.ok((await page.locator('#phaseEvents').innerText()).includes(label));
+   for(const label of labels) assert.ok(!(await page.locator('#phaseEvents').innerText()).includes(label));
    await page.press('#phaseEvents > button','Escape');
-   for(const label of labels) assert.ok((await page.locator('#phaseTableBody').innerText()).includes(label));
+   for(const label of ['June','August']) assert.ok((await page.locator('#phaseTableBody').innerText()).includes(label));
    await page.click('#promoMonths > button'); await page.check('#promoMonthOptions input[data-value="*"]'); await page.press('#promoMonths > button','Escape');
    const rendered=await page.evaluate(()=>({datasets:Chart.getChart(document.getElementById('promoChart')).data.datasets.map(d=>d.label),legend:Chart.getChart(document.getElementById('promoChart')).legend.legendItems.map(l=>l.text),focus:document.getElementById('promoFocus').textContent,accessible:document.getElementById('promoChartData').textContent,overflow:document.documentElement.scrollWidth>innerWidth}));
    for(const label of labels) {assert.ok(rendered.datasets.some(s=>s.includes(label))); assert.ok(rendered.legend.includes(label)); assert.ok(rendered.focus.includes(label));assert.ok(rendered.accessible.includes(label));}

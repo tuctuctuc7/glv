@@ -1048,21 +1048,29 @@ function phaseMetricCell(key, value) {
 
 function renderPhaseChart(days) {
   const metric = $('phaseMetric').value;
-  const chartData = phases.monthlySeries(days, metric, { phases: state.phaseSelection, splitInflu: $('phaseInfluSplit').checked });
-  $('phaseChart').setAttribute('aria-label', `Monthly year-to-date performance: ${chartData.phases.join(', ') || 'no series selected'}`);
+  const promo = phaseMode === 'promo';
+  const cohorts = promo ? phases.promoEventRows(days, phases.buildPromoCohorts(state.data.phases)).filter(e => e.rows.length > 0) : [];
+  const chartData = promo
+    ? { months: cohorts.map(e => e.label), phases: metric === 'none' ? [] : ['Promo'], series: { Promo: cohorts.map(e => phases.metricValue(e.metrics, metric)) } }
+    : phases.monthlySeries(days, metric, { phases: state.phaseSelection, splitInflu: $('phaseInfluSplit').checked });
+  const categoryLabel = month => promo ? month : phaseMonthLabel(month);
+  const panel = $('phaseChartTitle').closest('section');
+  panel.querySelector('.eyebrow').textContent = promo ? 'Promo cohorts' : 'Monthly YTD';
+  panel.querySelector('.panel-subtitle').textContent = promo ? 'Promo aggregates · represented event days only' : 'One line per phase · through latest loaded working day';
+  $('phaseChart').setAttribute('aria-label', `${promo ? 'Promo cohort aggregate' : 'Monthly year-to-date'} performance: ${chartData.phases.join(', ') || 'no series selected'}`);
   const header = $('phaseChartData').querySelector('thead tr');
   clear(header);
-  ['Month', ...chartData.phases].forEach(label => header.appendChild(element('th', '', label)));
-  $('phaseSplitNotice').hidden = !$('phaseInfluSplit').checked || ['none', 'revenue', 'avg_daily_revenue'].includes(metric);
+  [promo ? 'Promo' : 'Month', ...chartData.phases].forEach(label => header.appendChild(element('th', '', label)));
+  $('phaseSplitNotice').hidden = promo || !$('phaseInfluSplit').checked || ['none', 'revenue', 'avg_daily_revenue'].includes(metric);
   const body = $('phaseChartDataBody');
   clear(body);
   chartData.months.forEach((month, index) => {
     const row = element('tr');
-    [phaseMonthLabel(month), ...chartData.phases.map((phase) => phaseMetricCell(metric, chartData.series[phase][index]))]
+    [categoryLabel(month), ...chartData.phases.map((phase) => phaseMetricCell(metric, chartData.series[phase][index]))]
       .forEach((value) => row.appendChild(element('td', '', value)));
     body.appendChild(row);
   });
-  $('phaseChartCaption').textContent = `Monthly CZSK ${METRIC_CONFIG[metric]?.label || 'metric'} by phase through ${days[days.length - 1]?.date || 'latest loaded day'}`;
+  $('phaseChartCaption').textContent = `${promo ? 'Promo cohort aggregate' : 'Monthly'} CZSK ${METRIC_CONFIG[metric]?.label || 'metric'} ${promo ? '(represented event days only)' : 'by phase'} through ${days[days.length - 1]?.date || 'latest loaded day'}`;
   if (state.phaseChart) state.phaseChart.destroy();
   state.phaseChart = null;
   const canvas = $('phaseChart');
@@ -1084,7 +1092,7 @@ function renderPhaseChart(days) {
   state.phaseChart = new window.Chart(canvas, {
     type: 'line',
     data: {
-      labels: chartData.months.map((month) => phaseMonthLabel(month).replace(` ${month.slice(0, 4)}`, '')),
+      labels: chartData.months.map((month) => promo ? month : phaseMonthLabel(month).replace(` ${month.slice(0, 4)}`, '')),
       datasets: chartData.phases.map((phase) => ({
         type: 'line',
         label: phase,
@@ -1133,11 +1141,16 @@ function promoEventLabel(event) {
 function renderPhaseTable(days) {
   const hierarchy = $('phaseHierarchy').value;
   $('phaseTable').querySelector('th').textContent = phaseMode === 'promo' ? 'Promo' : 'Dimension';
-  const nodes = phaseMode === 'promo' ? phases.promoEventRows(days, phases.buildPromoEvents(state.data.phases))
-    .filter(e => state.phaseEvents == null || state.phaseEvents.includes(e.id)).flatMap(e => [
-      {id:e.id, depth:0, kind:'event', phase:'Promo', label:e.label, description:promoEventLabel(e), metrics:e.metrics, expandable:e.rows.length > 0},
-      ...e.rows.map(d => ({id:`${e.id}|${d.date}`, parentId:e.id, depth:1, kind:'day', phase:'Promo', label:d.date, metrics:phases.aggregateRows([d])})),
-    ]) : phases.buildHierarchy(days, hierarchy, $('phaseInfluSplit').checked, { phases: state.phaseSelection, months: state.phaseMonths });
+  const nodes = phaseMode === 'promo' ? phases.promoEventRows(days, phases.buildPromoCohorts(state.data.phases))
+    .filter(e => e.rows.length > 0 && (state.phaseEvents == null || state.phaseEvents.includes(e.id))).flatMap(e => {
+      const parent = {id:e.id, depth:0, kind:'event', phase:'Promo', label:e.label, description:promoEventLabel(e), metrics:e.metrics, expandable:true};
+      const dayNodes = (event, depth) => event.rows.map(d => ({id:`${event.id}|${d.date}`, parentId:event.id, depth, kind:'day', phase:'Promo', label:d.date, metrics:phases.aggregateRows([d])}));
+      if (e.events.length === 1) return [parent, ...dayNodes(e, 1)];
+      return [parent, ...phases.promoEventRows(e.rows, e.events).filter(stage => stage.rows.length > 0).flatMap(stage => [
+        {id:stage.id, parentId:e.id, depth:1, kind:'stage', phase:'Promo', label:stage.label.replace(`${e.label} `, ''), description:promoEventLabel(stage), metrics:stage.metrics, expandable:true},
+        ...dayNodes(stage, 2),
+      ])];
+    }) : phases.buildHierarchy(days, hierarchy, $('phaseInfluSplit').checked, { phases: state.phaseSelection, months: state.phaseMonths });
   if (!state.phaseExpansionInitialized) {
     nodes.filter((node) => node.depth === 0).forEach((node) => state.phaseExpanded.add(node.id));
     state.phaseExpansionInitialized = true;
@@ -1184,7 +1197,7 @@ function renderPhaseTable(days) {
     values.forEach((value) => row.appendChild(element('td', '', value)));
     body.appendChild(row);
   });
-  $('phaseTableSubtitle').textContent = phaseMode === 'promo' ? 'Promo → represented days · full event dates · CZSK' : $('phaseInfluSplit').checked
+  $('phaseTableSubtitle').textContent = phaseMode === 'promo' ? 'Promo → Private/Public where applicable → represented days · CZSK' : $('phaseInfluSplit').checked
     ? (hierarchy === 'month-phase' ? 'Month → phase → code/no code → days' : 'Phase → code/no code → month → days')
     : (hierarchy === 'month-phase' ? 'Month → phase → days' : 'Phase → month → days');
 }
@@ -1239,8 +1252,12 @@ function renderPhases() {
     button.setAttribute('aria-pressed', String(button.dataset.phaseMode === phaseMode));
     button.onclick = () => { phaseMode = button.dataset.phaseMode; renderPhases(); };
   });
-  document.querySelector('.phase-chart-panel').hidden = promo;
-  const allEvents = promo ? events : phases.buildPromoEvents(state.data.phases);
+  document.querySelector('.phase-chart-panel').hidden = false;
+  const allEvents = phases.buildPromoCohorts(state.data.phases);
+  if (state.phaseEvents != null) {
+    const selected = new Set(state.phaseEvents);
+    state.phaseEvents = allEvents.filter(e => selected.has(e.id) || e.events.some(stage => selected.has(stage.id))).map(e => e.id);
+  }
   renderPhaseMenu('phaseEvents', 'Promos', allEvents.map(e => e.id), 'phaseEvents', id => promoEventLabel(allEvents.find(e => e.id === id)));
   // Keep controls and their saved selections in place; only applicability changes.
   ['phaseFilter', 'phaseMonths', 'phaseEvents'].forEach(id => {
@@ -1253,13 +1270,13 @@ function renderPhases() {
       host.querySelector('button').setAttribute('aria-expanded', 'false');
     }
   });
-  ['phaseHierarchy', 'phaseMetric', 'phaseInfluSplit'].forEach(id => {
+  ['phaseHierarchy', 'phaseInfluSplit'].forEach(id => {
     $(id).disabled = promo;
     $(id).closest('label').setAttribute('aria-disabled', String(promo));
   });
-  if (!promo) renderPhaseChart(days);
+  renderPhaseChart(days);
   renderPhaseTable(days);
-  window.renderPromoComparison(days, promo ? phases.buildPromoCohorts(state.data.phases) : null);
+  window.renderPromoComparison(days, promo ? events : null);
   $('screenReaderStatus').textContent = `Phases view updated for CZSK, year to date through ${formatDate(days[days.length - 1].date)}.`;
 }
 
