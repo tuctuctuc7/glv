@@ -327,7 +327,7 @@
     });
   }
 
-  // Comparison-only cohorts; audit table keeps the original event identities.
+  // Top-chart/table cohorts retain member identities; daily comparison stays per event.
   function buildPromoCohorts(schedule) {
     const groups = new Map();
     buildPromoEvents(schedule).forEach(event => {
