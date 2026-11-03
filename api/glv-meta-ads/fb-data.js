@@ -7,6 +7,14 @@ const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
 // Presets the cron pre-warms; everything else hits Meta live
 const CACHED_PRESETS = new Set(['last_7d', 'last_14d', 'last_30d', 'last_90d', 'this_month', 'last_month']);
+const { lastMonth } = require('../../public/glv-meta-ads/wl-report.js');
+function wlCacheUsable(payload, range, now = new Date()) {
+  const age = now - new Date(payload?.generated_at);
+  return Boolean(payload?.wl_version === 1 && Array.isArray(payload.rows)
+    && payload.range?.since === range.since && payload.range?.until === range.until
+    && age >= 0 && age <= 90000000
+    && payload.rows.every(row => typeof row.campaign_name === 'string' && row.campaign_name));
+}
 
 function resolveRedisConfig(env = process.env) {
   const kvUrl = env.KV_REST_API_URL;
@@ -113,7 +121,8 @@ function normalizeAd(row, statusMap) {
     name: row.ad_name || '',
     status: statusMap[adId] || 'UNKNOWN',
     campaign_id: row.campaign_id || '',
-    amount_spent:                  row.spend || '0',
+    campaign_name: row.campaign_name || '',
+    amount_spent:                  row.spend ?? null,
     impressions:                   row.impressions || '0',
     'actions:link_click':          getAction(row.actions, 'link_click'),
     'actions:landing_page_view':   getAction(row.actions, 'landing_page_view'),
@@ -134,7 +143,7 @@ async function paginate(url) {
   while (next) {
     const r = await fetch(next);
     const data = await r.json();
-    if (data.error) throw new Error(`FB API: ${data.error.message} (code ${data.error.code})`);
+    if (!r.ok || data.error || !Array.isArray(data.data)) throw new Error('Meta insights unavailable or incomplete');
     rows = rows.concat(data.data || []);
     next = data.paging?.next || null;
   }
@@ -156,6 +165,16 @@ module.exports = async (req, res) => {
 
   const { type, date_preset, time_range } = req.query;
   const preset = date_preset || 'last_30d';
+  const wl = req.query.wl === '1';
+  let wlRange;
+  if (wl) {
+    res.setHeader('Cache-Control', 'private, no-store');
+    try {
+      wlRange = time_range ? JSON.parse(time_range) : lastMonth();
+      const valid = d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && new Date(d).toISOString().slice(0,10) === d;
+      if (type !== 'ads' || (!time_range && preset !== 'last_month') || !valid(wlRange.since) || !valid(wlRange.until) || wlRange.since > wlRange.until) throw new Error();
+    } catch { return res.status(400).json({error:'Invalid WL date range'}); }
+  }
 
   if (type === 'promo_formats' || type === 'promo_concepts') {
     res.setHeader('Cache-Control', 'private, no-store');
@@ -181,7 +200,7 @@ module.exports = async (req, res) => {
   // Serve from cache for standard presets (no time_range = custom date)
   if (!time_range && CACHED_PRESETS.has(preset)) {
     const cached = await redisGet(`glv:${type}:${preset}`);
-    if (cachedPayloadUsable(type, cached)) {
+    if (cachedPayloadUsable(type, cached) && (!wl || wlCacheUsable(cached, wlRange))) {
       res.setHeader('X-Cache', 'HIT');
       return res.json(cached);
     }
@@ -189,7 +208,7 @@ module.exports = async (req, res) => {
 
   // Cache miss or custom range — hit Meta API live
   res.setHeader('X-Cache', 'MISS');
-  const dateParam = time_range
+  const dateParam = wl ? `time_range=${encodeURIComponent(JSON.stringify(wlRange))}` : time_range
     ? `time_range=${encodeURIComponent(time_range)}`
     : `date_preset=${preset}`;
   const auth = `access_token=${token}`;
@@ -208,7 +227,7 @@ module.exports = async (req, res) => {
       res.json({ rows: raw.map(normalizeCampaign) });
 
     } else if (type === 'ads') {
-      const fields = 'ad_id,ad_name,campaign_id,spend,impressions,actions,action_values,video_p100_watched_actions,video_thruplay_watched_actions';
+      const fields = 'ad_id,ad_name,campaign_id,campaign_name,spend,impressions,actions,action_values,video_p100_watched_actions,video_thruplay_watched_actions';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=ad&fields=${fields}&${dateParam}&sort=spend_descending&limit=50&${auth}`;
       const raw = await paginate(url);
 
@@ -227,14 +246,15 @@ module.exports = async (req, res) => {
         } catch(e) {}
       }
 
-      res.json({ rows: raw.map(r => normalizeAd(r, statusMap)) });
+      res.json({ rows: raw.map(r => normalizeAd(r, statusMap)), ...(wl ? {wl_version:1,range:wlRange,generated_at:new Date().toISOString()} : {}) });
 
     } else {
       res.status(400).json({ error: 'Invalid type. Use: aggregate, daily, or ads.' });
     }
   } catch (err) {
-    console.error('fb-data error:', err);
-    res.status(500).json({ error: err.message });
+    // Do not expose upstream URLs, tokens or source text through diagnostics.
+    console.error('fb-data request failed');
+    res.status(500).json({ error: 'Meta data unavailable. Please retry.' });
   }
 };
-module.exports._test = { normalizeCampaign, cachedPayloadUsable, resolveRedisConfig };
+module.exports._test = { normalizeAd, wlCacheUsable, normalizeCampaign, cachedPayloadUsable, resolveRedisConfig };

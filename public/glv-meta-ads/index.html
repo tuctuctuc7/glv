@@ -321,6 +321,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 <script src="/glv-meta-ads/promo-format-ui.js?v=promo-labels-20261029"></script>
 <script src="/glv-meta-ads/session-cache.js?v=meta-cache-20260922"></script>
 <link rel="stylesheet" href="/glv-meta-ads/section-info.css?v=promo-creative-20260921">
+<link rel="stylesheet" href="/glv-meta-ads/wl-report.css?v=wl-report-20261102">
+<script src="/glv-meta-ads/wl-report.js?v=wl-report-20261102"></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to dashboard content</a>
@@ -374,22 +376,25 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
     </div>
   </div>
   <div class="header-tabs" role="tablist" aria-label="Dashboard views">
+
     <button class="tab-btn active" id="tab-czsk" data-tab="czsk" role="tab" aria-selected="true" aria-controls="panel-czsk"><span class="tab-desktop-label">🇨🇿 CZSK</span><span class="tab-mobile-label"><span class="tab-mobile-icon">🇨🇿</span>CZSK</span></button>
     <button class="tab-btn" id="tab-czsk-triage" data-tab="czsk-triage" role="tab" aria-selected="false" aria-controls="panel-czsk-triage"><span class="tab-desktop-label">Triage</span><span class="tab-mobile-label"><span class="tab-mobile-icon">⌁</span>Triage</span></button>
     <button class="tab-btn" id="tab-czsk-promo" data-tab="czsk-promo" role="tab" aria-selected="false" aria-controls="panel-czsk-promo"><span class="tab-desktop-label">CZSK Promo</span><span class="tab-mobile-label"><span class="tab-mobile-icon">◫</span>Promo</span></button>
     <button class="tab-btn" id="tab-czsk-promo-creative" data-tab="czsk-promo-creative" role="tab" aria-label="CZSK Promo Creative" aria-selected="false" aria-controls="panel-czsk-promo-creative"><span class="tab-desktop-label">CZSK Promo Creative</span><span class="tab-mobile-label">CZSK Promo<br>Creative</span></button>
     <button class="tab-btn" id="tab-czsk-leadgen" data-tab="czsk-leadgen" role="tab" aria-selected="false" aria-controls="panel-czsk-leadgen"><span class="tab-desktop-label">CZSK Lead-gen</span><span class="tab-mobile-label"><span class="tab-mobile-icon">◎</span>Lead-gen</span></button>
     <button class="tab-btn" id="tab-us" data-tab="us" role="tab" aria-selected="false" aria-controls="panel-us"><span class="tab-desktop-label">🇺🇸 US</span><span class="tab-mobile-label"><span class="tab-mobile-icon">🇺🇸</span>US</span></button>
+    <button class="tab-btn" id="tab-wl" data-tab="wl" role="tab" aria-selected="false" aria-controls="panel-wl">WL</button>
   </div>
 </header>
 
 <main class="page" id="main-content">
   <section class="dashboard-intro" aria-labelledby="dashboard-title"><div><p class="dashboard-kicker">Executive media control room</p><h1 class="dashboard-title" id="dashboard-title">Performance, without the noise.</h1><p class="dashboard-sub">Campaign efficiency, promo contribution, creative health, and daily evidence across CZSK and US.</p></div><div class="scope-pill">META ADS · ACCOUNT CURRENCY CZK</div></section>
-<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button id="refresh-data" type="button" class="metric-select" style="min-height:44px" onclick="loadData({force:true})" title="Reload selected dates, exchange rate and independent creative history">Refresh data</button></div>
+<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button id="refresh-data" type="button" class="metric-select" style="min-height:44px" onclick="document.getElementById('tab-wl').classList.contains('active')?GlvWlUI.load(true):loadData({force:true})" title="Reload the active view">Refresh data</button></div>
 <div id="loading" class="loading" role="status"><div class="spinner"></div><span id="loading-msg">Loading campaigns…</span></div>
 <div id="error" class="err" style="display:none;"></div>
 
 <!-- ═══ CZSK PANEL ═══ -->
+<div class="panel" id="panel-wl" role="tabpanel" aria-labelledby="tab-wl"></div>
 <div class="panel active" id="panel-czsk" role="tabpanel" aria-labelledby="tab-czsk">
   <div class="kpi-grid" id="kpi-czsk"></div>
   <div class="section">
@@ -1786,7 +1791,8 @@ function setPromoActiveDaysOnly(checked){
   renderPromoTable();
 }
 function syncPromoFilterVisibility(activeTab){
-  document.getElementById('date-wrap').hidden=activeTab==='czsk-promo-creative';
+  document.body.classList.toggle('wl-active',activeTab==='wl');
+  document.getElementById('date-wrap').hidden=activeTab==='czsk-promo-creative'||activeTab==='wl';
   document.getElementById('promo-active-days-wrap')?.classList.toggle('hidden',activeTab!=='czsk-promo');
   document.getElementById('include-leadgen-wrap')?.classList.toggle('hidden',activeTab!=='czsk'&&activeTab!=='czsk-triage');
   document.getElementById('leadgen-only-wrap')?.classList.toggle('hidden',activeTab!=='czsk-leadgen');
@@ -2073,7 +2079,7 @@ function scopeIdentity(scope){return new Date().toISOString().slice(0,10)+'|'+JS
 function syncLoadingPanels(scopeKey){
   document.querySelectorAll('.panel').forEach(panel=>{
     // Independent history remains usable during another tab's date request.
-    panel.style.display=panel.id==='panel-czsk-promo-creative'||renderedScope===scopeKey?'':'none';
+    panel.style.display=panel.id==='panel-wl'||panel.id==='panel-czsk-promo-creative'||renderedScope===scopeKey?'':'none';
   });
 }
 async function loadData({force=false}={}){
@@ -2162,5 +2168,6 @@ const root=document.documentElement;const themeToggle=document.getElementById('t
 initTabFilters();initTriageCards();initSelects();initSortControls();updateDateLabel();loadData();
 </script>
 <script src="/glv-meta-ads/section-info.js?v=concept-funnel-v1-20261014"></script>
+<script src="/glv-meta-ads/wl-report-ui.js?v=wl-report-20261102"></script>
 </body>
 </html>

@@ -167,7 +167,8 @@ function normalizeAd(row, statusMap) {
     name: row.ad_name || '',
     status: statusMap[adId] || 'UNKNOWN',
     campaign_id: row.campaign_id || '',
-    amount_spent: row.spend || '0',
+    campaign_name: row.campaign_name || '',
+    amount_spent: row.spend ?? null,
     impressions: row.impressions || '0',
     'actions:link_click': getAction(row.actions, 'link_click'),
     'actions:landing_page_view': getAction(row.actions, 'landing_page_view'),
@@ -188,7 +189,7 @@ async function paginate(url, fetcher) {
   while (next) {
     const r = await fetcher(next);
     const data = await r.json();
-    if (data.error) throw new Error(`FB API: ${data.error.message} (code ${data.error.code})`);
+    if (!r.ok || data.error || !Array.isArray(data.data)) throw new Error('Meta insights unavailable or incomplete');
     rows = rows.concat(data.data || []);
     next = data.paging?.next || null;
   }
@@ -228,7 +229,7 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
 
   // ads
   try {
-    const fields = 'ad_id,ad_name,campaign_id,spend,impressions,actions,action_values,video_p100_watched_actions,video_thruplay_watched_actions';
+    const fields = 'ad_id,ad_name,campaign_id,campaign_name,spend,impressions,actions,action_values,video_p100_watched_actions,video_thruplay_watched_actions';
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=ad&fields=${fields}&${dateParam}&sort=spend_descending&limit=50&${auth}`;
     const raw = await paginate(url, fetcher);
 
@@ -245,7 +246,7 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
     }
 
     const rows = raw.map(r => normalizeAd(r, statusMap));
-    await redisCommand(fetcher, 'SET', `glv:ads:${preset}`, JSON.stringify({ rows }), 'EX', String(TTL));
+    await redisCommand(fetcher, 'SET', `glv:ads:${preset}`, JSON.stringify({ rows, wl_version:1, range:{since,until}, generated_at:new Date().toISOString() }), 'EX', String(TTL));
     stats.ads = summarizeRows(rows);
   } catch (e) {
     errors.push(`ads/${preset}: ${e.message}`);
@@ -335,4 +336,4 @@ async function handler(req, res) {
 }
 
 module.exports = handler;
-module.exports._test = { cutoffDate, sinceDate, monthRange, redisCmd, summarizeRows, normalizeCampaign, resolveRedisConfig, refreshPromoFormatCache, runRefresh };
+module.exports._test = { normalizeAd, fetchAndCache, cutoffDate, sinceDate, monthRange, redisCmd, summarizeRows, normalizeCampaign, resolveRedisConfig, refreshPromoFormatCache, runRefresh };
