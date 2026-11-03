@@ -47,7 +47,7 @@ const server=http.createServer((req,res)=>{
    assert.equal(await page.locator('#promo-format-section').count(),1,'native format section exists');
    assert.deepEqual(await page.evaluate(()=>({datePreset,customRange})),{datePreset:'last_30d',customRange:null});
    assert.equal(await page.locator('#panel-czsk-promo #promo-format-section').count(),0);
-   assert.equal(await page.locator('.tab-btn').count(),6);
+   assert.equal(await page.locator('.tab-btn').count(),7); // Includes the WL Report tab.
    await page.locator('[data-tab="czsk-promo-creative"]').click();
    const expected=promoMix(payload.rows).filter(p=>p.total.spend>0||p.total.impressions>0);
    assert.equal(await page.locator('#promo-format-table tbody tr').count(),expected.reduce((n,m)=>n+3+(m.formats.Unknown.ads?1:0),0));
