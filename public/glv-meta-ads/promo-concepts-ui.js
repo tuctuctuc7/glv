@@ -25,13 +25,15 @@ function renderPromoConcepts(){
   if(focused)Array.from(choices.querySelectorAll('input')).find(input=>input.value===focused)?.focus({preventScroll:true});
   document.getElementById('filter-label-promo-concept').textContent=selected.length===1?(campaigns.find(c=>c.id===selected[0])?.name||'1 selected'):selected.length?`${selected.length} selected`:'None';
   let rows=PromoConcepts.aggregate(conceptPayload.rows,selected);if(conceptSort.key)rows=PromoConcepts.sort(rows,conceptSort.key,conceptSort.direction);
-  const missing=selected.filter(id=>!campaigns.some(c=>c.id===id)).length,warnings=rows.filter(r=>r.warning).length;
-  status.textContent=!rows.length?(selected.length?'No activity for selected campaigns.':'No campaigns selected.'):`${rows.length} concepts · ${warnings?`${warnings} unmapped/conflicting full-name groups retained in totals.`:'Carryover purchases included.'}`;
+  const missing=selected.filter(id=>!campaigns.some(c=>c.id===id)).length,warnings=rows.filter(r=>r.warning&&!r.is_ghost).length;
+  const ghosts=rows.filter(r=>r.is_ghost).length;
+  status.textContent=!rows.length?(selected.length?'No activity for selected campaigns.':'No campaigns selected.'):`${rows.length-ghosts} concepts · ${warnings?`${warnings} unmapped/conflicting full-name groups retained in totals.`:'Carryover purchases included.'}`;
+  if(ghosts)status.textContent+=' Ghost creative — pending Meta reconciliation. Negative values are signed adjustments, not observed concepts.';
   if(missing)status.textContent+=` ${missing} selected campaign IDs unavailable; selection retained.`;
   const freshnessWarning=promoHistoryWarning(conceptPayload,conceptError);
   if(freshnessWarning)status.textContent=freshnessWarning+' '+status.textContent;
   status.classList.toggle('format-warning',Boolean(freshnessWarning));
   const percent=n=>n===null?'—':n.toFixed(2)+'%',number=n=>n===null?'—':n.toLocaleString('en-US',{maximumFractionDigits:2});
   const total=PromoConcepts.total(rows);
-  for(const row of total?[total,...rows]:rows){const tr=document.createElement('tr');if(row===total)tr.className='subtotal-row';tr.innerHTML=(row===total?'<td><strong>Total</strong></td>':`<td title="${escapeHtml(row.campaign_name+' · '+row.campaign_id+(row.warning?' · '+row.warning:''))}" aria-label="${escapeHtml(row.label+' · '+row.campaign_name+' · '+row.campaign_id+(row.warning?' · '+row.warning:''))}"><strong>${escapeHtml(row.label)}</strong></td>`)+conceptColumns.map(([key])=>{let value=['ctr','lpCheckout','checkoutPurchase','cvr'].includes(key)?percent(row[key]):key==='roas'?(row[key]===null?'—':row[key].toFixed(2)+'x'):number(row[key]);if(key==='spend'||key==='purchases')value+=`<small>${percent(row[key==='spend'?'spendShare':'purchaseShare'])} share</small>`;return `<td>${value}</td>`;}).join('');body.append(tr);}
+  for(const row of total?[total,...rows]:rows){const tr=document.createElement('tr');if(row===total)tr.className='subtotal-row';else if(row.is_ghost)tr.className='ghost-row';tr.innerHTML=(row===total?'<td><strong>Total</strong></td>':`<td title="${escapeHtml(row.campaign_name+' · '+row.campaign_id+(row.warning?' · '+row.warning:''))}" aria-label="${escapeHtml(row.label+' · '+row.campaign_name+' · '+row.campaign_id+(row.warning?' · '+row.warning:''))}"><strong>${escapeHtml(row.label)}</strong></td>`)+conceptColumns.map(([key])=>{let value=['ctr','lpCheckout','checkoutPurchase','cvr'].includes(key)?percent(row[key]):key==='roas'?(row[key]===null?'—':row[key].toFixed(2)+'x'):number(row[key]);if(key==='spend'||key==='purchases')value+=`<small>${percent(row[key==='spend'?'spendShare':'purchaseShare'])} share</small>`;return `<td>${value}</td>`;}).join('');body.append(tr);}
 }

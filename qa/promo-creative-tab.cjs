@@ -47,7 +47,7 @@ const server=http.createServer((req,res)=>{
    assert.equal(await page.locator('#promo-format-section').count(),1,'native format section exists');
    assert.deepEqual(await page.evaluate(()=>({datePreset,customRange})),{datePreset:'last_30d',customRange:null});
    assert.equal(await page.locator('#panel-czsk-promo #promo-format-section').count(),0);
-   assert.equal(await page.locator('.tab-btn').count(),6);
+   assert.deepEqual(await page.locator('.tab-btn').evaluateAll(nodes=>nodes.map(n=>n.dataset.tab)),['czsk','czsk-triage','czsk-promo','czsk-promo-creative','czsk-leadgen','us','wl']);
    await page.locator('[data-tab="czsk-promo-creative"]').click();
    const expected=promoMix(payload.rows).filter(p=>p.total.spend>0||p.total.impressions>0);
    assert.equal(await page.locator('#promo-format-table tbody tr').count(),expected.reduce((n,m)=>n+3+(m.formats.Unknown.ads?1:0),0));
@@ -66,7 +66,7 @@ const server=http.createServer((req,res)=>{
    let rowIndex=0;
    const pct=n=>n===null?'—':n.toFixed(1)+'%';
    for(const month of expected){
-    const entries=[['Total',month.total],...Object.entries(month.formats).filter(([name,data])=>name!=='Unknown'||data.ads)];
+    const entries=[['Total',month.total],...Object.entries(month.formats).filter(([name,data])=>name==='Ghost'?['spend','purchases','revenue','impressions'].some(k=>data[k]!==0):name!=='Unknown'||data.ads)];
     for(const [format,data] of entries){const row=table[rowIndex++];assert.equal(row[0],month.label);assert.equal(row[1],format);assert.equal(row[2],data.assets===null?'—':String(data.assets)+(data.asset_status==='partial'?' known':''));assert.equal(row[4],pct(data.spendShare));assert.equal(row[6],pct(data.purchaseShare));}
    }
    assert.equal(await page.evaluate(()=>window.__formatXss),undefined);

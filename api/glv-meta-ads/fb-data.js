@@ -7,6 +7,11 @@ const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
 // Presets the cron pre-warms; everything else hits Meta live
 const CACHED_PRESETS = new Set(['last_7d', 'last_14d', 'last_30d', 'last_90d', 'this_month', 'last_month']);
+const { monthRange } = require('../../lib/glv-meta-dates.cjs');
+function cacheFreshForRange(payload, range, now = new Date()) {
+  const age = now - Date.parse(payload?.generated_at);
+  return Boolean(range && payload?.range?.since === range.since && payload?.range?.until === range.until && Number.isFinite(age) && age >= 0 && age <= 90000000);
+}
 const { lastMonth } = require('../../public/glv-meta-ads/wl-report.js');
 function wlCacheUsable(payload, range, now = new Date()) {
   const age = now - new Date(payload?.generated_at);
@@ -197,10 +202,21 @@ module.exports = async (req, res) => {
     }
   }
 
+  res.setHeader('Cache-Control', 'private, no-store');
+  let range = wlRange || (CACHED_PRESETS.has(preset) ? monthRange(preset, false) : null);
+  if (time_range && !wl) {
+    try {
+      range = JSON.parse(time_range);
+      const {validDate} = require('../../public/glv-meta-ads/promo-format.js');
+      if (!validDate(range.since) || !validDate(range.until) || range.since > range.until) throw new Error();
+    } catch { return res.status(400).json({error:'Invalid date range'}); }
+  }
+  const provenance = () => ({...(range ? {range} : {}), generated_at:new Date().toISOString()});
+
   // Serve from cache for standard presets (no time_range = custom date)
   if (!time_range && CACHED_PRESETS.has(preset)) {
     const cached = await redisGet(`glv:${type}:${preset}`);
-    if (cachedPayloadUsable(type, cached) && (!wl || wlCacheUsable(cached, wlRange))) {
+    if (cachedPayloadUsable(type, cached) && cacheFreshForRange(cached, range) && (!wl || wlCacheUsable(cached, wlRange))) {
       res.setHeader('X-Cache', 'HIT');
       return res.json(cached);
     }
@@ -208,7 +224,7 @@ module.exports = async (req, res) => {
 
   // Cache miss or custom range — hit Meta API live
   res.setHeader('X-Cache', 'MISS');
-  const dateParam = wl ? `time_range=${encodeURIComponent(JSON.stringify(wlRange))}` : time_range
+  const dateParam = range ? `time_range=${encodeURIComponent(JSON.stringify(range))}` : time_range
     ? `time_range=${encodeURIComponent(time_range)}`
     : `date_preset=${preset}`;
   const auth = `access_token=${token}`;
@@ -218,13 +234,13 @@ module.exports = async (req, res) => {
       const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&limit=500&${auth}`;
       const raw = await paginate(url);
-      res.json({ rows: raw.map(normalizeCampaign) });
+      res.json({ rows: raw.map(normalizeCampaign), ...provenance() });
 
     } else if (type === 'daily') {
       const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&time_increment=1&limit=500&${auth}`;
       const raw = await paginate(url);
-      res.json({ rows: raw.map(normalizeCampaign) });
+      res.json({ rows: raw.map(normalizeCampaign), ...provenance() });
 
     } else if (type === 'ads') {
       const fields = 'ad_id,ad_name,campaign_id,campaign_name,spend,impressions,actions,action_values,video_p100_watched_actions,video_thruplay_watched_actions';
@@ -246,7 +262,7 @@ module.exports = async (req, res) => {
         } catch(e) {}
       }
 
-      res.json({ rows: raw.map(r => normalizeAd(r, statusMap)), ...(wl ? {wl_version:1,range:wlRange,generated_at:new Date().toISOString()} : {}) });
+      res.json({ rows: raw.map(r => normalizeAd(r, statusMap)), ...provenance(), ...(wl ? {wl_version:1} : {}) });
 
     } else {
       res.status(400).json({ error: 'Invalid type. Use: aggregate, daily, or ads.' });

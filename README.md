@@ -454,6 +454,39 @@ of observed performance. Read-only source validation must verify account identit
 use a bounded date range, inspect action aliases, reconcile real concept inputs,
 and keep its facts and screenshots under a private directory outside this repo.
 
+### Ghost artifact browser validation (local synthetic fixtures)
+
+Run these browser suites sequentially on the QA host; do not launch parallel
+Chromium matrices. No live Meta requests, cache writes, deployment or activation
+are implied by these checks.
+
+```bash
+GLV_META_QA_WIDTHS=1440 GLV_META_QA_EVIDENCE_DIR=/tmp/ghost-meta-desktop node qa/meta-ads-smoke.cjs
+PERF_REPORT=/tmp/ghost-cache-report.json node qa/meta-cache-performance.cjs
+GLV_META_QA_EVIDENCE_DIR=/tmp/ghost-meta-full npm run qa:meta-ads
+node qa/promo-creative-tab.cjs
+node qa/promo-concepts.cjs
+node qa/promo-ghost.cjs
+node qa/wl-report.cjs
+```
+
+The ghost candidate passed each command locally. Meta Ads, Creative and Concepts
+cover 1440/1001/1000/800/721/720/390/320px; Creative and Concepts exercise both
+themes (Creative: 416 section-information cases). Ghost and WL cover
+1440/390/320px in both themes. Cache assertions verify exact request domains:
+`aggregate`, `daily`, `ads`, `fx`, and one shared `promo_formats` history request
+on visibility rollover and expiry, rather than counting separate concept history.
+The earlier `About Promo Period Split` focus timeout did not reproduce in either
+the desktop probe or full matrix; its exact accessible-name assertion remains.
+
+Evidence remains outside Git: `/tmp/ghost-meta-desktop`, `/tmp/ghost-meta-full`,
+`/tmp/glv-promo-creative-browser`, `/tmp/glv-promo-concepts-qa`,
+`/tmp/glv-ghost-browser`, and `/tmp/glv-wl-report-qa`. Section-only ghost captures
+include fixed page chrome, so they are chart/table evidence, not unobscured
+full-page reachability evidence. Browser validation does not independently prove
+server lookback or production daily freshness; those require backend tests and
+post-release readback separately.
+
 ## Media Buyer OS
 
 Route: `/glv-mb-os/`

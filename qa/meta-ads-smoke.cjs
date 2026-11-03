@@ -87,7 +87,8 @@ async function run() {
       { name: 'mobile-720', width: 720, height: 900 },
       { name: 'mobile-390', width: 390, height: 844 },
       { name: 'mobile-320', width: 320, height: 780 },
-    ]) {
+    ].filter(v=>!process.env.GLV_META_QA_WIDTHS||process.env.GLV_META_QA_WIDTHS.split(',').map(Number).includes(v.width))) {
+      console.log('Viewport',viewport.name);
       const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
       const page = await context.newPage();
       page.on('console', message => { if (message.type() === 'error') errors.push(`${viewport.name}: ${message.text()}`); });

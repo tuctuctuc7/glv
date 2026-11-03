@@ -35,7 +35,7 @@ function refreshPromoFormats() {
   const chartGrid=section.querySelector('.promo-format-grid');
   const rows=promoFormatRows(), allPeriods=PromoFormat.promoMix(rows);
   // Display delivery-positive periods consistently; raw carryover is not reassigned.
-  const periods=allPeriods.filter(period=>period.total.spend>0||period.total.impressions>0);
+  const periods=allPeriods.filter(period=>period.total.spend>0||period.total.impressions>0||rows.some(r=>r.is_ghost&&PromoFormat.promoMix([r]).some(p=>p.id===period.id)));
   const omitted=allPeriods.length-periods.length;
   section.style.setProperty('--promo-plot-min-width',`${72+periods.length*64}px`);
   chartGrid.hidden=!periods.length;
@@ -48,16 +48,19 @@ function refreshPromoFormats() {
   if(!periods.length){status.textContent=(freshnessWarning?freshnessWarning+' ':'')+'No Promo ad activity in this history range.';status.classList.toggle('format-warning',Boolean(freshnessWarning));return;}
   const unknownRows=rows.filter(row=>row.format==='Unknown');
   const unknownCount=new Set(unknownRows.map(row=>row.ad_id)).size;
-  status.textContent=unknownCount?`Unknown: ${unknownCount} ads retained in totals and shares. Review unmapped or conflicting labels below.`:`All ${new Set(rows.map(row=>row.ad_id)).size} activity-bearing ads classified. Carryover purchases included.`;
+  const ghostCount=rows.filter(row=>row.is_ghost).length;
+  status.textContent=unknownCount?`Unknown: ${unknownCount} ads retained in totals and shares. Review unmapped or conflicting labels below.`:`All ${new Set(rows.filter(row=>!row.is_ghost).map(row=>row.ad_id)).size} activity-bearing ads classified. Carryover purchases included.`;
+  if(ghostCount)status.textContent+=' Ghost creative — pending Meta reconciliation. Signed campaign/day residuals; negative values are reconciliation adjustments, not observed creatives, concepts or assets.';
   if(freshnessWarning)status.textContent=freshnessWarning+' '+status.textContent;
   status.classList.toggle('format-warning',unknownCount>0||Boolean(freshnessWarning));
-  status.hidden=unknownCount===0&&!freshnessWarning;
+  status.hidden=unknownCount===0&&!freshnessWarning&&!ghostCount;
   document.getElementById('promo-format-summary').textContent=(unknownCount||freshnessWarning?'':status.textContent+' ')+(omitted?`${omitted} no-delivery periods hidden from both charts and table; their carryover remains in raw history, not reassigned.`:'');
-  const formats=PromoFormat.FORMATS.filter(format=>format!=='Unknown'||unknownCount);
+  const formats=PromoFormat.FORMATS.filter(format=>(format!=='Unknown'||unknownCount)&&(format!=='Ghost'||ghostCount));
+  const formatLabel=format=>format==='Ghost'?'Ghost creative — pending Meta reconciliation':format;
   const percent=value=>value===null?'—':value.toFixed(1)+'%';
   const value=(key,n)=>n===null?'—':formatChartVal(key,n);
   for(const period of periods) {
-    const renderRow=(format,data,total=false)=>`<tr class="${total?'subtotal-row':'child-row'}"><td>${escapeHtml(period.label)}</td><td>${total?'Total':`<span class="format-dot" style="background:${PromoFormat.COLORS[format]}"></span>${format}`}</td><td title="${data.asset_status==='partial'?'Known source references only; inventory partial / aliases unresolved':data.asset_status==='configured'?'Unique currently configured source references, not historical delivery':data.asset_status==='not_applicable'?'Unknown is an ad-classification diagnostic; known media are counted by actual kind':'Source inventory unavailable'}">${data.assets===null?'—':data.assets+(data.asset_status==='partial'?' known':'')}</td><td>${escapeHtml(value('spend',data.spend))}</td><td>${percent(data.spendShare)}</td><td>${escapeHtml(value('purchases',data.purchases))}</td><td>${percent(data.purchaseShare)}</td><td>${escapeHtml(value('revenue',data.revenue))}</td><td>${escapeHtml(value('roas',data.roas))}</td><td>${escapeHtml(value('cpa',data.cpa))}</td></tr>`;
+    const renderRow=(format,data,total=false)=>`<tr class="${total?'subtotal-row':format==='Ghost'?'child-row ghost-row':'child-row'}"><td>${escapeHtml(period.label)}</td><td>${total?'Total':`<span class="format-dot" style="background:${PromoFormat.COLORS[format]}"></span>${formatLabel(format)}`}</td><td title="${format==='Ghost'?'Reconciliation adjustment; no source asset':data.asset_status==='partial'?'Known source references only; inventory partial / aliases unresolved':data.asset_status==='configured'?'Unique currently configured source references, not historical delivery':data.asset_status==='not_applicable'?'Unknown is an ad-classification diagnostic; known media are counted by actual kind':'Source inventory unavailable'}">${data.assets===null?'—':data.assets+(data.asset_status==='partial'?' known':'')}</td><td>${escapeHtml(value('spend',data.spend))}</td><td>${percent(data.spendShare)}</td><td>${escapeHtml(value('purchases',data.purchases))}</td><td>${percent(data.purchaseShare)}</td><td>${escapeHtml(value('revenue',data.revenue))}</td><td>${escapeHtml(value('roas',data.roas))}</td><td>${escapeHtml(value('cpa',data.cpa))}</td></tr>`;
     body.insertAdjacentHTML('beforeend',renderRow('Total',period.total,true)+formats.filter(format=>format!=='Unknown'||period.formats.Unknown.ads).map(format=>renderRow(format,period.formats[format])).join(''));
   }
   if(unknownCount){
@@ -71,11 +74,14 @@ function refreshPromoFormats() {
     chart.data.datasets.forEach((dataset,index)=>{if(!chart.isDatasetVisible(index))return;chart.getDatasetMeta(index).data.forEach((bar,i)=>{const n=dataset.data[i];if(n===null||n<6)return;const text=percent(n);if(ctx.measureText(text).width+4>bar.width)return;ctx.fillText(text,bar.x,(bar.y+bar.base)/2);});});ctx.restore();
   }};
   for(const [key,metric,title] of [['promo-format-spend','spendShare','Spend share'],['promo-format-purchases','purchaseShare','Purchase share']]){
+    const bounds=periods.map(p=>formats.map(f=>p.formats[f][metric]||0));
+    const min=Math.min(0,...bounds.map(values=>values.filter(n=>n<0).reduce((s,n)=>s+n,0)));
+    const max=Math.max(100,...bounds.map(values=>values.filter(n=>n>0).reduce((s,n)=>s+n,0)));
     charts[key]=new Chart(document.getElementById('chart-'+key).getContext('2d'),{
-      type:'bar',data:{labels:periods.map(period=>period.label),datasets:formats.map(format=>({label:format,data:periods.map(period=>period.formats[format][metric]),backgroundColor:PromoFormat.COLORS[format],borderWidth:0,categoryPercentage:0.9,barPercentage:0.9,maxBarThickness:64}))},
+      type:'bar',data:{labels:periods.map(period=>period.label),datasets:formats.map(format=>({label:formatLabel(format),data:periods.map(period=>period.formats[format][metric]),backgroundColor:PromoFormat.COLORS[format],borderWidth:format==='Ghost'?1:0,borderDash:format==='Ghost'?[4,3]:[],categoryPercentage:0.9,barPercentage:0.9,maxBarThickness:64}))},
       plugins:[percentLabels],options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
         plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${percent(item.raw)}`}}},
-        scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:11},autoSkip:false,maxRotation:60}},y:{stacked:true,min:0,max:100,title:{display:true,text:title},ticks:{font:{size:11},stepSize:20,callback:n=>n+'%'}}}}
+        scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:11},autoSkip:false,maxRotation:60}},y:{stacked:true,min,max,title:{display:true,text:title},ticks:{font:{size:11},callback:n=>n+'%'}}}}
     });
   }
 }

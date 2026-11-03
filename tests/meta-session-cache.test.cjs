@@ -17,6 +17,14 @@ test('failures retry; TTL, UTC rollover and bounded LRU evict; invalidation fenc
  assert.equal(await cache.get('race',load),8,'invalidated old request must not repopulate cache');
  cache.clear();assert.equal(await cache.get('race',load),9);
 });
+test('source age caps memory reuse even before the local five-minute TTL',async()=>{
+ let now=Date.parse('2026-11-03T12:00:00Z'),calls=0;
+ const cache=createSessionCache({now:()=>now});
+ const loader=async()=>({generated_at:new Date(now-25*3600000+60000).toISOString(),calls:++calls});
+ assert.equal((await cache.get('daily',loader)).calls,1);
+ now+=30000;assert.equal((await cache.get('daily',loader)).calls,1);
+ now+=31000;assert.equal((await cache.get('daily',loader)).calls,2);
+});
 test('fresh successful requests reuse exact keys and coalesce in flight',async()=>{
  const cache=createSessionCache();let calls=0,resolve;
  const loader=()=>{calls++;return new Promise(r=>resolve=r);};

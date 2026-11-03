@@ -1,41 +1,14 @@
 // GLV Meta Ads daily cron — runs at 00:00 UTC (07:00 GMT+7)
 // Scheduled runs end yesterday; authorized manual runs may include today's partial data.
 
-const { fetchPromoFormats, formatRange, sliceCachedFormats, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
+const { fetchPromoFormats, formatRange, sliceCachedFormats, refreshWindow, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
 const { validPayload } = require('../../public/glv-meta-ads/promo-format.js');
 const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
 
 const PRESETS = ['last_7d', 'last_14d', 'last_30d', 'last_90d', 'this_month', 'last_month'];
-const PRESET_DAYS = { last_7d: 6, last_14d: 13, last_30d: 29, last_90d: 89 };
 const TTL = 90000; // 25 hours
-
-function cutoffDate(includeToday = false, now = new Date()) {
-  const d = new Date(now);
-  if (!includeToday) d.setUTCDate(d.getUTCDate() - 1);
-  return d.toISOString().slice(0, 10);
-}
-
-function sinceDate(preset, includeToday = false, now = new Date()) {
-  const d = new Date(now);
-  d.setUTCDate(d.getUTCDate() - (includeToday ? 0 : 1) - PRESET_DAYS[preset]);
-  return d.toISOString().slice(0, 10);
-}
-
-function monthRange(preset, includeToday = false, now = new Date()) {
-  if (preset === 'this_month') {
-    const until = cutoffDate(includeToday, now);
-    const cutoff = new Date(`${until}T00:00:00Z`);
-    const since = new Date(Date.UTC(cutoff.getUTCFullYear(), cutoff.getUTCMonth(), 1));
-    return { since: since.toISOString().slice(0, 10), until };
-  }
-  if (preset === 'last_month') {
-    const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
-    const until = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0));
-    return { since: since.toISOString().slice(0, 10), until: until.toISOString().slice(0, 10) };
-  }
-  return { since: sinceDate(preset, includeToday, now), until: cutoffDate(includeToday, now) };
-}
+const {cutoffDate,sinceDate,monthRange} = require('../../lib/glv-meta-dates.cjs');
 
 function resolveRedisConfig(env = process.env) {
   const kvUrl = env.KV_REST_API_URL;
@@ -202,6 +175,14 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
   const auth = `access_token=${token}`;
   const errors = [];
   const stats = { preset, since, until };
+  async function publish(type,rows,extra={}){
+    const key=`glv:${type}:${preset}`,generated_at=new Date().toISOString();
+    const serialized=JSON.stringify({rows,range:{since,until},generated_at,...extra});
+    await redisCommand(fetcher,'SET',key,serialized,'EX',String(TTL));
+    const readback=await redisCommand(fetcher,'GET',key);
+    if(readback?.result!==serialized)throw new Error('Cache readback mismatch');
+    stats[type]={...summarizeRows(rows),range:{since,until},generated_at,readback_verified:true};
+  }
 
   // aggregate
   try {
@@ -209,8 +190,7 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&limit=500&${auth}`;
     const raw = await paginate(url, fetcher);
     const rows = raw.map(normalizeCampaign);
-    await redisCommand(fetcher, 'SET', `glv:aggregate:${preset}`, JSON.stringify({ rows }), 'EX', String(TTL));
-    stats.aggregate = summarizeRows(rows);
+    await publish('aggregate',rows);
   } catch (e) {
     errors.push(`aggregate/${preset}: ${e.message}`);
   }
@@ -221,8 +201,7 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&time_increment=1&limit=500&${auth}`;
     const raw = await paginate(url, fetcher);
     const rows = raw.map(normalizeCampaign);
-    await redisCommand(fetcher, 'SET', `glv:daily:${preset}`, JSON.stringify({ rows }), 'EX', String(TTL));
-    stats.daily = summarizeRows(rows);
+    await publish('daily',rows);
   } catch (e) {
     errors.push(`daily/${preset}: ${e.message}`);
   }
@@ -246,8 +225,7 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
     }
 
     const rows = raw.map(r => normalizeAd(r, statusMap));
-    await redisCommand(fetcher, 'SET', `glv:ads:${preset}`, JSON.stringify({ rows, wl_version:1, range:{since,until}, generated_at:new Date().toISOString() }), 'EX', String(TTL));
-    stats.ads = summarizeRows(rows);
+    await publish('ads',rows,{wl_version:1});
   } catch (e) {
     errors.push(`ads/${preset}: ${e.message}`);
   }
@@ -255,8 +233,8 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
   return { errors, stats };
 }
 
-async function refreshPromoFormatCache(token, includeToday = false, fetcher = boundedFetcher(Date.now() + 270000)) {
-  const range = formatRange({date_preset:'promo_history',include_today:includeToday ? '1' : '0'});
+async function refreshPromoFormatCache(token, includeToday = false, fetcher = boundedFetcher(Date.now() + 270000), {now=new Date(),fullHistory=false}={}) {
+  const range = formatRange({date_preset:'promo_history',include_today:includeToday ? '1' : '0'},now);
   // Migrate an existing last-good snapshot before a potentially failing pull.
   // SET without EX only fixes expiry after a successful replacement.
   const previous = await redisCommand(fetcher,'GET',CACHE_KEY);
@@ -267,7 +245,9 @@ async function refreshPromoFormatCache(token, includeToday = false, fetcher = bo
     const ttl=await redisCommand(fetcher,'TTL',CACHE_KEY);
     if (ttl?.result !== -1) throw new Error('Promo last-good cache retention was not verified');
   }
-  const payload = await fetchPromoFormats(token,range,fetcher);
+  const window=fullHistory?range:refreshWindow(prior,range);
+  const fresh=await fetchPromoFormats(token,window,fetcher);
+  const payload={...fresh,range,refresh_window:window,refresh_mode:window.since===range.since?'full_history':'rolling_7d',rows:[...(window.since===range.since?[]:prior.rows.filter(r=>r.date<window.since)),...fresh.rows]};
   if (!validPayload(payload)) throw new Error('Invalid Promo format refresh');
   const serialized = JSON.stringify(payload);
   // Keep the last reconciled history through producer outages. Freshness is
@@ -278,18 +258,18 @@ async function refreshPromoFormatCache(token, includeToday = false, fetcher = bo
   if (readback?.result !== serialized) throw new Error('Promo inventory cache readback mismatch');
   const {monthlyMix} = require('../../public/glv-meta-ads/promo-format.js');
   return {type:'promo_formats',...range,rows:payload.rows.length,unknownAds:new Set(payload.rows.filter(r=>r.format==='Unknown').map(r=>r.ad_id)).size,
-    inventory_version:payload.inventory_version,generated_at:payload.generated_at,readback_verified:true,
+    inventory_version:payload.inventory_version,funnel_version:payload.funnel_version,generated_at:payload.generated_at,readback_verified:true,refresh_mode:payload.refresh_mode,refresh_window:window,
     months:monthlyMix(payload.rows).map(m=>({month:m.month,images:m.formats.Banner.assets,videos:m.formats.Video.assets,total:m.total.assets,status:m.total.asset_status}))};
 }
 
-async function runRefresh(token, includeToday, {timeoutMs = 270000} = {}) {
+async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=false} = {}) {
   const fetcher = boundedFetcher(Date.now() + timeoutMs);
   const allErrors = [];
   const summaries = [];
   // Start the single bounded history pull alongside the old sequential preset
   // refreshes, so it does not add another full history budget at their end.
   // Attach both handlers immediately: failures must never become unhandled.
-  const formatRefresh = refreshPromoFormatCache(token,includeToday,fetcher).then(
+  const formatRefresh = refreshPromoFormatCache(token,includeToday,fetcher,{fullHistory}).then(
     stats=>({stats}), error=>({error:error.message})
   );
   for (const preset of PRESETS) {
@@ -299,11 +279,31 @@ async function runRefresh(token, includeToday, {timeoutMs = 270000} = {}) {
   }
 
   // One history pull per existing daily job, not one ad-level pull per preset.
-  // Replace all historical facts so attribution backfill and label changes land.
+  // Replace the rolling window; explicit full_history rebuilds older facts too.
   const formatResult = await formatRefresh;
   if (formatResult.error) allErrors.push(`promo_formats: ${formatResult.error}`);
   else summaries.push(formatResult.stats);
-  return {allErrors, summaries};
+  const freshness=verifyTabFreshness(summaries,includeToday);
+  if(!freshness.all_tabs_verified)allErrors.push('All-tabs freshness verification incomplete');
+  return {allErrors, summaries, freshness};
+}
+
+function verifyTabFreshness(summaries,includeToday=false,now=new Date()){
+  // Consumer inventory: ordinary tabs use the selected preset, independent
+  // Promo Creative sections share history, WL defaults to last_month ads.
+  // Historical selections stop at their own end, not an invented yesterday row.
+  const byPreset=new Map(summaries.filter(s=>s.preset).map(s=>[s.preset,s]));
+  const fresh=stamp=>{const age=now-Date.parse(stamp);return Number.isFinite(age)&&age>=-60000&&age<=90000000;};
+  const presetOK=(preset,types)=>types.every(type=>{const source=byPreset.get(preset)?.[type],expected=monthRange(preset,includeToday,now);return source?.readback_verified===true&&source.range?.since===expected.since&&source.range?.until===expected.until&&fresh(source.generated_at);});
+  const tabs={};
+  for(const tab of ['czsk','czsk-triage','czsk-promo','czsk-leadgen','us']){
+    const types=['aggregate','daily',...(['czsk','us'].includes(tab)?['ads']:[])];
+    tabs[tab]={verified:PRESETS.every(p=>presetOK(p,types)),sources:types,presets:PRESETS};
+  }
+  const history=summaries.find(s=>s.type==='promo_formats');
+  tabs['czsk-promo-creative']={verified:Boolean(history?.readback_verified&&history.since==='2026-03-01'&&history.until===cutoffDate(includeToday,now)&&history.funnel_version===1&&fresh(history.generated_at)),sources:['promo_formats','promo_concepts'],through:history?.until||null};
+  tabs.wl={verified:presetOK('last_month',['ads']),sources:['ads'],presets:['last_month'],through:monthRange('last_month',includeToday,now).until,custom_ranges:'live; verified by WL reader, not scheduled history'};
+  return {through:cutoffDate(includeToday,now),all_tabs_verified:Object.values(tabs).every(t=>t.verified),tabs};
 }
 
 async function handler(req, res) {
@@ -323,7 +323,7 @@ async function handler(req, res) {
   }
 
   const includeToday = ['1', 'true'].includes(String(req.query?.include_today || '').toLowerCase());
-  const {allErrors, summaries} = await runRefresh(token, includeToday);
+  const {allErrors, summaries, freshness} = await runRefresh(token, includeToday,{fullHistory:['1','true'].includes(String(req.query?.full_history||'').toLowerCase())});
   const success = allErrors.length === 0;
   const through = cutoffDate(includeToday);
   const coverageNote = includeToday ? ' including partial current day' : '';
@@ -332,7 +332,7 @@ async function handler(req, res) {
     : `Cache refresh completed with errors: ${allErrors.join('; ')}`;
 
   console.log(JSON.stringify({ event: 'glv-meta-ads-cron', message, summaries }));
-  res.status(success ? 200 : 500).json({ ok: success, message, summaries });
+  res.status(success ? 200 : 500).json({ ok: success, message, summaries, freshness });
 }
 
 module.exports = handler;

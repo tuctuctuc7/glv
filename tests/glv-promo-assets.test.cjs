@@ -157,7 +157,8 @@ test('unsupported and URL-only branches keep known sources partial rather than c
 test('metadata body stall is bounded and preserves reconciled facts', async () => {
   const {fetchPromoFormats}=require('../lib/glv-promo-format.cjs');
   let calls=0;
-  const values=[{data:[{campaign_id:'c',date_start:'2026-06-10',spend:'1'}]},{c:{id:'c',name:'TUC_999_CZSK_Promo'}},{data:[{campaign_id:'c',ad_id:'a',adset_id:'s',date_start:'2026-06-10',spend:'1'}]},{a:{id:'a',name:'a',adset_id:'s',campaign_id:'c'}},{s:{id:'s',name:'Video',campaign_id:'c'}}];
+  const values=[{data:[{campaign_id:'c',date_start:'2026-06-10',spend:'1',impressions:'0'}]},{c:{id:'c',name:'TUC_999_CZSK_Promo'}},{data:[{campaign_id:'c',ad_id:'a',adset_id:'s',date_start:'2026-06-10',spend:'1',impressions:'0'}]},{a:{id:'a',name:'a',adset_id:'s',campaign_id:'c'}},{s:{id:'s',name:'Video',campaign_id:'c'}}];
+  [values[1],values[2]]=[values[2],values[1]]; // Ad discovery precedes direct campaign lookup.
   const fetcher=async()=>{calls++;return {ok:true,json:()=>values.length?Promise.resolve(values.shift()):new Promise(()=>{})};};
   const result=await Promise.race([fetchPromoFormats('test',{since:'2026-06-01',until:'2026-06-11'},fetcher,{timeoutMs:30}),new Promise((_,reject)=>{setTimeout(()=>reject(Error('unbounded metadata body')),300);})]);
   assert.equal(result.rows[0].spend,1);

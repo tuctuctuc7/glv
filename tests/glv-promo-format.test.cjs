@@ -55,14 +55,17 @@ test('refresh discovers current campaign scope, reads archived ad daily facts, a
   assert.equal(result.rows[0].date, '2026-09-02');
   assert.equal(result.reconciled, true);
   assert.equal(calls.filter(u=>u.pathname.endsWith('/insights')).length, 2);
-  // Synthetic campaign/ad mismatches must fail before any success-shaped payload.
+  // Valid discrepancies become signed residuals, not refresh failures.
   for(const type of ['link_click','landing_page_view','initiate_checkout']){
     const mismatched=async (url,options)=>{
       const response=await fetcher(url,options),data=await response.json(),u=new URL(url);
       if(u.searchParams.get('level')==='campaign')data.data[0].actions.find(a=>a.action_type===type).value='9999';
       return {...response,json:async()=>data};
     };
-    await assert.rejects(()=>fetchPromoFormats('private-test-token',range,mismatched),/reconciliation failed/);
+    const reconciled=await fetchPromoFormats('private-test-token',range,mismatched);
+    const key={link_click:'link_clicks',landing_page_view:'landing_page_views',initiate_checkout:'checkouts'}[type];
+    assert.equal(reconciled.rows.reduce((sum,row)=>sum+row[key],0),9999);
+    assert.equal(reconciled.rows.filter(row=>row.is_ghost).length,1);
   }
 });
 
@@ -180,13 +183,15 @@ test('cron starts its bounded history refresh before the sequential presets', as
   const cron=require('../api/glv-meta-ads/cron.js');
   const oldFetch=global.fetch, oldEnv={...process.env}, oldLog=console.log;
   let historyStarted=false, historyWritten=false, status, storedHistory;
+  const stored=new Map();
   process.env.GLV_META_FB_ACCESS_TOKEN='private-test-token';process.env.GLV_META_CRON_SECRET='test-secret';
   delete process.env.CRON_SECRET;
   process.env.KV_REST_API_URL='https://redis.test';process.env.KV_REST_API_TOKEN='cache-test-token';
   global.fetch=async(url,options={})=>{
     if(String(url).startsWith('https://redis.test')){
       const command=JSON.parse(options.body);
-      if(command[0]==='GET') {historyStarted=true;return {ok:true,json:async()=>({result:storedHistory})};}
+      if(command[0]==='GET') {historyStarted=true;return {ok:true,json:async()=>({result:stored.get(command[1])})};}
+      if(command[0]==='SET')stored.set(command[1],command[2]);
       if(command[1]==='glv:promo_formats:history:v1') {historyWritten=true;storedHistory=command[2];}
       return {ok:true,json:async()=>({result:'OK'})};
     }
@@ -209,10 +214,10 @@ test('partial Meta responses, paging faults, and reconciliation errors fail clos
     {a:{id:'a',name:'PAC403',campaign_id:march,adset_id:'s'}},
     {s:{id:'s',name:'Video',campaign_id:march}}
   ];
-  async function run(values){return api().fetchPromoFormats('private-test-token',range,async()=>({ok:true,json:async()=>values.shift()}));}
+  async function run(values){[values[1],values[2]]=[values[2],values[1]];return api().fetchPromoFormats('private-test-token',range,async()=>({ok:true,json:async()=>values.shift()}));}
   assert.equal((await run(responses())).reconciled,true);
   let values=responses();values[2]={data:[]};values.splice(3);
-  await assert.rejects(()=>run(values),/reconciliation failed/);
+  const residual=await run(values);assert.equal(residual.rows.length,1);assert.equal(residual.rows[0].is_ghost,true);assert.equal(residual.rows[0].spend,100);
   values=responses();values[3]={};
   await assert.rejects(()=>run(values),/Current Promo object unavailable/);
   values=responses();values[2].data[0].spend='invalid';

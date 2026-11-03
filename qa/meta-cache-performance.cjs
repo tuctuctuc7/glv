@@ -4,7 +4,7 @@ const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),
 const root=path.resolve(__dirname,'../public'),delay=200;
 const requests=[];
 let failedTypes=new Set(),empty=false,malformed=false,historyDelay=delay,fxDelay=delay,fxValue=0.044;
-let historyStamp='2026-09-21T00:00:00Z';
+let historyStamp='2026-09-21T12:00:00Z';
 const row={id:'c1',name:'TUC_008_CZSK_Sales_Promo',amount_spent:'100',impressions:'1000',reach:'800','actions:omni_purchase':'2','action_values:omni_purchase':'300',date_start:'2026-09-10',date_stop:'2026-09-10'};
 const formats={schema_version:1,classification_version:2,reconciled:true,generated_at:'2026-09-21T00:00:00Z',range:{since:'2026-03-01',until:'2026-09-20'},rows:[{ad_id:'a',ad_name:'a',adset_id:'s',adset_name:'Banner',campaign_id:'c1',campaign_name:row.name,date:'2026-09-10',format:'Banner',reason:'current_adset_label',spend:100,purchases:2,revenue:300,impressions:1000}]};
 formats.funnel_version=1;
@@ -12,7 +12,7 @@ for(const row of formats.rows)Object.assign(row,{link_clicks:50,landing_page_vie
 const server=http.createServer((req,res)=>{
  const u=new URL(req.url,'http://localhost');
  if(u.pathname==='/api/glv-meta-ads/fb-data'){
-  const type=u.searchParams.get('type');requests.push({type,scope:u.searchParams.get('time_range')||u.searchParams.get('date_preset'),start:performance.now()});
+  const type=u.searchParams.get('type');requests.push({type,wl:u.searchParams.get('wl')==='1',scope:u.searchParams.get('time_range')||u.searchParams.get('date_preset'),start:performance.now()});
   const range=JSON.parse(u.searchParams.get('time_range')||'null');
   const amount=range?Number(range.since.slice(-2))*100:100;
   const wait=type.startsWith('promo_')?historyDelay:range?.since==='2026-09-01'?600:delay;
@@ -35,7 +35,8 @@ const server=http.createServer((req,res)=>{
  await page.waitForFunction(()=>document.getElementById('loading').style.display==='none');
  const initial=requests.slice();const beforeTabs=requests.length;
  const tabs=await page.evaluate(async()=>{const timings=[];for(const b of document.querySelectorAll('.tab-btn')){const t=performance.now();b.click();await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);timings.push({tab:b.dataset.tab,ms:performance.now()-t});}return timings;});
- assert.equal(requests.length,beforeTabs,'tabs must not fetch');
+ assert.deepEqual(requests.slice(beforeTabs).map(r=>[r.type,r.wl,r.scope]),[['ads',true,'last_month']],'only independent WL fetches on first activation');
+ await page.locator('[data-tab="us"]').click();
  const snapshot=()=>page.evaluate(()=>JSON.stringify({aggregateCampaigns,dailyCampaigns,adCreatives,promo:PromoFormat.monthlyMix(promoFormatRows())}));const first=await snapshot();
  const run=async preset=>page.evaluate(async p=>{datePreset=p;customRange=null;updateDateLabel();const t=performance.now();await loadData();return performance.now()-t;},preset);
  const coldStart=requests.length,cold=await run('last_7d'),count=requests.length;
@@ -81,7 +82,7 @@ const server=http.createServer((req,res)=>{
   });
   assert.deepEqual(retained,{visible:true,rows:1,history:true},'same-range refresh keeps content visible while updating');
   await page.evaluate(()=>window.pendingRefresh);
-  assert.equal(requests.length-refreshStart,6,'explicit refresh invalidates main data, rate and both independent histories');
+  assert.equal(requests.length-refreshStart,5,'explicit refresh invalidates main data, rate and shared history');
   const hidden=await page.evaluate(()=>{
    customRange={since:'2026-09-03',until:'2026-09-10'};updateDateLabel();window.pendingRange=loadData();
    document.querySelector('[data-tab="czsk-promo"]').click();
@@ -92,7 +93,7 @@ const server=http.createServer((req,res)=>{
   const historyStart=requests.length;await page.evaluate(()=>promoFormatHistory());
   assert.equal(requests.length-historyStart,1,'history refresh only invalidates independent history');
   const conceptStart=requests.length;await page.evaluate(()=>refreshPromoConceptHistory());
-  assert.deepEqual(requests.slice(conceptStart).map(r=>[r.type,r.scope]),[['promo_concepts','promo_history']],'concept refresh never refetches charts or scoped data');
+  assert.deepEqual(requests.slice(conceptStart).map(r=>[r.type,r.scope]),[['promo_formats','promo_history']],'concept refresh never refetches charts or scoped data');
   const dedupStart=requests.length;
   await page.evaluate(async()=>{customRange={since:'2026-09-04',until:'2026-09-10'};await Promise.all([loadData(),loadData()]);});
   assert.equal(requests.length-dedupStart,3,'concurrent same-scope loads coalesce all three scoped requests');
@@ -110,9 +111,10 @@ const server=http.createServer((req,res)=>{
   failedTypes.clear();await page.evaluate(()=>loadData());
   malformed=true;await page.evaluate(()=>loadData({force:true}));malformed=false;
   assert.match(await page.locator('#error').textContent(),/schema unavailable/);
-  assert.equal(await page.locator('#promo-format-table tbody tr').count(),0);
+  assert.equal(await page.locator('#promo-format-table tbody tr').count(),3,'malformed refresh retains last-good history');
+  assert.match(await page.locator('#promo-format-status').textContent(),/Last-good data.*Refresh failed/);
   const schemaRetry=requests.length;await page.evaluate(()=>loadData());
-  assert.equal(requests.length-schemaRetry,5,'malformed payloads never enter successful cache');
+  assert.equal(requests.length-schemaRetry,4,'malformed payloads never enter successful cache');
   empty=true;await page.evaluate(()=>loadData({force:true}));
   assert.match(await page.locator('#kpi-czsk').textContent(),/No campaign activity/);
   const emptyStart=requests.length;await page.evaluate(()=>loadData());assert.equal(requests.length,emptyStart,'valid empty response is reusable');
@@ -124,17 +126,17 @@ const server=http.createServer((req,res)=>{
   await page.clock.setSystemTime(new Date('2026-09-25T12:00:00Z'));
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await page.waitForFunction(()=>document.getElementById('loading').style.display==='none'&&renderedScope.startsWith('2026-09-25'));
-  assert.equal(requests.length-rolloverStart,6,'UTC rollover invalidates all cached resources when page resumes');
+  assert.equal(requests.length-rolloverStart,5,'UTC rollover invalidates all cached resources when page resumes');
   const duplicateStart=requests.length;
   await page.evaluate(()=>{window.dispatchEvent(new Event('focus'));window.dispatchEvent(new Event('pageshow'));document.dispatchEvent(new Event('visibilitychange'));});
   assert.equal(requests.length,duplicateStart,'same UTC day resume must not fetch');
   await page.clock.setSystemTime(new Date('2026-09-26T00:01:00Z'));
   await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   await page.waitForFunction(()=>document.getElementById('loading').style.display==='none'&&renderedScope.startsWith('2026-09-26'));
-  assert.equal(requests.length-duplicateStart,6,'visibility resume refreshes UTC-relative scopes');
+  assert.deepEqual(requests.slice(duplicateStart).map(r=>r.type).sort(),['ads','aggregate','daily','fx','promo_formats'],'visibility resume refreshes scoped data, FX and one coalesced history');
   await page.clock.setSystemTime(new Date('2026-09-26T00:07:00Z'));
   const expiredStart=requests.length;await page.evaluate(()=>loadData());
-  assert.equal(requests.length-expiredStart,6,'expired data refetches at the next load');
+  assert.deepEqual(requests.slice(expiredStart).map(r=>r.type).sort(),['ads','aggregate','daily','fx','promo_formats'],'expired data refetches scoped data, FX and one coalesced history');
   assert.deepEqual(errors,[]);
   if(process.env.PERF_REPORT)fs.writeFileSync(process.env.PERF_REPORT,JSON.stringify({...report,expandedQaPassed:true},null,2));
   console.log('PASS cache concurrency, race, refresh visibility, retry/schema/empty recovery, UTC rollover');
