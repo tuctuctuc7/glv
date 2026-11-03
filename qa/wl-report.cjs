@@ -8,7 +8,7 @@ const app=http.createServer((req,res)=>{const url=new URL(req.url,'http://localh
  if(url.searchParams.get('wl')==='1'){
   calls.push(Object.fromEntries(url.searchParams));const range=url.searchParams.has('time_range')?JSON.parse(url.searchParams.get('time_range')):require('../public/glv-meta-ads/wl-report.js').lastMonth();
   if(fail)return res.writeHead(503).end('{}');
-  const payload={rows,range,wl_version:1,generated_at:new Date().toISOString()};
+  const payload={rows,range,wl_version:2,generated_at:new Date().toISOString()};
   return setTimeout(()=>res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify(payload)),range.since==='2026-08-01'?500:0);
  }
  return res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify({rows:[]}));

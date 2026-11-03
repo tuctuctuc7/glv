@@ -3,6 +3,7 @@
 
 const { formatRange, sliceCachedFormats, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
 const { validPayload, validConceptPayload } = require('../../public/glv-meta-ads/promo-format.js');
+const { campaignFacts, needsAdsets } = require('../../lib/glv-wl-creators.cjs');
 const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
 // Presets the cron pre-warms; everything else hits Meta live
@@ -10,7 +11,7 @@ const CACHED_PRESETS = new Set(['last_7d', 'last_14d', 'last_30d', 'last_90d', '
 const { lastMonth } = require('../../public/glv-meta-ads/wl-report.js');
 function wlCacheUsable(payload, range, now = new Date()) {
   const age = now - new Date(payload?.generated_at);
-  return Boolean(payload?.wl_version === 1 && Array.isArray(payload.rows)
+  return Boolean(payload?.wl_version === 2 && Array.isArray(payload.rows)
     && payload.range?.since === range.since && payload.range?.until === range.until
     && age >= 0 && age <= 90000000
     && payload.rows.every(row => typeof row.campaign_name === 'string' && row.campaign_name));
@@ -57,9 +58,12 @@ async function redisGet(key) {
 function cachedPayloadUsable(type, payload) {
   if (type === 'promo_concepts') return validConceptPayload(payload);
   if (type === 'promo_formats') return validPayload(payload);
-  if (!payload || !Array.isArray(payload.rows)) return false;
+  if (!payload || payload.creator_version !== 2 || !Array.isArray(payload.rows)) return false;
+  if (type === 'ads') return payload.rows.every(row => typeof row.adset_name === 'string' && typeof row.adset_id === 'string');
   if (type !== 'aggregate' && type !== 'daily') return true;
   return payload.rows.every(row => {
+    if (needsAdsets(row) && (!Array.isArray(row.creator_rows) || (!row.creator_rows.length && !row.creator_issue))) return false;
+    if (row.creator_rows?.some(child => typeof child.adset_name !== 'string' || !child.adset_id)) return false;
     if (!Object.prototype.hasOwnProperty.call(row, 'reach')) return false;
     if (typeof row.reach !== 'number' && typeof row.reach !== 'string') return false;
     if (typeof row.reach === 'string' && row.reach.trim() === '') return false;
@@ -122,6 +126,8 @@ function normalizeAd(row, statusMap) {
     status: statusMap[adId] || 'UNKNOWN',
     campaign_id: row.campaign_id || '',
     campaign_name: row.campaign_name || '',
+    adset_id: row.adset_id || '',
+    adset_name: row.adset_name || '',
     amount_spent:                  row.spend ?? null,
     impressions:                   row.impressions || '0',
     'actions:link_click':          getAction(row.actions, 'link_click'),
@@ -217,17 +223,17 @@ module.exports = async (req, res) => {
     if (type === 'aggregate') {
       const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&limit=500&${auth}`;
-      const raw = await paginate(url);
-      res.json({ rows: raw.map(normalizeCampaign) });
+      const rows = await campaignFacts(url,paginate,normalizeCampaign);
+      res.json({ rows, creator_version:2 });
 
     } else if (type === 'daily') {
       const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&time_increment=1&limit=500&${auth}`;
-      const raw = await paginate(url);
-      res.json({ rows: raw.map(normalizeCampaign) });
+      const rows = await campaignFacts(url,paginate,normalizeCampaign);
+      res.json({ rows, creator_version:2 });
 
     } else if (type === 'ads') {
-      const fields = 'ad_id,ad_name,campaign_id,campaign_name,spend,impressions,actions,action_values,video_p100_watched_actions,video_thruplay_watched_actions';
+      const fields = 'ad_id,ad_name,campaign_id,campaign_name,adset_id,adset_name,spend,impressions,actions,action_values,video_p100_watched_actions,video_thruplay_watched_actions';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=ad&fields=${fields}&${dateParam}&sort=spend_descending&limit=50&${auth}`;
       const raw = await paginate(url);
 
@@ -246,7 +252,7 @@ module.exports = async (req, res) => {
         } catch(e) {}
       }
 
-      res.json({ rows: raw.map(r => normalizeAd(r, statusMap)), ...(wl ? {wl_version:1,range:wlRange,generated_at:new Date().toISOString()} : {}) });
+      res.json({ creator_version:2, rows: raw.map(r => normalizeAd(r, statusMap)), ...(wl ? {wl_version:2, creator_version:2,range:wlRange,generated_at:new Date().toISOString()} : {}) });
 
     } else {
       res.status(400).json({ error: 'Invalid type. Use: aggregate, daily, or ads.' });

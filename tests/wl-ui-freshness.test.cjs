@@ -14,7 +14,7 @@ function harness(){
  vm.runInNewContext(fs.readFileSync(require.resolve('../public/glv-meta-ads/wl-report-ui.js'),'utf8'),{
   window,document:{getElementById:node,visibilityState:'visible',addEventListener:(name,fn)=>events[name]=fn},
   Date:Clock,Intl,AbortController,URLSearchParams,setTimeout,clearTimeout,setInterval:fn=>events.interval=fn,
-  fetch:async()=>{calls++;return {ok:true,json:async()=>({wl_version:1,rows:[],range:model.lastMonth(new Date(now)),generated_at:generated})};}
+  fetch:async()=>{calls++;return {ok:true,json:async()=>({wl_version:2,rows:[],range:model.lastMonth(new Date(now)),generated_at:generated})};}
  });
  return {load:window.GlvWlUI.load,node,events,get calls(){return calls;},advance:ms=>now+=ms,stamp:s=>generated=s};
 }

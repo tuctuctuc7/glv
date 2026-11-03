@@ -11,12 +11,18 @@
   const v=s.slice(p.index+p[0].length).match(/(?:^|[^a-z0-9])V[ _-]*(\d+)(?=$|[^a-z0-9])/i);
   return {pac:p[1],label:`PAC ${p[1]}${v?' V'+v[1]:''}`};
  }
+ // One creator policy for every MAD consumer. Never inspect ad names/PACs.
+ function resolveCreator(campaign,adset){
+  const campaignMatches=creators.filter(c=>token(text(campaign),text(c)));
+  const matches=campaignMatches.length?campaignMatches:creators.filter(c=>token(text(adset),text(c)));
+  return {creator:matches.length===1?matches[0]:null,source:campaignMatches.length?'campaign':'adset',status:matches.length===1?'resolved':matches.length?'ambiguous':'missing'};
+ }
  function normalize(raw){
   return raw.filter(r=>token(text(r.campaign_name),'wl')).map(r=>{
-   const name=String(r.campaign_name||''),matches=creators.filter(c=>token(text(name),text(c))),a=asset(r.name);
+   const name=String(r.campaign_name||''),resolution=resolveCreator(name,r.adset_name),a=asset(r.name);
    const us=token(text(name),'us'),cz=token(text(name),'cz')||token(text(name),'czsk');
    const market=us&&cz?null:us?'US':cz?'CZSK':/^wl_befit_over40(?:_|$)/i.test(name)?'CZSK':null;
-   return {id:r.id,campaignId:r.campaign_id,campaign:name,creator:matches.length===1?matches[0]:null,
+   return {id:r.id,campaignId:r.campaign_id,campaign:name,creator:resolution.creator,adset:String(r.adset_name||''),creatorStatus:resolution.status,
     market,
     label:a.label,pac:a.pac,actual:number(r.amount_spent),revenue:number(r['action_values:omni_purchase']),purchases:number(r['actions:omni_purchase'])};
   });
@@ -39,12 +45,12 @@
   const markets=group(r=>JSON.stringify([identity(r),r.market])).sort((a,b)=>creators.indexOf(a.creator)-creators.indexOf(b.creator)||String(a.market).localeCompare(String(b.market)));
   const creativeRows=group(r=>JSON.stringify([identity(r),r.market,r.label]));
   const creatives=Object.fromEntries([...creators,null].map(c=>[c,creativeRows.filter(r=>r.creator===c).sort((a,b)=>(b.actual??-Infinity)-(a.actual??-Infinity)||a.label.localeCompare(b.label))]));
-  return {rows,overview,unresolvedOverview,markets,creatives,total:sum(rows),issues:[...new Set(rows.filter(r=>!r.creator||!r.market).map(r=>r.campaign))]};
+  return {rows,overview,unresolvedOverview,markets,creatives,total:sum(rows),issues:[...new Set(rows.filter(r=>!r.creator||!r.market).map(r=>`${r.campaign}${r.adset?' / '+r.adset:''}`))]};
  }
  function lastMonth(now=new Date()){
   const parts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'Europe/Prague',year:'numeric',month:'numeric'}).formatToParts(now).map(p=>[p.type,p.value]));
   const year=Number(parts.year),month=Number(parts.month)-1;
   return {since:new Date(Date.UTC(year,month-1,1)).toISOString().slice(0,10),until:new Date(Date.UTC(year,month,0)).toISOString().slice(0,10)};
  }
- return {normalize,report,asset,creators,lastMonth};
+ return {normalize,report,asset,creators,lastMonth,resolveCreator};
 });

@@ -179,15 +179,16 @@ test('cron shares one deadline across history, legacy pagination/status, and Red
 test('cron starts its bounded history refresh before the sequential presets', async () => {
   const cron=require('../api/glv-meta-ads/cron.js');
   const oldFetch=global.fetch, oldEnv={...process.env}, oldLog=console.log;
-  let historyStarted=false, historyWritten=false, status, storedHistory;
+  let historyStarted=false, historyWritten=false, status; const stored=new Map();
   process.env.GLV_META_FB_ACCESS_TOKEN='private-test-token';process.env.GLV_META_CRON_SECRET='test-secret';
   delete process.env.CRON_SECRET;
   process.env.KV_REST_API_URL='https://redis.test';process.env.KV_REST_API_TOKEN='cache-test-token';
   global.fetch=async(url,options={})=>{
     if(String(url).startsWith('https://redis.test')){
       const command=JSON.parse(options.body);
-      if(command[0]==='GET') {historyStarted=true;return {ok:true,json:async()=>({result:storedHistory})};}
-      if(command[1]==='glv:promo_formats:history:v1') {historyWritten=true;storedHistory=command[2];}
+      if(command[0]==='GET') {historyStarted=true;return {ok:true,json:async()=>({result:stored.get(command[1])})};}
+      if(command[0]==='SET')stored.set(command[1],command[2]);
+      if(command[1]==='glv:promo_formats:history:v1') historyWritten=true;
       return {ok:true,json:async()=>({result:'OK'})};
     }
     if(options.headers?.Authorization==='Bearer private-test-token')historyStarted=true;

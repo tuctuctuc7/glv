@@ -28,7 +28,7 @@ module.exports=async function(page,viewport,evidenceDir){
  assert.deepEqual(await snapshot(),before,'toggle preserves filters, grain, source totals and expansion');
  const warning=page.locator('#wl-naming-warning');
  await warning.waitFor({state:'visible',timeout:2000});
- assert.match(await warning.textContent(),/breakdown unavailable until each WL campaign identifies exactly one recognized creator/i);
+ assert.match(await warning.textContent(),/breakdown unavailable until the campaign name, or only when absent the ad-set name, identifies exactly one recognized creator/i);
  assert.match(await warning.textContent(),/Combined WL totals shown/);
  for(const name of ['GLV_302_CZ_WL_New','GLV_303_CZ_WL_Kristyna_ActionKate','GLV_308_CZ_WL_befit_over40_Kristyna','GLV_309_CZ_WL_befit_over40_ActionKate'])assert.ok((await warning.textContent()).includes(name));
  const assertCombined=async()=>{
@@ -140,7 +140,7 @@ module.exports=async function(page,viewport,evidenceDir){
    await button.focus();
    const popup=page.locator('#'+await button.getAttribute('aria-controls'));
    await popup.waitFor({state:'visible'});
-   assert.match(await popup.textContent(),/Every WL campaign must identify exactly one recognized creator/);
+   assert.match(await popup.textContent(),/campaign name first; only when absent is the ad-set name used/);
    const box=await popup.boundingBox();
    assert.ok(box.x>=0&&box.x+box.width<=viewport.width,`${theme} ${title} popup fits`);
    await page.keyboard.press('Escape');
@@ -193,7 +193,7 @@ module.exports=async function(page,viewport,evidenceDir){
  assert.equal(await warning.isVisible(),true);
  await assertCombined();
  await toggle.uncheck();
- assert.equal(await warning.isVisible(),false,'OFF remains combined without a split warning');
+ assert.equal(await warning.isVisible(),true,'Unresolved creators warn even when breakdown is OFF');
  await toggle.check();
  assert.equal(await warning.isVisible(),true);
  // A real in-app load replaces the synthetic invalid rows with the server's valid names.
