@@ -12,7 +12,7 @@
 
 ## Cache and refresh
 
-Aggregate/daily/ad preset payloads now use `creator_version: 2`; WL ads also use `wl_version: 2`. Old schema payloads cannot satisfy the new contract. Nested campaign facts preserve the original campaign rows for unsplit tabs. Every preset cache write is followed by a GET of the exact key and serialized-value comparison; mismatches fail the refresh. Completion stats include `readback_verified` and unresolved `creatorIssues`.
+Aggregate/daily/ad preset payloads now use `creator_version: 2`; all ad payloads now use `wl_version: 3` for verified-positive partnership eligibility (see README); creator attribution alone is not eligibility. Old schema payloads cannot satisfy the new contract. Nested campaign facts preserve the original campaign rows for unsplit tabs. Every preset cache write is followed by a GET of the exact key and serialized-value comparison; mismatches fail the refresh. Completion stats include `readback_verified` and unresolved `creatorIssues`.
 
 Retain the single registered `/api/glv-meta-ads/cron` schedule at `0 0 * * *` UTC. It refreshes all preset sources and shared creative history; do not create a WL-only schedule or alter the completed-day cutoff.
 

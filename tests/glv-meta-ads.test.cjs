@@ -231,7 +231,7 @@ test('Meta cache rejects legacy aggregate and daily rows without reach', () => {
   for (const reach of ['', '   ', null, false, []]) {
     assert.equal(api._test.cachedPayloadUsable('daily', { creator_version:2, rows: [{ reach }] }), false, `reach ${JSON.stringify(reach)} must be rejected`);
   }
-  assert.equal(api._test.cachedPayloadUsable('ads', { creator_version:2, rows: [{ impressions: '100',adset_id:'s',adset_name:'Set_Kristyna' }] }), true);
+  assert.equal(api._test.cachedPayloadUsable('ads', { creator_version:2, wl_version:3, rows: [{ partnership:{status:'unverified',reason:'no_positive_metadata',evidence:[]}, impressions: '100',adset_id:'s',adset_name:'Set_Kristyna' }] }), true);
 });
 
 test('Meta Redis configuration selects one complete credential family atomically', () => {

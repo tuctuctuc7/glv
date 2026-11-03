@@ -17,8 +17,24 @@
   const matches=campaignMatches.length?campaignMatches:creators.filter(c=>token(text(adset),text(c)));
   return {creator:matches.length===1?matches[0]:null,source:campaignMatches.length?'campaign':'adset',status:matches.length===1?'resolved':matches.length?'ambiguous':'missing'};
  }
+ const evidenceFields=['facebook_branded_content.sponsor_page_id','instagram_branded_content.sponsor_id'];
+ function validPartnership(p){
+  return Boolean(p&&Array.isArray(p.evidence)&&(p.status==='verified_positive'&&p.reason==='sponsor_metadata'&&p.evidence.length&&p.evidence.every(e=>evidenceFields.includes(e))||p.status==='unverified'&&['no_positive_metadata','metadata_unavailable'].includes(p.reason)&&p.evidence.length===0));
+ }
+ function verification(raw){
+  const d={verified:0,noPositive:0,unavailable:0,naming:[]};
+  for(const r of raw){
+   const p=r.partnership,positive=validPartnership(p)&&p.status==='verified_positive';
+   if(positive)d.verified++;else if(validPartnership(p)&&p.reason==='no_positive_metadata')d.noPositive++;else d.unavailable++;
+   const named=token(text(r.campaign_name),'wl')||token(text(r.adset_name),'wl');
+   const label=`${r.campaign_name||'(unnamed campaign)'} / ${r.adset_name||'(unnamed ad set)'} / ${r.id}`;
+   if(named&&!positive)d.naming.push(`WL-named but unverified; excluded: ${label}`);
+   if(!named&&positive)d.naming.push(`Verified partnership without WL naming; included: ${label}`);
+  }
+  return d;
+ }
  function normalize(raw){
-  return raw.filter(r=>token(text(r.campaign_name),'wl')).map(r=>{
+  return raw.filter(r=>validPartnership(r.partnership)&&r.partnership.status==='verified_positive').map(r=>{
    const name=String(r.campaign_name||''),resolution=resolveCreator(name,r.adset_name),a=asset(r.name);
    const us=token(text(name),'us'),cz=token(text(name),'cz')||token(text(name),'czsk');
    const market=us&&cz?null:us?'US':cz?'CZSK':/^wl_befit_over40(?:_|$)/i.test(name)?'CZSK':null;
@@ -52,5 +68,5 @@
   const year=Number(parts.year),month=Number(parts.month)-1;
   return {since:new Date(Date.UTC(year,month-1,1)).toISOString().slice(0,10),until:new Date(Date.UTC(year,month,0)).toISOString().slice(0,10)};
  }
- return {normalize,report,asset,creators,lastMonth,resolveCreator};
+ return {normalize,report,asset,creators,lastMonth,resolveCreator,validPartnership,verification};
 });

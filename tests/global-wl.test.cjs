@@ -1,7 +1,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const wl=require('../public/glv-meta-ads/wl-report.js');
-const ad=(campaign,adset)=>({campaign_name:campaign,adset_name:adset,name:'PAC462_ActionKate',amount_spent:'10','action_values:omni_purchase':'30','actions:omni_purchase':'2'});
+const ad=(campaign,adset)=>({partnership:{status:'verified_positive',reason:'sponsor_metadata',evidence:['facebook_branded_content.sponsor_page_id']},campaign_name:campaign,adset_name:adset,name:'PAC462_ActionKate',amount_spent:'10','action_values:omni_purchase':'30','actions:omni_purchase':'2'});
 test('global creator hierarchy: campaign first, only absent campaign creator permits adset fallback',()=>{
  const rows=wl.normalize([ad('GLV_035_CZ_WL','Set_Kristyna'),ad('GLV_035_CZ_WL','Set_ActionKate'),ad('GLV_001_CZ_WL_Kristyna','Set_ActionKate'),ad('GLV_001_CZ_WL_Kristyna_ActionKate','Set_Kristyna'),ad('GLV_035_CZ_WL','Set_Unknown'),ad('GLV_035_CZ_WL','Set_Kristyna_ActionKate')]);
  assert.deepEqual(rows.map(r=>r.creator),['Kristyna','ActionKate','Kristyna',null,null,null]);

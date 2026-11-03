@@ -4,6 +4,7 @@
 const { formatRange, sliceCachedFormats, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
 const { validPayload, validConceptPayload } = require('../../public/glv-meta-ads/promo-format.js');
 const { campaignFacts, needsAdsets } = require('../../lib/glv-wl-creators.cjs');
+const {fetchAdMetadata} = require('../../lib/glv-partnership.cjs');
 const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
 // Presets the cron pre-warms; everything else hits Meta live
@@ -13,13 +14,14 @@ function cacheFreshForRange(payload, range, now = new Date()) {
   const age = now - Date.parse(payload?.generated_at);
   return Boolean(range && payload?.range?.since === range.since && payload?.range?.until === range.until && Number.isFinite(age) && age >= 0 && age <= 90000000);
 }
+const { validPartnership } = require('../../public/glv-meta-ads/wl-report.js');
 const { lastMonth } = require('../../public/glv-meta-ads/wl-report.js');
 function wlCacheUsable(payload, range, now = new Date()) {
   const age = now - new Date(payload?.generated_at);
-  return Boolean(payload?.wl_version === 2 && Array.isArray(payload.rows)
+  return Boolean(payload?.wl_version === 3 && Array.isArray(payload.rows)
     && payload.range?.since === range.since && payload.range?.until === range.until
     && age >= 0 && age <= 90000000
-    && payload.rows.every(row => typeof row.campaign_name === 'string' && row.campaign_name));
+    && payload.rows.every(row => typeof row.campaign_name === 'string' && row.campaign_name && validPartnership(row.partnership)));
 }
 
 function resolveRedisConfig(env = process.env) {
@@ -64,7 +66,7 @@ function cachedPayloadUsable(type, payload) {
   if (type === 'promo_concepts') return validConceptPayload(payload);
   if (type === 'promo_formats') return validPayload(payload);
   if (!payload || payload.creator_version !== 2 || !Array.isArray(payload.rows)) return false;
-  if (type === 'ads') return payload.rows.every(row => typeof row.adset_name === 'string' && typeof row.adset_id === 'string');
+  if (type === 'ads') return payload.wl_version === 3 && payload.rows.every(row => typeof row.adset_name === 'string' && typeof row.adset_id === 'string' && validPartnership(row.partnership));
   if (type !== 'aggregate' && type !== 'daily') return true;
   return payload.rows.every(row => {
     if (needsAdsets(row) && (!Array.isArray(row.creator_rows) || (!row.creator_rows.length && !row.creator_issue))) return false;
@@ -253,22 +255,9 @@ module.exports = async (req, res) => {
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=ad&fields=${fields}&${dateParam}&sort=spend_descending&limit=50&${auth}`;
       const raw = await paginate(url);
 
-      const adIds = [...new Set(raw.map(r => r.ad_id || r.id).filter(Boolean))];
-      let statusMap = {};
-      if (adIds.length) {
-        try {
-          const batchUrl = `${FB_API}/?ids=${adIds.join(',')}&fields=effective_status&${auth}`;
-          const sr = await fetch(batchUrl);
-          const sd = await sr.json();
-          if (!sd.error) {
-            for (const [id, d] of Object.entries(sd)) {
-              statusMap[id] = d.effective_status || 'UNKNOWN';
-            }
-          }
-        } catch(e) {}
-      }
-
-      res.json({ creator_version:2, rows: raw.map(r => normalizeAd(r, statusMap)), ...provenance(), ...(wl ? {wl_version:2} : {}) });
+      const metadata = await fetchAdMetadata(raw.map(r=>r.ad_id||r.id),token,fetch);
+      const statusMap = Object.fromEntries(Object.entries(metadata).map(([id,m])=>[id,m.status]));
+      res.json({ creator_version:2, rows: raw.map(r => ({...normalizeAd(r, statusMap),partnership:metadata[r.ad_id||r.id]?.partnership||{status:'unverified',reason:'metadata_unavailable',evidence:[]}})), ...provenance(), wl_version:3 });
 
     } else {
       res.status(400).json({ error: 'Invalid type. Use: aggregate, daily, or ads.' });
