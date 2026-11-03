@@ -3,6 +3,7 @@
 
 const { fetchPromoFormats, formatRange, sliceCachedFormats, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
 const { validPayload } = require('../../public/glv-meta-ads/promo-format.js');
+const { campaignFacts } = require('../../lib/glv-wl-creators.cjs');
 const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
 
@@ -168,6 +169,8 @@ function normalizeAd(row, statusMap) {
     status: statusMap[adId] || 'UNKNOWN',
     campaign_id: row.campaign_id || '',
     campaign_name: row.campaign_name || '',
+    adset_id: row.adset_id || '',
+    adset_name: row.adset_name || '',
     amount_spent: row.spend ?? null,
     impressions: row.impressions || '0',
     'actions:link_click': getAction(row.actions, 'link_click'),
@@ -196,6 +199,16 @@ async function paginate(url, fetcher) {
   return rows;
 }
 
+async function writeVerifiedCache(fetcher,key,payload) {
+  const serialized=JSON.stringify(payload);
+  await redisCommand(fetcher,'SET',key,serialized,'EX',String(TTL));
+  const readback=await redisCommand(fetcher,'GET',key);
+  if(readback?.result!==serialized)throw new Error('Preset cache readback mismatch');
+}
+function creatorIssues(rows) {
+  const {resolveCreator}=require('../../public/glv-meta-ads/wl-report.js');
+  return [...new Set(rows.flatMap(r=>r.creator_rows?.length?r.creator_rows:[r]).filter(r=>/(?:^|_)WL(?:_|$)/.test(r.campaign_name||r.name)&&!resolveCreator(r.campaign_name||r.name,r.adset_name).creator).map(r=>`${r.campaign_name||r.name}${r.adset_name?' / '+r.adset_name:''}${r.creator_issue?' — '+r.creator_issue:''}`))];
+}
 async function fetchAndCache(token, preset, includeToday, fetcher) {
   const { since, until } = monthRange(preset, includeToday);
   const dateParam = `time_range=${encodeURIComponent(JSON.stringify({ since, until }))}`;
@@ -207,10 +220,9 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
   try {
     const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&limit=500&${auth}`;
-    const raw = await paginate(url, fetcher);
-    const rows = raw.map(normalizeCampaign);
-    await redisCommand(fetcher, 'SET', `glv:aggregate:${preset}`, JSON.stringify({ rows }), 'EX', String(TTL));
-    stats.aggregate = summarizeRows(rows);
+    const rows = await campaignFacts(url,u=>paginate(u,fetcher),normalizeCampaign);
+    await writeVerifiedCache(fetcher,`glv:aggregate:${preset}`,{ rows, creator_version:2, range:{since,until}, generated_at:new Date().toISOString() });
+    stats.aggregate = {...summarizeRows(rows),creator_version:2,readback_verified:true,creatorIssues:creatorIssues(rows)};
   } catch (e) {
     errors.push(`aggregate/${preset}: ${e.message}`);
   }
@@ -219,17 +231,16 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
   try {
     const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&time_increment=1&limit=500&${auth}`;
-    const raw = await paginate(url, fetcher);
-    const rows = raw.map(normalizeCampaign);
-    await redisCommand(fetcher, 'SET', `glv:daily:${preset}`, JSON.stringify({ rows }), 'EX', String(TTL));
-    stats.daily = summarizeRows(rows);
+    const rows = await campaignFacts(url,u=>paginate(u,fetcher),normalizeCampaign);
+    await writeVerifiedCache(fetcher,`glv:daily:${preset}`,{ rows, creator_version:2, range:{since,until}, generated_at:new Date().toISOString() });
+    stats.daily = {...summarizeRows(rows),creator_version:2,readback_verified:true,creatorIssues:creatorIssues(rows)};
   } catch (e) {
     errors.push(`daily/${preset}: ${e.message}`);
   }
 
   // ads
   try {
-    const fields = 'ad_id,ad_name,campaign_id,campaign_name,spend,impressions,actions,action_values,video_p100_watched_actions,video_thruplay_watched_actions';
+    const fields = 'ad_id,ad_name,campaign_id,campaign_name,adset_id,adset_name,spend,impressions,actions,action_values,video_p100_watched_actions,video_thruplay_watched_actions';
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=ad&fields=${fields}&${dateParam}&sort=spend_descending&limit=50&${auth}`;
     const raw = await paginate(url, fetcher);
 
@@ -246,8 +257,8 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
     }
 
     const rows = raw.map(r => normalizeAd(r, statusMap));
-    await redisCommand(fetcher, 'SET', `glv:ads:${preset}`, JSON.stringify({ rows, wl_version:1, range:{since,until}, generated_at:new Date().toISOString() }), 'EX', String(TTL));
-    stats.ads = summarizeRows(rows);
+    await writeVerifiedCache(fetcher,`glv:ads:${preset}`,{ rows, creator_version:2, range:{since,until}, generated_at:new Date().toISOString(), wl_version:2 });
+    stats.ads = {...summarizeRows(rows),creator_version:2,readback_verified:true,creatorIssues:creatorIssues(rows)};
   } catch (e) {
     errors.push(`ads/${preset}: ${e.message}`);
   }

@@ -78,6 +78,7 @@ async function run() {
   const browser = await chromium.launch({ executablePath: chromePath, headless: true, args: ['--no-sandbox'], env: { ...process.env, LD_LIBRARY_PATH: `${browserLibRoot}/usr/lib/x86_64-linux-gnu:${browserLibRoot}/usr/lib`, FONTCONFIG_PATH: `${browserLibRoot}/etc/fonts` } });
   const errors = [];
   try {
+    assert.ok(!process.env.GLV_META_QA_VIEWPORT || ['desktop','desktop-1001','tablet-1000','desktop-800','desktop-721','mobile-720','mobile-390','mobile-320'].includes(process.env.GLV_META_QA_VIEWPORT),'Unknown QA viewport');
     for (const viewport of [
       { name: 'desktop', width: 1440, height: 1100 },
       { name: 'desktop-1001', width: 1001, height: 1000 },
@@ -87,7 +88,8 @@ async function run() {
       { name: 'mobile-720', width: 720, height: 900 },
       { name: 'mobile-390', width: 390, height: 844 },
       { name: 'mobile-320', width: 320, height: 780 },
-    ]) {
+    ].filter(viewport => !process.env.GLV_META_QA_VIEWPORT || viewport.name === process.env.GLV_META_QA_VIEWPORT)) {
+      console.log(`Meta QA viewport: ${viewport.name}`);
       const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
       const page = await context.newPage();
       page.on('console', message => { if (message.type() === 'error') errors.push(`${viewport.name}: ${message.text()}`); });

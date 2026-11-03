@@ -223,15 +223,15 @@ test('Meta live and cached producers expose reach for the triage frequency metri
 
 test('Meta cache rejects legacy aggregate and daily rows without reach', () => {
   const api = require('../api/glv-meta-ads/fb-data.js');
-  assert.equal(api._test.cachedPayloadUsable('daily', { rows: [{ impressions: '100' }] }), false);
-  assert.equal(api._test.cachedPayloadUsable('aggregate', { rows: [{ impressions: '100', reach: '60' }] }), true);
-  assert.equal(api._test.cachedPayloadUsable('daily', { rows: [{ reach: 0 }] }), true);
-  assert.equal(api._test.cachedPayloadUsable('daily', { rows: [{ reach: '0' }] }), true);
-  assert.equal(api._test.cachedPayloadUsable('daily', { rows: [{ impressions: '100', reach: 'not-a-number' }] }), false);
+  assert.equal(api._test.cachedPayloadUsable('daily', { creator_version:2, rows: [{ impressions: '100' }] }), false);
+  assert.equal(api._test.cachedPayloadUsable('aggregate', { creator_version:2, rows: [{ impressions: '100', reach: '60' }] }), true);
+  assert.equal(api._test.cachedPayloadUsable('daily', { creator_version:2, rows: [{ reach: 0 }] }), true);
+  assert.equal(api._test.cachedPayloadUsable('daily', { creator_version:2, rows: [{ reach: '0' }] }), true);
+  assert.equal(api._test.cachedPayloadUsable('daily', { creator_version:2, rows: [{ impressions: '100', reach: 'not-a-number' }] }), false);
   for (const reach of ['', '   ', null, false, []]) {
-    assert.equal(api._test.cachedPayloadUsable('daily', { rows: [{ reach }] }), false, `reach ${JSON.stringify(reach)} must be rejected`);
+    assert.equal(api._test.cachedPayloadUsable('daily', { creator_version:2, rows: [{ reach }] }), false, `reach ${JSON.stringify(reach)} must be rejected`);
   }
-  assert.equal(api._test.cachedPayloadUsable('ads', { rows: [{ impressions: '100' }] }), true);
+  assert.equal(api._test.cachedPayloadUsable('ads', { creator_version:2, rows: [{ impressions: '100',adset_id:'s',adset_name:'Set_Kristyna' }] }), true);
 });
 
 test('Meta Redis configuration selects one complete credential family atomically', () => {

@@ -15,7 +15,7 @@ module.exports = async function testTabFilters(page, viewport, evidenceDir, fixt
     await page.locator(`#tab-${tab}`).click();
     const section=page.locator(`#panel-${tab} > .tab-filter-section`);
     assert.equal(await section.count(),1);
-    assert.equal(await page.locator(`#panel-${tab}`).evaluate(panel=>panel.firstElementChild.classList.contains('tab-filter-section')),true);
+    assert.equal(await page.locator(`#panel-${tab}`).evaluate(panel=>[...panel.children].find(child=>!child.classList.contains('global-creator-warning')).classList.contains('tab-filter-section')),true);
     assert.deepEqual((await section.locator('.triage-filter-label').allTextContents()).slice(0,3),['Campaign group','Campaign name','Grain']);
     const key=kind=>tab==='czsk-triage'?`triage-${kind}`:`tab-${tab}-${kind}`;
     const groups=tab==='us'?['bau','advertorial']:['promo','bau','wl'];

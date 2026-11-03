@@ -4,7 +4,7 @@ This repo is the `agenthic-lab` Vercel project that serves the GLV dashboard sur
 
 ## Production
 
-- Vercel team: `agenthic`
+- Vercel team: `tucmedia`
 - Vercel project: `agenthic-lab`
 - GitHub repo: `https://github.com/tuctuctuc7/glv`
 - Production domain: `https://lab.agenthic.com`
@@ -16,14 +16,17 @@ This repo is the `agenthic-lab` Vercel project that serves the GLV dashboard sur
 - Elmich audit dashboard: `https://lab.agenthic.com/elm-meta-ads/`
 - KURSA Meta Ads ingress: `https://lab.agenthic.com/krs-meta-ads/`
 
-Always deploy with the AGENTHIC Vercel scope:
+Release from a clean, reviewed checkout linked to `agenthic-lab` under the verified `tucmedia` scope. Prefer the Git-linked production deployment after merging the reviewed PR. Do not deploy unrelated changes from the dirty canonical checkout.
+
+For an explicitly authorized CLI deployment from that clean checkout:
 
 ```bash
-cd /home/tom/.openclaw/workspace/dashboard/glv
-PATH=/home/tom/.local/node/bin:$PATH vercel --prod --yes --scope agenthic
+npx --no-install vercel --prod --yes --scope tucmedia
 ```
 
-Do not deploy this to Tom's personal Vercel scope. `agenthic.com` belongs to the AGENTHIC team.
+Verify the project, production alias and source SHA before triggering the existing refresh. Do not infer scope from historical AGENTHIC branding.
+
+Global WL creator hierarchy and refresh verification: [docs/global-wl-creators.md](docs/global-wl-creators.md).
 
 ## Repository Map
 

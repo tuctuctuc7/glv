@@ -5,7 +5,7 @@ const vm=require('node:vm');
 const html=fs.readFileSync(require('node:path').join(__dirname,'../public/glv-meta-ads/index.html'),'utf8');
 function runtime(){
  const slice=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b));
- const ctx=vm.createContext({});
+ const ctx=vm.createContext({GlvWlReport:require('../public/glv-meta-ads/wl-report.js')});
  vm.runInContext(`let wlInfluencerBreakdown=false;${slice('const PROMO_GROUPS','function getCampaignColor')}${slice('function aggregate(','function calcMetrics')}`,ctx);
  vm.runInContext(slice('function byPromoGroup','function byDate(rows'),ctx);
  return ctx;
