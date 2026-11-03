@@ -293,6 +293,25 @@ and carryover-only outcomes remain included. All pages and chunks share the same
 240-second deadline; a failed chunk leaves the prior cache intact. Errors identify
 request class and numeric HTTP/Meta codes without exposing tokens or raw URLs.
 
+### Approved 036 → 037 Winners inheritance
+
+Campaign `120250692949130687` (`TUC_037_CZSK_CBO_Sales_Promo_Winners`)
+contains unchanged duplicates from `120250608228580687` (036). Its mixed-format
+adsets omit Banner/Video labels. The classifier shares an exact-name fallback
+between those two campaign IDs only: `PAC480 V3 no-CTA`,
+`2026-10-21_V_AI UGC_01 no-CTA`, and `PAC475 V3` are Video; the
+`2026-10-21_B_Velvet-Beauty-Round02_` names ending in
+`CC01_03_1080x1080`, `CC01_04_1080x1080`, or `CC04_03_1080x1080` are Banner.
+These are the approved duplicate names, not a general `_B`, `_V`, PAC, or CC
+inference. Current adset labels still win; conflicts and genuinely unmapped
+names stay Unknown. Campaign eligibility and all older rules are unchanged.
+
+Schema 1 / classification 2 and the single daily cron remain unchanged.
+Compatible cached source facts reclassify on read after backend deployment;
+reload already-open tabs. No Meta refresh, Redis write, or freshness reset is
+needed. Regression: `node --test tests/glv-promo-winners.test.cjs`; also run
+`npm test`, `npm run verify:glv-release`, and `node qa/promo-format.cjs`.
+
 ### Promo configured source assets (inventory revision 1)
 
 The Assets column is independent of the approved ad-level performance classifier.
