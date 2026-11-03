@@ -4,6 +4,7 @@
 const { fetchPromoFormats, formatRange, sliceCachedFormats, refreshWindow, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
 const { validPayload } = require('../../public/glv-meta-ads/promo-format.js');
 const { campaignFacts } = require('../../lib/glv-wl-creators.cjs');
+const {fetchAdMetadata} = require('../../lib/glv-partnership.cjs');
 const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
 
@@ -191,7 +192,9 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
   async function publish(type,rows,extra={}){
     const key=`glv:${type}:${preset}`,generated_at=new Date().toISOString();
     await writeVerifiedCache(fetcher,key,{rows,creator_version:2,range:{since,until},generated_at,...extra});
-    stats[type]={...summarizeRows(rows),creator_version:2,creatorIssues:creatorIssues(rows),range:{since,until},generated_at,readback_verified:true};
+    const partnership=type==='ads'?require('../../public/glv-meta-ads/wl-report.js').verification(rows):null;
+    if(partnership)delete partnership.naming;
+    stats[type]={...(partnership?{wl_version:3,partnership,eligible_ad_ids:rows.filter(r=>r.partnership.status==='verified_positive').map(r=>r.id),unverified_ad_ids:rows.filter(r=>r.partnership.status!=='verified_positive').map(r=>r.id)}:{}),...summarizeRows(rows),creator_version:2,creatorIssues:creatorIssues(rows),range:{since,until},generated_at,readback_verified:true};
   }
 
   // aggregate
@@ -220,20 +223,10 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=ad&fields=${fields}&${dateParam}&sort=spend_descending&limit=50&${auth}`;
     const raw = await paginate(url, fetcher);
 
-    const adIds = [...new Set(raw.map(r => r.ad_id || r.id).filter(Boolean))];
-    let statusMap = {};
-    if (adIds.length) {
-      try {
-        const sr = await fetcher(`${FB_API}/?ids=${adIds.join(',')}&fields=effective_status&${auth}`);
-        const sd = await sr.json();
-        if (!sd.error) {
-          for (const [id, d] of Object.entries(sd)) statusMap[id] = d.effective_status || 'UNKNOWN';
-        }
-      } catch (e) {}
-    }
-
-    const rows = raw.map(r => normalizeAd(r, statusMap));
-    await publish('ads',rows,{wl_version:2});
+      const metadata = await fetchAdMetadata(raw.map(r=>r.ad_id||r.id),token,fetcher);
+      const statusMap = Object.fromEntries(Object.entries(metadata).map(([id,m])=>[id,m.status]));
+    const rows = raw.map(r => ({...normalizeAd(r, statusMap),partnership:metadata[r.ad_id||r.id]?.partnership||{status:'unverified',reason:'metadata_unavailable',evidence:[]}}));
+    await publish('ads',rows,{wl_version:3});
   } catch (e) {
     errors.push(`ads/${preset}: ${e.message}`);
   }

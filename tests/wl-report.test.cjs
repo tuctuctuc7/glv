@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const modulePath='../public/glv-meta-ads/wl-report.js';
 const wl=require(modulePath);
-const row=(overrides={})=>({id:'a',campaign_id:'c',campaign_name:'GLV_1_CZ_WL_ActionKate',name:'PAC 462 V2',amount_spent:'20','action_values:omni_purchase':'80','actions:omni_purchase':'2',...overrides});
+const row=(overrides={})=>({partnership:{status:'verified_positive',reason:'sponsor_metadata',evidence:['facebook_branded_content.sponsor_page_id']},id:'a',campaign_id:'c',campaign_name:'GLV_1_CZ_WL_ActionKate',name:'PAC 462 V2',amount_spent:'20','action_values:omni_purchase':'80','actions:omni_purchase':'2',...overrides});
 test('last full month uses Prague rollover, leap years and year boundary',()=>{
  assert.deepEqual(wl.lastMonth(new Date('2026-10-31T23:30:00Z')),{since:'2026-10-01',until:'2026-10-31'});
  assert.deepEqual(wl.lastMonth(new Date('2026-01-15T00:00:00Z')),{since:'2025-12-01',until:'2025-12-31'});
@@ -50,8 +50,8 @@ test('ActionKate PAC 462 only removes spend from reported denominator, never out
  assert.ok(fs.existsSync(require('node:path').join(__dirname,modulePath)),'WL report module exists');
  const wl=require(modulePath);
  const rows=wl.normalize([
-  {id:'1',campaign_id:'c',campaign_name:'GLV_1_CZ_WL_ActionKate',name:'V_PAC462_v2',amount_spent:'20','action_values:omni_purchase':'80','actions:omni_purchase':'2'},
-  {id:'2',campaign_id:'c',campaign_name:'GLV_1_CZ_WL_ActionKate',name:'PAC460 V1',amount_spent:'30','action_values:omni_purchase':'20','actions:omni_purchase':'1'}]);
+  {partnership:{status:'verified_positive',reason:'sponsor_metadata',evidence:['facebook_branded_content.sponsor_page_id']},id:'1',campaign_id:'c',campaign_name:'GLV_1_CZ_WL_ActionKate',name:'V_PAC462_v2',amount_spent:'20','action_values:omni_purchase':'80','actions:omni_purchase':'2'},
+  {partnership:{status:'verified_positive',reason:'sponsor_metadata',evidence:['facebook_branded_content.sponsor_page_id']},id:'2',campaign_id:'c',campaign_name:'GLV_1_CZ_WL_ActionKate',name:'PAC460 V1',amount_spent:'30','action_values:omni_purchase':'20','actions:omni_purchase':'1'}]);
  const report=wl.report(rows);
  assert.equal(report.total.actual,50);assert.equal(report.total.excluded,20);assert.equal(report.total.reported,30);
  assert.equal(report.total.revenue,100);assert.equal(report.total.purchases,3);

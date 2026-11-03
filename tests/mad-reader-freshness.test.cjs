@@ -5,7 +5,7 @@ test('ordinary readers reject stale, unversioned-range and wrong-range caches; l
  const env={...process.env},oldFetch=global.fetch;
  Object.assign(process.env,{GLV_META_FB_ACCESS_TOKEN:'synthetic',KV_REST_API_URL:'https://redis.test',KV_REST_API_TOKEN:'synthetic'});delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
  try{for(const type of ['aggregate','daily','ads'])for(const state of ['fresh','stale','wrong','legacy']){
-  const range=monthRange('last_7d',false),cached={creator_version:2,rows:[{reach:'10',adset_id:'s',adset_name:'Banner'}],range,generated_at:new Date().toISOString()};
+  const range=monthRange('last_7d',false),cached={creator_version:2,wl_version:3,rows:[{partnership:{status:'unverified',reason:'no_positive_metadata',evidence:[]},reach:'10',adset_id:'s',adset_name:'Banner'}],range,generated_at:new Date().toISOString()};
   if(state==='stale')cached.generated_at=new Date(Date.now()-26*3600000).toISOString();
   if(state==='wrong')cached.range={since:'2020-01-01',until:'2020-01-07'};
   if(state==='legacy')delete cached.range;

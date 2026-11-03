@@ -17,11 +17,11 @@ function ads(){return [
  {id:'ak',campaign_id:'35',campaign_name:'GLV_035_CZ_WL',adset_id:'a',adset_name:invalid?'Unknown_<svg onload=window.__globalXss=1>':'Set_ActionKate',name:'PAC462',...fact(20,100)},
  {id:'kr',campaign_id:'35',campaign_name:'GLV_035_CZ_WL',adset_id:'k',adset_name:'Set_Kristyna',name:'PAC419',...fact(10,80)},
  {id:'precedence',campaign_id:'36',campaign_name:'GLV_036_CZ_WL_Kristyna',adset_id:'conflict',adset_name:'Set_ActionKate',name:'PAC462',...fact(40,190)}
- ];}
+ ].map(r=>({...r,partnership:{status:'verified_positive',reason:'sponsor_metadata',evidence:['instagram_branded_content.sponsor_id']}}));}
 const root=path.resolve(__dirname,'../public');
 const app=http.createServer((req,res)=>{const u=new URL(req.url,'http://local');if(u.pathname.startsWith('/api/')){
  const type=u.searchParams.get('type'),wl=u.searchParams.get('wl')==='1';
- const payload={creator_version:2,rows:type==='aggregate'?campaignRows():type==='daily'?campaignRows(true):ads(),...(wl?{wl_version:2,range:lastMonth(),generated_at:new Date().toISOString()}:{} )};
+ const payload={creator_version:2,rows:type==='aggregate'?campaignRows():type==='daily'?campaignRows(true):ads(),...(wl?{wl_version:3,range:lastMonth(),generated_at:new Date().toISOString()}:{} )};
  return res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify(payload));
  }let file=path.join(root,u.pathname);if(fs.existsSync(file)&&fs.statSync(file).isDirectory())file=path.join(file,'index.html');if(!fs.existsSync(file))return res.writeHead(404).end();res.writeHead(200,{'Content-Type':{'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml'}[path.extname(file)]||'application/octet-stream'});fs.createReadStream(file).pipe(res);
 });

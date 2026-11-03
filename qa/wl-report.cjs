@@ -1,14 +1,15 @@
 // Synthetic browser fixture only; not the historical Notion report metrics.
 const {chromium}=require('playwright-core');const http=require('node:http');const fs=require('node:fs');const path=require('node:path');const assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'../public');const evidence='/tmp/glv-wl-report-qa';fs.mkdirSync(evidence,{recursive:true});
-const ad=(id,campaign,name,spend=20,revenue=80)=>({id,campaign_id:campaign,campaign_name:campaign,name,amount_spent:String(spend),'action_values:omni_purchase':String(revenue),'actions:omni_purchase':'2'});
-const rows=[ad('a','GLV_1_CZ_WL_ActionKate','PAC462 V2'),ad('b','GLV_1_CZ_WL_ActionKate','PAC460 V1',30,20),ad('c','GLV_2_US_WL_ActionKate','PAC460 V1',10,0),ad('d','WL_befit_over40','PAC470 V1'),ad('e','GLV_3_CZ_WL_Kristyna','PAC419 V1'),ad('z','GLV_3_CZ_WL_Kristyna','zero spend',0,40)];
+const ad=(id,campaign,name,spend=20,revenue=80)=>({partnership:{status:'verified_positive',reason:'sponsor_metadata',evidence:['facebook_branded_content.sponsor_page_id']},id,campaign_id:campaign,campaign_name:campaign,name,amount_spent:String(spend),'action_values:omni_purchase':String(revenue),'actions:omni_purchase':'2'});
+const rows=[ad('a','GLV_1_CZ_WL_ActionKate','PAC462 V2'),ad('b','GLV_1_CZ_WL_ActionKate','PAC460 V1',30,20),{...ad('c','TUC_002_US_ABO_Sales','PAC460 V1',10,0),adset_id:'as37',adset_name:'AS37_WL_ActionKate'},ad('d','WL_befit_over40','PAC470 V1'),ad('e','GLV_3_CZ_WL_Kristyna','PAC419 V1'),ad('z','GLV_3_CZ_WL_Kristyna','zero spend',0,40)];
+rows.push({...ad('excluded-as36','TUC_002_US_ABO_Sales','AS36 asset',9999,9999),adset_id:'as36',adset_name:'AS36_WL_ActionKate',partnership:{status:'unverified',reason:'no_positive_metadata',evidence:[]}}, {...ad('mixed','TUC_002_US_ABO_Sales','mixed adset asset',9999,9999),adset_id:'as37',adset_name:'AS37_WL_ActionKate',partnership:{status:'unverified',reason:'metadata_unavailable',evidence:[]}});
 let fail=false;let calls=[];
 const app=http.createServer((req,res)=>{const url=new URL(req.url,'http://localhost');if(url.pathname.startsWith('/api/')){
  if(url.searchParams.get('wl')==='1'){
   calls.push(Object.fromEntries(url.searchParams));const range=url.searchParams.has('time_range')?JSON.parse(url.searchParams.get('time_range')):require('../public/glv-meta-ads/wl-report.js').lastMonth();
   if(fail)return res.writeHead(503).end('{}');
-  const payload={rows,range,wl_version:2,generated_at:new Date().toISOString()};
+  const payload={rows,range,wl_version:3,generated_at:new Date().toISOString()};
   return setTimeout(()=>res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify(payload)),range.since==='2026-08-01'?500:0);
  }
  return res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify({rows:[]}));
@@ -23,6 +24,8 @@ try{for(const width of [1440,390,320])for(const theme of ['dark','light']){
  assert.equal(await page.locator('#panel-wl table').count(),5);
  assert.deepEqual(await page.locator('#wl-overview tbody tr').evaluateAll(rs=>rs.map(r=>r.cells[0].textContent)),['ActionKate','Kristyna','befit_over40','Total']);
  const total=await page.locator('#wl-overview tbody tr').last().innerText();assert.match(total,/100\.00/);assert.match(total,/80\.00/);assert.match(total,/300\.00/);
+ assert.match(await page.locator('#wl-warning').innerText(),/1 without positive sponsor metadata and 1 unavailable metadata/);
+ assert.doesNotMatch(await page.locator('#wl-results').innerText(),/AS36 asset|mixed adset asset|9,999/);
  assert.equal(await page.locator('#panel-wl svg').count(),0);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
  for(const id of ['campaign','market','creator']){await page.locator('#wl-'+id).selectOption('__none');assert.match(await page.locator('#wl-results').innerText(),/No WL ads/);await page.locator('#wl-'+id).selectOption('__all');}
