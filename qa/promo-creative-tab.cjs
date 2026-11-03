@@ -47,7 +47,7 @@ const server=http.createServer((req,res)=>{
    assert.equal(await page.locator('#promo-format-section').count(),1,'native format section exists');
    assert.deepEqual(await page.evaluate(()=>({datePreset,customRange})),{datePreset:'last_30d',customRange:null});
    assert.equal(await page.locator('#panel-czsk-promo #promo-format-section').count(),0);
-   assert.equal(await page.locator('.tab-btn').count(),7); // Includes the WL Report tab.
+   assert.deepEqual(await page.locator('.tab-btn').evaluateAll(nodes=>nodes.map(n=>n.dataset.tab)),['czsk','czsk-triage','czsk-promo','czsk-promo-creative','czsk-leadgen','us','wl']);
    await page.locator('[data-tab="czsk-promo-creative"]').click();
    const expected=promoMix(payload.rows).filter(p=>p.total.spend>0||p.total.impressions>0);
    assert.equal(await page.locator('#promo-format-table tbody tr').count(),expected.reduce((n,m)=>n+3+(m.formats.Unknown.ads?1:0),0));
@@ -66,7 +66,7 @@ const server=http.createServer((req,res)=>{
    let rowIndex=0;
    const pct=n=>n===null?'—':n.toFixed(1)+'%';
    for(const month of expected){
-    const entries=[['Total',month.total],...Object.entries(month.formats).filter(([name,data])=>name!=='Unknown'||data.ads)];
+    const entries=[['Total',month.total],...Object.entries(month.formats).filter(([name,data])=>name==='Ghost'?['spend','purchases','revenue','impressions'].some(k=>data[k]!==0):name!=='Unknown'||data.ads)];
     for(const [format,data] of entries){const row=table[rowIndex++];assert.equal(row[0],month.label);assert.equal(row[1],format);assert.equal(row[2],data.assets===null?'—':String(data.assets)+(data.asset_status==='partial'?' known':''));assert.equal(row[4],pct(data.spendShare));assert.equal(row[6],pct(data.purchaseShare));}
    }
    assert.equal(await page.evaluate(()=>window.__formatXss),undefined);
@@ -121,10 +121,10 @@ const server=http.createServer((req,res)=>{
       await button.scrollIntoViewIfNeeded();
       if(width>720) await button.hover(); else await button.tap();
       assert.equal(await popup.isVisible(),true,'WL definition opens on hover/tap');
-      assert.match(await popup.innerText(),/WL is a campaign-name group based on substrings, not ad-set or ad names/);
-      assert.match(await popup.innerText(),/Every WL campaign must identify exactly one recognized creator/);
-      assert.match(await popup.innerText(),/combined WL totals are shown with a naming-validation warning/);
-      assert.match(await popup.innerText(),/A displayed 0 does not prove no activity outside this scope/);
+      assert.match(await popup.innerText(),/creator is resolved from the campaign name first; only when absent is the ad-set name used/);
+      assert.match(await popup.innerText(),/Multiple matches at the chosen level are ambiguous/);
+      assert.match(await popup.innerText(),/Unresolved names stay in totals and trigger an actionable warning/);
+      assert.match(await popup.innerText(),/Mixed campaigns use reconciled ad-set facts, never duplicated campaign totals/);
       await page.keyboard.press('Escape');
       assert.equal(await popup.isVisible(),false);
       await button.blur();

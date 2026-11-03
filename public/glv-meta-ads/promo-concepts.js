@@ -18,11 +18,11 @@
   function aggregate(rows,selected){
     const groups=new Map(), totals={spend:0,purchases:0};
     for(const r of rows.filter(r=>eligible(r)&&selected.includes(r.campaign_id))){
-      const id=identity(r.ad_name),key=JSON.stringify([r.campaign_id,id.key]);
+      const id=r.is_ghost?{label:r.label,key:'ghost',is_ghost:true,warning:'Signed reconciliation adjustment; not an observed creative or concept'}:identity(r.ad_name),key=JSON.stringify([r.campaign_id,id.key]);
       if(!groups.has(key))groups.set(key,{key,...id,campaign_id:r.campaign_id,campaign_name:r.campaign_name,...Object.fromEntries(inputs.map(k=>[k,0]))});
       const g=groups.get(key);for(const k of inputs)g[k]+=r[k];totals.spend+=r.spend;totals.purchases+=r.purchases;
     }
-    return [...groups.values()].map(g=>metrics(g,totals));
+    return [...groups.values()].map(g=>{const result=metrics(g,totals);if(g.is_ghost)for(const key of ['roas','ctr','costLP','lpCheckout','checkoutPurchase','cvr'])result[key]=null;return result;});
   }
   function campaigns(rows){
     const map=new Map();for(const r of rows.filter(eligible)){

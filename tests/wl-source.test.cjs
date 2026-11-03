@@ -4,11 +4,11 @@ test('live and cron paginate every ad, retain zero spend and reject malformed up
  const oldFetch=global.fetch,oldEnv={...process.env};
  Object.assign(process.env,{GLV_META_FB_ACCESS_TOKEN:'synthetic',KV_REST_API_URL:'https://redis.test',KV_REST_API_TOKEN:'synthetic'});delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
  const raw=i=>({ad_id:String(i),ad_name:'PAC462 V1',campaign_id:'c',campaign_name:'X_US_WL_ActionKate',spend:'0',actions:[{action_type:'omni_purchase',value:'1'}]});
- const cache=new Map();let stored,mode='valid';const requests=[];
+ let stored,mode='valid';const requests=[],cache=new Map();
  const fetcher=async(url,opts={})=>{
   const u=new URL(url);requests.push(u);
   if(u.hostname==='redis.test'){
-   if(opts.body){const [op,key,value]=JSON.parse(opts.body);if(op==='GET')return {ok:true,json:async()=>({result:cache.get(key)})};cache.set(key,value);if(key==='glv:ads:last_month')stored=JSON.parse(value);return {ok:true,json:async()=>({result:'OK'})};}
+   if(opts.body){const args=JSON.parse(opts.body);if(args[0]==='SET'){cache.set(args[1],args[2]);if(args[1]==='glv:ads:last_month')stored=JSON.parse(args[2]);}return {ok:true,json:async()=>({result:args[0]==='GET'?cache.get(args[1]):'OK'})};}
    return {ok:true,json:async()=>({result:null})};
   }
   if(u.searchParams.has('ids'))return {ok:true,json:async()=>({})};

@@ -6,8 +6,8 @@
   'use strict';
   const CLASSIFICATION_VERSION = 2;
   const INVENTORY_VERSION = 2;
-  const FORMATS = ['Banner','Video','Unknown'];
-  const COLORS = {Banner:'#3b82f6',Video:'#a855f7',Unknown:'#f59e0b'};
+  const FORMATS = ['Banner','Video','Unknown','Ghost'];
+  const COLORS = {Banner:'#3b82f6',Video:'#a855f7',Unknown:'#f59e0b',Ghost:'#64748b'};
   function validDate(value) {
     return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value;
   }
@@ -16,10 +16,15 @@
   }
   function validPayload(data) {
     if (!data || data.schema_version !== 1 || data.classification_version !== CLASSIFICATION_VERSION || data.reconciled !== true || !Array.isArray(data.rows) || !Number.isFinite(Date.parse(data.generated_at)) || !validDate(data.range?.since) || !validDate(data.range?.until) || data.range.since > data.range.until) return false;
-    if (data.funnel_version !== undefined && (data.funnel_version !== 1 || !data.rows.every(row=>row && ['link_clicks','landing_page_views','checkouts'].every(k=>typeof row[k]==='number'&&Number.isFinite(row[k])&&row[k]>=0)))) return false;
+    if (data.funnel_version !== undefined && (data.funnel_version !== 1 || !data.rows.every(row=>row && ['link_clicks','landing_page_views','checkouts'].every(k=>typeof row[k]==='number'&&Number.isFinite(row[k])&&(row.is_ghost===true||row[k]>=0))))) return false;
     if (data.inventory_version !== undefined && data.inventory_version !== INVENTORY_VERSION) return false;
     const seen = new Set();
     return data.rows.every(row => {
+      if(row?.is_ghost===true){
+        if(row.format!=='Ghost'||row.reason!=='campaign_day_residual'||row.label!=='Ghost creative — pending Meta reconciliation'||!['campaign_id','campaign_name'].every(k=>typeof row[k]==='string'&&row[k])||!validDate(row.date)||row.date<data.range.since||row.date>data.range.until||['ad_id','ad_name','adset_id','adset_name','asset_inventory'].some(k=>row[k]!==undefined)||!['spend','purchases','revenue','impressions'].every(k=>typeof row[k]==='number'&&Number.isFinite(row[k])))return false;
+        const key=`ghost:${row.campaign_id}|${row.date}`;if(seen.has(key))return false;seen.add(key);return true;
+      }
+      if(row?.format==='Ghost'||row?.is_ghost!==undefined)return false;
       if (!row || !['ad_id','ad_name','adset_id','adset_name','campaign_id','campaign_name','reason'].every(k=>typeof row[k] === 'string' && row[k].length > 0) || !FORMATS.includes(row.format) || !validDate(row.date) || row.date < data.range.since || row.date > data.range.until || !['spend','purchases','revenue','impressions'].every(k=>typeof row[k] === 'number' && Number.isFinite(row[k]) && row[k] >= 0)) return false;
       if (row.asset_inventory !== undefined && (data.inventory_version !== INVENTORY_VERSION || !validInventory(row.asset_inventory))) return false;
       const key=`${row.ad_id}|${row.date}`;
@@ -51,7 +56,7 @@
     return aggregateMix(rows,monthPeriod).map(({month,total,formats})=>({month,total,formats}));
   }
   function promoMix(rows) {
-    return aggregateMix(rows.filter(row=>['spend','purchases','revenue','impressions'].some(key=>row[key]>0)),promoPeriod);
+    return aggregateMix(rows.filter(row=>['spend','purchases','revenue','impressions'].some(key=>row[key]!==0)),promoPeriod);
   }
   function aggregateMix(rows,periodFor) {
     const months = new Map();
@@ -62,7 +67,7 @@
       const group=months.get(period.id);
       if (period.sort < group.sort) group.sort=period.sort;
       // Carryover purchases remain in performance, not media membership.
-      if (row.spend > 0 || row.impressions > 0) {
+      if (!row.is_ghost && (row.spend > 0 || row.impressions > 0)) {
         const inventory=row.asset_inventory;
         const valid=validInventory(inventory);
         if (!valid || !inventory.configured_media_complete) {
@@ -75,7 +80,7 @@
       }
       for (const target of [group.total,group.formats[row.format]]) {
         for (const metric of ['spend','purchases','revenue','impressions']) target[metric]+=row[metric];
-        target.ads.add(row.ad_id);
+        if(!row.is_ghost) target.ads.add(row.ad_id);
       }
     }
     return [...months.values()].sort((a,b)=>a.sort.localeCompare(b.sort)||a.id.localeCompare(b.id)).map(group=>{
@@ -83,12 +88,12 @@
         target.ads=target.ads.size;
         target.assets=target.assetKeys.size || (target.assetIncomplete ? null : 0);
         target.asset_status=target.assetIncomplete ? (target.assets === null ? 'unavailable' : 'partial') : 'configured';
-        if (target === group.formats.Unknown) { target.assets=null; target.asset_status='not_applicable'; }
+        if (target === group.formats.Unknown || target === group.formats.Ghost) { target.assets=null; target.asset_status='not_applicable'; }
         delete target.assetKeys; delete target.assetIncomplete;
         target.spendShare=group.total.spend ? target.spend/group.total.spend*100 : null;
         target.purchaseShare=group.total.purchases ? target.purchases/group.total.purchases*100 : null;
-        target.roas=target.spend ? target.revenue/target.spend : null;
-        target.cpa=target.purchases ? target.spend/target.purchases : null;
+        target.roas=target!==group.formats.Ghost&&target.spend>0 ? target.revenue/target.spend : null;
+        target.cpa=target!==group.formats.Ghost&&target.purchases>0 ? target.spend/target.purchases : null;
       }
       return group;
     });

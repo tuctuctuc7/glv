@@ -1,4 +1,6 @@
 #promo-format-section{min-width:0}
+.ghost-row td{font-style:italic;border-top:1px dashed var(--muted,#64748b)}
+.ghost-row td:first-child,.ghost-row td:nth-child(2){white-space:normal;overflow-wrap:anywhere}
 #promo-format-section .promo-format-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 #promo-format-section .promo-format-heading .section-title{margin:0}
 #promo-format-section .promo-format-history{font:inherit;font-size:12px;cursor:pointer;min-height:32px}

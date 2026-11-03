@@ -18,7 +18,8 @@
       }
       const entry={pending:true,expires:0,promise:null};
       entry.promise=Promise.resolve().then(loader).then(value=>{
-        entry.pending=false;entry.expires=now()+ttl;return value;
+        const generated=Date.parse(value?.generated_at);
+        entry.pending=false;entry.expires=Math.min(now()+ttl,Number.isFinite(generated)?generated+25*3600000:Infinity);return value;
       },error=>{
         if(entries.get(key)===entry)entries.delete(key);
         throw error;

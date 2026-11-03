@@ -137,7 +137,9 @@ module.exports=async function(page,viewport,evidenceDir){
   assert.notEqual(style.background,'rgba(0, 0, 0, 0)','befit uses a native colored badge');
   for(const title of ['Promo Period Split','Promo Group Charts','Promo Group Table']){
    const button=page.getByRole('button',{name:`About ${title}`,exact:true});
-   await button.focus();
+   try { await button.focus(); } catch(error) {
+    console.error('Info target diagnostics',JSON.stringify(await page.evaluate(()=>({active:document.querySelector('.tab-btn.active')?.dataset.tab,panel:document.querySelector('#panel-czsk-promo')?.outerHTML.slice(0,200),buttons:[...document.querySelectorAll('#panel-czsk-promo .section-info-button')].map(b=>({label:b.getAttribute('aria-label'),visible:!!b.getClientRects().length})),error:document.querySelector('#error')?.textContent}))));throw error;
+   }
    const popup=page.locator('#'+await button.getAttribute('aria-controls'));
    await popup.waitFor({state:'visible'});
    assert.match(await popup.textContent(),/campaign name first; only when absent is the ad-set name used/);
