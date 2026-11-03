@@ -321,8 +321,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 <script src="/glv-meta-ads/promo-format-ui.js?v=ghost-reconciliation-20261103"></script>
 <script src="/glv-meta-ads/session-cache.js?v=ghost-reconciliation-20261103"></script>
 <link rel="stylesheet" href="/glv-meta-ads/section-info.css?v=promo-creative-20260921">
-<link rel="stylesheet" href="/glv-meta-ads/wl-report.css?v=wl-report-20261102">
-<script src="/glv-meta-ads/wl-report.js?v=wl-report-20261102"></script>
+<link rel="stylesheet" href="/glv-meta-ads/wl-report.css?v=global-wl-v2">
+<script src="/glv-meta-ads/wl-report.js?v=global-wl-v2"></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to dashboard content</a>
@@ -841,26 +841,39 @@ const isAdvert = n => n.toLowerCase().includes('advertorial');
 const isLeadGen = n => String(n||'').includes('_Lead');
 const promoGroupKey = name => String(name||'').includes('_Promo') ? 'promo' : (String(name||'').includes('_WL') || isBefitLaunch(name)) ? 'wl' : 'bau';
 // Raw campaign phases remain canonical; presentation is applied only after filtering.
-function wlCreatorKey(name){
-  const normalized=String(name||'').toLowerCase();
-  const matches=[['kristyna','wl-kristyna'],['actionkate','wl-actionkate'],['befit_over40','wl-befit-over40']].filter(([marker])=>normalized.includes(marker));
-  return matches.length===1?matches[0][1]:null;
+function wlCreatorKey(name,adset){
+  const creator=GlvWlReport.resolveCreator(name,adset).creator;
+  return {'Kristyna':'wl-kristyna','ActionKate':'wl-actionkate','befit_over40':'wl-befit-over40'}[creator]||null;
+}
+function creatorFacts(rows){
+  return rows.flatMap(row=>row.creatorRows?.length?row.creatorRows.map(child=>({...child,date:row.date})): [row]);
 }
 function getWlNamingIssues(rows){
-  return [...new Set(rows.filter(r=>r.segment==='czsk'&&(r.group||promoGroupKey(r.name))==='wl'&&!wlCreatorKey(r.name)).map(r=>String(r.name||'(unnamed campaign)')))];
+  return [...new Set(creatorFacts(rows).filter(r=>promoGroupKey(r.campaignName||r.name)==='wl'&&!wlCreatorKey(r.campaignName||r.name,r.adsetName)).map(r=>`${r.campaignName||r.name||'(unnamed campaign)'}${r.adsetName?' / '+r.adsetName:''}${r.creatorIssue?' — '+r.creatorIssue:''}`))];
+}
+function renderCreatorWarning(tab){
+  const panel=document.getElementById('panel-'+tab);if(!panel)return;
+  let warning=panel.querySelector('.global-creator-warning');
+  if(!warning){warning=document.createElement('div');warning.className='global-creator-warning wl-naming-warning';warning.setAttribute('role','status');panel.prepend(warning);}
+  const rows=[...filterTabRows(tab,getTabBaseRows(tab,'aggregate')),...filterTabRows(tab,getTabBaseRows(tab,'daily'))];
+  const segments=tab==='us'?['us']:tab==='czsk-triage'&&triageMarket==='all'?['czsk','us']:[tab==='czsk-triage'?triageMarket:'czsk'];
+  const ads=filterTabRows(tab,adCreatives.filter(r=>segments.includes(r.segment)));
+  const issues=getWlNamingIssues([...rows,...ads]);
+  warning.hidden=!issues.length;
+  warning.innerHTML=issues.length?`<strong>Unresolved WL creator — check campaign name first, then ad-set name. No creator assumed; performance remains in totals.</strong><ul>${issues.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul>`:'';
 }
 function validateWlBreakdown(){
   // Validate the selected KPI + daily scope once before rendering any Promo surface.
   // Table-local narrowing must not change chart/KPI identities.
   wlNamingIssues=getWlNamingIssues([...getPromoKpiRows(),...getPromoDailyRows()]);
   const warning=document.getElementById('wl-naming-warning');
-  warning.hidden=!wlInfluencerBreakdown||wlNamingIssues.length===0;
-  warning.innerHTML=warning.hidden?'':`<strong>WL naming validation: breakdown unavailable until each WL campaign identifies exactly one recognized creator (Kristyna, ActionKate or befit_over40).</strong> Combined WL totals shown. Affected campaigns:<ul>${wlNamingIssues.map(name=>`<li>${escapeHtml(name)}</li>`).join('')}</ul>`;
+  warning.hidden=wlNamingIssues.length===0;
+  warning.innerHTML=warning.hidden?'':`<strong>WL naming validation: breakdown unavailable until the campaign name, or only when absent the ad-set name, identifies exactly one recognized creator (Kristyna, ActionKate or befit_over40).</strong> Combined WL totals shown. Affected campaigns / ad sets:<ul>${wlNamingIssues.map(name=>`<li>${escapeHtml(name)}</li>`).join('')}</ul>`;
 }
 function promoPresentationKey(row){
   const phase=row.group||promoGroupKey(row.name);
   if(!wlBreakdownActive()||phase!=='wl')return phase;
-  return wlCreatorKey(row.name)||'wl';
+  return wlCreatorKey(row.name,row.adsetName)||'wl';
 }
 const promoGroup = key => [...PROMO_GROUPS,...WL_INFLUENCER_GROUPS].find(g=>g.key===key)||PROMO_GROUPS[2];
 function setWlInfluencerBreakdown(enabled){
@@ -1078,13 +1091,16 @@ function processRow(r){
     impressions:parseNum(r.impressions),reach:parseNum(r.reach),
   };
 }
+function creatorMetadata(r,seg,date){
+  return {adsetName:r.adset_name||'',creator:GlvWlReport.resolveCreator(r.name,r.adset_name).creator,creatorIssue:r.creator_issue||'',creatorRows:(r.creator_rows||[]).map(c=>({id:r.id,name:r.name,adsetId:c.adset_id,adsetName:c.adset_name,segment:seg,group:campaignGroupKey(r.name,seg),date,...processRow(c)}))};
+}
 function processAggregateRows(rawRows){
   const out=[];
   for(const r of rawRows){
     if(!isValid(r.name))continue;
     const seg=isUS(r.name)?'us':'czsk';
     campaignMeta[r.id]={name:r.name,segment:seg,color:getCampaignColor(r.name)};
-    out.push({id:r.id,name:r.name,segment:seg,group:campaignGroupKey(r.name,seg),date:null,...processRow(r)});
+    out.push({id:r.id,name:r.name,segment:seg,group:campaignGroupKey(r.name,seg),date:null,...processRow(r),...creatorMetadata(r,seg,null)});
   }
   return out;
 }
@@ -1095,7 +1111,7 @@ function processDaily(rawRows){
     const seg=isUS(r.name)?'us':'czsk';
     const date=extractDate(r);if(!date)continue;
     campaignMeta[r.id]={name:r.name,segment:seg,color:getCampaignColor(r.name)};
-    out.push({id:r.id,name:r.name,segment:seg,group:campaignGroupKey(r.name,seg),date,...processRow(r)});
+    out.push({id:r.id,name:r.name,segment:seg,group:campaignGroupKey(r.name,seg),date,...processRow(r),...creatorMetadata(r,seg,date)});
   }
   return out;
 }
@@ -1109,8 +1125,8 @@ function processCreatives(rawRows){
     const v3sec=parseNum(r.video_3_sec_watched_actions);
     const campInfo=campaignMeta[r.campaign_id]||{};
     const isVideo=thruplay>0||v3sec>0;
-    const campaignName=campInfo.name||'';
-    return{id:r.id,name:r.name,status:r.status,campaignId:r.campaign_id,campaignName,campaignCode:campaignCode(campaignName),type:isVideo?'Video':'Static',
+    const campaignName=r.campaign_name||campInfo.name||'';
+    return{id:r.id,name:r.name,status:r.status,campaignId:r.campaign_id,campaignName,adsetName:r.adset_name||'',creator:GlvWlReport.resolveCreator(campaignName,r.adset_name).creator,campaignCode:campaignCode(campaignName),type:isVideo?'Video':'Static',
       segment:campInfo.segment||null,spend,lp,purchases,checkouts,leads,linkClicks,revenue,impressions,isVideo,
       hookRate:impressions>0?v3sec/impressions*100:0,holdRate:impressions>0?thruplay/impressions*100:0};
   }).filter(c=>campaignMeta[c.campaignId]&&c.spend>0);
@@ -1213,7 +1229,7 @@ function getPromoKpiRows(){
 function byPromoGroup(rows){
   const map={};
   activePromoGroups().forEach(g=>{map[g.key]=emptyAgg(null,g.key);});
-  for(const r of rows.filter(r=>r.segment==='czsk')){
+  for(const r of (wlBreakdownActive()?creatorFacts(rows):rows).filter(r=>r.segment==='czsk')){
     const key=promoPresentationKey(r);
     const d=map[key]||(map[key]=emptyAgg(null,key));
     d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
@@ -1227,7 +1243,7 @@ function byDateGroup(rows){
 function byDateGroupFiltered(rows,selectedIds){
   const map={};
   const filtered=selectedIds?rows.filter(r=>selectedIds.has(r.id)):rows;
-  for(const r of filtered.filter(r=>r.segment==='czsk')){
+  for(const r of (wlBreakdownActive()?creatorFacts(filtered):filtered).filter(r=>r.segment==='czsk')){
     if(!r.date)continue;
     const key=promoPresentationKey(r);
     const mapKey=`${r.date}|${key}`;
@@ -1285,6 +1301,7 @@ function renderSourceEmpty(id,source){
   return true;
 }
 function renderKPIs(seg){
+  renderCreatorWarning(seg);
   if(renderSourceEmpty('kpi-'+seg,'aggregate'))return;
   const rows=getMainSegmentRows(seg,'aggregate');const a=aggregate(rows);const m=calcMetrics(a);
   document.getElementById('kpi-'+seg).innerHTML=`
@@ -1387,7 +1404,8 @@ function setAllTriageGrains(grain){
   });
   refreshTriageCharts();
 }
-function refreshTriageCharts(){TRIAGE_PRESETS.forEach(preset=>refreshTriageChart(preset.id));}
+function refreshTriageCharts(){
+  renderCreatorWarning('czsk-triage');TRIAGE_PRESETS.forEach(preset=>refreshTriageChart(preset.id));}
 function refreshTriageChart(presetId){
   const preset=TRIAGE_PRESETS.find(item=>item.id===presetId);const state=triageState[presetId];if(!preset||!state)return;
   const rows=byPeriod(getTriageSegmentRows('daily'),null,state.grain);
@@ -1596,6 +1614,7 @@ function byDateLeadgenGroup(rows,selectedIds=null){
   return Object.values(map).sort((a,b)=>a.date===b.date?LEADGEN_GROUPS.findIndex(g=>g.key===a.group)-LEADGEN_GROUPS.findIndex(g=>g.key===b.group):a.date<b.date?-1:1);
 }
 function renderLeadgenKPIs(){
+  renderCreatorWarning('czsk-leadgen');
   if(renderSourceEmpty('kpi-czsk-leadgen','aggregate'))return;
   const rows=byLeadgenGroup(getLeadgenRows('aggregate'));
   document.getElementById('kpi-czsk-leadgen').innerHTML=rows.map(a=>{
@@ -1997,6 +2016,7 @@ function setTypeFilter(seg,type){
   renderCreatives(seg);
 }
 function renderCreatives(seg){
+  renderCreatorWarning(seg);
   if(renderSourceEmpty('creative-'+seg,'ads'))return;
   const campFilter=filterState[seg+'-creative'];const typeFilter=creativeTypeFilter[seg];
   let creatives=filterTabRows(seg,adCreatives.filter(c=>c.segment===seg&&c.spend>0));
@@ -2174,7 +2194,7 @@ function formatUtcTimestamp(date){
 const root=document.documentElement;const themeToggle=document.getElementById('theme-toggle');const mobileControlsToggle=document.getElementById('mobile-controls-toggle');const headerRight=document.querySelector('.header-right');function setTheme(theme){root.dataset.theme=theme;try{localStorage.setItem('glv-meta-ads-theme',theme);}catch(e){}const light=theme==='light';themeToggle.textContent=light?'☾':'☀';themeToggle.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');Chart.defaults.color=light?'#637589':'#9bacc0';Chart.defaults.borderColor=light?'rgba(99,117,137,.18)':'rgba(155,172,192,.16)';Object.values(charts).forEach(chart=>chart?.update('none'));}let preferred='dark';try{preferred=localStorage.getItem('glv-meta-ads-theme')||'dark';}catch(e){}setTheme(preferred==='light'?'light':'dark');if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');}themeToggle.addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));mobileControlsToggle.addEventListener('click',()=>{const collapsed=headerRight.classList.toggle('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded',String(!collapsed));mobileControlsToggle.textContent=collapsed?'Filters':'Done';});
 initTabFilters();initTriageCards();initSelects();initSortControls();updateDateLabel();loadData();
 </script>
-<script src="/glv-meta-ads/section-info.js?v=concept-funnel-v1-20261014"></script>
-<script src="/glv-meta-ads/wl-report-ui.js?v=wl-report-20261102"></script>
+<script src="/glv-meta-ads/section-info.js?v=global-wl-v2"></script>
+<script src="/glv-meta-ads/wl-report-ui.js?v=global-wl-v2"></script>
 </body>
 </html>

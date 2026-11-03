@@ -11,11 +11,10 @@ for (const title of ['Promo Period Split', 'Promo Group Charts', 'Promo Group Ta
   test(`${title} explains WL classification and scoped zero without inventing a diagnosis`, () => {
     const text = context.copy[title];
     for (const phrase of [
-      'WL is a campaign-name group', 'not ad-set or ad names',
-      'Case-sensitive: _Promo takes priority, then _WL (or a leading WL_befit_over40 launch marker); otherwise BAU',
-      'Break down WL influencers', 'case-insensitive', 'kristyna', 'actionkate',
-      'befit_over40 → befit_over40', 'Every WL campaign must identify exactly one recognized creator', 'combined WL totals are shown with a naming-validation warning', 'selected dates and filters',
-      'A displayed 0 does not prove no activity outside this scope',
+      'campaign-name phase precedence', '_Promo first', 'campaign name first',
+      'only when absent is the ad-set name used', 'Multiple matches', 'No ad-name or PAC guessing',
+      'Unresolved names stay in totals', 'reconciled ad-set facts', 'Unsplit views keep campaign reach',
+      'summed matching ad-set reach', 'selected dates and filters',
     ]) assert.ok(text.includes(phrase), `${title}: ${phrase}`);
     assert.doesNotMatch(text, /whitelist|ActionKate has no|ActionKate had no/i);
   });

@@ -4,7 +4,7 @@ This repo is the `agenthic-lab` Vercel project that serves the GLV dashboard sur
 
 ## Production
 
-- Vercel team: `agenthic`
+- Vercel team: `tucmedia`
 - Vercel project: `agenthic-lab`
 - GitHub repo: `https://github.com/tuctuctuc7/glv`
 - Production domain: `https://lab.agenthic.com`
@@ -16,14 +16,17 @@ This repo is the `agenthic-lab` Vercel project that serves the GLV dashboard sur
 - Elmich audit dashboard: `https://lab.agenthic.com/elm-meta-ads/`
 - KURSA Meta Ads ingress: `https://lab.agenthic.com/krs-meta-ads/`
 
-Always deploy with the AGENTHIC Vercel scope:
+Release from a clean, reviewed checkout linked to `agenthic-lab` under the verified `tucmedia` scope. Prefer the Git-linked production deployment after merging the reviewed PR. Do not deploy unrelated changes from the dirty canonical checkout.
+
+For an explicitly authorized CLI deployment from that clean checkout:
 
 ```bash
-cd /home/tom/.openclaw/workspace/dashboard/glv
-PATH=/home/tom/.local/node/bin:$PATH vercel --prod --yes --scope agenthic
+npx --no-install vercel --prod --yes --scope tucmedia
 ```
 
-Do not deploy this to Tom's personal Vercel scope. `agenthic.com` belongs to the AGENTHIC team.
+Verify the project, production alias and source SHA before triggering the existing refresh. Do not infer scope from historical AGENTHIC branding.
+
+Global WL creator hierarchy and refresh verification: [docs/global-wl-creators.md](docs/global-wl-creators.md).
 
 ## Repository Map
 
@@ -289,6 +292,25 @@ source before publishing. Current direct-object names still gate scope; archived
 and carryover-only outcomes remain included. All pages and chunks share the same
 240-second deadline; a failed chunk leaves the prior cache intact. Errors identify
 request class and numeric HTTP/Meta codes without exposing tokens or raw URLs.
+
+### Approved 036 → 037 Winners inheritance
+
+Campaign `120250692949130687` (`TUC_037_CZSK_CBO_Sales_Promo_Winners`)
+contains unchanged duplicates from `120250608228580687` (036). Its mixed-format
+adsets omit Banner/Video labels. The classifier shares an exact-name fallback
+between those two campaign IDs only: `PAC480 V3 no-CTA`,
+`2026-10-21_V_AI UGC_01 no-CTA`, and `PAC475 V3` are Video; the
+`2026-10-21_B_Velvet-Beauty-Round02_` names ending in
+`CC01_03_1080x1080`, `CC01_04_1080x1080`, or `CC04_03_1080x1080` are Banner.
+These are the approved duplicate names, not a general `_B`, `_V`, PAC, or CC
+inference. Current adset labels still win; conflicts and genuinely unmapped
+names stay Unknown. Campaign eligibility and all older rules are unchanged.
+
+Schema 1 / classification 2 and the single daily cron remain unchanged.
+Compatible cached source facts reclassify on read after backend deployment;
+reload already-open tabs. No Meta refresh, Redis write, or freshness reset is
+needed. Regression: `node --test tests/glv-promo-winners.test.cjs`; also run
+`npm test`, `npm run verify:glv-release`, and `node qa/promo-format.cjs`.
 
 ### Promo configured source assets (inventory revision 1)
 

@@ -121,10 +121,10 @@ const server=http.createServer((req,res)=>{
       await button.scrollIntoViewIfNeeded();
       if(width>720) await button.hover(); else await button.tap();
       assert.equal(await popup.isVisible(),true,'WL definition opens on hover/tap');
-      assert.match(await popup.innerText(),/WL is a campaign-name group based on substrings, not ad-set or ad names/);
-      assert.match(await popup.innerText(),/Every WL campaign must identify exactly one recognized creator/);
-      assert.match(await popup.innerText(),/combined WL totals are shown with a naming-validation warning/);
-      assert.match(await popup.innerText(),/A displayed 0 does not prove no activity outside this scope/);
+      assert.match(await popup.innerText(),/creator is resolved from the campaign name first; only when absent is the ad-set name used/);
+      assert.match(await popup.innerText(),/Multiple matches at the chosen level are ambiguous/);
+      assert.match(await popup.innerText(),/Unresolved names stay in totals and trigger an actionable warning/);
+      assert.match(await popup.innerText(),/Mixed campaigns use reconciled ad-set facts, never duplicated campaign totals/);
       await page.keyboard.press('Escape');
       assert.equal(await popup.isVisible(),false);
       await button.blur();
