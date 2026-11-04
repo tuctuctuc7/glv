@@ -4,6 +4,13 @@ const backend=require('../lib/glv-promo-format.cjs');
 const shared=require('../public/glv-meta-ads/promo-format.js');
 const concepts=require('../public/glv-meta-ads/promo-concepts.js');
 const {fixture,range}=require('./helpers/promo-ghost-fixture.cjs');
+test('financial Ghost visibility uses cents without mutating facts or hiding real creatives',()=>{
+ for(const [spend,revenue,visible] of [[0,0,false],[0.000022,-0.000022,false],[0.0049,-0.0049,false],[0.005,0,true],[-0.005,0,true],[0,0.01,true],[-0.01,0,true],[10,-10,true]]){
+  const row={spend,revenue,purchases:3,link_clicks:5};const before={...row};
+  assert.equal(shared.hasFinancialContribution(row),visible);
+  assert.deepEqual(row,before);
+ }
+});
 const metrics=['spend','purchases','revenue','impressions','link_clicks','landing_page_views','checkouts'];
 
 test('signed campaign/day residuals preserve real facts and reconcile every additive input',async()=>{

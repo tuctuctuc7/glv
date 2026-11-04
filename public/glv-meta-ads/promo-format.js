@@ -99,5 +99,8 @@
     });
   }
   const validConceptPayload=data=>validPayload(data)&&data.funnel_version===1&&data.rows.every(r=>/^(TUC|GLV)_\d+_/.test(r.campaign_name)&&r.campaign_name.includes('_CZSK_')&&!r.campaign_name.includes('_US_')&&r.campaign_name.includes('_Promo'));
-  return { INVENTORY_VERSION, CLASSIFICATION_VERSION, FORMATS, COLORS, validDate, validPayload, validConceptPayload, monthlyMix, promoMix };
+  // Presentation only: a signed half-cent rounds to a nonzero CZK cent.
+  // Never use this predicate to filter source facts or compute totals/ratios.
+  const hasFinancialContribution=row=>Math.abs(row.spend)>=0.005||Math.abs(row.revenue)>=0.005;
+  return { hasFinancialContribution, INVENTORY_VERSION, CLASSIFICATION_VERSION, FORMATS, COLORS, validDate, validPayload, validConceptPayload, monthlyMix, promoMix };
 });
