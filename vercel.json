@@ -72,7 +72,7 @@
   "crons": [
     {
       "path": "/api/glv-meta-ads/cron",
-      "schedule": "0 0 * * *"
+      "schedule": "0 0,1,2,4,8,12,16,20 * * *"
     }
   ]
 }
