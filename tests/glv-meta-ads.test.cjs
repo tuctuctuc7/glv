@@ -402,7 +402,7 @@ test('Meta cron returns HTTP 500 when cache writes fail', async () => {
     await cron({ headers: { authorization: 'Bearer test-cron-secret' }, query: { include_today: '1' } }, response);
     assert.equal(response.statusCode, 500);
     assert.equal(response.body.ok, false);
-    assert.match(response.body.message, /Redis HTTP 500/);
+    assert.match(response.body.message, /Refresh coordination failed/);
   } finally {
     global.fetch = originalFetch;
     console.log = originalLog;

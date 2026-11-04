@@ -1,10 +1,11 @@
-// GLV Meta Ads daily cron — runs at 00:00 UTC (07:00 GMT+7)
+// One daily refresh owner: midnight primary plus bounded recovery opportunities.
 // Scheduled runs end yesterday; authorized manual runs may include today's partial data.
 
 const { fetchPromoFormats, formatRange, sliceCachedFormats, refreshWindow, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
 const { validPayload } = require('../../public/glv-meta-ads/promo-format.js');
 const { campaignFacts } = require('../../lib/glv-wl-creators.cjs');
 const {fetchAdMetadata} = require('../../lib/glv-partnership.cjs');
+const {scheduledRefresh,hash} = require('../../lib/glv-refresh-owner.cjs');
 const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
 
@@ -47,8 +48,14 @@ function boundedFetcher(deadline) {
       const result = await Promise.race([budget, (async () => {
         if (controller.signal.aborted) throw new Error('Cron request time budget exceeded');
         const response = await fetch(url, {...options, signal:controller.signal});
-        const data = await response.json();
-        return {ok:response.ok, status:response.status, json:async () => data};
+        // Keep the HTTP status when a proxy/provider returns a non-JSON body.
+        // Body consumption remains inside the abortable request budget.
+        let data, bodyError;
+        try { data = await response.json(); } catch (error) { bodyError = error; }
+        return {ok:response.ok, status:response.status, json:async () => {
+          if (bodyError) throw bodyError;
+          return data;
+        }};
       })()]);
       return result;
     } finally {
@@ -76,7 +83,7 @@ async function redisCommand(fetcher, ...args) {
   const payload = await r.json();
   if (!r.ok) throw new Error(`Redis HTTP ${r.status}`);
   if (payload?.error) throw new Error(`Redis: ${payload.error}`);
-  if (String(args[0]).toUpperCase() === 'SET' && payload?.result !== 'OK') throw new Error('Redis SET was not acknowledged');
+  if (String(args[0]).toUpperCase() === 'SET' && payload?.result !== 'OK' && !(args.includes('NX') && payload?.result === null)) throw new Error('Redis SET was not acknowledged');
   return payload;
 }
 
@@ -178,6 +185,7 @@ async function writeVerifiedCache(fetcher,key,payload) {
   await redisCommand(fetcher,'SET',key,serialized,'EX',String(TTL));
   const readback=await redisCommand(fetcher,'GET',key);
   if(readback?.result!==serialized)throw new Error('Preset cache readback mismatch');
+  return hash(serialized);
 }
 function creatorIssues(rows) {
   const {resolveCreator}=require('../../public/glv-meta-ads/wl-report.js');
@@ -191,10 +199,10 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
   const stats = { preset, since, until };
   async function publish(type,rows,extra={}){
     const key=`glv:${type}:${preset}`,generated_at=new Date().toISOString();
-    await writeVerifiedCache(fetcher,key,{rows,creator_version:2,range:{since,until},generated_at,...extra});
+    const cache_sha256=await writeVerifiedCache(fetcher,key,{rows,creator_version:2,range:{since,until},generated_at,...extra});
     const partnership=type==='ads'?require('../../public/glv-meta-ads/wl-report.js').verification(rows):null;
     if(partnership)delete partnership.naming;
-    stats[type]={...(partnership?{wl_version:3,partnership,eligible_ad_ids:rows.filter(r=>r.partnership.status==='verified_positive').map(r=>r.id),unverified_ad_ids:rows.filter(r=>r.partnership.status!=='verified_positive').map(r=>r.id)}:{}),...summarizeRows(rows),creator_version:2,creatorIssues:creatorIssues(rows),range:{since,until},generated_at,readback_verified:true};
+    stats[type]={cache_sha256,...(partnership?{wl_version:3,partnership,eligible_ad_ids:rows.filter(r=>r.partnership.status==='verified_positive').map(r=>r.id),unverified_ad_ids:rows.filter(r=>r.partnership.status!=='verified_positive').map(r=>r.id)}:{}),...summarizeRows(rows),creator_version:2,creatorIssues:creatorIssues(rows),range:{since,until},generated_at,readback_verified:true};
   }
 
   // aggregate
@@ -258,13 +266,14 @@ async function refreshPromoFormatCache(token, includeToday = false, fetcher = bo
   const readback = await redisCommand(fetcher, 'GET',CACHE_KEY);
   if (readback?.result !== serialized) throw new Error('Promo inventory cache readback mismatch');
   const {monthlyMix} = require('../../public/glv-meta-ads/promo-format.js');
-  return {type:'promo_formats',...range,rows:payload.rows.length,unknownAds:new Set(payload.rows.filter(r=>r.format==='Unknown').map(r=>r.ad_id)).size,
+  return {type:'promo_formats',cache_sha256:hash(serialized),...range,rows:payload.rows.length,unknownAds:new Set(payload.rows.filter(r=>r.format==='Unknown').map(r=>r.ad_id)).size,
     inventory_version:payload.inventory_version,funnel_version:payload.funnel_version,generated_at:payload.generated_at,readback_verified:true,refresh_mode:payload.refresh_mode,refresh_window:window,
     months:monthlyMix(payload.rows).map(m=>({month:m.month,images:m.formats.Banner.assets,videos:m.formats.Video.assets,total:m.total.assets,status:m.total.asset_status}))};
 }
 
 async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=false} = {}) {
-  const fetcher = boundedFetcher(Date.now() + timeoutMs);
+  const deadline=Date.now()+timeoutMs;
+  const fetcher = require('../../lib/glv-meta-retry.cjs').metaRetryFetcher(boundedFetcher(deadline),deadline);
   const allErrors = [];
   const summaries = [];
   // Start the single bounded history pull alongside the old sequential preset
@@ -286,7 +295,12 @@ async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=f
   else summaries.push(formatResult.stats);
   const freshness=verifyTabFreshness(summaries,includeToday);
   if(!freshness.all_tabs_verified)allErrors.push('All-tabs freshness verification incomplete');
-  return {allErrors, summaries, freshness};
+  const hashes={};
+  for(const summary of summaries){
+    if(summary.type==='promo_formats')hashes[CACHE_KEY]=summary.cache_sha256;
+    else for(const type of ['aggregate','daily','ads'])if(summary[type]?.cache_sha256)hashes[`glv:${type}:${summary.preset}`]=summary[type].cache_sha256;
+  }
+  return {allErrors, summaries, freshness, hashes};
 }
 
 function verifyTabFreshness(summaries,includeToday=false,now=new Date()){
@@ -324,16 +338,31 @@ async function handler(req, res) {
   }
 
   const includeToday = ['1', 'true'].includes(String(req.query?.include_today || '').toLowerCase());
-  const {allErrors, summaries, freshness} = await runRefresh(token, includeToday,{fullHistory:['1','true'].includes(String(req.query?.full_history||'').toLowerCase())});
+  const fullHistory=['1','true'].includes(String(req.query?.full_history||'').toLowerCase());
+  const deadline=Date.now()+270000;
+  const redisFetcher=boundedFetcher(deadline);
+  let result;
+  try{
+    result=await scheduledRefresh({
+      redis:(...args)=>redisCommand(redisFetcher,...args),
+      refresh:()=>runRefresh(token,includeToday,{fullHistory,timeoutMs:Math.max(0,deadline-Date.now()-10000)}),
+      keys:[...PRESETS.flatMap(p=>['aggregate','daily','ads'].map(t=>`glv:${t}:${p}`)),CACHE_KEY],
+      through:cutoffDate(includeToday),force:includeToday||fullHistory
+    });
+  }catch(error){
+    console.error(JSON.stringify({event:'glv-meta-ads-cron',message:'Refresh coordination failed',error:error.message}));
+    return res.status(500).json({ok:false,message:'Refresh coordination failed; next scheduled invocation can retry',freshness:{all_tabs_verified:false}});
+  }
+  const {allErrors,summaries,freshness,skipped}=result;
   const success = allErrors.length === 0;
   const through = cutoffDate(includeToday);
   const coverageNote = includeToday ? ' including partial current day' : '';
-  const message = success
+  const message = skipped ? `Cache refresh skipped: ${skipped} — target ${through}` : success
     ? `Cache refreshed for ${PRESETS.join(', ')} — data through ${through}${coverageNote}`
     : `Cache refresh completed with errors: ${allErrors.join('; ')}`;
 
-  console.log(JSON.stringify({ event: 'glv-meta-ads-cron', message, summaries }));
-  res.status(success ? 200 : 500).json({ ok: success, message, summaries, freshness });
+  console.log(JSON.stringify({ event: 'glv-meta-ads-cron', message, skipped, freshness, summaries },(key,value)=>['eligible_ad_ids','unverified_ad_ids'].includes(key)?undefined:value));
+  res.status(skipped==='refresh_in_progress'?202:success?200:500).json({ ok: success&&skipped!=='refresh_in_progress', message, skipped, summaries, freshness });
 }
 
 module.exports = handler;
