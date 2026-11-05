@@ -16,7 +16,7 @@ test('mixed WL campaign gets reconciled child facts, never duplicate parent tota
  assert.equal(result.length,1);assert.equal(result[0].reach,'150');assert.equal(result[0].amount_spent,'30');
  assert.deepEqual(result[0].creator_rows.map(r=>r.adset_id),['k','a']);
  const mismatch=attachCreatorFacts([parent],[children[0]]);
- assert.equal(mismatch[0].creator_rows.length,0);assert.match(mismatch[0].creator_issue,/reconcile/);assert.equal(mismatch[0].amount_spent,'30');
+ assert.equal(mismatch[0].creator_rows.length,2);assert.equal(mismatch[0].creator_rows[1].is_ghost,true);assert.equal(mismatch[0].creator_rows[1].amount_spent,20);assert.equal(mismatch[0].creator_issue,undefined);assert.equal(mismatch[0].amount_spent,'30');
 });
 test('Promo consumes mixed adsets while all unsplit tabs retain original campaign facts',()=>{
  const fs=require('node:fs'),vm=require('node:vm');

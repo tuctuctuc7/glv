@@ -117,7 +117,7 @@ test('shared Meta API exposes lead actions to the canonical dashboard', () => {
     assert.match(api, /offsite_conversion\.fb_pixel_lead/);
   }
   const v2 = read('public/glv-meta-ads/index.html');
-  assert.match(v2, /lp:parseNum\(r\['actions:landing_page_view'\]\)/);
+  assert.match(v2, /lp:parseAmt\(r\['actions:landing_page_view'\]\)/);
   assert.match(v2, /getPromoSegmentRows/);
 });
 
@@ -215,8 +215,8 @@ test('Meta live and cached producers expose reach for the triage frequency metri
   }
   const dashboard = read('public/glv-meta-ads/index.html');
   assert.match(dashboard, /reach:parseNum\(r\.reach\)/);
-  assert.match(dashboard, /const frequency=a\.reach>0\?a\.impressions\/a\.reach:0/);
-  assert.match(dashboard, /linkClicks:parseNum\(r\['actions:link_click'\]\)/);
+  assert.match(dashboard, /const frequency=a\.reach===null\?null:a\.reach>0\?a\.impressions\/a\.reach:0/);
+  assert.match(dashboard, /linkClicks:parseAmt\(r\['actions:link_click'\]\)/);
   assert.match(dashboard, /const ctr=a\.impressions>0\?a\.linkClicks\/a\.impressions\*100:0/);
   assert.doesNotMatch(dashboard, /const ctr=a\.impressions>0\?a\.lp\/a\.impressions\*100:0/);
 });
