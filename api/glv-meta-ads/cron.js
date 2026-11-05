@@ -199,7 +199,7 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
   const stats = { preset, since, until };
   async function publish(type,rows,extra={}){
     const key=`glv:${type}:${preset}`,generated_at=new Date().toISOString();
-    const cache_sha256=await writeVerifiedCache(fetcher,key,{rows,creator_version:2,range:{since,until},generated_at,...extra});
+    const cache_sha256=await writeVerifiedCache(fetcher,key,{rows,creator_version:2,...(type==='aggregate'||type==='daily'?{creator_reconciliation_version:1}:{}),range:{since,until},generated_at,...extra});
     const partnership=type==='ads'?require('../../public/glv-meta-ads/wl-report.js').verification(rows):null;
     if(partnership)delete partnership.naming;
     stats[type]={cache_sha256,...(partnership?{wl_version:3,partnership,eligible_ad_ids:rows.filter(r=>r.partnership.status==='verified_positive').map(r=>r.id),unverified_ad_ids:rows.filter(r=>r.partnership.status!=='verified_positive').map(r=>r.id)}:{}),...summarizeRows(rows),creator_version:2,creatorIssues:creatorIssues(rows),range:{since,until},generated_at,readback_verified:true};

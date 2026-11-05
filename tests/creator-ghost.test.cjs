@@ -1,0 +1,47 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+const {attachCreatorFacts}=require('../lib/glv-wl-creators.cjs');
+const fs=require('node:fs'),vm=require('node:vm');
+function ui(){const html=fs.readFileSync(require('node:path').join(__dirname,'../public/glv-meta-ads/index.html'),'utf8');const slice=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b));const ctx=vm.createContext({GlvWlReport:require('../public/glv-meta-ads/wl-report.js'),PromoFormat:require('../public/glv-meta-ads/promo-format.js')});vm.runInContext(`let wlInfluencerBreakdown=true;${slice('const PROMO_GROUPS','function getCampaignColor')}${slice('function aggregate(','function metricForSort')}${slice('function byPromoGroup','function byDate(rows')}`,ctx);return ctx;}
+test('Ghost keeps naming resolution available, signed totals and explicit unattributed group',()=>{
+ const ctx=ui();const result=vm.runInContext(`(()=>{const row={...emptyAgg(),id:'35',name:'GLV_035_CZSK_WL',segment:'czsk',group:'wl',spend:30,reach:150,creatorRows:[{...emptyAgg(),name:'GLV_035_CZSK_WL',segment:'czsk',group:'wl',adsetName:'Set_Kristyna',spend:40,revenue:100,reach:null},{...emptyAgg(),name:'GLV_035_CZSK_WL',segment:'czsk',group:'wl',isGhost:true,spend:-10,revenue:-10,reach:null}]};return {issues:getWlNamingIssues([row]),split:byPromoGroup([row]),parent:aggregate([row])};})()`,ctx);
+ assert.equal(result.issues.length,0);assert.equal(result.split.find(r=>r.group==='wl-kristyna').spend,40);assert.equal(result.split.find(r=>r.group==='wl-ghost').spend,-10);assert.equal(result.split.reduce((s,r)=>s+r.spend,0),30);assert.equal(result.parent.reach,150);assert.equal(result.split.find(r=>r.group==='wl-ghost').reach,null);
+});
+test('wire Ghost survives normalizers and cache validation without claiming a creator or reach',()=>{
+ const result=attachCreatorFacts([parent],[child])[0];
+ const live=require('../api/glv-meta-ads/fb-data.js')._test;
+ assert.equal(live.cachedPayloadUsable('aggregate',{creator_version:2,creator_reconciliation_version:1,rows:[result]}),true);
+ const html=fs.readFileSync(require('node:path').join(__dirname,'../public/glv-meta-ads/index.html'),'utf8');
+ const ctx=ui();vm.runInContext(`const campaignGroupKey=()=> 'wl';${html.slice(html.indexOf('function processRow('),html.indexOf('function processAggregateRows('))};var wire=${JSON.stringify(result)};`,ctx);
+ const actual=vm.runInContext("creatorMetadata(wire,'czsk','2026-11-01')",ctx);assert.equal(actual.creatorRows[1].isGhost,true);assert.equal(actual.creatorRows[1].reach,null);assert.equal(actual.creatorRows[0].reach,null);
+});
+test('duplicate and malformed real inputs remain explicit validation failures, not Ghost',()=>{
+ for(const children of [[child,child],[{...child,amount_spent:NaN}],[{...child,amount_spent:null}],[{...child,amount_spent:''}],[{...child,amount_spent:-1}],[{...child,adset_id:''}]]){
+ const row=attachCreatorFacts([parent],children)[0];assert.deepEqual(row.creator_rows,[]);assert.match(row.creator_issue,/invalid|missing/);assert.equal(row.amount_spent,'30');
+ }
+});
+test('global reconciliation notice distinguishes Ghost from naming and hides financial zero only',()=>{
+ const ctx=ui(); const result=vm.runInContext(`(()=>{const ghost={name:'GLV_035_US_WL',isGhost:true,spend:-1,revenue:0};return {real:getWlReconciliationIssues([ghost]),zero:getWlReconciliationIssues([{...ghost,spend:0,purchases:3}]),naming:getWlNamingIssues([ghost]),ambiguous:getWlNamingIssues([{...ghost,isGhost:false,adsetName:'Set_Kristyna_ActionKate'}])};})()`,ctx);assert.equal(result.real.length,1);assert.match(result.real[0],/Ghost/);assert.equal(result.zero.length,0);assert.equal(result.naming.length,0);assert.equal(result.ambiguous.length,1);
+});
+test('reconciliation notice aggregates before financial visibility',()=>{
+ const ctx=ui();assert.equal(vm.runInContext("getWlReconciliationIssues([{name:'X',isGhost:true,spend:.003,revenue:0},{name:'X',isGhost:true,spend:.003,revenue:0}]).length",ctx),1);assert.equal(vm.runInContext("getWlReconciliationIssues([{name:'X',isGhost:true,spend:10,revenue:0},{name:'X',isGhost:true,spend:-10,revenue:0}]).length",ctx),0);
+});
+test('unavailable creator reach cannot become a zero frequency proxy',()=>{const ctx=ui();assert.equal(vm.runInContext('calcMetrics({...emptyAgg(),reach:null,impressions:10}).frequency',ctx),null);assert.equal(vm.runInContext('aggregate([{...emptyAgg(),reach:null}]).reach',ctx),null);});
+test('fractional signed creator actions survive wire normalization',()=>{
+ const html=fs.readFileSync(require('node:path').join(__dirname,'../public/glv-meta-ads/index.html'),'utf8');const ctx=ui();vm.runInContext(html.slice(html.indexOf('function processRow('),html.indexOf('function processAggregateRows(')),ctx);
+ assert.equal(vm.runInContext("processRow({'actions:omni_purchase':-0.75}).purchases",ctx),-0.75);
+});
+test('legacy accepted cent discrepancy requires a new creator reconciliation extraction',()=>{const live=require('../api/glv-meta-ads/fb-data.js')._test;const row={...parent,creator_rows:[{...child,amount_spent:parent.amount_spent,'action_values:omni_purchase':'90.01'}]};assert.equal(live.cachedPayloadUsable('aggregate',{creator_version:2,rows:[row]}),false);});
+test('old discarded-child cache is rejected rather than invented attribution',()=>{
+ const live=require('../api/glv-meta-ads/fb-data.js')._test;
+ assert.equal(live.cachedPayloadUsable('daily',{creator_version:2,rows:[{...parent,creator_rows:[],creator_issue:'Ad-set facts do not reconcile with campaign totals; refresh and check source naming.'}]}),false);
+});
+const parent={id:'35',name:'GLV_035_CZSK_WL',date_start:'2026-11-01',date_stop:'2026-11-01',amount_spent:'30',impressions:'300',reach:'150','action_values:omni_purchase':'90'};
+const child={...parent,adset_id:'k',adset_name:'Set_Kristyna',amount_spent:'40',impressions:'400',reach:'180','action_values:omni_purchase':'100'};
+test('signed creator residual retains real source facts and authoritative campaign totals',()=>{
+ const result=attachCreatorFacts([parent],[child])[0];
+ assert.equal(result.creator_rows.length,2);
+ assert.deepEqual(result.creator_rows[0],child);
+ const ghost=result.creator_rows[1];assert.equal(ghost.is_ghost,true);assert.equal(ghost.creator,null);assert.equal(ghost.adset_name,undefined);assert.equal(ghost.reach,null);
+ assert.equal(ghost.amount_spent,-10);assert.equal(ghost.impressions,-100);assert.equal(ghost['action_values:omni_purchase'],-10);
+ assert.equal(result.creator_issue,undefined);assert.equal(result.creator_rows.reduce((s,r)=>s+Number(r.amount_spent),0),30);assert.equal(result.reach,'150');
+});

@@ -822,9 +822,11 @@ const WL_INFLUENCER_GROUPS = [
   {key:'wl-actionkate',label:'WL · ActionKate',color:'#db2777',className:'group-wl-actionkate'},
   {key:'wl-befit-over40',label:'WL · befit_over40',color:'#0891b2',className:'group-wl-befit-over40'},
 ];
+const WL_GHOST_GROUP={key:'wl-ghost',label:'Ghost / unattributed creator',color:'#64748b',className:'group-wl-ghost'};
+let wlGhostVisible=false;
 let wlNamingIssues = [];
 const wlBreakdownActive = () => wlInfluencerBreakdown && wlNamingIssues.length===0;
-const activePromoGroups = () => wlBreakdownActive() ? [PROMO_GROUPS[0],...WL_INFLUENCER_GROUPS,PROMO_GROUPS[2]] : PROMO_GROUPS;
+const activePromoGroups = () => wlBreakdownActive() ? [PROMO_GROUPS[0],...WL_INFLUENCER_GROUPS,...(wlGhostVisible?[WL_GHOST_GROUP]:[]),PROMO_GROUPS[2]] : PROMO_GROUPS;
 const LEADGEN_GROUPS = [
   {key:'leadgen',label:'Lead-gen',color:'#f97316',className:'group-leadgen'},
   {key:'sales',label:'Sales',color:'#10b981',className:'group-sales'},
@@ -849,7 +851,12 @@ function creatorFacts(rows){
   return rows.flatMap(row=>row.creatorRows?.length?row.creatorRows.map(child=>({...child,date:row.date})): [row]);
 }
 function getWlNamingIssues(rows){
-  return [...new Set(creatorFacts(rows).filter(r=>promoGroupKey(r.campaignName||r.name)==='wl'&&!wlCreatorKey(r.campaignName||r.name,r.adsetName)).map(r=>`${r.campaignName||r.name||'(unnamed campaign)'}${r.adsetName?' / '+r.adsetName:''}${r.creatorIssue?' — '+r.creatorIssue:''}`))];
+  return [...new Set(creatorFacts(rows).filter(r=>!r.isGhost&&promoGroupKey(r.campaignName||r.name)==='wl'&&!wlCreatorKey(r.campaignName||r.name,r.adsetName)).map(r=>`${r.campaignName||r.name||'(unnamed campaign)'}${r.adsetName?' / '+r.adsetName:''}${r.creatorIssue?' — '+r.creatorIssue:''}`))];
+}
+function getWlReconciliationIssues(rows){
+  const totals=new Map();
+  for(const r of creatorFacts(rows).filter(r=>r.isGhost)){const key=r.id||r.name;const t=totals.get(key)||{name:r.name,spend:0,revenue:0};t.spend+=r.spend;t.revenue+=r.revenue;totals.set(key,t);}
+  return [...totals.values()].filter(PromoFormat.hasFinancialContribution).map(r=>`${r.name} — Ghost / unattributed creator; campaign totals retained, real creator facts unchanged.`);
 }
 function renderCreatorWarning(tab){
   const panel=document.getElementById('panel-'+tab);if(!panel)return;
@@ -859,13 +866,19 @@ function renderCreatorWarning(tab){
   const segments=tab==='us'?['us']:tab==='czsk-triage'&&triageMarket==='all'?['czsk','us']:[tab==='czsk-triage'?triageMarket:'czsk'];
   const ads=filterTabRows(tab,adCreatives.filter(r=>segments.includes(r.segment)));
   const issues=getWlNamingIssues([...rows,...ads]);
-  warning.hidden=!issues.length;
-  warning.innerHTML=issues.length?`<strong>Unresolved WL creator — check campaign name first, then ad-set name. No creator assumed; performance remains in totals.</strong><ul>${issues.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul>`:'';
+  const residuals=getWlReconciliationIssues(rows);
+  warning.hidden=!issues.length&&!residuals.length;
+  warning.innerHTML=(issues.length?`<strong>Unresolved WL creator — check campaign name first, then ad-set name. No creator assumed; performance remains in totals.</strong><ul>${issues.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul>`:'')+(residuals.length?`<strong>Meta reconciliation pending — signed difference remains unattributed.</strong><ul>${residuals.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul>`:'');
 }
 function validateWlBreakdown(){
   // Validate the selected KPI + daily scope once before rendering any Promo surface.
   // Table-local narrowing must not change chart/KPI identities.
-  wlNamingIssues=getWlNamingIssues([...getPromoKpiRows(),...getPromoDailyRows()]);
+  const creatorScope=[...getPromoKpiRows(),...getPromoDailyRows()];
+  wlNamingIssues=getWlNamingIssues(creatorScope);
+  // Decide visibility after aggregation at each displayed grain, not per source row.
+  wlGhostVisible=true;
+  wlGhostVisible=[...byPromoGroup(getPromoKpiRows()),...byDateGroup(periodRows(getPromoDailyRows(),'czsk-promo'))].some(r=>r.group==='wl-ghost'&&PromoFormat.hasFinancialContribution(r));
+  wlNamingIssues=getWlNamingIssues(creatorScope);
   const warning=document.getElementById('wl-naming-warning');
   warning.hidden=wlNamingIssues.length===0;
   warning.innerHTML=warning.hidden?'':`<strong>WL naming validation: breakdown unavailable until the campaign name, or only when absent the ad-set name, identifies exactly one recognized creator (Kristyna, ActionKate or befit_over40).</strong> Combined WL totals shown. Affected campaigns / ad sets:<ul>${wlNamingIssues.map(name=>`<li>${escapeHtml(name)}</li>`).join('')}</ul>`;
@@ -873,9 +886,9 @@ function validateWlBreakdown(){
 function promoPresentationKey(row){
   const phase=row.group||promoGroupKey(row.name);
   if(!wlBreakdownActive()||phase!=='wl')return phase;
-  return wlCreatorKey(row.name,row.adsetName)||'wl';
+  return row.isGhost?'wl-ghost':wlCreatorKey(row.name,row.adsetName)||'wl';
 }
-const promoGroup = key => [...PROMO_GROUPS,...WL_INFLUENCER_GROUPS].find(g=>g.key===key)||PROMO_GROUPS[2];
+const promoGroup = key => [...PROMO_GROUPS,...WL_INFLUENCER_GROUPS,WL_GHOST_GROUP].find(g=>g.key===key)||PROMO_GROUPS[2];
 function setWlInfluencerBreakdown(enabled){
   wlInfluencerBreakdown=Boolean(enabled);
   renderTab('czsk-promo');
@@ -902,7 +915,7 @@ function aggregate(rows){
   return {
     spend:rows.reduce((s,r)=>s+r.spend,0),lp:rows.reduce((s,r)=>s+r.lp,0),
     purchases:rows.reduce((s,r)=>s+r.purchases,0),checkouts:rows.reduce((s,r)=>s+r.checkouts,0),leads:rows.reduce((s,r)=>s+r.leads,0),
-    revenue:rows.reduce((s,r)=>s+r.revenue,0),impressions:rows.reduce((s,r)=>s+r.impressions,0),reach:rows.reduce((s,r)=>s+(r.reach||0),0),
+    revenue:rows.reduce((s,r)=>s+r.revenue,0),impressions:rows.reduce((s,r)=>s+r.impressions,0),reach:rows.some(r=>r.reach===null)?null:rows.reduce((s,r)=>s+(r.reach||0),0),
     linkClicks:rows.reduce((s,r)=>s+r.linkClicks,0),
   };
 }
@@ -922,7 +935,7 @@ function calcMetrics(a){
   const costLp=a.lp>0?a.spend/a.lp:0;
   const ctr=a.impressions>0?a.linkClicks/a.impressions*100:0;
   const cpm=a.impressions>0?a.spend/a.impressions*1000:0;
-  const frequency=a.reach>0?a.impressions/a.reach:0;
+  const frequency=a.reach===null?null:a.reach>0?a.impressions/a.reach:0;
   const cpl=a.leads>0?a.spend/a.leads:0;
   const lp2lead=a.lp>0?a.leads/a.lp*100:0;
   return{roas,cpa,aov,cvr,lp2co,co2pur,lp2pur,costChk,costLp,ctr,cpm,frequency,cpl,lp2lead};
@@ -1084,15 +1097,15 @@ function extractDate(r){
 function fmtDate(iso){return iso?iso.slice(5):'—';}
 function processRow(r){
   return{
-    spend:parseAmt(r.amount_spent),lp:parseNum(r['actions:landing_page_view']),
-    purchases:parseNum(r['actions:omni_purchase']),checkouts:parseNum(r['actions:initiate_checkout']),
-    leads:parseNum(r['actions:lead']),
-    linkClicks:parseNum(r['actions:link_click']),revenue:parseAmt(r['action_values:omni_purchase']),
+    spend:parseAmt(r.amount_spent),lp:parseAmt(r['actions:landing_page_view']),
+    purchases:parseAmt(r['actions:omni_purchase']),checkouts:parseAmt(r['actions:initiate_checkout']),
+    leads:parseAmt(r['actions:lead']),
+    linkClicks:parseAmt(r['actions:link_click']),revenue:parseAmt(r['action_values:omni_purchase']),
     impressions:parseNum(r.impressions),reach:parseNum(r.reach),
   };
 }
 function creatorMetadata(r,seg,date){
-  return {adsetName:r.adset_name||'',creator:GlvWlReport.resolveCreator(r.name,r.adset_name).creator,creatorIssue:r.creator_issue||'',creatorRows:(r.creator_rows||[]).map(c=>({id:r.id,name:r.name,adsetId:c.adset_id,adsetName:c.adset_name,segment:seg,group:campaignGroupKey(r.name,seg),date,...processRow(c)}))};
+  return {adsetName:r.adset_name||'',creator:GlvWlReport.resolveCreator(r.name,r.adset_name).creator,creatorIssue:r.creator_issue||'',creatorRows:(r.creator_rows||[]).map(c=>({id:r.id,name:r.name,adsetId:c.adset_id,adsetName:c.adset_name,segment:seg,group:campaignGroupKey(r.name,seg),date,...processRow(c),isGhost:c.is_ghost===true,reach:null}))};
 }
 function processAggregateRows(rawRows){
   const out=[];
@@ -1233,9 +1246,9 @@ function byPromoGroup(rows){
     const key=promoPresentationKey(r);
     const d=map[key]||(map[key]=emptyAgg(null,key));
     d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
-    d.linkClicks+=r.linkClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
+    d.linkClicks+=r.linkClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach=d.reach===null||r.reach===null?null:d.reach+(r.reach||0);
   }
-  return activePromoGroups().map(g=>map[g.key]);
+  return [...activePromoGroups().map(g=>map[g.key]),...(map['wl-ghost']&&!wlGhostVisible?[map['wl-ghost']]:[])];
 }
 function byDateGroup(rows){
   return byDateGroupFiltered(rows,null);
@@ -1250,7 +1263,7 @@ function byDateGroupFiltered(rows,selectedIds){
     if(!map[mapKey])map[mapKey]=emptyAgg(r.date,key);
     const d=map[mapKey];
     d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
-    d.linkClicks+=r.linkClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
+    d.linkClicks+=r.linkClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach=d.reach===null||r.reach===null?null:d.reach+(r.reach||0);
   }
   return Object.values(map).sort((a,b)=>a.date===b.date?activePromoGroups().findIndex(g=>g.key===a.group)-activePromoGroups().findIndex(g=>g.key===b.group):a.date<b.date?-1:1);
 }
@@ -1315,18 +1328,19 @@ function renderKPIs(seg){
     <div class="kpi-card"><div class="kpi-label">Cost / Checkout</div><div class="kpi-val">${m.costChk>0?fmtInt(m.costChk):'—'}</div><div class="kpi-sub">${m.costChk>0?'CZK':'No checkout data'}</div></div>
   `;
 }
+const fmtCreatorGhostMoney=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 function renderPromoKPIs(){
   validateWlBreakdown();
   if(renderSourceEmpty('kpi-czsk-promo',promoActiveDaysOnly?'daily':'aggregate'))return;
-  const rows=byPromoGroup(getPromoKpiRows());
+  const rows=byPromoGroup(getPromoKpiRows()).filter(r=>r.group!=='wl-ghost'||PromoFormat.hasFinancialContribution(r));
   document.getElementById('kpi-czsk-promo').innerHTML=rows.map(a=>{
     const m=calcMetrics(a);const g=promoGroup(a.group);
     return`
       <div class="kpi-card">
         <div class="kpi-label"><span class="group-badge ${g.className}">${g.label}</span></div>
-        <div class="kpi-val">${fmtInt(a.spend)}</div>
+        <div class="kpi-val">${a.group==='wl-ghost'?fmtCreatorGhostMoney(a.spend):fmtInt(a.spend)}</div>
         <div class="kpi-sub">Spend CZK</div>
-        <div class="kpi-sub2">${fmtRoas(m.roas)} ROAS · ${a.revenue>0?fmtInt(a.revenue):'—'} revenue</div>
+        <div class="kpi-sub2">${fmtRoas(m.roas)} ROAS · ${a.group==='wl-ghost'?fmtCreatorGhostMoney(a.revenue):a.revenue>0?fmtInt(a.revenue):'—'} revenue</div>
       </div>`;
   }).join('');
 }
@@ -1542,23 +1556,25 @@ function refreshPromoCharts(){
   lineConfigs.forEach(makeLine);
   const totals=byPromoGroup(getPromoKpiRows());
   const pieMetricKey=document.getElementById('chart-metric-promo-pie')?.value||'spend';const pieMetric=metricDefinition(pieMetricKey);
-  const pieValues=activePromoGroups().map(group=>{const row=totals.find(item=>item.group===group.key)||emptyAgg(null,group.key);return computeChartMetric(pieMetricKey,row,calcMetrics(row));});
+  const pieGroups=activePromoGroups().filter(g=>g.key!=='wl-ghost'||PromoFormat.hasFinancialContribution(totals.find(r=>r.group===g.key)||emptyAgg()));
+  const pieValues=pieGroups.map(group=>{const row=totals.find(item=>item.group===group.key)||emptyAgg(null,group.key);return computeChartMetric(pieMetricKey,row,calcMetrics(row));});
   const pieTotal=pieValues.reduce((sum,value)=>sum+value,0);
-  const pieTitle=document.getElementById('promo-chart-title-pie');if(pieTitle)pieTitle.textContent=`${pieMetric.label} Mix`;
+  const signedMix=pieValues.some(value=>value<0);
+  const pieTitle=document.getElementById('promo-chart-title-pie');if(pieTitle)pieTitle.textContent=`${pieMetric.label} ${signedMix?'by group (signed reconciliation)':'Mix'}`;
   if(charts['promo-pie']){charts['promo-pie'].destroy();delete charts['promo-pie'];}
   const pieCanvas=document.getElementById('chart-promo-pie');pieCanvas?.setAttribute('aria-label',`${pieMetric.label} mix by Promo campaign group`);
   const pieTable=document.getElementById('promo-chart-table-pie');
   if(pieTable){
     pieTable.querySelector('caption').textContent=`${pieMetric.label} mix by Promo campaign group`;
     pieTable.querySelector('thead th:nth-child(2)').textContent=pieMetric.label;
-    pieTable.querySelector('tbody').innerHTML=activePromoGroups().map((group,index)=>`<tr><th scope="row">${escapeHtml(group.label)}</th><td>${escapeHtml(formatChartVal(pieMetricKey,pieValues[index]))}</td><td>${escapeHtml((pieTotal?pieValues[index]/pieTotal*100:0).toFixed(1)+'%')}</td></tr>`).join('');
+    pieTable.querySelector('tbody').innerHTML=pieGroups.map((group,index)=>`<tr><th scope="row">${escapeHtml(group.label)}</th><td>${escapeHtml(formatChartVal(pieMetricKey,pieValues[index]))}</td><td>${escapeHtml((pieTotal?pieValues[index]/pieTotal*100:0).toFixed(1)+'%')}</td></tr>`).join('');
   }
   const pieCtx=pieCanvas?.getContext('2d');
   if(pieCtx){
     const percentLabelPlugin={
       id:'promoMetricPercentLabels',
       afterDatasetsDraw(chart){
-        if(chart.canvas.id!=='chart-promo-pie'||!pieTotal)return;
+        if(signedMix||chart.canvas.id!=='chart-promo-pie'||!pieTotal)return;
         const {ctx}=chart;
         const meta=chart.getDatasetMeta(0);
         ctx.save();
@@ -1579,10 +1595,10 @@ function refreshPromoCharts(){
       },
     };
     charts['promo-pie']=new Chart(pieCtx,{
-      type:'doughnut',
-      data:{labels:activePromoGroups().map(g=>g.label),datasets:[{metricKey:pieMetricKey,label:pieMetric.label,data:pieValues,backgroundColor:activePromoGroups().map(g=>g.color),borderWidth:0}]},
+      type:signedMix?'bar':'doughnut',
+      data:{labels:pieGroups.map(g=>g.label),datasets:[{metricKey:pieMetricKey,label:pieMetric.label,data:pieValues,backgroundColor:pieGroups.map(g=>g.color),borderWidth:0}]},
       plugins:[percentLabelPlugin],
-      options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:ctx=>{
+      options:{responsive:true,maintainAspectRatio:false,...(signedMix?{scales:{y:{beginAtZero:true,ticks:{callback:v=>formatChartTick(pieMetricKey,v)}}}}:{cutout:'62%'}),plugins:{legend:{display:!signedMix,position:'bottom',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:ctx=>{
         const pct=pieTotal?ctx.raw/pieTotal*100:0;
         return`${ctx.label}: ${formatChartVal(pieMetricKey,ctx.raw)} (${pct.toFixed(1)}%)`;
       }}}}}
@@ -1844,15 +1860,15 @@ function sumPromoRows(rows,date=null,group=null){
   const total=emptyAgg(date,group);
   for(const r of rows){
     total.spend+=r.spend;total.lp+=r.lp;total.purchases+=r.purchases;total.checkouts+=r.checkouts;total.leads+=r.leads;
-    total.linkClicks+=r.linkClicks;total.revenue+=r.revenue;total.impressions+=r.impressions;total.reach+=r.reach||0;
+    total.linkClicks+=r.linkClicks;total.revenue+=r.revenue;total.impressions+=r.impressions;total.reach=total.reach===null||r.reach===null?null:total.reach+(r.reach||0);
   }
   return total;
 }
 function promoMetricCells(d){
   const m=calcMetrics(d);
   return[
-    fmtInt(d.spend),
-    d.revenue>0?fmtInt(d.revenue):'—',
+    d.group==='wl-ghost'?fmtCreatorGhostMoney(d.spend):fmtInt(d.spend),
+    d.group==='wl-ghost'?fmtCreatorGhostMoney(d.revenue):d.revenue>0?fmtInt(d.revenue):'—',
     roasHtml(m.roas),
     d.purchases||'—',
     m.cpa>0?fmtInt(m.cpa):'—',
@@ -1919,9 +1935,9 @@ function renderPromoTable(){
     : [grain==='day'?'Date':'Period','Group','Spend','Revenue','ROAS','Purchases','CPA','AOV','LP→Checkout','Checkout→Purchase','Checkouts','Cost/Checkout','LP Views','Cost/LP','CTR','LP→Purchase','CPM'];
   let body='';
   if(promoTableMode==='groups'){
-    const groups=sortPromoParents(activePromoGroups().map(g=>sumPromoRows(rows.filter(r=>r.group===g.key),null,g.key)).filter(g=>g.spend>0||g.revenue>0||g.purchases>0||g.checkouts>0||g.lp>0));
+    const groups=sortPromoParents(activePromoGroups().map(g=>sumPromoRows(rows.filter(r=>r.group===g.key),null,g.key)).filter(g=>g.group==='wl-ghost'?PromoFormat.hasFinancialContribution(g):g.spend>0||g.revenue>0||g.purchases>0||g.checkouts>0||g.lp>0));
     for(const groupTotal of groups){
-      const groupRows=sortPromoChildren(rows.filter(r=>r.group===groupTotal.group));
+      const groupRows=sortPromoChildren(rows.filter(r=>r.group===groupTotal.group&&(r.group!=='wl-ghost'||PromoFormat.hasFinancialContribution(r))));
       if(!groupRows.length)continue;
       body+=promoNestedRow('subtotal-row',promoGroupToggleHtml(groupTotal.group),'Subtotal',groupTotal);
       if(promoExpandedGroups.has(groupTotal.group))body+=groupRows.map(r=>promoNestedRow('child-row','',`<span class="nested-child">${escapeHtml(grain==='day'?r.date:fmtChartDate(r.date,grain))}</span>`,r,groupTotal.group)).join('');
@@ -1936,7 +1952,7 @@ function renderPromoTable(){
           : promoSortComparator(a,b);
       });
       body+=promoNestedRow('subtotal-row',promoPeriodToggleHtml(dateTotal.date),'Subtotal',dateTotal);
-      if(!promoCollapsedPeriods.has(`${grain}:${dateTotal.date}`))body+=dateRows.map(r=>promoNestedRow('child-row','',`<span class="nested-child">${promoGroupHtml(r.group)}</span>`,r)).join('');
+      if(!promoCollapsedPeriods.has(`${grain}:${dateTotal.date}`))body+=dateRows.filter(r=>r.group!=='wl-ghost'||PromoFormat.hasFinancialContribution(r)).map(r=>promoNestedRow('child-row','',`<span class="nested-child">${promoGroupHtml(r.group)}</span>`,r)).join('');
     }
   }
   container.innerHTML=`<div class="data-table-wrap"><table class="data-table daily-data-table"><thead><tr>${columns.map(label=>`<th title="${escapeHtml(label)}">${escapeHtml(label)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
