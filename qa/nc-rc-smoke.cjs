@@ -18,14 +18,14 @@ module.exports = async (browser, baseUrl, evidenceDir) => {
   await page.locator('#grain').selectOption('day'); await page.locator('#auditGrain').selectOption('day');
   const headers=await page.locator('#metricsTable thead th').allTextContents();
   assert.equal(headers[headers.indexOf('CAC')+1],'NC ROAS');
-  assert.equal(headers[headers.indexOf('NC revenue')+1],'RC revenue');
+  assert.equal(headers[headers.indexOf('NC Revenue')+1],'RC Revenue');
   for (const id of ['trendMetric','trendMetricSecondary']) for (const [key,values] of [['nc_roas',[2,1,null]],['returning_customer_revenue',[300,300,-10]]]) {
    await page.locator('#'+id).selectOption(key);
    const series=await page.evaluate(id=>Chart.getChart('trendChart').data.datasets.find(d=>d.yAxisID===(id==='trendMetric'?'y':'y1')).data,id);
    assert.deepEqual(series,values);
   }
   assert.equal(await page.locator('#metricsTableBody tr').first().locator('td').nth(headers.indexOf('NC ROAS')).textContent(),'1.30');
-  assert.equal(await page.locator('#metricsTableBody tr').first().locator('td').nth(headers.indexOf('RC revenue')).textContent(),'$590');
+  assert.equal(await page.locator('#metricsTableBody tr').first().locator('td').nth(headers.indexOf('RC Revenue')).textContent(),'$590');
   assert.match(await page.locator('#trendDataBody').textContent(), /-\$10/);
   if(width<=720) await page.locator('#filtersToggle').click();
   const downloadPromise=page.waitForEvent('download'); await page.locator('#exportCsv').click();

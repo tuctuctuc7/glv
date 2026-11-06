@@ -442,7 +442,8 @@ def build_promo_events(schedule):
         label = dt.date.fromisoformat(start).strftime("%B")
         if (start, end) == ("2026-10-07", "2026-10-14"):
             label = "Menopause"
-        elif (start, end) == ("2026-10-28", "2026-11-04"):
+        # The 2026 VB2 launch keeps its name when its end is extended.
+        elif start == "2026-10-28":
             label = "VB2"
         groups.setdefault(key, {"id": key, "start_date": start, "end_date": end,
                                 "label": label, "sources": []})["sources"].append(dict(entry))

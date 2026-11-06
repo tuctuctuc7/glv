@@ -7,7 +7,7 @@ const app = fs.readFileSync('public/glv/app.js','utf8');
 const keys = ['spend','revenue','roas','cac','nc_roas','new_customer_rate','new_customer_revenue','returning_customer_revenue','cvr','purchases','cpa','aov','unique_visitors','cpv'];
 test('Home headers and summary/detail values follow the requested metric order at every grain', () => {
   const headers = [...html.match(/<table id="metricsTable">([\s\S]*?)<\/table>/)[1].matchAll(/<th\b[^>]*>(.*?)<\/th>/g)].map(m=>m[1]);
-  assert.deepEqual(headers,['Date','Spend','Revenue','ROAS','CAC','NC ROAS','NC rate','NC revenue','RC revenue','CVR','Purchases','Cost per purchase','AOV','Visitors','Cost per Visitor']);
+  assert.deepEqual(headers,['Date','Spend','Revenue','ROAS','CAC','NC ROAS','NC Rate','NC Revenue','RC Revenue','CVR','Purchases','Cost per purchase','AOV','Visitors','Cost per Visitor']);
   for (const grain of ['day','week','month','year']) {
     const nodes = {}; const node = () => ({children:[],appendChild(n){this.children.push(n);}});
     const row = Object.fromEntries(keys.map((k,i)=>[k,i+1])); row.label='period';

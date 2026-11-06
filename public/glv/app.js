@@ -1,7 +1,7 @@
 const METRIC_CONFIG = {
   cpv: { label: 'Cost per Visitor', type: 'money', color: 'var(--blue)', description: 'Spend / Visitors from matching available rows; nonpositive Visitors are unavailable.' },
-  nc_roas: { label: 'NC ROAS', type: 'ratio', color: 'var(--cyan)', description: 'NC revenue / existing ad spend, using matching available rows. Nonpositive spend is unavailable.' },
-  returning_customer_revenue: { label: 'RC revenue', type: 'money', color: 'var(--purple)', description: 'Revenue minus NC revenue on matching available rows. Negative source discrepancies are preserved.' },
+  nc_roas: { label: 'NC ROAS', type: 'ratio', color: 'var(--cyan)', description: 'NC Revenue / existing ad spend, using matching available rows. Nonpositive spend is unavailable.' },
+  returning_customer_revenue: { label: 'RC Revenue', type: 'money', color: 'var(--purple)', description: 'Revenue minus NC Revenue on matching available rows. Negative source discrepancies are preserved.' },
   avg_daily_revenue: { label: 'Avg daily revenue', type: 'money', color: 'var(--accent)', description: 'Phase revenue divided by distinct represented phase dates, including zero-revenue days.' },
   cac: { label: 'CAC', type: 'money', color: 'var(--blue)', description: 'Total recorded spend divided by total new customers after aggregation; blank when new customers are not positive or inputs are unavailable.' },
   none: { label: 'None', type: 'count', color: 'transparent', description: 'No metric selected.' },
@@ -13,8 +13,8 @@ const METRIC_CONFIG = {
   aov: { label: 'AOV', type: 'money', color: 'var(--purple)', description: 'Revenue divided by purchases.' },
   cvr: { label: 'CVR', type: 'percent', color: 'var(--cyan)', description: 'Purchases divided by summed market-day unique visitors.' },
   unique_visitors: { label: 'Visitors', type: 'count', color: 'var(--accent)', description: 'Summed market-day unique visitors; visitors can repeat across dates or markets.' },
-  new_customer_revenue: { label: 'New customer revenue', type: 'money', color: 'var(--blue)', description: 'Revenue recorded from new customers.' },
-  new_customer_rate: { label: 'New customer rate', type: 'percent', color: 'var(--purple)', description: 'New customers divided by new plus returning customers after aggregation.' },
+  new_customer_revenue: { label: 'NC Revenue', type: 'money', color: 'var(--blue)', description: 'Revenue recorded from new customers.' },
+  new_customer_rate: { label: 'NC Rate', type: 'percent', color: 'var(--purple)', description: 'New customers divided by new plus returning customers after aggregation.' },
 };
 
 const REGION_CONFIG = {
@@ -155,7 +155,7 @@ function renderHistoricalNote(id, context) {
   } else if (!context.rows.length) {
     note.textContent = 'No complete 2025 month is contained by the selected date range.';
   } else {
-    note.textContent = 'Includes the static 2025 CZSK monthly snapshot; US and ROW had no activity in 2025. Revenue and spend are converted from kCZK to USD with ECB monthly reference rates; Visitors, CVR, and New customer revenue are unavailable for 2025.';
+    note.textContent = 'Includes the static 2025 CZSK monthly snapshot; US and ROW had no activity in 2025. Revenue and spend are converted from kCZK to USD with ECB monthly reference rates; Visitors, CVR, and NC Revenue are unavailable for 2025.';
   }
 }
 
@@ -1334,14 +1334,14 @@ async function exportCsv() {
   const sourcePayload = new TextEncoder().encode(JSON.stringify(state.data.rows));
   const digest = await crypto.subtle.digest('SHA-256', sourcePayload);
   const checksum = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-  const headers = ['date', 'region', 'spend_usd', 'revenue_usd', 'purchases', 'market_day_unique_visitors', 'new_customers', 'returning_customers', 'new_customer_revenue_usd', 'returning_customer_revenue_usd', 'nc_roas', 'cost_per_visitor_usd'];
+  const headers = ['date', 'region', 'spend_usd', 'revenue_usd', 'purchases', 'market_day_unique_visitors', 'NC', 'RC', 'NC Revenue (USD)', 'RC Revenue (USD)', 'NC ROAS', 'cost_per_visitor_usd'];
   const lines = [
     `# source_updated_at=${state.data.updated_at || 'unknown'}`,
     `# exported_at=${new Date().toISOString()}`,
     `# selected_from=${view.filters.from}`,
     `# selected_to=${view.filters.to}`,
     `# selected_regions=${state.selectedRegions.join('|')}`,
-    '# acquisition_metrics=matching available inputs only; NC ROAS uses existing ad spend; RC revenue is revenue minus NC revenue; historical NC unavailable',
+    '# acquisition_metrics=matching available inputs only; NC ROAS uses existing ad spend; RC Revenue is revenue minus NC Revenue; historical NC unavailable',
     '# aggregation_version=glv-metrics-v2-post-aggregation-ratios',
     `# dataset_sha256=${checksum}`,
     headers.join(','),
