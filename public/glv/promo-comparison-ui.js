@@ -20,6 +20,12 @@ window.renderPromoComparison = (() => {
     const nextMode = events ? 'promo' : 'month';
     if (nextMode !== mode) { mode = nextMode; ({selected, focusedMonth = null} = modes[mode]); }
     eventList = events;
+    if (events) {
+      events = GlvPhases.groupPromoEvents(events);
+      const parent = id => events.find(e => e.id === id || e.events.some(stage => stage.id === id))?.id || id;
+      if (selected) selected = [...new Set(selected.map(parent))];
+      if (focusedMonth) focusedMonth = parent(focusedMonth);
+    }
     const monthName = key => events ? promoEventLabel(events.find(e => e.id === key)) : new Intl.DateTimeFormat('en-US', {month:'long', year:'numeric', timeZone:'UTC'}).format(new Date(`${key}-01T00:00:00Z`));
     const unit = events ? 'Promos' : 'Months';
     lastDays = days;
