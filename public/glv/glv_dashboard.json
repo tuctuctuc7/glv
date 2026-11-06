@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-06 01:10 UTC",
+  "updated_at": "2026-11-06 03:02 UTC",
   "source": {
     "tab": "Daily",
     "phase_calendar_sheet_id": "18oXDGQaE2p8E_G3PGHJwaYsl0CFM0eE9pVd-ju19edY",
@@ -197,7 +197,7 @@
     },
     {
       "start_date": "2026-10-28",
-      "end_date": "2026-11-04",
+      "end_date": "2026-11-06",
       "phase": "Promo",
       "label": "promo gummies",
       "source_row": 53
@@ -211,7 +211,7 @@
     },
     {
       "start_date": "2026-10-28",
-      "end_date": "2026-11-04",
+      "end_date": "2026-11-06",
       "phase": "Promo",
       "label": "promo gummies",
       "source_row": 60
@@ -406,21 +406,21 @@
       ]
     },
     {
-      "id": "promo:2026-10-28/2026-11-04",
+      "id": "promo:2026-10-28/2026-11-06",
       "start_date": "2026-10-28",
-      "end_date": "2026-11-04",
-      "label": "VB2",
+      "end_date": "2026-11-06",
+      "label": "October",
       "sources": [
         {
           "start_date": "2026-10-28",
-          "end_date": "2026-11-04",
+          "end_date": "2026-11-06",
           "phase": "Promo",
           "label": "promo gummies",
           "source_row": 53
         },
         {
           "start_date": "2026-10-28",
-          "end_date": "2026-11-04",
+          "end_date": "2026-11-06",
           "phase": "Promo",
           "label": "promo gummies",
           "source_row": 60
