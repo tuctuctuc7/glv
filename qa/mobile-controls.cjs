@@ -45,7 +45,7 @@ module.exports = async (browser, baseUrl, evidenceDir) => {
     assert.equal(await page.locator('#phaseHierarchy').inputValue(),'phase-month');
     assert.match(await page.locator('#phaseTableSubtitle').textContent(),/Phase/);
     await page.locator('#promoMetric').selectOption('new_customer_revenue');
-    assert.match(await page.locator('#promoChartCaption').textContent(),/New customer revenue/);
+    assert.match(await page.locator('#promoChartCaption').textContent(),/NC Revenue/);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
     assert.ok(await page.locator('#promoMetric').evaluate(n=>n.getBoundingClientRect().right<=innerWidth));
     for(const id of ['phaseMonths','promoMonths']) {

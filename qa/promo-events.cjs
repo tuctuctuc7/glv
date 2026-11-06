@@ -16,7 +16,7 @@ fs.mkdirSync(out,{recursive:true});
  });
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const libs='/home/tom/.cache/hermes-browser-libs/root';
- const browser=await chromium.launch({executablePath:'/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome',headless:true,args:['--no-sandbox'],env:{...process.env,LD_LIBRARY_PATH:`${libs}/usr/lib/x86_64-linux-gnu:${libs}/usr/lib`,FONTCONFIG_PATH:`${libs}/etc/fonts`,XDG_DATA_DIRS:`${libs}/usr/share`}});
+ const browser=await chromium.launch({executablePath:process.env.GLV_CHROME_PATH||'/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome',headless:true,args:['--no-sandbox'],env:{...process.env,LD_LIBRARY_PATH:`${libs}/usr/lib/x86_64-linux-gnu:${libs}/usr/lib`,FONTCONFIG_PATH:`${libs}/etc/fonts`,XDG_DATA_DIRS:`${libs}/usr/share`}});
  try {
  for(const width of (process.env.GLV_QA_WIDTH ? [Number(process.env.GLV_QA_WIDTH)] : [1440,430,390,375,320])) for(const theme of ['dark','light']) {
   const page=await browser.newPage({viewport:{width,height:1000},reducedMotion:'reduce'});
@@ -137,7 +137,7 @@ fs.mkdirSync(out,{recursive:true});
    await page.locator('#phaseTable').screenshot({path:`${out}/${width}-${theme}-${group.label}-stages.png`});
    await parent.click();
   }
-  const vb='promo:2026-10-28/2026-11-04';
+  const vb=await page.evaluate(()=>GlvPhases.buildPromoEvents(state.data.phases).find(e=>e.start_date==='2026-10-28').id);
   const disclosure=page.locator(`button[data-phase-toggle="${vb}"]`);
   await disclosure.click();
   assert.equal(await disclosure.getAttribute('aria-expanded'),'true');
@@ -253,14 +253,14 @@ fs.mkdirSync(out,{recursive:true});
   assert.equal(await page.locator('#phaseTableBody .phase-kind-event').count(),1);
   await page.evaluate(()=>{state.phaseEvents=null;renderPhases();});
   // Synthetic browser-only sparse cross-month fixture; never writes source data.
-  const sparse=await page.evaluate(()=>{
+  const sparse=await page.evaluate(vb=>{
    const raw=state.data.rows.find(r=>r.region==='czsk' && r.date==='2026-10-28');
    const rows=[{...raw,date:'2026-10-28',revenue:100},{...raw,date:'2026-11-01',revenue:300}];
    const days=GlvPhases.buildPhaseDays(rows,state.data.phases,'2026-11-01');
    window.renderPromoComparison(days,GlvPhases.buildPromoEvents(state.data.phases));
    const c=Chart.getChart(document.getElementById('promoChart'));
-   return {labels:c.data.labels,values:c.data.datasets.find(d=>d.month==='promo:2026-10-28/2026-11-04').data};
-  });
+   return {labels:c.data.labels,values:c.data.datasets.find(d=>d.month===vb).data};
+  },vb);
   assert.deepEqual(sparse.labels,['Day 1','Day 2','Day 3','Day 4','Day 5']);
   assert.deepEqual(sparse.values,[100,null,null,null,300]);
   // Representation, not revenue truthiness, determines detail-table visibility.

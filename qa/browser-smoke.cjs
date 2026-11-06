@@ -170,7 +170,7 @@ async function run() {
     assert.match(await page.locator('#metricsTableBody tr').first().textContent(), /Selected period/);
     assert.equal(await page.locator('#metricsTable thead th').count(), 15);
     assert.doesNotMatch(await page.locator('#metricsTable thead').textContent(), /New customers|Returning customers/);
-    assert.match(await page.locator('#executiveKpis').textContent(), /New customer rate/);
+    assert.match(await page.locator('#executiveKpis').textContent(), /NC Rate/);
     assert.doesNotMatch(await page.locator('#executiveKpis').textContent(), /Visitors/);
     assert.match(await page.locator('.header-brand').textContent(), /GELAVIS · Business intelligence by AGENTHIC/);
     assert.ok(await page.locator('.brand-mark img').isVisible(), 'AGENTHIC logo should be visible');
@@ -395,9 +395,9 @@ async function run() {
     const januaryCells = await january2025.locator('td').allTextContents();
     assert.equal(januaryCells[9], '—', '2025 CVR must remain unavailable');
     assert.equal(januaryCells[13], '—', '2025 Visitors must remain unavailable');
-    assert.equal(januaryCells[7], '—', '2025 New customer revenue must remain unavailable');
+    assert.equal(januaryCells[7], '—', '2025 NC Revenue must remain unavailable');
     assert.equal(januaryCells[5], '—', '2025 NC ROAS must remain unavailable');
-    assert.equal(januaryCells[8], '—', '2025 RC revenue must remain unavailable');
+    assert.equal(januaryCells[8], '—', '2025 RC Revenue must remain unavailable');
     const workingSummary = dashboardMetrics.aggregateRows(dashboardData.rows);
     const expectedWorkingCvr = `${(workingSummary.cvr * 100).toFixed(2)}%`;
     assert.equal((await page.locator('#metricsTableBody .summary-row td').nth(9).textContent()).trim(), expectedWorkingCvr, 'mixed-period CVR must use only rows with visitor data');
@@ -702,9 +702,9 @@ async function run() {
     assert.ok(visibleThirdRatio >= 0.28 && visibleThirdRatio <= 0.38, `mobile KPI grid should reveal about one-third of the third column: ${JSON.stringify({ visibleThirdRatio, ...mobileKpiGeometry })}`);
     const scorecardPlacement = Object.fromEntries(mobileKpiGeometry.cards.map((card) => [card.label, card]));
     assert.equal(scorecardPlacement.Revenue.left, scorecardPlacement.Spend.left, 'Revenue and Spend should form mobile column A');
-    assert.equal(scorecardPlacement.ROAS.left, scorecardPlacement['New customer rate'].left, 'ROAS and NC rate should form mobile column B');
+    assert.equal(scorecardPlacement.ROAS.left, scorecardPlacement['NC Rate'].left, 'ROAS and NC Rate should form mobile column B');
     assert.equal(scorecardPlacement.Revenue.top, scorecardPlacement.ROAS.top, 'Revenue and ROAS should form mobile row 1');
-    assert.equal(scorecardPlacement.Spend.top, scorecardPlacement['New customer rate'].top, 'Spend and NC rate should form mobile row 2');
+    assert.equal(scorecardPlacement.Spend.top, scorecardPlacement['NC Rate'].top, 'Spend and NC Rate should form mobile row 2');
     assert.ok(scorecardPlacement.ROAS.left > scorecardPlacement.Revenue.left, 'ROAS should be the second visible scorecard on mobile');
     const mobileAuditGrain = await mobile.locator('#auditGrain').evaluate((node) => ({
       visible: Boolean(node.offsetWidth || node.offsetHeight),

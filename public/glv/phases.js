@@ -316,7 +316,7 @@
     });
     const named = events.map(e => ({...e,
       label: e.start_date === '2026-10-07' && e.end_date === '2026-10-14' ? 'Menopause' :
-        e.start_date === '2026-10-28' && e.end_date === '2026-11-04' ? 'VB2' :
+        e.start_date === '2026-10-28' ? 'VB2' :
         new Intl.DateTimeFormat('en-US', {month:'long', timeZone:'UTC'}).format(parseIsoDate(e.start_date)),
     }));
     return named.map(e => {

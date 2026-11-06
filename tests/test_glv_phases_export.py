@@ -111,7 +111,7 @@ class ManualCalendarParserTest(unittest.TestCase):
         self.assertEqual({(e['start_date'], e['end_date'], e['phase']) for e in october}, {
             ('2026-10-07', '2026-10-14', 'Promo'),
             ('2026-10-15', '2026-10-19', 'Influ'),
-            ('2026-10-28', '2026-11-04', 'Promo')})
+            ('2026-10-28', '2026-11-06', 'Promo')})
         self.assertEqual({e['label'] for e in payload['phase_campaigns']}, {'influ befit10', 'influ zdravi10'})
 
     def test_january_2026_supplement_survives_export_without_changing_other_months(self):
