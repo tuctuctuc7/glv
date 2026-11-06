@@ -327,10 +327,14 @@
     });
   }
 
-  // Top-chart/table cohorts retain member identities; daily comparison stays per event.
+  // Shared cohorts retain member identities for detail stages and daily membership.
   function buildPromoCohorts(schedule) {
+    return groupPromoEvents(buildPromoEvents(schedule));
+  }
+
+  function groupPromoEvents(input) {
     const groups = new Map();
-    buildPromoEvents(schedule).forEach(event => {
+    input.flatMap(event => event.events || [event]).forEach(event => {
       const combined = /^2026-(06|08)-/.test(event.start_date);
       const key = combined ? event.start_date.slice(0, 7) : event.id;
       if (!groups.has(key)) groups.set(key, []);
@@ -359,6 +363,7 @@
     promoEventRows,
     buildPromoEvents,
     buildPromoCohorts,
+    groupPromoEvents,
     ABSOLUTE_METRICS,
     PHASES,
     aggregatePhaseGroups,

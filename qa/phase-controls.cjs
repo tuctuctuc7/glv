@@ -69,7 +69,8 @@ const out = process.env.GLV_CONTROLS_EVIDENCE || '/tmp/glv-phase-controls-eviden
    for(const label of ['June','August']) assert.ok((await page.locator('#phaseTableBody').innerText()).includes(label));
    await page.click('#promoMonths > button'); await page.check('#promoMonthOptions input[data-value="*"]'); await page.press('#promoMonths > button','Escape');
    const rendered=await page.evaluate(()=>({datasets:Chart.getChart(document.getElementById('promoChart')).data.datasets.map(d=>d.label),legend:Chart.getChart(document.getElementById('promoChart')).legend.legendItems.map(l=>l.text),focus:document.getElementById('promoFocus').textContent,accessible:document.getElementById('promoChartData').textContent,overflow:document.documentElement.scrollWidth>innerWidth}));
-   for(const label of labels) {assert.ok(rendered.datasets.some(s=>s.includes(label))); assert.ok(rendered.legend.includes(label)); assert.ok(rendered.focus.includes(label));assert.ok(rendered.accessible.includes(label));}
+   for(const label of labels) {assert.ok(!rendered.datasets.some(s=>s.includes(label))); assert.ok(!rendered.legend.includes(label));assert.ok(!rendered.focus.includes(label));assert.ok(!rendered.accessible.includes(label));}
+   for(const label of ['June','August']) {assert.ok(rendered.datasets.some(s=>s.startsWith(`${label} (`))); assert.ok(rendered.legend.includes(label)); assert.ok(rendered.focus.includes(label));assert.ok(rendered.accessible.includes(label));}
    assert.equal(rendered.overflow,false);
    await page.evaluate(()=>{document.activeElement?.blur();scrollTo(0,0);});
    await page.waitForTimeout(400);

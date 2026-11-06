@@ -189,7 +189,7 @@ fs.mkdirSync(out,{recursive:true});
    return resolved.datasets.map(d=>({id:d.id,values:d.values,dates:d.dates}));
   }
   await inspectColors([meno,vb]);
-  for(const ids of [[old,vb],[old,meno,vb]]) {
+  for(const ids of [[old,vb],[old,meno,vb],[groups[0].id,groups[1].id,vb]]) {
    await page.click('#promoMonths > button');
    await page.check('#promoMonthOptions input[data-value="none"]');
    for(const id of ids) await page.check(`#promoMonthOptions input[data-value="${id}"]`);
@@ -209,6 +209,14 @@ fs.mkdirSync(out,{recursive:true});
    assert.deepEqual(await inspectColors(ids),original);
    await page.locator('#promoChart').screenshot({path:`${out}/${width}-${theme}-${ids.length}-colors.png`});
   }
+  // A legacy stage selection/focus is reconciled when the full calendar returns.
+  await page.evaluate(stage=>{const days=GlvPhases.buildPhaseDays(state.data.rows,state.data.phases,state.data.phase_contract.latest_date);window.renderPromoComparison(days,[stage]);},groups[0].events[0]);
+  await page.click('#promoMonths > button');
+  await page.check('#promoMonthOptions input[data-value="*"]');
+  await page.press('#promoMonthOptions input[data-value="*"]','Escape');
+  await page.selectOption('#promoFocus',groups[0].events[0].id);
+  await page.evaluate(()=>renderPhases());
+  assert.equal(await page.locator('#promoFocus').inputValue(),groups[0].id);
   await page.selectOption('#promoMetric','roas');
   await page.selectOption('#promoMetric','revenue');
   await page.click('#promoMonths > button');
@@ -217,16 +225,16 @@ fs.mkdirSync(out,{recursive:true});
   await page.selectOption('#promoMetric','cpv');
   const cohortEvidence=await page.evaluate(()=>{
     const chart=Chart.getChart('promoChart');
-    const cohorts=GlvPhases.buildPromoEvents(state.data.phases);
+    const cohorts=GlvPhases.buildPromoCohorts(state.data.phases);
     return chart.data.datasets.map(d=>{
       const cohort=cohorts.find(c=>c.id===d.month);
-      const rows=state.data.rows.filter(r=>r.region==='czsk' && r.date>=cohort.start_date && r.date<=cohort.end_date);
+      const rows=state.data.rows.filter(r=>r.region==='czsk' && cohort.events.some(e=>r.date>=e.start_date && r.date<=e.end_date));
       return {label:cohort.label,days:rows.length,spend:rows.reduce((s,r)=>s+r.spend,0),visitors:rows.reduce((s,r)=>s+r.unique_visitors,0),
         matches:d.data.every((v,i)=>{const row=rows.find(r=>r.date===d.dates[i]);return v===(row&&row.unique_visitors>0?row.spend/row.unique_visitors:null);})};
     });
   });
-  assert.deepEqual(cohortEvidence.filter(c=>c.label.startsWith('June')).map(c=>c.label),['June Private','June Public']);
-  assert.deepEqual(cohortEvidence.filter(c=>c.label.startsWith('August')).map(c=>c.label),['August Private','August Public']);
+  assert.deepEqual(cohortEvidence.filter(c=>c.label.startsWith('June')).map(c=>c.label),['June']);
+  assert.deepEqual(cohortEvidence.filter(c=>c.label.startsWith('August')).map(c=>c.label),['August']);
   assert.equal(cohortEvidence.filter(c=>['Menopause','VB2'].includes(c.label)).length,2);
   assert.ok(cohortEvidence.every(c=>c.matches));
   fs.writeFileSync(`${out}/${width}-${theme}-cpv-cohorts.json`,JSON.stringify(cohortEvidence,null,2));

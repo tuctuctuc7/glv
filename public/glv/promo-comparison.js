@@ -63,9 +63,10 @@
   }
   function buildEvents(days, events, selected, metric = 'revenue') {
     const phases = typeof module === 'object' && module.exports ? require('./phases.js') : globalThis.GlvPhases;
-    const groups = phases.promoEventRows(days, events);
+    const groups = phases.promoEventRows(days, phases.groupPromoEvents(events));
+    const mapped = selected == null ? selected : groups.filter(g => selected.includes(g.id) || g.events.some(e => selected.includes(e.id))).map(g => g.id);
     const available = groups.filter(g => g.rows.length).map(g => g.id);
-    const chosen = selected === undefined ? available.slice(-2) : selected === null ? available : available.filter(id => selected.includes(id));
+    const chosen = selected === undefined ? available.slice(-2) : selected === null ? available : available.filter(id => mapped.includes(id));
     const ordinal = (date, start) => Math.round((Date.parse(date) - Date.parse(start)) / 86400000);
     const active = groups.filter(g => chosen.includes(g.id));
     const length = Math.max(0, ...active.map(g => ordinal(g.rows.at(-1).date, g.start_date) + 1));
