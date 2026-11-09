@@ -30,7 +30,7 @@ module.exports = async (browser, baseUrl, evidenceDir) => {
   if(width<=720) await page.locator('#filtersToggle').click();
   const downloadPromise=page.waitForEvent('download'); await page.locator('#exportCsv').click();
   const download=await downloadPromise; const csv=fs.readFileSync(await download.path(),'utf8');
-  assert.match(csv,/returning_customer_revenue_usd,nc_roas/); assert.match(csv,/,20,-10,,0\n/);
+  assert.match(csv,/RC Revenue \(USD\),NC ROAS/); assert.match(csv,/,20,-10,,0\n/);
   await page.screenshot({path:path.join(evidenceDir,`nc-rc-home-${width}-${theme}.png`)});
   await page.locator('#phasesViewTab').click();
   const ph=await page.locator('#phaseTable thead th').allTextContents();

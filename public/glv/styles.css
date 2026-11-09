@@ -398,7 +398,7 @@ html[data-theme="light"] .theme-icon-sun {
   text-transform: uppercase;
 }
 
-.field input,
+.field input:not([type="checkbox"]),
 .field select {
   appearance: none;
   background-color: var(--surface);
@@ -2184,7 +2184,7 @@ tbody tr:last-child td {
     padding-top: 9px;
   }
 
-  .field input,
+  .field input:not([type="checkbox"]),
   .field select,
   .region-buttons,
   .mobile-filter-toggle,
