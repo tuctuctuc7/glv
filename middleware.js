@@ -32,7 +32,9 @@ function cookieValue(cookieHeader, name) {
 
 function isGlvDashboardPath(pathname) {
   return (
-    pathname === '/glv-meta-ads'
+    pathname === '/glv-meta-ads-v2'
+    || pathname.startsWith('/glv-meta-ads-v2/')
+    || pathname === '/glv-meta-ads'
     || pathname.startsWith('/glv-meta-ads/')
     || pathname === '/glv-mb-os'
     || pathname.startsWith('/glv-mb-os/')
@@ -148,7 +150,7 @@ export default async function middleware(request) {
     return;
   }
 
-  if ((pathname === DATA_PATH || pathname === MB_OS_DATA_PATH) && !hasGlvAccess(request)) {
+  if ((pathname.startsWith('/api/glv-meta-ads-v2/') || pathname === '/api/glv-meta-ads-v2' || pathname === DATA_PATH || pathname === MB_OS_DATA_PATH) && !hasGlvAccess(request)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -177,6 +179,10 @@ export default async function middleware(request) {
 
 export const config = {
   matcher: [
+    '/glv-meta-ads-v2',
+    '/glv-meta-ads-v2/:path*',
+    '/api/glv-meta-ads-v2',
+    '/api/glv-meta-ads-v2/:path*',
     '/glv-2',
     '/glv-2/:path*',
     '/glv-meta-ads/:path*',

@@ -12,7 +12,11 @@
     },
     "api/glv-meta-ads/cron.js": {
       "maxDuration": 300,
-      "includeFiles": "{lib/glv-meta-dates.cjs,lib/glv-promo-format.cjs,lib/glv-promo-assets.cjs,public/glv-meta-ads/promo-format.js}"
+      "includeFiles": "{lib/glv-meta-dates.cjs,lib/glv-promo-format.cjs,lib/glv-promo-assets.cjs,public/glv-meta-ads/promo-format.js,lib/glv-mad-v2*.cjs,public/glv-meta-ads-v2/dates.js}"
+    },
+    "api/glv-meta-ads-v2/fb-data.js": {
+      "maxDuration": 300,
+      "includeFiles": "{lib/glv-mad-v2*.cjs,public/glv-meta-ads-v2/dates.js,public/glv-meta-ads/promo-format.js}"
     },
     "api/krs-meta-ads/fb-data.js": {
       "maxDuration": 60

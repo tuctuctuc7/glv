@@ -282,6 +282,11 @@ async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=f
   const formatRefresh = refreshPromoFormatCache(token,includeToday,fetcher,{fullHistory}).then(
     stats=>({stats}), error=>({error:error.message})
   );
+  const v2Enabled=require('../../lib/glv-mad-v2.cjs').rolloutEnabled();
+  const v2Refresh=v2Enabled?require('../../lib/glv-mad-v2-cache.cjs').refreshV2({
+    token:process.env.GLV_MAD_V2_FB_ACCESS_TOKEN||token,force:fullHistory,deadline:deadline-10000,redis:(...args)=>redisCommand(fetcher,...args),
+    promoPayload:async()=>{const outcome=await formatRefresh;if(outcome.error)throw new Error('Promo refresh failed');return JSON.parse((await redisCommand(fetcher,'GET',CACHE_KEY)).result);}
+  }).then(result=>result,()=>({errors:['v2: refresh failed'],summaries:[],hashes:{},verified:false})):null;
   for (const preset of PRESETS) {
     const result = await fetchAndCache(token, preset, includeToday,fetcher);
     allErrors.push(...result.errors);
@@ -299,6 +304,12 @@ async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=f
   for(const summary of summaries){
     if(summary.type==='promo_formats')hashes[CACHE_KEY]=summary.cache_sha256;
     else for(const type of ['aggregate','daily','ads'])if(summary[type]?.cache_sha256)hashes[`glv:${type}:${summary.preset}`]=summary[type].cache_sha256;
+  }
+  if(v2Refresh){
+    const v2=await v2Refresh;
+    allErrors.push(...v2.errors);Object.assign(hashes,v2.hashes);
+    freshness.v2={through:require('../../lib/glv-mad-v2.cjs').commonCutoff(),all_tabs_verified:v2.verified,summaries:v2.summaries,failures:v2.failures||[]};
+    freshness.all_tabs_verified=freshness.all_tabs_verified&&v2.verified;
   }
   return {allErrors, summaries, freshness, hashes};
 }
@@ -346,8 +357,8 @@ async function handler(req, res) {
     result=await scheduledRefresh({
       redis:(...args)=>redisCommand(redisFetcher,...args),
       refresh:()=>runRefresh(token,includeToday,{fullHistory,timeoutMs:Math.max(0,deadline-Date.now()-10000)}),
-      keys:[...PRESETS.flatMap(p=>['aggregate','daily','ads'].map(t=>`glv:${t}:${p}`)),CACHE_KEY],
-      through:cutoffDate(includeToday),force:includeToday||fullHistory
+      keys:[...PRESETS.flatMap(p=>['aggregate','daily','ads'].map(t=>`glv:${t}:${p}`)),CACHE_KEY,...(require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?require('../../lib/glv-mad-v2-cache.cjs').requiredKeys():[])],
+      through:require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?`${cutoffDate(includeToday)}:v2:${require('../../lib/glv-mad-v2.cjs').commonCutoff()}`:cutoffDate(includeToday),force:includeToday||fullHistory
     });
   }catch(error){
     console.error(JSON.stringify({event:'glv-meta-ads-cron',message:'Refresh coordination failed',error:error.message}));

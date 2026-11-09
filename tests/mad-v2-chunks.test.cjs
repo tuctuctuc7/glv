@@ -1,0 +1,22 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+const {buildSnapshot}=require('../lib/glv-mad-v2-source.cjs'),v2=require('../lib/glv-mad-v2.cjs');
+test('ads checkpoint disjoint bounded calendar chunks and resume without repulling completed work',async()=>{
+ const range={since:'2026-10-25',until:'2026-11-08'},now=new Date('2026-11-09T12:00:00Z');
+ let saved=null,fail=true;const requests=[];
+ const progress={load:async()=>saved,save:async state=>{saved=JSON.parse(JSON.stringify(state));}};
+ const fetcher=async url=>{const u=new URL(url),a=v2.ACCOUNTS.find(a=>u.pathname.includes(a.id));let body;
+  if(!u.pathname.endsWith('/insights'))body={account_id:a.id,currency:a.currency,timezone_name:a.timezone,account_status:1};
+  else {const r=JSON.parse(u.searchParams.get('time_range'));requests.push([a.id,r]);
+   assert.ok(Date.parse(r.until)-Date.parse(r.since)<=6*86400000,'ad windows bounded to seven days');
+   assert.equal(r.since.slice(0,7),r.until.slice(0,7),'never crosses calendar month');
+   if(fail&&r.since>range.since)throw Error('interruption');body={data:[]};
+  }return {ok:true,status:200,json:async()=>body};
+ };
+ await assert.rejects(buildSnapshot({range,type:'ads',token:'synthetic',fx:{},now,fetcher,progress}));
+ assert.ok(saved,'completed chunks durably checkpointed');
+ const first=requests[0];fail=false;requests.length=0;
+ const result=await buildSnapshot({range,type:'ads',token:'synthetic',fx:{},now:new Date(+now+60000),fetcher,progress});
+ assert.equal(result.complete,true);assert.ok(!requests.some(x=>JSON.stringify(x)===JSON.stringify(first)),'first completed chunk not fetched again');
+ assert.equal(result.generated_at,now.toISOString(),'oldest actual extraction retained');
+ assert.ok(result.source_extractions.length>1);
+});
