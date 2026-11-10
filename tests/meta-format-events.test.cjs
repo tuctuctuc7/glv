@@ -11,7 +11,7 @@ test('percentage annotations fit the actual bar width',()=>{
   plugin.afterDatasetsDraw({ctx,data:{datasets:[{data:[100,25]}]},isDatasetVisible:()=>true,getDatasetMeta:()=>({data:[{width:31,base:100,y:0,x:0},{width:64,base:100,y:0,x:0}]})});
   assert.deepEqual(drawn,['25.0%']);
 });
-const fact=(date,overrides={})=>({date,ad_id:'synthetic-ad',campaign_name:'TUC_001_CZSK_Promo',format:'Video',spend:10,purchases:2,revenue:50,impressions:100,...overrides});
+const fact=(date,overrides={})=>({date,ad_id:'synthetic-ad',campaign_id:'synthetic-campaign',campaign_name:'TUC_001_CZSK_Promo',format:'Video',spend:10,purchases:2,revenue:50,impressions:100,...overrides});
 
 test('event aggregates union configured assets across months and retain summed-ratio/unavailable semantics',()=>{
   const inventory=(assets,complete=true)=>({version:2,assets:assets.map(id=>({id,key:'video:'+id,kind:'video'})),configured_media_complete:complete,unknown_reasons:complete?[]:['synthetic_missing'],alternate_video_ids_not_counted:[]});
@@ -40,28 +40,28 @@ test('native charts, accessible table and copy consume the same promo partition'
   assert.match(html,/<th scope="col">Promo<\/th><th scope="col">Format/);
 });
 
-test('repeated June/August stages stay distinct, with residual dates retained',()=>{
-  const dates=['2026-06-14','2026-06-15','2026-06-17','2026-06-18','2026-06-23','2026-06-24','2026-08-17','2026-08-18','2026-08-19','2026-08-20','2026-08-26','2026-08-27'];
-  const groups=promoMix(dates.map(date=>fact(date)));
-  assert.deepEqual(groups.map(g=>[g.label,g.total.spend]),[['Jun 2026',20],['Jun Private',20],['Jun Public',20],['Aug 2026',20],['Aug Private',20],['Aug Public',20]]);
+test('Private/Public are naming metadata, never date partitions of a spending campaign',()=>{
+ const rows=[fact('2026-06-18',{campaign_id:'june'}),fact('2026-06-23',{campaign_id:'june'}),fact('2026-06-24',{campaign_id:'june',spend:0,revenue:12}),fact('2026-08-20',{campaign_id:'august'}),fact('2026-08-26',{campaign_id:'august'})];
+ const groups=promoMix(rows);
+ assert.deepEqual(groups.map(g=>[g.label,g.total.spend]),[['Jun Public',20],['Aug Public',20]]);
+ assert.equal(groups[0].total.revenue,112);
+ const privatePublic=[fact('2026-06-15',{campaign_id:'private'}),fact('2026-06-18',{campaign_id:'private'}),fact('2026-06-18',{campaign_id:'public'})];
+ assert.deepEqual(promoMix(privatePublic).map(g=>[g.label,g.total.spend]),[['Jun Private',30]],'overlapping stages form one logical promo named from first spend');
 });
-
-test('future events are deferred; campaign names cannot create or override slots',()=>{
-  assert.deepEqual(promoMix([]),[]);
-  assert.deepEqual(promoMix([fact('2026-10-28',{campaign_name:'TUC_099_CZSK_Promo_BFCM'})]).map(g=>g.label),['Oct/Nov VB2']);
-  const rows=[fact('2026-11-20',{campaign_name:'TUC_099_CZSK_Promo_BFCM'}),fact('2026-11-21')];
-  assert.deepEqual(promoMix(rows).map(g=>[g.label,g.total.spend]),[['Nov 2026',20]]);
-  assert.deepEqual(promoMix([fact('2026-11-20',{spend:0,purchases:0,revenue:0,impressions:0})]),[]);
+test('campaign IDs, not names or monthly windows, distinguish future cohorts',()=>{
+ assert.deepEqual(promoMix([]),[]);
+ const rows=[fact('2026-11-20',{campaign_id:'one'}),fact('2026-11-21',{campaign_id:'two'})];
+ assert.equal(promoMix(rows).length,2);
+ assert.notEqual(promoMix(rows)[0].id,promoMix(rows)[1].id);
+ assert.deepEqual(promoMix([fact('2026-11-20',{spend:0,purchases:0,revenue:0,impressions:0})]),[]);
 });
-
-test('format event boundaries partition October/November once, retaining out-of-window facts',()=>{
-  assert.equal(typeof promoMix,'function');
-  const dates=['2026-09-22','2026-10-06','2026-10-07','2026-10-14','2026-10-15','2026-10-27','2026-10-28','2026-10-31','2026-11-01','2026-11-04','2026-11-05'];
-  const rows=dates.map(date=>fact(date));
-  const groups=promoMix(rows);
-  assert.deepEqual(groups.map(g=>[g.label,g.total.spend]),[['Sep 2026',10],['Oct 2026',30],['Oct Menopause',20],['Oct/Nov VB2',40],['Nov 2026',10]]);
-  for(const key of ['spend','purchases','revenue','impressions']) assert.equal(groups.reduce((n,g)=>n+g.total[key],0),rows.reduce((n,r)=>n+r[key],0));
-  assert.deepEqual(promoMix(rows.slice().reverse()),groups);
-  assert.equal(monthlyMix(rows).length,3,'legacy diagnostic monthly aggregator remains monthly');
-  assert.deepEqual(promoMix([fact('2027-10-28'),fact('2027-11-01')]).map(g=>g.label),['Oct 2027','Nov 2027'],'2026 schedule must not recur implicitly');
+test('campaign carryover across calendar/year boundaries preserves facts and inventory',()=>{
+ const dates=['2026-10-28','2026-11-02','2026-11-06','2027-01-01'];
+ const rows=dates.map(date=>fact(date,{campaign_id:'campaign'}));
+ const groups=promoMix(rows);
+ assert.deepEqual(groups.map(g=>[g.label,g.total.spend]),[['Oct/Nov VB2',40]]);
+ for(const key of ['spend','purchases','revenue','impressions'])assert.equal(groups[0].total[key],rows.reduce((n,r)=>n+r[key],0));
+ assert.deepEqual(promoMix(rows.slice().reverse()),groups);
+ assert.equal(monthlyMix(rows).length,3,'legacy diagnostic remains monthly');
+ assert.deepEqual(promoMix([fact('2027-10-28',{campaign_id:'new-year'})]).map(g=>g.label),['Oct 2027']);
 });

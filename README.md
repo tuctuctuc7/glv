@@ -241,10 +241,72 @@ Meta Ads currency is CZK. Always label it as CZK in reports, Slack summaries, an
 
 CZSK campaign groups preserve case-sensitive `_Promo` precedence over `_WL`, otherwise BAU. The supplied `WL_befit_over40` launch name (including underscore suffixes and case-insensitive creator spelling) is also accepted without the usual `GLV_<number>_` / `TUC_<number>_` prefix; its leading `WL_` remains case-sensitive. This narrow exception does not admit unrelated unprefixed campaigns. The default-off **Break down WL influencers** toggle splits WL into **Kristyna**, **ActionKate**, and **befit_over40** across Promo KPIs, charts, accessible data, and both nested-table orientations. Every WL campaign must identify exactly one of these creators (case-insensitive substrings). Missing or ambiguous creator names in the selected KPI/daily scope produce a visible naming-validation warning listing affected campaigns. Until corrected or excluded by filters, all surfaces show complete combined WL totals rather than an incomplete creator split; the toggle stays ON and retries automatically after filters or data change. There is no Other group. OFF retains the canonical total WL. US grouping is unchanged. Both live and cron producers retain the raw campaign name, so this presentation change needs no cache schema, refresh, or schedule change. Validate with `npm test`, `npm run qa:meta-ads` (eight widths, both themes and WL info popovers), and `node qa/meta-cache-performance.cjs`; fixtures are synthetic, not live launch data.
 
+### Promo Creative spend cohorts and Ghost visibility (`promo-spend-cohorts-20261110`)
+
+Both Meta dashboard versions share the same logical Promo grouping. Aggregate
+signed creative facts plus campaign/day residuals to authoritative **daily campaign
+spend**, in native CZK equivalent. The first observed positive-spend day is the
+campaign start. In the same account and market, a new eligible Promo campaign
+joins an existing campaign's promo only when that campaign has positive spend on
+that exact start day. Otherwise it starts a separate promo, even in the same
+calendar month or official window. Same-day starts are processed by stable
+account/campaign identity. If several older promos are spending, choose the
+oldest cohort (stable identity breaks ties); do not retroactively merge them.
+Missing days, impressions, revenue, names/numbers and official calendar end dates
+do not establish spending. This is observed history, not a claim about delivery
+before the loaded history begins.
+
+All later facts for a campaign, including signed adjustments, resumed delivery
+and outcome-only carryover, remain in its original cohort. There is no invented
+seven-day expiry or November override. A reused campaign ID remains one campaign;
+new promos require a new campaign start/identity. Campaigns with no observed
+positive spend are explicitly Unassigned rather than inventing a Private stage;
+their facts remain intact. Official windows only supply
+first-spend **naming metadata**, not membership boundaries. Private/Public labels
+no longer partition one campaign by reporting date. Read-only historical evidence
+has June starting in Public and August starting in Public, with no private-stage
+spend. July/September FOMO starts overlap their original campaigns, and VB2's
+Winners starts while the original VB2 spends. The 12 observed campaigns form nine
+logical promos, including one VB2 through its actual extension. This does not
+change the separate Business KPI phase calendar or its stage presentation.
+
+Ghost visibility is presentation-only, applied **after aggregation/cancellation**:
+show if both revenue and purchases are nonzero (either sign), **or absolute spend
+is strictly greater than 10 CZK**. Exactly ±10 CZK without paired outcomes,
+purchase-only adjustments and revenue-only +0.06 CZK are hidden. A 1e-8 tolerance
+removes floating-point noise. V2 retains separately summed signed native-CZK
+amounts, so changing display USD/CZK does not change visibility; daily FX and its
+provenance are untouched. Format tables, chart data/legends and concept rows use
+the same predicate at their respective aggregation grain. Raw residuals, totals,
+share denominators and source asset inventory are never filtered or rounded;
+visible breakdowns may therefore differ slightly from totals. The independent
+WL creator visibility policy is unchanged. Both HTML entrypoints cache-bust all
+changed Promo modules.
+
+Local verification (no Meta/cache writes):
+
+```bash
+node --test tests/promo-final-contract.test.cjs tests/promo-vb2-continuation.test.cjs tests/promo-ghost.test.cjs tests/meta-format-events.test.cjs
+npm test
+node qa/promo-ghost.cjs
+PROMO_PRIVATE_FIXTURE=/private/path/producer.json node qa/promo-vb2-continuation.cjs
+```
+
+The browser matrix covers V1 CZK and V2 USD/CZK, both themes and 1440/390/320px,
+thresholds, paired signed outcomes, aggregate cancellation, filters, future
+separate promos and unchanged raw facts. Browser clocks match fixture dates;
+production freshness validation is not relaxed. Optional real-fixture playback
+uses synthetic FX 25, not a live fixing. For a scoped October/November producer
+capture, V2's QA-only history envelope explicitly flags incomplete earlier
+coverage and displays the partial-replay warning; it is not proof of a fresh
+full-history production cache. Private source data, screenshots and results stay
+outside the repository. No publication, deployment or refresh is performed by
+these commands.
+
 ### Promo Creative classification revision 2
 
-The independent CZSK Promo Creative history keeps the native dynamic monthly
-Banner / Video chart and table. Current direct-object CZSK `_Promo` campaign
+The independent CZSK Promo Creative history keeps the native dynamic by-promo
+Banner / Video chart and table (spend cohorts defined above). Current direct-object CZSK `_Promo` campaign
 eligibility still gates ingestion; explicit current ad-set Banner/Video labels
 win, and conflicting ad-set labels remain Unknown. Tom's June fallback is scoped
 to original campaign `120247470134450687`: complete `CC10`–`CC15` and `PAC433`

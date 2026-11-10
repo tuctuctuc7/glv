@@ -1,5 +1,6 @@
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.PromoConcepts=factory();})(globalThis,()=>{
   'use strict';
+  const format=typeof module==='object'&&module.exports?require('./promo-format.js'):globalThis.PromoFormat;
   const inputs=['spend','purchases','revenue','impressions','link_clicks','landing_page_views','checkouts'];
   const eligible=r=>/^(TUC|GLV)_\d+_/.test(r.campaign_name)&&r.campaign_name.includes('_CZSK_')&&!r.campaign_name.includes('_US_')&&r.campaign_name.includes('_Promo');
   function identity(name){
@@ -21,8 +22,8 @@
     const groups=new Map(), totals={spend:0,purchases:0};
     for(const r of rows.filter(r=>eligible(r)&&selected.includes(r.campaign_id))){
       const id=r.is_ghost?{label:r.label,key:'ghost',is_ghost:true,warning:'Signed reconciliation adjustment; not an observed creative or concept'}:identity(r.ad_name),key=JSON.stringify([r.campaign_id,id.key]);
-      if(!groups.has(key))groups.set(key,{key,...id,campaign_id:r.campaign_id,campaign_name:r.campaign_name,...Object.fromEntries(inputs.map(k=>[k,0]))});
-      const g=groups.get(key);for(const k of inputs)g[k]+=r[k];totals.spend+=r.spend;totals.purchases+=r.purchases;
+      if(!groups.has(key))groups.set(key,{key,...id,campaign_id:r.campaign_id,campaign_name:r.campaign_name,spend_czk:0,revenue_czk:0,...Object.fromEntries(inputs.map(k=>[k,0]))});
+      const g=groups.get(key);g.spend_czk+=format.czkValue(r,'spend');g.revenue_czk+=format.czkValue(r,'revenue');for(const k of inputs)g[k]+=r[k];totals.spend+=r.spend;totals.purchases+=r.purchases;
     }
     return [...groups.values()].map(g=>{const result=metrics(g,totals);if(g.is_ghost)for(const key of ['roas','ctr','costLP','lpCheckout','checkoutPurchase','cvr'])result[key]=null;return result;});
   }

@@ -4,8 +4,8 @@ const backend=require('../lib/glv-promo-format.cjs');
 const shared=require('../public/glv-meta-ads/promo-format.js');
 const concepts=require('../public/glv-meta-ads/promo-concepts.js');
 const {fixture,range}=require('./helpers/promo-ghost-fixture.cjs');
-test('financial Ghost visibility uses cents without mutating facts or hiding real creatives',()=>{
- for(const [spend,revenue,visible] of [[0,0,false],[0.000022,-0.000022,false],[0.0049,-0.0049,false],[0.005,0,true],[-0.005,0,true],[0,0.01,true],[-0.01,0,true],[10,-10,true]]){
+test('financial Ghost visibility uses paired outcomes or absolute CZK spend without mutating facts',()=>{
+ for(const [spend,revenue,visible] of [[0,0,false],[0.000000002,-0.000000002,false],[0.06,-0.06,true],[0.4999,-0.4999,true],[0.5,0,false],[-0.5,0,false],[0,0.5,true],[0,-0.5,true],[10,-10,true]]){
   const row={spend,revenue,purchases:3,link_clicks:5};const before={...row};
   assert.equal(shared.hasFinancialContribution(row),visible);
   assert.deepEqual(row,before);

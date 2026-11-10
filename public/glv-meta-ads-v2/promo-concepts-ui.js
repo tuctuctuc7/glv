@@ -26,9 +26,10 @@ function renderPromoConcepts(){
   document.getElementById('filter-label-promo-concept').textContent=selected.length===1?(campaigns.find(c=>c.id===selected[0])?.name||'1 selected'):selected.length?`${selected.length} selected`:'None';
   let rows=PromoConcepts.aggregate(conceptPayload.rows,selected);if(conceptSort.key)rows=PromoConcepts.sort(rows,conceptSort.key,conceptSort.direction);
   const missing=selected.filter(id=>!campaigns.some(c=>c.id===id)).length,warnings=rows.filter(r=>r.warning&&!r.is_ghost).length;
-  const ghosts=rows.filter(r=>r.is_ghost).length;
+  const ghosts=rows.filter(r=>r.is_ghost).length,visibleGhosts=rows.filter(r=>r.is_ghost&&PromoFormat.hasFinancialContribution(r)).length;
   status.textContent=!rows.length?(selected.length?'No activity for selected campaigns.':'No campaigns selected.'):`${rows.length-ghosts} concepts · ${warnings?`${warnings} unmapped/conflicting full-name groups retained in totals.`:'Carryover purchases included.'}`;
-  if(ghosts)status.textContent+=' Ghost creative — pending Meta reconciliation. Negative values are signed adjustments, not observed concepts.';
+  if(ghosts)status.textContent+=' Small or unpaired Ghost adjustments may be hidden; signed residuals remain in totals.';
+  if(visibleGhosts)status.textContent+=' Ghost creative — pending Meta reconciliation. Negative values are signed adjustments, not observed concepts.';
   if(missing)status.textContent+=` ${missing} selected campaign IDs unavailable; selection retained.`;
   const freshnessWarning=promoHistoryWarning(conceptPayload,conceptError);
   if(freshnessWarning)status.textContent=freshnessWarning+' '+status.textContent;

@@ -1,5 +1,17 @@
 # Promo Format Mix event grouping
 
+> **Historical design — superseded November 10, 2026.** The reporting-date
+> partition policy below is no longer the runtime contract. Follow README.md,
+> “Promo Creative spend cohorts and Ghost visibility” instead. Actual positive
+> campaign/day spend determines promo membership: overlapping starts join the
+> same account/market promo; standalone starts create a new promo. Extensions
+> and campaign carryover remain in that cohort. Official windows supply labels
+> only and do not split Private/Public stages or impose end-date cutoffs.
+> Future promos are discovered from observed spend, not invented dates.
+> Ghost appears only with paired nonzero revenue and purchases or absolute
+> aggregated CZK-equivalent spend strictly above 10; hidden residuals remain
+> in authoritative totals. The text below is retained solely as design history.
+
 ## Scope and data flow
 
 Only the independent Creative tab's Promo Format Mix changes. The protected

@@ -35,7 +35,7 @@ function refreshPromoFormats() {
   const chartGrid=section.querySelector('.promo-format-grid');
   const rows=promoFormatRows(), allPeriods=PromoFormat.promoMix(rows);
   // Display delivery-positive periods consistently; raw carryover is not reassigned.
-  const periods=allPeriods.filter(period=>period.total.spend>0||period.total.impressions>0||rows.some(r=>r.is_ghost&&PromoFormat.promoMix([r]).some(p=>p.id===period.id)));
+  const periods=allPeriods.filter(period=>period.delivery_observed||period.total.impressions>0||PromoFormat.hasFinancialContribution(period.formats.Ghost));
   const omitted=allPeriods.length-periods.length;
   section.style.setProperty('--promo-plot-min-width',`${72+periods.length*64}px`);
   chartGrid.hidden=!periods.length;
@@ -48,8 +48,9 @@ function refreshPromoFormats() {
   if(!periods.length){status.textContent=(freshnessWarning?freshnessWarning+' ':'')+'No Promo ad activity in this history range.';status.classList.toggle('format-warning',Boolean(freshnessWarning));return;}
   const unknownRows=rows.filter(row=>row.format==='Unknown');
   const unknownCount=new Set(unknownRows.map(row=>row.ad_id)).size;
-  const ghostCount=rows.filter(row=>row.is_ghost).length;
+  const ghostCount=periods.filter(p=>PromoFormat.hasFinancialContribution(p.formats.Ghost)).length;
   status.textContent=unknownCount?`Unknown: ${unknownCount} ads retained in totals and shares. Review unmapped or conflicting labels below.`:`All ${new Set(rows.filter(row=>!row.is_ghost).map(row=>row.ad_id)).size} activity-bearing ads classified. Carryover purchases included.`;
+  if(rows.some(row=>row.is_ghost))status.textContent+=' Small or unpaired Ghost adjustments may be hidden; signed residuals remain in totals.';
   if(ghostCount)status.textContent+=' Ghost creative — pending Meta reconciliation. Signed campaign/day residuals; negative values are reconciliation adjustments, not observed creatives, concepts or assets.';
   if(freshnessWarning)status.textContent=freshnessWarning+' '+status.textContent;
   status.classList.toggle('format-warning',unknownCount>0||Boolean(freshnessWarning));
@@ -77,9 +78,9 @@ function refreshPromoFormats() {
     // Fixed presentation domain; signed facts remain intact in tables/tooltips.
     const min=0,max=100;
     charts[key]=new Chart(document.getElementById('chart-'+key).getContext('2d'),{
-      type:'bar',data:{labels:periods.map(period=>period.label),datasets:formats.map(format=>({label:formatLabel(format),data:periods.map(period=>period.formats[format][metric]),backgroundColor:PromoFormat.COLORS[format],borderWidth:format==='Ghost'?1:0,borderDash:format==='Ghost'?[4,3]:[],categoryPercentage:0.9,barPercentage:0.9,maxBarThickness:64}))},
+      type:'bar',data:{labels:periods.map(period=>period.label),datasets:formats.map(format=>({label:formatLabel(format),data:periods.map(period=>format==='Ghost'&&!PromoFormat.hasFinancialContribution(period.formats.Ghost)?null:period.formats[format][metric]),backgroundColor:PromoFormat.COLORS[format],borderWidth:format==='Ghost'?1:0,borderDash:format==='Ghost'?[4,3]:[],categoryPercentage:0.9,barPercentage:0.9,maxBarThickness:64}))},
       plugins:[percentLabels],options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-        plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis,filter:item=>formats[item.datasetIndex]!=='Ghost'||periods.some(p=>metric==='spendShare'?PromoFormat.hasFinancialContribution({spend:p.formats.Ghost.spend,revenue:0}):p.formats.Ghost.purchases!==0)}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${percent(item.raw)}`}}},
+        plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis,filter:item=>formats[item.datasetIndex]!=='Ghost'||periods.some(p=>PromoFormat.hasFinancialContribution(p.formats.Ghost))}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${percent(item.raw)}`}}},
         scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:11},autoSkip:false,maxRotation:60}},y:{stacked:true,min,max,title:{display:true,text:title},ticks:{font:{size:11},callback:n=>n+'%'}}}}
     });
   }
