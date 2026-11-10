@@ -32,9 +32,9 @@
       seen.add(key); return true;
     });
   }
-  // Reporting-date windows, not Meta campaign identity or Business KPI scope.
-  // 2026 dates supplied by Tom and confirmed in the read-only phase calendar.
-  // Outside a named window keep a month bucket: carryover is never discarded.
+  // Naming metadata only, applied to first observed positive campaign spend.
+  // Official ends never constrain membership or split campaign carryover.
+  // Outside a named window use a month label, not a shared month identity.
   const PROMO_WINDOWS = [
     {id:'2026-06-15_2026-06-17',start:'2026-06-15',end:'2026-06-17',label:'Jun Private'},
     {id:'2026-06-18_2026-06-23',start:'2026-06-18',end:'2026-06-23',label:'Jun Public'},
@@ -55,12 +55,36 @@
     // Retain the existing monthly diagnostic contract for cron/offline audits.
     return aggregateMix(rows,monthPeriod).map(({month,total,formats})=>({month,total,formats}));
   }
+  // Membership is campaign-lifetime, inferred from authoritative campaign/day
+  // spend (creative facts plus signed residuals). No calendar end or gap timer.
+  function campaignKey(row) {
+    const account=String(row.account_id||'legacy').replace(/^act_/,'');
+    return JSON.stringify([account,row.market||(/_US_/.test(row.campaign_name)?'US':'CZSK'),row.source_campaign_id||row.campaign_id]);
+  }
   function promoMix(rows) {
-    return aggregateMix(rows.filter(row=>['spend','purchases','revenue','impressions'].some(key=>row[key]!==0)),promoPeriod);
+    const campaigns=new Map();
+    for(const row of rows) {
+      const key=campaignKey(row);
+      if(!campaigns.has(key))campaigns.set(key,{key,scope:JSON.parse(key).slice(0,2).join('|'),days:new Map(),first:row.date,eligible:/^(TUC|GLV)_\d+_/.test(row.campaign_name)&&row.campaign_name.includes('_Promo')});
+      const c=campaigns.get(key);c.first=c.first<row.date?c.first:row.date;
+      c.days.set(row.date,(c.days.get(row.date)||0)+czkValue(row,'spend'));
+    }
+    for(const c of campaigns.values())c.start=[...c.days].filter(([,spend])=>spend>1e-8).map(([date])=>date).sort()[0];
+    const ordered=[...campaigns.values()].sort((a,b)=>(a.start||a.first).localeCompare(b.start||b.first)||a.key.localeCompare(b.key));
+    const assigned=[];
+    for(const c of ordered) {
+      // Simultaneous starts join deterministically. If distinct older cohorts
+      // overlap, choose the earliest cohort; never retroactively merge them.
+      const active=c.eligible&&c.start?assigned.filter(p=>p.eligible&&p.scope===c.scope&&(p.days.get(c.start)||0)>1e-8).sort((a,b)=>a.period.sort.localeCompare(b.period.sort)||a.period.id.localeCompare(b.period.id)):[];
+      const start=c.start||c.first, metadata=c.start?promoPeriod({date:start}):{...monthPeriod({date:start}),label:'Unassigned · '+monthPeriod({date:start}).label};
+      c.period=active.length?active[0].period:{...metadata,id:'promo:'+c.key+':'+start,sort:start,start,delivery_observed:Boolean(c.start)};
+      assigned.push(c);
+    }
+    return aggregateMix(rows.filter(row=>['spend','purchases','revenue','impressions'].some(key=>row[key]!==0)),row=>campaigns.get(campaignKey(row)).period);
   }
   function aggregateMix(rows,periodFor) {
     const months = new Map();
-    const empty = () => ({spend:0,purchases:0,revenue:0,impressions:0,ads:new Set(),assetKeys:new Set(),assetIncomplete:false});
+    const empty = () => ({spend:0,purchases:0,revenue:0,impressions:0,spend_czk:0,revenue_czk:0,ads:new Set(),assetKeys:new Set(),assetIncomplete:false});
     for (const row of rows) {
       const period=periodFor(row);
       if (!months.has(period.id)) months.set(period.id,{...period,total:empty(),formats:Object.fromEntries(FORMATS.map(f=>[f,empty()]))});
@@ -80,6 +104,7 @@
       }
       for (const target of [group.total,group.formats[row.format]]) {
         for (const metric of ['spend','purchases','revenue','impressions']) target[metric]+=row[metric];
+        target.spend_czk+=czkValue(row,'spend'); target.revenue_czk+=czkValue(row,'revenue');
         if(!row.is_ghost) target.ads.add(row.ad_id);
       }
     }
@@ -99,8 +124,12 @@
     });
   }
   const validConceptPayload=data=>validPayload(data)&&data.funnel_version===1&&data.rows.every(r=>/^(TUC|GLV)_\d+_/.test(r.campaign_name)&&r.campaign_name.includes('_CZSK_')&&!r.campaign_name.includes('_US_')&&r.campaign_name.includes('_Promo'));
-  // Presentation only: a signed half-cent rounds to a nonzero CZK cent.
-  // Never use this predicate to filter source facts or compute totals/ratios.
-  const hasFinancialContribution=row=>Math.abs(row.spend)>=0.005||Math.abs(row.revenue)>=0.005;
-  return { hasFinancialContribution, INVENTORY_VERSION, CLASSIFICATION_VERSION, FORMATS, COLORS, validDate, validPayload, validConceptPayload, monthlyMix, promoMix };
+  // Signed CZK equivalents are aggregated independently of display currency.
+  function czkValue(row,key) {
+    if(Number.isFinite(row[key+'_czk']))return row[key+'_czk'];
+    if(Number.isFinite(row.native?.[key]))return row.native[key]*(row.native_currency==='USD'?row.fx.czk_per_usd:1);
+    return row[key]*(row.report_currency==='USD'?row.fx.czk_per_usd:1);
+  }
+  const hasFinancialContribution=row=>(Math.abs(czkValue(row,'revenue'))>1e-8&&Math.abs(row.purchases)>1e-8)||Math.abs(czkValue(row,'spend'))>10+1e-8;
+  return { czkValue, hasFinancialContribution, INVENTORY_VERSION, CLASSIFICATION_VERSION, FORMATS, COLORS, validDate, validPayload, validConceptPayload, monthlyMix, promoMix };
 });

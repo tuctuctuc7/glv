@@ -10,9 +10,9 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
  for(const theme of ['dark','light']){await page.evaluate(t=>setTheme(t),theme);assert.equal(await page.locator('#promo-format-table .ghost-row').count(),1);assert.equal(await page.locator('#promo-concept-table .ghost-row').count(),1);assert.match(await page.locator('#promo-format-table .ghost-row').textContent(),/Ghost creative — pending Meta reconciliation/);assert.match(await page.locator('#promo-format-status').textContent(),/negative.*adjustment/i);assert.match(await page.locator('#promo-concept-status').textContent(),/1 concepts/);assert.equal(await page.locator('#promo-format-table .ghost-row td').nth(2).textContent(),'—');
  const chart=await page.evaluate(()=>({labels:charts['promo-format-spend'].data.datasets.map(d=>d.label),min:charts['promo-format-spend'].scales.y.min,max:charts['promo-format-spend'].scales.y.max,data:charts['promo-format-spend'].data.datasets.map(d=>d.data),overflow:document.documentElement.scrollWidth>innerWidth+1}));assert.ok(chart.labels.includes(ghost.label));assert.equal(chart.min,0);assert.equal(chart.max,100);assert.equal(chart.overflow,false);assert.ok(chart.data.some(d=>d[0]===-25));
  await page.evaluate(()=>chooseConceptCampaigns([]));assert.equal(await page.locator('#promo-concept-table tbody tr').count(),0);await page.evaluate(()=>chooseConceptCampaigns(['c']));assert.equal(await page.locator('#promo-concept-table .ghost-row').count(),1);
- await page.evaluate(()=>{for(const key of PROMO_FORMAT_CHART_KEYS){charts[key].stop();charts[key].update('none');}});fs.mkdirSync('/tmp/glv-ghost-browser',{recursive:true});await page.locator('#promo-format-section').screenshot({path:`/tmp/glv-ghost-browser/${width}-${theme}.png`});
- // Exercise display-only suppression, signed cents, period-local rows and rerenders.
- for(const [spend,revenue,visible] of [[0,0,false],[0.00002279323,-0.00002279323,false],[0.0049,-0.0049,false],[0.01,0,true],[0,0.01,true],[-0.01,0,true],[0,-0.01,true],[0.005,0,true],[-0.005,0,true]]){
+ await page.evaluate(()=>{for(const key of PROMO_FORMAT_CHART_KEYS){charts[key].stop();charts[key].update('none');}});fs.mkdirSync(path.join(process.env.TMPDIR||process.cwd(),'glv-ghost-browser'),{recursive:true});await page.locator('#promo-format-section').screenshot({path:path.join(process.env.TMPDIR||process.cwd(),'glv-ghost-browser',`${width}-${theme}.png`)});
+ // Exercise display-only suppression, paired-outcome/absolute-CZK boundaries, period-local rows and rerenders.
+ for(const [spend,revenue,visible] of [[0,0,false],[0.000000002,-0.000000002,false],[0.06,-0.06,true],[9.99,0,false],[10,0,false],[10.01,0,true],[-9.99,0,false],[-10,0,false],[-10.01,0,true]]){
   const result=await page.evaluate(({real,ghost,payload,spend,revenue})=>{
    const rows=[real,{...ghost,spend,revenue},{...real,date:'2026-09-01',ad_id:'b',campaign_id:'d'},{...ghost,date:'2026-09-01',campaign_id:'d',spend:0,revenue:0}];
    promoFormatPayload={...payload,rows};conceptPayload={...payload,rows};conceptSelection=['c','d'];refreshPromoFormats();renderPromoConcepts();
@@ -21,7 +21,7 @@ const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://local
   },{real,ghost,payload,spend,revenue});
   assert.equal(result.formatRows,visible?1:0);assert.equal(result.conceptRows,visible?1:0);assert.ok(Math.abs(result.total.spend-(200+spend))<1e-10);assert.ok(Math.abs(result.total.revenue-(400+revenue))<1e-10);assert.equal(result.total.purchases,24);assert.equal(result.raw.spend,spend);
   for(const scale of result.scales){assert.equal(scale.min,0);assert.equal(scale.max,100);assert.equal(scale.ticks[0],'0%');assert.equal(scale.ticks.at(-1),'100%');assert.ok(scale.ticks.every(t=>/^\d+(?:\.\d)?%$/.test(t)));}
-  assert.equal(result.spendLegend.includes(ghost.label),Math.abs(spend)>=0.005);assert.ok(result.purchaseLegend.includes(ghost.label));
+  assert.equal(result.spendLegend.includes(ghost.label),visible);assert.equal(result.purchaseLegend.includes(ghost.label),visible);
   await page.evaluate(()=>{chooseConceptCampaigns(['d']);refreshPromoFormats();});assert.equal(await page.locator('#promo-concept-table .ghost-row').count(),0);
   await page.evaluate(()=>chooseConceptCampaigns(['c']));assert.equal(await page.locator('#promo-concept-table .ghost-row').count(),visible?1:0);
  }
