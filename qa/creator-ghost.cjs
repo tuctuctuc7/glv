@@ -65,4 +65,26 @@ await page.evaluate(rows=>{aggregateCampaigns=processAggregateRows(rows);dailyCa
 await page.locator('[data-tab="czsk-promo"]').click();
 const split=await page.evaluate(()=>({issues:wlNamingIssues,totals:byPromoGroup(getPromoKpiRows()).map(r=>[r.group,r.spend]),ghost:wlGhostVisible}));
 assert.deepEqual(split.issues,[]);assert.equal(split.ghost,false);assert.equal(split.totals.filter(r=>r[1]===15).length,2);
+// Outbound-only residuals survive all display aggregations, including signed cancellation.
+for(const [deltas,visible] of [[[1],true],[[-1],true],[[.003,.003],true],[[1,-1],false],[[0],false]]){
+ const rows=deltas.flatMap(delta=>attachCreatorFacts([{...parent,'actions:outbound_click':Math.max(delta,0)}],[{...parent,ad_id:'outbound-ad',ad_name:'Kristyna_PAC419_V1',adset_id:'AS13',adset_name:'AS13','actions:outbound_click':Math.max(-delta,0)}]));
+ await page.evaluate(rows=>{aggregateCampaigns=processAggregateRows(rows);dailyCampaigns=processDaily(rows);},rows);
+ for(const grain of ['day','week','month']){
+  await page.locator('#tab-grain-czsk-promo').selectOption(grain);
+  assert.equal(await page.evaluate(()=>wlGhostVisible),visible);
+  assert.equal((await page.locator('#kpi-czsk-promo').textContent()).includes('Ghost'),visible);
+  assert.equal((await page.locator('#promo-table').textContent()).includes('Ghost'),visible);
+  assert.equal(await page.evaluate(()=>charts['promo-pie'].data.labels.some(l=>l.includes('Ghost'))),visible);
+ }
+}
+// Parent naming conflicts are actionable, never a reason to discard valid ad attribution.
+const conflictParent={...parent,name:'TUC_035_CZSK_WL_Kristyna'};
+const conflicting=attachCreatorFacts([conflictParent],[{...conflictParent,ad_id:'conflict-ad',ad_name:'ActionKate_PAC462_V2',adset_id:'conflict-set',adset_name:'Set_befit_over40'}]);
+await page.evaluate(rows=>{aggregateCampaigns=processAggregateRows(rows);dailyCampaigns=processDaily(rows);renderTab('czsk-promo');},conflicting);
+assert.equal(await page.evaluate(()=>wlBreakdownActive()),true);
+assert.equal(await page.evaluate(()=>byPromoGroup(getPromoKpiRows()).find(r=>r.group==='wl-actionkate').spend),30);
+const conflictWarning=page.locator('#wl-naming-warning');assert.equal(await conflictWarning.isVisible(),true);
+for(const label of ['TUC_035_CZSK_WL_Kristyna','Set_befit_over40','ActionKate_PAC462_V2'])assert.ok((await conflictWarning.textContent()).includes(label));
+await page.locator('[data-tab="czsk"]').click();await page.evaluate(()=>renderTab('czsk'));
+assert.match(await page.locator('#panel-czsk .global-creator-warning').textContent(),/valid ad-name attribution retained/);
 results.push({width,theme,passed:true});await page.close();}assert.deepEqual(errors,[]);fs.writeFileSync(path.join(evidence,'results.json'),JSON.stringify({synthetic:true,results,errors},null,2));console.log(JSON.stringify({evidence,results,errors}));}finally{await browser?.close();server.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
