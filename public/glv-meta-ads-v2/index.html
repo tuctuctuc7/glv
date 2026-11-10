@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('glv-mad-v2-theme')==='light'?'light':'dark';}catch{}</script>
 <script src="/glv-meta-ads-v2/dates.js"></script>
 <script src="/glv-meta-ads-v2/freshness.js?v=scope-integrity-1"></script>
 <script src="/glv-meta-ads-v2/config.js"></script>
@@ -321,7 +322,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 <script src="/glv-meta-ads/promo-concepts.js?v=ai-concepts-20261105"></script>
 <script src="/glv-meta-ads-v2/promo-concepts-ui.js?v=scope-integrity-1"></script>
 <link rel="stylesheet" href="/glv-meta-ads/promo-concepts.css?v=concept-total-color-20261014">
-<script src="/glv-meta-ads-v2/promo-format-ui.js?v=scope-integrity-1"></script>
+<script src="/glv-meta-ads-v2/promo-format-ui.js?v=quiet-precision-1"></script>
 <script src="/glv-meta-ads/session-cache.js?v=ghost-reconciliation-20261103"></script>
 <link rel="stylesheet" href="/glv-meta-ads/section-info.css?v=promo-creative-20260921">
 <link rel="stylesheet" href="/glv-meta-ads/wl-report.css?v=partnership-v3">
@@ -331,6 +332,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 .v2-global-controls select{min-height:44px;max-width:80px}
 @media(max-width:720px){.header-brand .brand-copy{display:none}.header-brand{flex-shrink:0}.header-right.controls-collapsed{width:0;overflow:hidden}.v2-global-controls{margin-left:auto}.v2-global-controls .theme-toggle{min-height:44px}.header-right:not(.controls-collapsed){grid-template-columns:1fr}.header-top{gap:6px}}
 </style>
+<link rel="stylesheet" href="/glv-meta-ads-v2/quiet-precision.css?v=quiet-precision-2">
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to dashboard content</a>
@@ -399,8 +401,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 
 <main class="page" id="main-content">
   <p class="promo-note" id="v2-date-note">Local account dates (Prague / Los Angeles) are added by date label, not rebucketed. Daily CNB FX; previous published fixing on holidays. Account identity wins over campaign prefix.</p><div id="v2-naming-warnings" class="wl-naming-warning" role="status" hidden></div>
-  <section class="dashboard-intro" aria-labelledby="dashboard-title"><div><p class="dashboard-kicker">Executive media control room</p><h1 class="dashboard-title" id="dashboard-title">Performance, without the noise.</h1><p class="dashboard-sub">Campaign efficiency, promo contribution, creative health, and daily evidence across CZSK and US.</p></div><div class="scope-pill">META ADS · TWO ACCOUNTS · <span id="v2-scope-currency">USD</span></div></section>
-<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button id="refresh-data" type="button" class="metric-select" style="min-height:44px" onclick="document.getElementById('tab-wl').classList.contains('active')?GlvWlUI.load(true):loadData({force:true})" title="Reload the active view">Refresh data</button></div>
+  <section class="dashboard-intro" aria-labelledby="dashboard-title"><h1 class="dashboard-title" id="dashboard-title">Performance</h1><div class="dashboard-actions"><div class="scope-pill">META ADS · TWO ACCOUNTS · <span id="v2-scope-currency">USD</span></div><button id="refresh-data" type="button" class="metric-select" onclick="document.getElementById('tab-wl').classList.contains('active')?GlvWlUI.load(true):loadData({force:true})" title="Reload the active view">Refresh data</button></div></section>
 <div id="loading" class="loading" role="status"><div class="spinner"></div><span id="loading-msg">Loading campaigns…</span></div>
 <div id="error" class="err" role="status" style="display:none;"></div>
 
@@ -435,8 +436,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk', this.value)">
           <div class="filter-options-list" id="filter-options-czsk"></div>
           <div class="filter-actions">
+            <button class="filter-action-btn" onclick="clearAll('czsk')">None</button>
             <button class="filter-action-btn" onclick="selectAll('czsk')">Select all</button>
-            <button class="filter-action-btn" onclick="clearAll('czsk')">Clear</button>
           </div>
         </div>
       </div>
@@ -459,8 +460,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk-creative', this.value)">
           <div class="filter-options-list" id="filter-options-czsk-creative"></div>
           <div class="filter-actions">
+            <button class="filter-action-btn" onclick="clearAll('czsk-creative')">None</button>
             <button class="filter-action-btn" onclick="selectAll('czsk-creative')">Select all</button>
-            <button class="filter-action-btn" onclick="clearAll('czsk-creative')">Clear</button>
           </div>
         </div>
       </div>
@@ -508,7 +509,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
         <div class="filter-dropdown" id="filter-dropdown-triage-campaign">
           <input class="filter-search" placeholder="Search campaigns…" aria-label="Search Triage campaigns" oninput="filterSearch('triage-campaign', this.value)">
           <div class="filter-options-list" id="filter-options-triage-campaign"></div>
-          <div class="filter-actions"><button class="filter-action-btn" onclick="selectAll('triage-campaign')">Select all</button><button class="filter-action-btn" onclick="clearAll('triage-campaign')">Clear</button></div>
+          <div class="filter-actions"><button class="filter-action-btn" onclick="clearAll('triage-campaign')">None</button><button class="filter-action-btn" onclick="selectAll('triage-campaign')">Select all</button></div>
         </div>
       </div>
       <div class="filter-wrap" id="filter-wrap-triage-group" data-filter-label="Campaign group">
@@ -516,7 +517,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
         <button type="button" class="filter-toggle" id="filter-toggle-triage-group" aria-labelledby="triage-filter-label-group filter-label-triage-group" aria-expanded="false" aria-controls="filter-dropdown-triage-group" onclick="toggleFilter('triage-group')"><span id="filter-label-triage-group">All campaign groups</span><span style="color:var(--gray400)">▾</span></button>
         <div class="filter-dropdown" id="filter-dropdown-triage-group">
           <div class="filter-options-list" id="filter-options-triage-group"></div>
-          <div class="filter-actions"><button class="filter-action-btn" onclick="selectAll('triage-group')">Select all</button><button class="filter-action-btn" onclick="clearAll('triage-group')">Clear</button></div>
+          <div class="filter-actions"><button class="filter-action-btn" onclick="clearAll('triage-group')">None</button><button class="filter-action-btn" onclick="selectAll('triage-group')">Select all</button></div>
         </div>
       </div>
     </div>
@@ -564,8 +565,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk-promo', this.value)">
           <div class="filter-options-list" id="filter-options-czsk-promo"></div>
           <div class="filter-actions">
+            <button class="filter-action-btn" onclick="clearAll('czsk-promo')">None</button>
             <button class="filter-action-btn" onclick="selectAll('czsk-promo')">Select all</button>
-            <button class="filter-action-btn" onclick="clearAll('czsk-promo')">Clear</button>
           </div>
         </div>
       </div>
@@ -649,7 +650,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
         <div class="filter-dropdown" id="filter-dropdown-czsk-leadgen">
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk-leadgen', this.value)">
           <div class="filter-options-list" id="filter-options-czsk-leadgen"></div>
-          <div class="filter-actions"><button class="filter-action-btn" onclick="selectAll('czsk-leadgen')">Select all</button><button class="filter-action-btn" onclick="clearAll('czsk-leadgen')">Clear</button></div>
+          <div class="filter-actions"><button class="filter-action-btn" onclick="clearAll('czsk-leadgen')">None</button><button class="filter-action-btn" onclick="selectAll('czsk-leadgen')">Select all</button></div>
         </div>
       </div>
       <div class="toggle-row">
@@ -692,8 +693,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('us', this.value)">
           <div class="filter-options-list" id="filter-options-us"></div>
           <div class="filter-actions">
+            <button class="filter-action-btn" onclick="clearAll('us')">None</button>
             <button class="filter-action-btn" onclick="selectAll('us')">Select all</button>
-            <button class="filter-action-btn" onclick="clearAll('us')">Clear</button>
           </div>
         </div>
       </div>
@@ -716,8 +717,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('us-creative', this.value)">
           <div class="filter-options-list" id="filter-options-us-creative"></div>
           <div class="filter-actions">
+            <button class="filter-action-btn" onclick="clearAll('us-creative')">None</button>
             <button class="filter-action-btn" onclick="selectAll('us-creative')">Select all</button>
-            <button class="filter-action-btn" onclick="clearAll('us-creative')">Clear</button>
           </div>
         </div>
       </div>
@@ -1210,7 +1211,7 @@ function periodRows(rows,tab){
   return grain==='day'?rows:rows.map(row=>({...row,date:row.date?(grain==='week'?startOfWeek(row.date):monthKey(row.date)):null}));
 }
 function tabFilterMarkup(key,label){
-  return `<div class="filter-wrap" id="filter-wrap-${key}"><span class="triage-filter-label" id="label-${key}">${label}</span><button type="button" class="filter-toggle" id="filter-toggle-${key}" aria-labelledby="label-${key} filter-label-${key}" aria-expanded="false" aria-controls="filter-dropdown-${key}" onclick="toggleFilter('${key}')"><span id="filter-label-${key}">All</span><span aria-hidden="true">▾</span></button><div class="filter-dropdown" id="filter-dropdown-${key}"><input class="filter-search" aria-label="Search ${label}" placeholder="Search…" oninput="filterSearch('${key}',this.value)"><div class="filter-options-list" id="filter-options-${key}"></div><div class="filter-actions"><button class="filter-action-btn" onclick="selectAll('${key}')">Select all</button><button class="filter-action-btn" onclick="clearAll('${key}')">Clear</button></div></div></div>`;
+  return `<div class="filter-wrap" id="filter-wrap-${key}"><span class="triage-filter-label" id="label-${key}">${label}</span><button type="button" class="filter-toggle" id="filter-toggle-${key}" aria-labelledby="label-${key} filter-label-${key}" aria-expanded="false" aria-controls="filter-dropdown-${key}" onclick="toggleFilter('${key}')"><span id="filter-label-${key}">All</span><span aria-hidden="true">▾</span></button><div class="filter-dropdown" id="filter-dropdown-${key}"><input class="filter-search" aria-label="Search ${label}" placeholder="Search…" oninput="filterSearch('${key}',this.value)"><div class="filter-options-list" id="filter-options-${key}"></div><div class="filter-actions"><button class="filter-action-btn" onclick="clearAll('${key}')">None</button><button class="filter-action-btn" onclick="selectAll('${key}')">Select all</button></div></div></div>`;
 }
 function initTabFilters(){
   TAB_KEYS.forEach(tab=>{
@@ -1452,7 +1453,7 @@ function refreshTriageChart(presetId){
   charts[chartKey]=new Chart(ctx,{
     data:{labels,datasets:[dataset(primary,primaryValues,primaryType,'y',2),dataset(secondary,secondaryValues,secondaryType,'y1',1)]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(item.dataset.metricKey,item.raw)}`}}},
+      plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(item.dataset.metricKey,item.raw)}`}}},
       scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
         y:{position:'left',grid:{color:'rgba(148,163,184,.12)'},title:{display:true,text:primary.label},ticks:{precision:wholeNumberTickPrecision(state.primary),font:{size:10},callback:value=>formatChartTick(state.primary,value)}},
         y1:{position:'right',grid:{display:false},title:{display:true,text:secondary.label},ticks:{precision:wholeNumberTickPrecision(state.secondary),font:{size:10},callback:value=>formatChartTick(state.secondary,value)}}}}
@@ -1493,7 +1494,7 @@ function refreshChart(seg){
       {type:'line',label:rLabel,metricKey:rKey,data:rightVals,borderColor:rightMetric.color,backgroundColor:hexToRgba(rightMetric.color,.1),borderWidth:2,pointRadius:3,fill:false,yAxisID:'y1',order:1,tension:.3},
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
+      plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
         tooltip:{callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${formatChartVal(ctx.datasetIndex===0?lKey:rKey,ctx.raw)}`}}},
       scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
         y:{position:'left',grid:{color:'rgba(0,0,0,.05)'},ticks:{precision:wholeNumberTickPrecision(lKey),font:{size:11},callback:v=>formatChartTick(lKey,v)}},
@@ -1516,7 +1517,7 @@ function refreshTrendsChart(){
       {label:'🇺🇸 US',data:usVals,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.08)',borderWidth:2,tension:.3,fill:true,pointRadius:3},
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
+      plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
         tooltip:{callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${formatChartVal(key,ctx.raw)}`}}},
       scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
         y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{precision:wholeNumberTickPrecision(key),font:{size:11},callback:v=>formatChartTick(key,v)}}}}
@@ -1552,7 +1553,7 @@ function refreshPromoCharts(){
       type:'line',
       data:{labels:dates.map(date=>fmtChartDate(date,grain)),datasets},
       options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-        plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
+        plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
           tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${formatChartVal(metricKey,ctx.raw)}`}}},
         scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
           y:{grid:{color:'rgba(0,0,0,.05)'},title:{display:true,text:metric.label},ticks:{precision:wholeNumberTickPrecision(metricKey),font:{size:11},callback:v=>formatChartTick(metricKey,v)}}}}
@@ -1603,7 +1604,7 @@ function refreshPromoCharts(){
       type:signedMix?'bar':'doughnut',
       data:{labels:pieGroups.map(g=>g.label),datasets:[{metricKey:pieMetricKey,label:pieMetric.label,data:pieValues,backgroundColor:pieGroups.map(g=>g.color),borderWidth:0}]},
       plugins:[percentLabelPlugin],
-      options:{responsive:true,maintainAspectRatio:false,...(signedMix?{scales:{y:{beginAtZero:true,ticks:{callback:v=>formatChartTick(pieMetricKey,v)}}}}:{cutout:'62%'}),plugins:{legend:{display:!signedMix,position:'bottom',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:ctx=>{
+      options:{responsive:true,maintainAspectRatio:false,...(signedMix?{scales:{y:{beginAtZero:true,ticks:{callback:v=>formatChartTick(pieMetricKey,v)}}}}:{cutout:'62%'}),plugins:{legend:{display:!signedMix,position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:ctx=>{
         const pct=pieTotal?ctx.raw/pieTotal*100:0;
         return`${ctx.label}: ${formatChartVal(pieMetricKey,ctx.raw)} (${pct.toFixed(1)}%)`;
       }}}}}
@@ -1669,18 +1670,18 @@ function refreshLeadgenCharts(){
     const leftLabel=leftMetric.label;const rightLabel=rightMetric.label;
     const rows=byPeriod(source,null,grain);const labels=rows.map(row=>fmtChartDate(row.date,grain));
     if(title)title.textContent=`${leftLabel} & ${rightLabel}`;canvas?.setAttribute('aria-label',`${leftLabel} bars and ${rightLabel} line, ${grain}`);
-    if(ctx)charts['leadgen-metric']=new Chart(ctx,{type:'bar',data:{labels,datasets:[{type:'bar',label:leftLabel,metricKey:leftKey,data:rows.map(row=>computeChartMetric(leftKey,row,calcMetrics(row))),yAxisID:'y',backgroundColor:hexToRgba(leftMetric.color,.8),borderColor:leftMetric.color,borderWidth:1,borderRadius:4},{type:'line',label:rightLabel,metricKey:rightKey,data:rows.map(row=>computeChartMetric(rightKey,row,calcMetrics(row))),yAxisID:'y1',borderColor:rightMetric.color,backgroundColor:hexToRgba(rightMetric.color,.13),borderWidth:2,tension:.3,pointRadius:3,fill:false}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(item.dataset.metricKey,item.raw)}`}}},scales:{x:{grid:{display:false}},y:{position:'left',title:{display:true,text:leftLabel},ticks:{precision:wholeNumberTickPrecision(leftKey),callback:v=>formatChartTick(leftKey,v)}},y1:{position:'right',title:{display:true,text:rightLabel},grid:{drawOnChartArea:false},ticks:{precision:wholeNumberTickPrecision(rightKey),callback:v=>formatChartTick(rightKey,v)}}}}});
+    if(ctx)charts['leadgen-metric']=new Chart(ctx,{type:'bar',data:{labels,datasets:[{type:'bar',label:leftLabel,metricKey:leftKey,data:rows.map(row=>computeChartMetric(leftKey,row,calcMetrics(row))),yAxisID:'y',backgroundColor:hexToRgba(leftMetric.color,.8),borderColor:leftMetric.color,borderWidth:1,borderRadius:4},{type:'line',label:rightLabel,metricKey:rightKey,data:rows.map(row=>computeChartMetric(rightKey,row,calcMetrics(row))),yAxisID:'y1',borderColor:rightMetric.color,backgroundColor:hexToRgba(rightMetric.color,.13),borderWidth:2,tension:.3,pointRadius:3,fill:false}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(item.dataset.metricKey,item.raw)}`}}},scales:{x:{grid:{display:false}},y:{position:'left',title:{display:true,text:leftLabel},ticks:{precision:wholeNumberTickPrecision(leftKey),callback:v=>formatChartTick(leftKey,v)}},y1:{position:'right',title:{display:true,text:rightLabel},grid:{drawOnChartArea:false},ticks:{precision:wholeNumberTickPrecision(rightKey),callback:v=>formatChartTick(rightKey,v)}}}}});
   }else{
     const periods=groups.map(g=>({group:g,rows:byPeriod(source.filter(r=>leadgenGroupKey(r.name)===g.key),null,grain)}));
     const dates=[...new Set(periods.flatMap(item=>item.rows.map(r=>r.date)))].sort();
     if(title)title.textContent=`${metricLabel} By Group`;canvas?.setAttribute('aria-label',`${metricLabel} by Lead-gen group, ${grain}`);
-    if(ctx)charts['leadgen-metric']=new Chart(ctx,{type:'line',data:{labels:dates.map(date=>fmtChartDate(date,grain)),datasets:periods.map(({group,rows})=>{const byDate=Object.fromEntries(rows.map(r=>[r.date,r]));return{label:group.label,data:dates.map(date=>{const row=byDate[date]||emptyAgg(date,group.key);return computeChartMetric(metricKey,row,calcMetrics(row));}),borderColor:group.color,backgroundColor:group.color+'22',borderWidth:2,tension:.3,pointRadius:3,fill:false};})},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(metricKey,item.raw)}`}}},scales:{x:{grid:{display:false}},y:{ticks:{precision:wholeNumberTickPrecision(metricKey),callback:v=>formatChartTick(metricKey,v)}}}}});
+    if(ctx)charts['leadgen-metric']=new Chart(ctx,{type:'line',data:{labels:dates.map(date=>fmtChartDate(date,grain)),datasets:periods.map(({group,rows})=>{const byDate=Object.fromEntries(rows.map(r=>[r.date,r]));return{label:group.label,data:dates.map(date=>{const row=byDate[date]||emptyAgg(date,group.key);return computeChartMetric(metricKey,row,calcMetrics(row));}),borderColor:group.color,backgroundColor:group.color+'22',borderWidth:2,tension:.3,pointRadius:3,fill:false};})},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(metricKey,item.raw)}`}}},scales:{x:{grid:{display:false}},y:{ticks:{precision:wholeNumberTickPrecision(metricKey),callback:v=>formatChartTick(metricKey,v)}}}}});
   }
   const totals=byLeadgenGroup(getLeadgenRows('aggregate'));const totalSpend=totals.reduce((sum,row)=>sum+row.spend,0);
   if(charts['leadgen-pie'])charts['leadgen-pie'].destroy();
   if(leadgenOnly){delete charts['leadgen-pie'];return;}
   const pieCtx=document.getElementById('chart-leadgen-pie')?.getContext('2d');
-  if(pieCtx)charts['leadgen-pie']=new Chart(pieCtx,{type:'doughnut',data:{labels:groups.map(g=>g.label),datasets:[{data:totals.map(r=>r.spend),backgroundColor:groups.map(g=>g.color),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${formatChartVal('spend',ctx.raw)} (${(totalSpend?ctx.raw/totalSpend*100:0).toFixed(1)}%)`}}}}});
+  if(pieCtx)charts['leadgen-pie']=new Chart(pieCtx,{type:'doughnut',data:{labels:groups.map(g=>g.label),datasets:[{data:totals.map(r=>r.spend),backgroundColor:groups.map(g=>g.color),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${formatChartVal('spend',ctx.raw)} (${(totalSpend?ctx.raw/totalSpend*100:0).toFixed(1)}%)`}}}}});
 }
 
 function buildFilterOptions(filterKey,campaignIds){
@@ -2210,7 +2211,7 @@ function formatUtcTimestamp(date){
   const pad=n=>String(n).padStart(2,'0');
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth()+1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())} UTC`;
 }
-const root=document.documentElement;const themeToggle=document.getElementById('theme-toggle');const mobileControlsToggle=document.getElementById('mobile-controls-toggle');const headerRight=document.querySelector('.header-right');function setTheme(theme){root.dataset.theme=theme;try{localStorage.setItem('glv-mad-v2-theme',theme);}catch(e){}const light=theme==='light';themeToggle.textContent=light?'☾':'☀';themeToggle.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');Chart.defaults.color=light?'#637589':'#9bacc0';Chart.defaults.borderColor=light?'rgba(99,117,137,.18)':'rgba(155,172,192,.16)';Object.values(charts).forEach(chart=>chart?.update('none'));}let preferred='dark';try{preferred=localStorage.getItem('glv-mad-v2-theme')||'dark';}catch(e){}setTheme(preferred==='light'?'light':'dark');if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');}themeToggle.addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));mobileControlsToggle.addEventListener('click',()=>{const collapsed=headerRight.classList.toggle('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded',String(!collapsed));mobileControlsToggle.textContent=collapsed?'Filters':'Done';});
+const root=document.documentElement;const themeToggle=document.getElementById('theme-toggle');const mobileControlsToggle=document.getElementById('mobile-controls-toggle');const headerRight=document.querySelector('.header-right');function setTheme(theme){root.dataset.theme=theme;try{localStorage.setItem('glv-mad-v2-theme',theme);}catch(e){}const light=theme==='light';themeToggle.textContent=light?'☾':'☀';themeToggle.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');Chart.defaults.color=light?'#646674':'#b2b5c4';Chart.defaults.borderColor=light?'rgba(100,102,116,.18)':'rgba(178,181,196,.16)';Object.values(charts).forEach(chart=>chart?.update('none'));}let preferred='dark';try{preferred=localStorage.getItem('glv-mad-v2-theme')||'dark';}catch(e){}setTheme(preferred==='light'?'light':'dark');if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');}themeToggle.addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));mobileControlsToggle.addEventListener('click',()=>{const collapsed=headerRight.classList.toggle('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded',String(!collapsed));mobileControlsToggle.textContent=collapsed?'Filters':'Done';});
 initV2Controls();initTabFilters();initTriageCards();initSelects();initSortControls();updateDateLabel();loadData();
 </script>
 <script src="/glv-meta-ads/section-info.js?v=ai-concepts-20261105"></script>

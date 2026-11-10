@@ -5,6 +5,7 @@ const root=path.resolve(__dirname,'..'),pub=path.join(root,'public');
 const dates=require('../public/glv-meta-ads-v2/dates.js');
 const {renderSnapshot}=require('../lib/glv-mad-v2-source.cjs');
 const evidence=process.env.GLV_V2_EVIDENCE||'/tmp/glv-mad-v2-browser';fs.mkdirSync(evidence,{recursive:true});
+const design=require('./mad-v2-design.cjs'),designChecks=[],designInteractions=[];
 const requests=[],checks=[],errors=[],freshnessChecks=[];let failure=false,scenario='fresh';
 const stamp=new Date().toISOString();
 const {cacheState,presetKey}=require('../lib/glv-mad-v2-cache.cjs');
@@ -65,7 +66,7 @@ async function run(){
  await new Promise(r=>app.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${app.address().port}/glv-meta-ads-v2/`;
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome',headless:true,args:['--no-sandbox'],env:{...process.env,LD_LIBRARY_PATH:'/home/tom/.cache/hermes-browser-libs/root/usr/lib/x86_64-linux-gnu:/home/tom/.cache/hermes-browser-libs/root/usr/lib'}});
  try{
- for(const width of (process.env.GLV_V2_WIDTH?[Number(process.env.GLV_V2_WIDTH)]:[1440,390,320])){
+ for(const width of (process.env.GLV_V2_WIDTH?[Number(process.env.GLV_V2_WIDTH)]:[1440,1200,1100,1024,800,768,721,720,390,320])){
   const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'}),page=await context.newPage();
   page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   const ready=async()=>{await page.waitForFunction(()=>document.querySelector('#loading').style.display==='none');assert.equal(await page.locator('#error').isVisible(),false,await page.locator('#error').textContent());};
@@ -75,21 +76,31 @@ async function run(){
   for(const theme of ['dark','light']){
    if(await page.locator('html').getAttribute('data-theme')!==theme)await page.locator('#theme-toggle').click();
    for(const currency of ['USD','CZK']){
-    if(await page.locator('#v2-currency').inputValue()!==currency){await page.locator('[data-tab="wl"]').click();await page.locator('#v2-currency').selectOption(currency);await page.waitForURL(u=>u.searchParams.get('currency')===currency);await ready();assert.equal(await page.locator('[data-tab="wl"]').getAttribute('aria-selected'),'true');await page.waitForFunction(()=>document.querySelector('#wl-status').textContent.includes('Source refreshed'),{},{timeout:5000});}
+    if(await page.locator('#v2-currency').inputValue()!==currency){await page.locator('[data-tab="wl"]').click();await page.locator('#v2-currency').selectOption(currency);await page.waitForURL(u=>u.searchParams.get('currency')===currency);await ready();assert.equal(await page.locator('[data-tab="wl"]').getAttribute('aria-selected'),'true');await page.waitForFunction(()=>document.querySelector('#wl-status')?.textContent.includes('Source refreshed'),{},{timeout:5000});}
     for(const tab of ['czsk','us','czsk-triage','czsk-promo','czsk-promo-creative','czsk-leadgen','wl']){
      await page.locator(`[data-tab="${tab}"]`).click();
-     if(tab==='wl')await page.waitForFunction(()=>document.querySelector('#wl-status').textContent.includes('Source refreshed'));
+     if(tab==='wl')await page.waitForFunction(()=>document.querySelector('#wl-status')?.textContent.includes('Source refreshed'));
      assert.equal(await page.locator('#panel-'+tab).isVisible(),true);
      if(tab==='czsk-promo-creative'){await page.locator('#promo-concept-table tbody tr').first().waitFor();assert.ok(await page.locator('#promo-format-table tbody tr').count()>0);assert.ok(!(await page.locator('#promo-concept-status').textContent()).includes('unavailable'));}
      if(tab==='czsk-leadgen')assert.ok(await page.locator('#leadgen-table tbody tr').count()>0);
      if(tab==='czsk-promo')assert.ok(await page.locator('#promo-table tbody tr').count()>0);
      if(tab==='czsk-triage')assert.equal(await page.evaluate(()=>TRIAGE_PRESETS.every(p=>charts['triage-'+p.id]?.data.labels.length>0)),true);
-     await page.evaluate(()=>{Object.values(charts).forEach(c=>c.update('none'));window.scrollTo(0,0);});
+     await page.evaluate(()=>{Object.values(charts).forEach(c=>{c.stop();c.options.animation=false;c.update('none');});window.scrollTo(0,0);});
      await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
      const geometry=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,currency:document.querySelector('#v2-currency').getBoundingClientRect().toJSON(),theme:document.querySelector('#theme-toggle').getBoundingClientRect().toJSON()}));
      assert.ok(geometry.scroll<=width+1,JSON.stringify({tab,theme,currency,geometry}));
      assert.ok(geometry.currency.right<=geometry.theme.left+1&&Math.abs(geometry.currency.top-geometry.theme.top)<15,JSON.stringify(geometry));
      const labels=await page.locator('.panel.active').innerText();assert.ok(!labels.includes(currency==='USD'?'CZK':'USD'),`wrong currency ${tab}: ${labels}`);
+     designChecks.push(await design.inspect(page,{width,theme,tab}));
+     if(width<=720){
+      await page.locator('#mobile-controls-toggle').click();
+      await design.header(page);
+      assert.equal(await page.locator(tab==='wl'?'#wl-status':'#updated-at').isVisible(),true,'active view freshness remains readable with mobile filters open');
+      if(currency==='USD'&&tab==='czsk')await page.screenshot({path:path.join(evidence,`${width}-${theme}-filters-open.png`)});
+      await page.locator('#mobile-controls-toggle').click();
+     }
+     await page.evaluate(()=>document.activeElement?.blur());
+     if(currency==='USD')await page.screenshot({path:path.join(evidence,`${width}-${theme}-${tab}-viewport.png`)});
      await page.screenshot({path:path.join(evidence,`${width}-${theme}-${currency}-${tab}.png`),fullPage:true});checks.push({width,theme,currency,tab});
     }
     // Real HTTP-200 reader freshness contract, not rejected fetch promises.
@@ -100,6 +111,7 @@ async function run(){
      scenario=staleCase;await page.evaluate(()=>loadData({force:true}));
      assert.equal(await page.locator('#error').isVisible(),true,staleCase);
      const status=await page.locator('#error').innerText();assert.match(status,/stale|generation|scope|range/i);
+     await design.header(page);
      if(staleCase!=='age-stale')assert.equal(await page.evaluate(()=>JSON.stringify([aggregateCampaigns,dailyCampaigns,adCreatives])),good,'invalid bundle must never replace last-good');
      else {assert.match(await page.locator('#updated-at').innerText(),/Stale last-good.*actual range/);assert.match(await page.evaluate(()=>lastGoodLabel),/^Stale last-good/);assert.ok(!status.includes('Mixed source generations'));assert.match(status,/Scheduled refresh pending/);}
      for(const affected of ['czsk','us','czsk-triage','czsk-promo','czsk-leadgen']){await page.locator(`[data-tab="${affected}"]`).click();assert.equal(await page.locator('#error').isVisible(),true);}
@@ -131,7 +143,7 @@ async function run(){
    }
   }
   await page.locator('[data-tab="us"]').click();
-  await page.locator('#filter-toggle-tab-us-campaign').click();await page.locator('#filter-dropdown-tab-us-campaign').getByRole('button',{name:'Clear',exact:true}).click();assert.equal(await page.evaluate(()=>getMainSegmentRows('us','aggregate').length),0);
+  await page.locator('#filter-toggle-tab-us-campaign').click();await page.locator('#filter-dropdown-tab-us-campaign').getByRole('button',{name:'None',exact:true}).click();assert.equal(await page.evaluate(()=>getMainSegmentRows('us','aggregate').length),0);
   await page.locator('#filter-dropdown-tab-us-campaign').getByRole('button',{name:'Select all',exact:true}).click();await page.keyboard.press('Escape');assert.equal(await page.evaluate(()=>getMainSegmentRows('us','aggregate').length),3);
   await page.locator('[data-tab="wl"]').click();await page.locator('#wl-campaign').selectOption('__none');assert.ok((await page.locator('#wl-results').textContent()).includes('No WL ads'));await page.locator('#wl-campaign').selectOption('__all');
   for(const account of ['TGLV','TUC','All']){
@@ -151,9 +163,10 @@ async function run(){
   assert.equal(await page.evaluate(()=>aggregateCampaigns.length+dailyCampaigns.length+adCreatives.length),0);
   scenario='fresh';await page.evaluate(()=>loadData({force:true}));await ready();
   freshnessChecks.push({width,scenario:'cold-start-rollover-and-recovery'});
+  designInteractions.push(await design.interactions(page,width,evidence));
   await page.screenshot({path:path.join(evidence,`${width}-recovered.png`),fullPage:true});await context.close();
  }
- assert.deepEqual(errors,[]);fs.writeFileSync(path.join(evidence,'results.json'),JSON.stringify({fixture:'SYNTHETIC ONLY; no live Meta calls',checks,freshnessChecks,errors,requests:requests.length},null,2));console.log(JSON.stringify({passed:true,states:checks.length,freshnessStates:freshnessChecks.length,errors,evidence}));
+ assert.deepEqual(errors,[]);fs.writeFileSync(path.join(evidence,'results.json'),JSON.stringify({fixture:'SYNTHETIC ONLY; no live Meta calls',checks,freshnessChecks,designChecks,designInteractions,errors,requests:requests.length},null,2));console.log(JSON.stringify({passed:true,states:checks.length,freshnessStates:freshnessChecks.length,errors,evidence}));
  }finally{await browser.close();await new Promise(r=>app.close(r));}
 }
 run().catch(e=>{console.error(e);process.exitCode=1;});

@@ -79,7 +79,7 @@ function refreshPromoFormats() {
     charts[key]=new Chart(document.getElementById('chart-'+key).getContext('2d'),{
       type:'bar',data:{labels:periods.map(period=>period.label),datasets:formats.map(format=>({label:formatLabel(format),data:periods.map(period=>period.formats[format][metric]),backgroundColor:PromoFormat.COLORS[format],borderWidth:format==='Ghost'?1:0,borderDash:format==='Ghost'?[4,3]:[],categoryPercentage:0.9,barPercentage:0.9,maxBarThickness:64}))},
       plugins:[percentLabels],options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-        plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis,filter:item=>formats[item.datasetIndex]!=='Ghost'||periods.some(p=>metric==='spendShare'?PromoFormat.hasFinancialContribution({spend:p.formats.Ghost.spend,revenue:0}):p.formats.Ghost.purchases!==0)}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${percent(item.raw)}`}}},
+        plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis,filter:item=>formats[item.datasetIndex]!=='Ghost'||periods.some(p=>metric==='spendShare'?PromoFormat.hasFinancialContribution({spend:p.formats.Ghost.spend,revenue:0}):p.formats.Ghost.purchases!==0)}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${percent(item.raw)}`}}},
         scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:11},autoSkip:false,maxRotation:60}},y:{stacked:true,min,max,title:{display:true,text:title},ticks:{font:{size:11},callback:n=>n+'%'}}}}
     });
   }
