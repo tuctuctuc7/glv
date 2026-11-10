@@ -38,7 +38,9 @@ test('cache refuses legacy adset aggregates while keeping ad-level schema and si
 });
 test('explicit strict ad prefix wins during migration without PAC inference',()=>{
  for(const [name,creator] of [['Kristyna_PAC419_v6-9','Kristyna'],['ActionKate_PAC460_V4','ActionKate'],['ActionKate_PAC462_V2','ActionKate'],['befit_over40_PAC470_V8','befit_over40']]){
-  assert.deepEqual(wl.resolveCreator('TUC_035_CZSK_WL_ActionKate','AS13_Kristyna',name),{creator,source:'ad',status:'resolved'});
+  const resolved=wl.resolveCreator('TUC_035_CZSK_WL_ActionKate','AS13_Kristyna',name);
+  assert.deepEqual({creator:resolved.creator,source:resolved.source,status:resolved.status},{creator,source:'ad',status:'resolved'});
+  assert.ok(resolved.conflicts.length,'Explicit conflicting parents are notices, not attribution blockers');
  }
  for(const name of ['PAC419_V7','xKristyna_PAC419_V7','Kristyna2_PAC419_V7','Kristyna_PAC419','Kristyna_PAC419_','PAC462_ActionKate'])assert.equal(wl.resolveCreator('TUC_035_CZSK_WL','AS13',name).status,'missing');
  assert.equal(wl.resolveCreator('WL_Kristyna','AS13','PAC340_V1').creator,'Kristyna');

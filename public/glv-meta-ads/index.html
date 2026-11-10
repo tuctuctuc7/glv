@@ -322,7 +322,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 <script src="/glv-meta-ads/session-cache.js?v=ghost-reconciliation-20261103"></script>
 <link rel="stylesheet" href="/glv-meta-ads/section-info.css?v=creator-context-20261109">
 <link rel="stylesheet" href="/glv-meta-ads/wl-report.css?v=partnership-v3">
-<script src="/glv-meta-ads/wl-report.js?v=ad-creator-migration-1"></script>
+<script src="/glv-meta-ads/wl-report.js?v=ad-creator-parity-2"></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to dashboard content</a>
@@ -853,9 +853,12 @@ function creatorFacts(rows){
 function getWlNamingIssues(rows){
   return [...new Set(creatorFacts(rows).filter(r=>!r.isGhost&&promoGroupKey(r.campaignName||r.name)==='wl'&&(r.creatorIssue||!wlCreatorKey(r.campaignName||r.name,r.adsetName,r.adName))).map(r=>`${r.campaignName||r.name||'(unnamed campaign)'}${r.adsetName?' / '+r.adsetName:''}${r.adName?' / '+r.adName:''} — ${r.creatorIssue||GlvWlReport.resolveCreator(r.campaignName||r.name,r.adsetName,r.adName).status}`))];
 }
+function getWlCreatorConflicts(rows){
+  return [...new Set(creatorFacts(rows).filter(r=>!r.isGhost&&promoGroupKey(r.campaignName||r.name)==='wl').map(r=>GlvWlReport.creatorConflictNotice(r.campaignName||r.name,r.adsetName,r.adName)).filter(Boolean))];
+}
 function hasCreatorResidual(row){
   // Match the producer's floating-point tolerance; do not hide action-only facts.
-  return ['spend','revenue','purchases','impressions','linkClicks','lp','checkouts','leads'].some(key=>Number.isFinite(row[key])&&Math.abs(row[key])>1e-9);
+  return ['spend','revenue','purchases','impressions','linkClicks','outboundClicks','lp','checkouts','leads'].some(key=>Number.isFinite(row[key])&&Math.abs(row[key])>1e-9);
 }
 function renderCreatorWarning(tab){
   const panel=document.getElementById('panel-'+tab);if(!panel)return;
@@ -864,9 +867,10 @@ function renderCreatorWarning(tab){
   const rows=[...filterTabRows(tab,getTabBaseRows(tab,'aggregate')),...filterTabRows(tab,getTabBaseRows(tab,'daily'))];
   const segments=tab==='us'?['us']:tab==='czsk-triage'&&triageMarket==='all'?['czsk','us']:[tab==='czsk-triage'?triageMarket:'czsk'];
   const ads=filterTabRows(tab,adCreatives.filter(r=>segments.includes(r.segment)));
-  const issues=getWlNamingIssues([...rows,...ads]);
+  const unresolved=getWlNamingIssues([...rows,...ads]);
+  const issues=[...unresolved,...getWlCreatorConflicts([...rows,...ads])];
   warning.hidden=!issues.length;
-  warning.innerHTML=issues.length?`<strong>Unresolved WL creator — check explicit creator_PAC_variant ad name first; for legacy ads check campaign name first, then ad-set name. No creator assumed; performance remains in totals.</strong><ul>${issues.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul>`:'';
+  warning.innerHTML=issues.length?`<strong>${unresolved.length?'Unresolved WL creator — check explicit creator_PAC_variant ad name first; for legacy ads check campaign name first, then ad-set name. No creator assumed for unresolved rows; performance remains in totals.':'WL creator naming conflict — valid ad-name attribution retained. Check and correct conflicting parent labels.'}</strong><ul>${issues.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul>`:'';
 }
 function validateWlBreakdown(){
   // Validate the selected KPI + daily scope once before rendering any Promo surface.
@@ -878,8 +882,9 @@ function validateWlBreakdown(){
   wlGhostVisible=[...byPromoGroup(getPromoKpiRows()),...byDateGroup(periodRows(getPromoDailyRows(),'czsk-promo'))].some(r=>r.group==='wl-ghost'&&hasCreatorResidual(r));
   wlNamingIssues=getWlNamingIssues(creatorScope);
   const warning=document.getElementById('wl-naming-warning');
-  warning.hidden=wlNamingIssues.length===0;
-  warning.innerHTML=warning.hidden?'':`<strong>WL naming validation: breakdown unavailable until each ad has an explicit creator_PAC_variant name or its legacy campaign/ad-set fallback identifies exactly one recognized creator (Kristyna, ActionKate or befit_over40).</strong> Combined WL totals shown. Affected campaigns / ad sets:<ul>${wlNamingIssues.map(name=>`<li>${escapeHtml(name)}</li>`).join('')}</ul>`;
+  const conflicts=getWlCreatorConflicts(creatorScope);
+  warning.hidden=wlNamingIssues.length===0&&conflicts.length===0;
+  warning.innerHTML=warning.hidden?'':`<strong>${wlNamingIssues.length?'WL naming validation: breakdown unavailable until each ad has an explicit creator_PAC_variant name or its legacy campaign/ad-set fallback identifies exactly one recognized creator (Kristyna, ActionKate or befit_over40). Combined WL totals shown.':'WL creator naming conflict — valid ad-name attribution retained. Check and correct conflicting parent labels.'}</strong><ul>${[...wlNamingIssues,...conflicts].map(name=>`<li>${escapeHtml(name)}</li>`).join('')}</ul>`;
 }
 function promoPresentationKey(row){
   const phase=row.group||promoGroupKey(row.name);
@@ -914,11 +919,11 @@ function aggregate(rows){
     spend:rows.reduce((s,r)=>s+r.spend,0),lp:rows.reduce((s,r)=>s+r.lp,0),
     purchases:rows.reduce((s,r)=>s+r.purchases,0),checkouts:rows.reduce((s,r)=>s+r.checkouts,0),leads:rows.reduce((s,r)=>s+r.leads,0),
     revenue:rows.reduce((s,r)=>s+r.revenue,0),impressions:rows.reduce((s,r)=>s+r.impressions,0),reach:rows.some(r=>r.reach===null)?null:rows.reduce((s,r)=>s+(r.reach||0),0),
-    linkClicks:rows.reduce((s,r)=>s+r.linkClicks,0),
+    linkClicks:rows.reduce((s,r)=>s+r.linkClicks,0),outboundClicks:rows.reduce((s,r)=>s+(r.outboundClicks||0),0),
   };
 }
 function emptyAgg(date=null,group=null){
-  return {date,group,spend:0,lp:0,purchases:0,checkouts:0,leads:0,linkClicks:0,revenue:0,impressions:0,reach:0};
+  return {date,group,spend:0,lp:0,purchases:0,checkouts:0,leads:0,linkClicks:0,outboundClicks:0,revenue:0,impressions:0,reach:0};
 }
 
 function calcMetrics(a){
@@ -1098,7 +1103,7 @@ function processRow(r){
     spend:parseAmt(r.amount_spent),lp:parseAmt(r['actions:landing_page_view']),
     purchases:parseAmt(r['actions:omni_purchase']),checkouts:parseAmt(r['actions:initiate_checkout']),
     leads:parseAmt(r['actions:lead']),
-    linkClicks:parseAmt(r['actions:link_click']),revenue:parseAmt(r['action_values:omni_purchase']),
+    linkClicks:parseAmt(r['actions:link_click']),outboundClicks:parseAmt(r['actions:outbound_click']),revenue:parseAmt(r['action_values:omni_purchase']),
     impressions:parseNum(r.impressions),reach:parseNum(r.reach),
   };
 }
@@ -1146,7 +1151,7 @@ function getSegmentRows(seg,source='daily'){
   return(source==='daily'?dailyCampaigns:aggregateCampaigns).filter(r=>r.segment===seg);
 }
 function spendOnlyRow(row){
-  return{...row,lp:0,purchases:0,checkouts:0,leads:0,linkClicks:0,revenue:0,impressions:0,reach:0};
+  return{...row,lp:0,purchases:0,checkouts:0,leads:0,linkClicks:0,outboundClicks:0,revenue:0,impressions:0,reach:0};
 }
 const TAB_KEYS=['czsk','czsk-triage','czsk-promo','czsk-leadgen','us'];
 const tabGrain=Object.fromEntries(TAB_KEYS.map(tab=>[tab,'day']));
@@ -1244,7 +1249,7 @@ function byPromoGroup(rows){
     const key=promoPresentationKey(r);
     const d=map[key]||(map[key]=emptyAgg(null,key));
     d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
-    d.linkClicks+=r.linkClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach=d.reach===null||r.reach===null?null:d.reach+(r.reach||0);
+    d.linkClicks+=r.linkClicks;d.outboundClicks+=(r.outboundClicks||0);d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach=d.reach===null||r.reach===null?null:d.reach+(r.reach||0);
   }
   return [...activePromoGroups().map(g=>map[g.key]),...(map['wl-ghost']&&!wlGhostVisible?[map['wl-ghost']]:[])];
 }
@@ -1261,7 +1266,7 @@ function byDateGroupFiltered(rows,selectedIds){
     if(!map[mapKey])map[mapKey]=emptyAgg(r.date,key);
     const d=map[mapKey];
     d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
-    d.linkClicks+=r.linkClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach=d.reach===null||r.reach===null?null:d.reach+(r.reach||0);
+    d.linkClicks+=r.linkClicks;d.outboundClicks+=(r.outboundClicks||0);d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach=d.reach===null||r.reach===null?null:d.reach+(r.reach||0);
   }
   return Object.values(map).sort((a,b)=>a.date===b.date?activePromoGroups().findIndex(g=>g.key===a.group)-activePromoGroups().findIndex(g=>g.key===b.group):a.date<b.date?-1:1);
 }
@@ -1270,10 +1275,10 @@ function byDate(rows,selectedIds){
   const map={};
   for(const r of filtered){
     if(!r.date)continue;
-    if(!map[r.date])map[r.date]={date:r.date,spend:0,lp:0,purchases:0,checkouts:0,leads:0,linkClicks:0,revenue:0,impressions:0,reach:0};
+    if(!map[r.date])map[r.date]={date:r.date,spend:0,lp:0,purchases:0,checkouts:0,leads:0,linkClicks:0,outboundClicks:0,revenue:0,impressions:0,reach:0};
     const d=map[r.date];
     d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
-    d.linkClicks+=r.linkClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
+    d.linkClicks+=r.linkClicks;d.outboundClicks+=(r.outboundClicks||0);d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
   }
   return Object.values(map).sort((a,b)=>a.date<b.date?-1:1);
 }
@@ -1290,10 +1295,10 @@ function byPeriod(rows,selectedIds,grain='day'){
   const map={};
   for(const r of daily){
     const key=grain==='week'?startOfWeek(r.date):monthKey(r.date);
-    if(!map[key])map[key]={date:key,spend:0,lp:0,purchases:0,checkouts:0,leads:0,linkClicks:0,revenue:0,impressions:0,reach:0};
+    if(!map[key])map[key]={date:key,spend:0,lp:0,purchases:0,checkouts:0,leads:0,linkClicks:0,outboundClicks:0,revenue:0,impressions:0,reach:0};
     const d=map[key];
     d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
-    d.linkClicks+=r.linkClicks;d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
+    d.linkClicks+=r.linkClicks;d.outboundClicks+=(r.outboundClicks||0);d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
   }
   return Object.values(map).sort((a,b)=>a.date<b.date?-1:1);
 }
@@ -1622,7 +1627,7 @@ function refreshPromoCharts(){
 
 function addToAgg(target,row){
   target.spend+=row.spend;target.lp+=row.lp;target.purchases+=row.purchases;target.checkouts+=row.checkouts;target.leads+=row.leads;
-  target.linkClicks+=row.linkClicks;target.revenue+=row.revenue;target.impressions+=row.impressions;target.reach+=row.reach||0;
+  target.linkClicks+=row.linkClicks;target.outboundClicks+=(row.outboundClicks||0);target.revenue+=row.revenue;target.impressions+=row.impressions;target.reach+=row.reach||0;
 }
 function byLeadgenGroup(rows){
   const map={};
@@ -1877,7 +1882,7 @@ function sumPromoRows(rows,date=null,group=null){
   const total=emptyAgg(date,group);
   for(const r of rows){
     total.spend+=r.spend;total.lp+=r.lp;total.purchases+=r.purchases;total.checkouts+=r.checkouts;total.leads+=r.leads;
-    total.linkClicks+=r.linkClicks;total.revenue+=r.revenue;total.impressions+=r.impressions;total.reach=total.reach===null||r.reach===null?null:total.reach+(r.reach||0);
+    total.linkClicks+=r.linkClicks;total.outboundClicks+=(r.outboundClicks||0);total.revenue+=r.revenue;total.impressions+=r.impressions;total.reach=total.reach===null||r.reach===null?null:total.reach+(r.reach||0);
   }
   return total;
 }
@@ -2021,8 +2026,8 @@ function renderTrendsTable(){
   if(!allDates.length){container.innerHTML='<div class="empty">No data.</div>';return;}
   if(grids['trends']){try{grids['trends'].destroy();}catch(e){}}
   const data=allDates.map(date=>{
-    const c=czskMap[date]||{spend:0,lp:0,purchases:0,checkouts:0,linkClicks:0,revenue:0,impressions:0};
-    const u=usMap[date]||{spend:0,lp:0,purchases:0,checkouts:0,linkClicks:0,revenue:0,impressions:0};
+    const c=czskMap[date]||{spend:0,lp:0,purchases:0,checkouts:0,linkClicks:0,outboundClicks:0,revenue:0,impressions:0};
+    const u=usMap[date]||{spend:0,lp:0,purchases:0,checkouts:0,linkClicks:0,outboundClicks:0,revenue:0,impressions:0};
     const cm=calcMetrics(c);const um=calcMetrics(u);
     return[date,c.spend,c.revenue,cm.roas,c.purchases,cm.cpa,u.spend,u.revenue,um.roas,u.purchases,um.cpa];
   });

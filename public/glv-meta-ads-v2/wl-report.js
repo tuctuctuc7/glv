@@ -17,7 +17,11 @@
   const adText=text(ad),adMatches=creators.filter(c=>token(adText,text(c)));
   if(adMatches.length>1)return {creator:null,source:'ad',status:'ambiguous'};
   const prefix=adText.match(/^(kristyna|actionkate|befit_over40)_pac[0-9]+_(\S.*)$/);
-  if(prefix)return {creator:creators.find(c=>text(c)===prefix[1]),source:'ad',status:'resolved'};
+  if(prefix){
+   const creator=creators.find(c=>text(c)===prefix[1]);
+   const conflicts=[['campaign',campaign],['adset',adset]].map(([source,name])=>({source,name:String(name||''),creators:creators.filter(c=>token(text(name),text(c)))})).filter(parent=>parent.creators.some(c=>c!==creator));
+   return {creator,source:'ad',status:'resolved',...(conflicts.length?{conflicts}:{})};
+  }
   const campaignMatches=creators.filter(c=>token(text(campaign),text(c)));
   const matches=campaignMatches.length?campaignMatches:creators.filter(c=>token(text(adset),text(c)));
   return {creator:matches.length===1?matches[0]:null,source:campaignMatches.length?'campaign':'adset',status:matches.length===1?'resolved':matches.length?'ambiguous':'missing'};
@@ -38,12 +42,16 @@
   }
   return d;
  }
+ function creatorConflictNotice(campaign,adset,ad,resolution=resolveCreator(campaign,adset,ad)){
+  if(!resolution.conflicts?.length)return '';
+  return `${campaign||'(unnamed campaign)'}${adset?' / '+adset:''} / ${ad} — ad creator ${resolution.creator} retained; conflicting ${resolution.conflicts.map(p=>`${p.source} "${p.name}" labels ${p.creators.join(', ')}`).join('; ')}. Check and correct parent creator labels to match the intended ad grouping.`;
+ }
  function normalize(raw){
   return raw.filter(r=>validPartnership(r.partnership)&&r.partnership.status==='verified_positive').map(r=>{
    const name=String(r.campaign_name||''),resolution=resolveCreator(name,r.adset_name,r.name),a=asset(r.name);
    const us=token(text(name),'us'),cz=token(text(name),'cz')||token(text(name),'czsk');
    const market=r.account_id==='1021777267558882'?'US':us&&cz?null:us?'US':cz?'CZSK':/^wl_befit_over40(?:_|$)/i.test(name)?'CZSK':null;
-   return {accountId:r.account_id,id:r.id,campaignId:r.campaign_id,campaign:name,creator:resolution.creator,adset:String(r.adset_name||''),adName:String(r.name||''),creatorStatus:resolution.status,
+   return {accountId:r.account_id,id:r.id,campaignId:r.campaign_id,campaign:name,creator:resolution.creator,adset:String(r.adset_name||''),adName:String(r.name||''),creatorStatus:resolution.status,creatorNotice:creatorConflictNotice(name,r.adset_name,r.name,resolution),
     market,
     label:a.label,pac:a.pac,actual:number(r.amount_spent),revenue:number(r['action_values:omni_purchase']),purchases:number(r['actions:omni_purchase'])};
   });
@@ -66,12 +74,12 @@
   const markets=group(r=>JSON.stringify([identity(r),r.market])).sort((a,b)=>creators.indexOf(a.creator)-creators.indexOf(b.creator)||String(a.market).localeCompare(String(b.market)));
   const creativeRows=group(r=>JSON.stringify([r.accountId,identity(r),r.market,r.label]));
   const creatives=Object.fromEntries([...creators,null].map(c=>[c,creativeRows.filter(r=>r.creator===c).sort((a,b)=>(b.actual??-Infinity)-(a.actual??-Infinity)||a.label.localeCompare(b.label))]));
-  return {rows,overview,unresolvedOverview,markets,creatives,total:sum(rows),issues:[...new Set(rows.filter(r=>!r.creator||!r.market).map(r=>`${r.campaign}${r.adset?' / '+r.adset:''}${!r.creator?' / '+r.adName+' — '+r.creatorStatus:''}`))]};
+  return {rows,overview,unresolvedOverview,markets,creatives,total:sum(rows),issues:[...new Set([...rows.filter(r=>!r.creator||!r.market).map(r=>`${r.campaign}${r.adset?' / '+r.adset:''}${!r.creator?' / '+r.adName+' — '+r.creatorStatus:''}`),...rows.map(r=>r.creatorNotice).filter(Boolean)])]};
  }
  function lastMonth(now=new Date()){
   const parts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'Europe/Prague',year:'numeric',month:'numeric'}).formatToParts(now).map(p=>[p.type,p.value]));
   const year=Number(parts.year),month=Number(parts.month)-1;
   return {since:new Date(Date.UTC(year,month-1,1)).toISOString().slice(0,10),until:new Date(Date.UTC(year,month,0)).toISOString().slice(0,10)};
  }
- return {normalize,report,asset,creators,lastMonth,resolveCreator,validPartnership,verification};
+ return {normalize,report,asset,creators,lastMonth,resolveCreator,creatorConflictNotice,validPartnership,verification};
 });
