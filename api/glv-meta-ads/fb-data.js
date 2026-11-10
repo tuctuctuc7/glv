@@ -68,12 +68,12 @@ function cachedPayloadUsable(type, payload) {
   if (!payload || payload.creator_version !== 2 || !Array.isArray(payload.rows)) return false;
   if (type === 'ads') return payload.wl_version === 3 && payload.rows.every(row => typeof row.adset_name === 'string' && typeof row.adset_id === 'string' && validPartnership(row.partnership));
   if (type !== 'aggregate' && type !== 'daily') return true;
-  if (payload.rows.some(needsAdsets) && payload.creator_reconciliation_version !== 1) return false;
+  if (payload.rows.some(needsAdsets) && (payload.creator_reconciliation_version !== 1 || payload.creator_ad_version !== 1)) return false;
   return payload.rows.every(row => {
     if (needsAdsets(row) && (!Array.isArray(row.creator_rows) || (!row.creator_rows.length && !row.creator_issue))) return false;
     // Legacy failed reconciliation discarded its children: require a new read.
     if (row.creator_issue?.includes('do not reconcile')) return false;
-    if (row.creator_rows?.some(child => child.is_ghost===true ? !validCreatorGhost(child) : typeof child.adset_name !== 'string' || !child.adset_id)) return false;
+    if (row.creator_rows?.some(child => child.is_ghost===true ? !validCreatorGhost(child) : typeof child.adset_name !== 'string' || !child.adset_id || !child.ad_id || typeof child.ad_name !== 'string')) return false;
     if (!Object.prototype.hasOwnProperty.call(row, 'reach')) return false;
     if (typeof row.reach !== 'number' && typeof row.reach !== 'string') return false;
     if (typeof row.reach === 'string' && row.reach.trim() === '') return false;
@@ -245,13 +245,13 @@ module.exports = async (req, res) => {
       const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&limit=500&${auth}`;
       const rows = await campaignFacts(url,paginate,normalizeCampaign);
-      res.json({ rows, creator_version:2, creator_reconciliation_version:1, ...provenance() });
+      res.json({ rows, creator_version:2, creator_reconciliation_version:1, creator_ad_version:1, ...provenance() });
 
     } else if (type === 'daily') {
       const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&time_increment=1&limit=500&${auth}`;
       const rows = await campaignFacts(url,paginate,normalizeCampaign);
-      res.json({ rows, creator_version:2, creator_reconciliation_version:1, ...provenance() });
+      res.json({ rows, creator_version:2, creator_reconciliation_version:1, creator_ad_version:1, ...provenance() });
 
     } else if (type === 'ads') {
       const fields = 'ad_id,ad_name,campaign_id,campaign_name,adset_id,adset_name,spend,impressions,actions,action_values,video_p100_watched_actions,video_thruplay_watched_actions';

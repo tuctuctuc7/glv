@@ -32,7 +32,8 @@ function payload(q,raw=false,overrideRange=null){
  const range=overrideRange|| (q.has('time_range')?JSON.parse(q.get('time_range')):type==='promo_formats'?{since:'2026-03-01',until:dates.commonCutoff()}:dates.rangeFor(q.get('date_preset')));
  if(type==='promo_formats')return {schema_version:1,classification_version:2,funnel_version:1,reconciled:true,generated_at:stamp,range,account_filter:account,report_currency:currency,rows:account==='TGLV'?[]:[{ad_id:'359758259164738:promo',ad_name:'SYNTHETIC CC001 PAC001 Video',adset_id:'359758259164738:s',adset_name:'Video',campaign_id:'359758259164738:1',campaign_name:'TUC_001_CZSK_Promo_SYNTHETIC',date:range.until,format:'Video',reason:'synthetic_fixture',spend:currency==='USD'?100:2500,revenue:currency==='USD'?300:7500,purchases:10,impressions:1000,link_clicks:100,landing_page_views:80,checkouts:20}]};
  const accounts=dates.ACCOUNTS.map((a,i)=>({...a,rows:(i?['TGLV_001_US_SYNTHETIC','AS | PPE | US']:['TUC_001_CZSK_Promo_SYNTHETIC','TUC_002_US_WL_Kristyna_SYNTHETIC','TUC_003_CZSK_Leads_SYNTHETIC']).map((name,j)=>({id:String(j+1),name:type==='ads'?'SYNTHETIC PAC001 V1':name,...(type==='ads'?{campaign_id:String(j+1),campaign_name:name,adset_id:'s'+j,adset_name:'Kristyna',partnership:{status:'verified_positive',reason:'sponsor_metadata',evidence:['facebook_branded_content.sponsor_page_id']}}:{}),date_start:range.until,date_stop:range.until,amount_spent:i?100:2500,'action_values:omni_purchase':i?300:7500,impressions:1000,reach:500,'actions:link_click':100,'actions:landing_page_view':80,'actions:omni_purchase':10,'actions:initiate_checkout':20,'actions:lead':j===2?5:0,video_thruplay_watched_actions:50,video_3_sec_watched_actions:100})),reach:[]}));
- const snapshot={schema_version:1,complete:true,type,range,generated_at:stamp,accounts,fx:{[range.until]:{date:range.until,czk_per_usd:25,provider:'SYNTHETIC QA ONLY'}}};
+ if(type!=='ads')for(const account of accounts)account.rows=require('../lib/glv-wl-creators.cjs').attachCreatorFacts(account.rows,account.rows.filter(r=>r.name.includes('_WL')).map(r=>({...r,ad_id:'creator-'+r.id,ad_name:'Kristyna_PAC419_v6-9',adset_id:'AS13',adset_name:'AS13_Purchase_Videos_WL_KPI'})));
+ const snapshot={schema_version:1,creator_ad_version:1,complete:true,type,range,generated_at:stamp,accounts,fx:{[range.until]:{date:range.until,czk_per_usd:25,provider:'SYNTHETIC QA ONLY'}}};
  return raw?snapshot:renderSnapshot(snapshot,currency,account);
 }
 const app=http.createServer(async(req,res)=>{
@@ -78,6 +79,7 @@ async function run(){
    for(const currency of ['USD','CZK']){
     if(await page.locator('#v2-currency').inputValue()!==currency){await page.locator('[data-tab="wl"]').click();await page.locator('#v2-currency').selectOption(currency);await page.waitForURL(u=>u.searchParams.get('currency')===currency);await ready();assert.equal(await page.locator('[data-tab="wl"]').getAttribute('aria-selected'),'true');await page.waitForFunction(()=>document.querySelector('#wl-status')?.textContent.includes('Source refreshed'),{},{timeout:5000});}
     for(const tab of ['czsk','us','czsk-triage','czsk-promo','czsk-promo-creative','czsk-leadgen','wl']){
+     if(process.env.GLV_QA_TRACE)console.log({width,theme,currency,tab});
      await page.locator(`[data-tab="${tab}"]`).click();
      if(tab==='wl')await page.waitForFunction(()=>document.querySelector('#wl-status')?.textContent.includes('Source refreshed'));
      assert.equal(await page.locator('#panel-'+tab).isVisible(),true);

@@ -3,7 +3,7 @@
   // Route-local adapter of GLV's existing hover/focus/tap disclosure system.
   // Inventory every section heading; move only methodology, never alerts.
   const titles = [...document.querySelectorAll('.panel .section-title, .panel .triage-preset')];
-  const wlDefinition = 'WL grouping keeps campaign-name phase precedence: _Promo first, then _WL or the leading WL_befit_over40 marker, otherwise BAU. Across MAD, creator is resolved from the campaign name first; only when absent is the ad-set name used. Multiple matches at the chosen level are ambiguous. No ad-name or PAC guessing. Unresolved names stay in totals and trigger an actionable warning; a requested Promo split falls back to combined WL until resolved. Mixed campaigns use reconciled ad-set facts, never duplicated campaign totals. Unsplit views keep campaign reach; creator-split frequency uses summed matching ad-set reach (not deduplicated people across ad sets), so it is not comparable to combined campaign frequency. Ratios use summed inputs within selected dates and filters.';
+  const wlDefinition = 'WL grouping keeps campaign-name phase precedence: _Promo first, then _WL or the leading WL_befit_over40 marker, otherwise BAU. A supported explicit creator_PAC_variant ad-name prefix takes precedence. During migration, legacy ads retain campaign-first then ad-set-name fallback. Multiple matches at the chosen level are ambiguous. No bare PAC inference. Unresolved names stay in totals and trigger an actionable warning; a requested Promo split falls back to combined WL until resolved. Mixed campaigns and ad sets use individual ad facts, never duplicated parent totals. Unsplit views keep campaign reach; creator-split reach and frequency are unavailable because reach is not additive. Ratios use summed inputs within selected dates and filters.';
   const descriptions = {
     'Filters': 'These campaign and grain controls apply only to this tab. Table-level campaign controls narrow their own table further.',
     'Daily Performance Chart': 'Uses the dashboard dates and this tab’s campaign filters. Select metrics and daily, weekly or monthly grain. Ratios are recalculated from aggregated inputs.',
@@ -104,6 +104,33 @@
     panel.addEventListener('pointerenter',()=>clearTimeout(timer));
     new MutationObserver(()=>{if(active===item)position();}).observe(panel,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['hidden']});
   }
+  // One delegated popup survives KPI/table/legend rerenders without orphan panels.
+  const ghostPanel=document.createElement('div');
+  ghostPanel.id='creator-ghost-info';ghostPanel.className='section-info-panel';ghostPanel.hidden=true;
+  ghostPanel.setAttribute('role','dialog');ghostPanel.setAttribute('aria-label','About Ghost / unattributed creator');ghostPanel.tabIndex=0;
+  ghostPanel.innerHTML='<strong>Ghost / unattributed creator</strong><p>The signed difference between campaign totals and available ad-level facts (legacy ad-set facts) remains unattributed while Meta reconciliation is pending. Negative values are reconciliation adjustments, not observed creator performance. Campaign totals are retained and real creator facts are unchanged; no creator is inferred. Ghost appears only in the WL creator breakdown when residual metrics remain in the selected scope.</p>';
+  document.body.append(ghostPanel);
+  const ghostItems=new WeakMap();
+  const ghostItem=target=>{
+    const button=target.closest('[data-creator-ghost-info]');if(!button)return null;
+    if(!ghostItems.has(button))ghostItems.set(button,{button,panel:ghostPanel,pinned:false});
+    return ghostItems.get(button);
+  };
+  let ghostWasPinned=false;
+  document.addEventListener('pointerdown',event=>{const item=ghostItem(event.target);ghostWasPinned=Boolean(item&&active===item&&item.pinned);});
+  document.addEventListener('focusin',event=>{const item=ghostItem(event.target);if(item&&!suppressFocus){item.pinned=false;open(item);}});
+  document.addEventListener('click',event=>{
+    const item=ghostItem(event.target);if(!item)return;
+    event.stopPropagation();
+    if(active===item&&(ghostWasPinned||(event.detail===0&&item.pinned))){item.pinned=false;close();}
+    else{item.pinned=true;open(item);}ghostWasPinned=false;
+  });
+  document.addEventListener('pointerover',event=>{const item=ghostItem(event.target);if(item&&event.pointerType!=='touch'&&matchMedia('(hover:hover)').matches){if(active!==item){item.pinned=false;open(item);}else clearTimeout(timer);}});
+  document.addEventListener('pointerout',event=>{const item=ghostItem(event.target);if(item)deferClose(item);});
+  document.addEventListener('focusout',()=>setTimeout(()=>{if(active?.panel===ghostPanel&&document.activeElement!==active.button&&!ghostPanel.contains(document.activeElement))close();},0));
+  ghostPanel.addEventListener('pointerenter',()=>clearTimeout(timer));
+  ghostPanel.addEventListener('pointerleave',()=>{if(active?.panel===ghostPanel)deferClose(active);});
+  new MutationObserver(()=>{if(active?.panel===ghostPanel&&!active.button.isConnected)close();}).observe(document.querySelector('#panel-czsk-promo'),{childList:true,subtree:true});
   document.addEventListener('pointerdown',event=>{if(active && !active.button.contains(event.target) && !active.panel.contains(event.target))close();});
   document.addEventListener('keydown',event=>{if(event.key==='Escape' && active){event.preventDefault();close(true);}});
   window.addEventListener('resize',position);

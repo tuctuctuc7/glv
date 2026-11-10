@@ -189,7 +189,7 @@ async function writeVerifiedCache(fetcher,key,payload) {
 }
 function creatorIssues(rows) {
   const {resolveCreator}=require('../../public/glv-meta-ads/wl-report.js');
-  return [...new Set(rows.flatMap(r=>r.creator_rows?.length?r.creator_rows:[r]).filter(r=>/(?:^|_)WL(?:_|$)/.test(r.campaign_name||r.name)&&!resolveCreator(r.campaign_name||r.name,r.adset_name).creator).map(r=>`${r.campaign_name||r.name}${r.adset_name?' / '+r.adset_name:''}${r.creator_issue?' — '+r.creator_issue:''}`))];
+  return [...new Set(rows.flatMap(r=>r.creator_rows?.length?r.creator_rows:[r]).filter(r=>/(?:^|_)WL(?:_|$)/.test(r.campaign_name||r.name)&&!r.is_ghost&&(r.creator_issue||!resolveCreator(r.campaign_name||r.name,r.adset_name,r.ad_name||(r.campaign_name?r.name:undefined)).creator)).map(r=>`${r.campaign_name||r.name}${r.adset_name?' / '+r.adset_name:''}${r.ad_name?' / '+r.ad_name:''}${r.creator_issue?' — '+r.creator_issue:''}`))];
 }
 async function fetchAndCache(token, preset, includeToday, fetcher) {
   const { since, until } = monthRange(preset, includeToday);
@@ -199,7 +199,7 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
   const stats = { preset, since, until };
   async function publish(type,rows,extra={}){
     const key=`glv:${type}:${preset}`,generated_at=new Date().toISOString();
-    const cache_sha256=await writeVerifiedCache(fetcher,key,{rows,creator_version:2,...(type==='aggregate'||type==='daily'?{creator_reconciliation_version:1}:{}),range:{since,until},generated_at,...extra});
+    const cache_sha256=await writeVerifiedCache(fetcher,key,{rows,creator_version:2,...(type==='aggregate'||type==='daily'?{creator_reconciliation_version:1,creator_ad_version:1}:{}),range:{since,until},generated_at,...extra});
     const partnership=type==='ads'?require('../../public/glv-meta-ads/wl-report.js').verification(rows):null;
     if(partnership)delete partnership.naming;
     stats[type]={cache_sha256,...(partnership?{wl_version:3,partnership,eligible_ad_ids:rows.filter(r=>r.partnership.status==='verified_positive').map(r=>r.id),unverified_ad_ids:rows.filter(r=>r.partnership.status!=='verified_positive').map(r=>r.id)}:{}),...summarizeRows(rows),creator_version:2,creatorIssues:creatorIssues(rows),range:{since,until},generated_at,readback_verified:true};

@@ -9,13 +9,13 @@ function campaignRows(daily=false){
  const dates=daily?['2026-10-10','2026-10-11']:[null];
  return dates.flatMap(date=>{
   const parent={id:'35',name:'GLV_035_CZ_WL',date_start:date,date_stop:date,...fact(30,150)};
-  const kids=[{...parent,adset_id:'k',adset_name:'Set_Kristyna',...fact(10,80)},{...parent,adset_id:'a',adset_name:invalid?'Unknown_<svg onload=window.__globalXss=1>':'Set_ActionKate',...fact(20,100)}];
+  const kids=ads().map(r=>({...r,id:r.campaign_id,name:r.campaign_name,ad_id:r.id,ad_name:r.name,date_start:date,date_stop:date}));
   return attachCreatorFacts([parent,{...parent,id:'36',name:'GLV_036_CZ_WL_Kristyna',...fact(40,190)}],kids);
  });
 }
 function ads(){return [
- {id:'ak',campaign_id:'35',campaign_name:'GLV_035_CZ_WL',adset_id:'a',adset_name:invalid?'Unknown_<svg onload=window.__globalXss=1>':'Set_ActionKate',name:'PAC462',...fact(20,100)},
- {id:'kr',campaign_id:'35',campaign_name:'GLV_035_CZ_WL',adset_id:'k',adset_name:'Set_Kristyna',name:'PAC419',...fact(10,80)},
+ {id:'ak',campaign_id:'35',campaign_name:'GLV_035_CZ_WL',adset_id:'AS13',adset_name:invalid?'Unknown_<svg onload=window.__globalXss=1>':'AS13_Purchase_Videos_WL_KPI',name:invalid?'PAC462':'ActionKate_PAC462_V2',...fact(20,100)},
+ {id:'kr',campaign_id:'35',campaign_name:'GLV_035_CZ_WL',adset_id:'AS13',adset_name:'AS13_Purchase_Videos_WL_KPI',name:'Kristyna_PAC419_v6-9',...fact(10,80)},
  {id:'precedence',campaign_id:'36',campaign_name:'GLV_036_CZ_WL_Kristyna',adset_id:'conflict',adset_name:'Set_ActionKate',name:'PAC462',...fact(40,190)}
  ].map(r=>({...r,partnership:{status:'verified_positive',reason:'sponsor_metadata',evidence:['instagram_branded_content.sponsor_id']}}));}
 const root=path.resolve(__dirname,'../public');

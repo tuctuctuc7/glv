@@ -20,7 +20,7 @@ test('live and cron preserve campaign totals when optional adset pagination fail
    if(primaryFailure)throw new Error('primary source failed');
    return {ok:true,json:async()=>({data:[{campaign_id:'35',campaign_name:'GLV_035_CZ_WL',spend:'30',reach:'150',impressions:'300'}]})};
   }
-  if(level==='adset'){
+  if(level==='ad'&&u.searchParams.has('filtering')){
    if(u.searchParams.has('after'))throw new Error('secret-bearing-upstream-detail');
    return {ok:true,json:async()=>({data:[{campaign_id:'35',campaign_name:'GLV_035_CZ_WL',adset_id:'k',adset_name:'Set_Kristyna',spend:'10'}],paging:{next:url+'&after=next'}})};
   }

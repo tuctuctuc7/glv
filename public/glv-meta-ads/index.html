@@ -320,9 +320,9 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 <link rel="stylesheet" href="/glv-meta-ads/promo-concepts.css?v=concept-total-color-20261014">
 <script src="/glv-meta-ads/promo-format-ui.js?v=ghost-display-20261104"></script>
 <script src="/glv-meta-ads/session-cache.js?v=ghost-reconciliation-20261103"></script>
-<link rel="stylesheet" href="/glv-meta-ads/section-info.css?v=promo-creative-20260921">
+<link rel="stylesheet" href="/glv-meta-ads/section-info.css?v=creator-context-20261109">
 <link rel="stylesheet" href="/glv-meta-ads/wl-report.css?v=partnership-v3">
-<script src="/glv-meta-ads/wl-report.js?v=partnership-v3"></script>
+<script src="/glv-meta-ads/wl-report.js?v=ad-creator-migration-1"></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to dashboard content</a>
@@ -843,20 +843,19 @@ const isAdvert = n => n.toLowerCase().includes('advertorial');
 const isLeadGen = n => String(n||'').includes('_Lead');
 const promoGroupKey = name => String(name||'').includes('_Promo') ? 'promo' : (String(name||'').includes('_WL') || isBefitLaunch(name)) ? 'wl' : 'bau';
 // Raw campaign phases remain canonical; presentation is applied only after filtering.
-function wlCreatorKey(name,adset){
-  const creator=GlvWlReport.resolveCreator(name,adset).creator;
+function wlCreatorKey(name,adset,ad){
+  const creator=GlvWlReport.resolveCreator(name,adset,ad).creator;
   return {'Kristyna':'wl-kristyna','ActionKate':'wl-actionkate','befit_over40':'wl-befit-over40'}[creator]||null;
 }
 function creatorFacts(rows){
   return rows.flatMap(row=>row.creatorRows?.length?row.creatorRows.map(child=>({...child,date:row.date})): [row]);
 }
 function getWlNamingIssues(rows){
-  return [...new Set(creatorFacts(rows).filter(r=>!r.isGhost&&promoGroupKey(r.campaignName||r.name)==='wl'&&!wlCreatorKey(r.campaignName||r.name,r.adsetName)).map(r=>`${r.campaignName||r.name||'(unnamed campaign)'}${r.adsetName?' / '+r.adsetName:''}${r.creatorIssue?' — '+r.creatorIssue:''}`))];
+  return [...new Set(creatorFacts(rows).filter(r=>!r.isGhost&&promoGroupKey(r.campaignName||r.name)==='wl'&&(r.creatorIssue||!wlCreatorKey(r.campaignName||r.name,r.adsetName,r.adName))).map(r=>`${r.campaignName||r.name||'(unnamed campaign)'}${r.adsetName?' / '+r.adsetName:''}${r.adName?' / '+r.adName:''} — ${r.creatorIssue||GlvWlReport.resolveCreator(r.campaignName||r.name,r.adsetName,r.adName).status}`))];
 }
-function getWlReconciliationIssues(rows){
-  const totals=new Map();
-  for(const r of creatorFacts(rows).filter(r=>r.isGhost)){const key=r.id||r.name;const t=totals.get(key)||{name:r.name,spend:0,revenue:0};t.spend+=r.spend;t.revenue+=r.revenue;totals.set(key,t);}
-  return [...totals.values()].filter(PromoFormat.hasFinancialContribution).map(r=>`${r.name} — Ghost / unattributed creator; campaign totals retained, real creator facts unchanged.`);
+function hasCreatorResidual(row){
+  // Match the producer's floating-point tolerance; do not hide action-only facts.
+  return ['spend','revenue','purchases','impressions','linkClicks','lp','checkouts','leads'].some(key=>Number.isFinite(row[key])&&Math.abs(row[key])>1e-9);
 }
 function renderCreatorWarning(tab){
   const panel=document.getElementById('panel-'+tab);if(!panel)return;
@@ -866,9 +865,8 @@ function renderCreatorWarning(tab){
   const segments=tab==='us'?['us']:tab==='czsk-triage'&&triageMarket==='all'?['czsk','us']:[tab==='czsk-triage'?triageMarket:'czsk'];
   const ads=filterTabRows(tab,adCreatives.filter(r=>segments.includes(r.segment)));
   const issues=getWlNamingIssues([...rows,...ads]);
-  const residuals=getWlReconciliationIssues(rows);
-  warning.hidden=!issues.length&&!residuals.length;
-  warning.innerHTML=(issues.length?`<strong>Unresolved WL creator — check campaign name first, then ad-set name. No creator assumed; performance remains in totals.</strong><ul>${issues.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul>`:'')+(residuals.length?`<strong>Meta reconciliation pending — signed difference remains unattributed.</strong><ul>${residuals.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul>`:'');
+  warning.hidden=!issues.length;
+  warning.innerHTML=issues.length?`<strong>Unresolved WL creator — check explicit creator_PAC_variant ad name first; for legacy ads check campaign name first, then ad-set name. No creator assumed; performance remains in totals.</strong><ul>${issues.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul>`:'';
 }
 function validateWlBreakdown(){
   // Validate the selected KPI + daily scope once before rendering any Promo surface.
@@ -877,16 +875,16 @@ function validateWlBreakdown(){
   wlNamingIssues=getWlNamingIssues(creatorScope);
   // Decide visibility after aggregation at each displayed grain, not per source row.
   wlGhostVisible=true;
-  wlGhostVisible=[...byPromoGroup(getPromoKpiRows()),...byDateGroup(periodRows(getPromoDailyRows(),'czsk-promo'))].some(r=>r.group==='wl-ghost'&&PromoFormat.hasFinancialContribution(r));
+  wlGhostVisible=[...byPromoGroup(getPromoKpiRows()),...byDateGroup(periodRows(getPromoDailyRows(),'czsk-promo'))].some(r=>r.group==='wl-ghost'&&hasCreatorResidual(r));
   wlNamingIssues=getWlNamingIssues(creatorScope);
   const warning=document.getElementById('wl-naming-warning');
   warning.hidden=wlNamingIssues.length===0;
-  warning.innerHTML=warning.hidden?'':`<strong>WL naming validation: breakdown unavailable until the campaign name, or only when absent the ad-set name, identifies exactly one recognized creator (Kristyna, ActionKate or befit_over40).</strong> Combined WL totals shown. Affected campaigns / ad sets:<ul>${wlNamingIssues.map(name=>`<li>${escapeHtml(name)}</li>`).join('')}</ul>`;
+  warning.innerHTML=warning.hidden?'':`<strong>WL naming validation: breakdown unavailable until each ad has an explicit creator_PAC_variant name or its legacy campaign/ad-set fallback identifies exactly one recognized creator (Kristyna, ActionKate or befit_over40).</strong> Combined WL totals shown. Affected campaigns / ad sets:<ul>${wlNamingIssues.map(name=>`<li>${escapeHtml(name)}</li>`).join('')}</ul>`;
 }
 function promoPresentationKey(row){
   const phase=row.group||promoGroupKey(row.name);
   if(!wlBreakdownActive()||phase!=='wl')return phase;
-  return row.isGhost?'wl-ghost':wlCreatorKey(row.name,row.adsetName)||'wl';
+  return row.isGhost?'wl-ghost':wlCreatorKey(row.name,row.adsetName,row.adName)||'wl';
 }
 const promoGroup = key => [...PROMO_GROUPS,...WL_INFLUENCER_GROUPS,WL_GHOST_GROUP].find(g=>g.key===key)||PROMO_GROUPS[2];
 function setWlInfluencerBreakdown(enabled){
@@ -1105,7 +1103,7 @@ function processRow(r){
   };
 }
 function creatorMetadata(r,seg,date){
-  return {adsetName:r.adset_name||'',creator:GlvWlReport.resolveCreator(r.name,r.adset_name).creator,creatorIssue:r.creator_issue||'',creatorRows:(r.creator_rows||[]).map(c=>({id:r.id,name:r.name,adsetId:c.adset_id,adsetName:c.adset_name,segment:seg,group:campaignGroupKey(r.name,seg),date,...processRow(c),isGhost:c.is_ghost===true,reach:null}))};
+  return {adsetName:r.adset_name||'',creator:GlvWlReport.resolveCreator(r.name,r.adset_name).creator,creatorIssue:r.creator_issue||'',creatorRows:(r.creator_rows||[]).map(c=>({id:r.id,name:r.name,adsetId:c.adset_id,adsetName:c.adset_name,adId:c.ad_id,adName:c.ad_name,segment:seg,group:campaignGroupKey(r.name,seg),date,...processRow(c),isGhost:c.is_ghost===true,reach:null}))};
 }
 function processAggregateRows(rawRows){
   const out=[];
@@ -1139,7 +1137,7 @@ function processCreatives(rawRows){
     const campInfo=campaignMeta[r.campaign_id]||{};
     const isVideo=thruplay>0||v3sec>0;
     const campaignName=r.campaign_name||campInfo.name||'';
-    return{id:r.id,name:r.name,status:r.status,campaignId:r.campaign_id,campaignName,adsetName:r.adset_name||'',creator:GlvWlReport.resolveCreator(campaignName,r.adset_name).creator,campaignCode:campaignCode(campaignName),type:isVideo?'Video':'Static',
+    return{id:r.id,name:r.name,status:r.status,campaignId:r.campaign_id,campaignName,adName:r.name,adsetName:r.adset_name||'',creator:GlvWlReport.resolveCreator(campaignName,r.adset_name,r.name).creator,campaignCode:campaignCode(campaignName),type:isVideo?'Video':'Static',
       segment:campInfo.segment||null,spend,lp,purchases,checkouts,leads,linkClicks,revenue,impressions,isVideo,
       hookRate:impressions>0?v3sec/impressions*100:0,holdRate:impressions>0?thruplay/impressions*100:0};
   }).filter(c=>campaignMeta[c.campaignId]&&c.spend>0);
@@ -1332,12 +1330,12 @@ const fmtCreatorGhostMoney=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,
 function renderPromoKPIs(){
   validateWlBreakdown();
   if(renderSourceEmpty('kpi-czsk-promo',promoActiveDaysOnly?'daily':'aggregate'))return;
-  const rows=byPromoGroup(getPromoKpiRows()).filter(r=>r.group!=='wl-ghost'||PromoFormat.hasFinancialContribution(r));
+  const rows=byPromoGroup(getPromoKpiRows()).filter(r=>r.group!=='wl-ghost'||hasCreatorResidual(r));
   document.getElementById('kpi-czsk-promo').innerHTML=rows.map(a=>{
-    const m=calcMetrics(a);const g=promoGroup(a.group);
+    const m=calcMetrics(a);
     return`
       <div class="kpi-card">
-        <div class="kpi-label"><span class="group-badge ${g.className}">${g.label}</span></div>
+        <div class="kpi-label">${promoGroupHtml(a.group,true,a.group==='wl-ghost'?'Ghost':null)}</div>
         <div class="kpi-val">${a.group==='wl-ghost'?fmtCreatorGhostMoney(a.spend):fmtInt(a.spend)}</div>
         <div class="kpi-sub">Spend CZK</div>
         <div class="kpi-sub2">${fmtRoas(m.roas)} ROAS · ${a.group==='wl-ghost'?fmtCreatorGhostMoney(a.revenue):a.revenue>0?fmtInt(a.revenue):'—'} revenue</div>
@@ -1517,6 +1515,20 @@ function refreshTrendsChart(){
         y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{precision:wholeNumberTickPrecision(key),font:{size:11},callback:v=>formatChartTick(key,v)}}}}
   });
 }
+// Canvas legends cannot contain focusable information controls. Use sibling HTML
+// legend controls while Ghost is present, retaining chart visibility toggles.
+function renderCreatorLegend(canvas,groups,chart,mix=false){
+  document.getElementById(canvas.id+'-legend')?.remove();
+  if(!groups.some(g=>g.key==='wl-ghost'))return;
+  const legend=document.createElement('div');legend.id=canvas.id+'-legend';legend.className='creator-chart-legend';
+  legend.innerHTML=groups.map((g,i)=>`<span class="creator-legend-item"><button type="button" data-index="${i}" aria-pressed="true" style="--legend-color:${g.color}">${escapeHtml(g.label)}</button>${creatorGhostInfoHtml(g.key)}</span>`).join('');
+  canvas.parentElement.after(legend);
+  legend.querySelectorAll('[data-index]').forEach(button=>button.addEventListener('click',()=>{
+    const index=Number(button.dataset.index);
+    if(mix)chart.toggleDataVisibility(index);else chart.setDatasetVisibility(index,!chart.isDatasetVisible(index));
+    button.setAttribute('aria-pressed',String(mix?chart.getDataVisibility(index):chart.isDatasetVisible(index)));chart.update();
+  }));
+}
 function refreshPromoCharts(){
   const grain=tabGrain['czsk-promo'];
   const daily=byDateGroup(periodRows(getPromoDailyRows(),'czsk-promo'));
@@ -1547,16 +1559,17 @@ function refreshPromoCharts(){
       type:'line',
       data:{labels:dates.map(date=>fmtChartDate(date,grain)),datasets},
       options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-        plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
+        plugins:{legend:{display:!activePromoGroups().some(g=>g.key==='wl-ghost'),position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
           tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${formatChartVal(metricKey,ctx.raw)}`}}},
         scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
           y:{grid:{color:'rgba(0,0,0,.05)'},title:{display:true,text:metric.label},ticks:{precision:wholeNumberTickPrecision(metricKey),font:{size:11},callback:v=>formatChartTick(metricKey,v)}}}}
     });
+    renderCreatorLegend(canvas,activePromoGroups(),charts[chartKey]);
   };
   lineConfigs.forEach(makeLine);
   const totals=byPromoGroup(getPromoKpiRows());
   const pieMetricKey=document.getElementById('chart-metric-promo-pie')?.value||'spend';const pieMetric=metricDefinition(pieMetricKey);
-  const pieGroups=activePromoGroups().filter(g=>g.key!=='wl-ghost'||PromoFormat.hasFinancialContribution(totals.find(r=>r.group===g.key)||emptyAgg()));
+  const pieGroups=activePromoGroups().filter(g=>g.key!=='wl-ghost'||hasCreatorResidual(totals.find(r=>r.group===g.key)||emptyAgg()));
   const pieValues=pieGroups.map(group=>{const row=totals.find(item=>item.group===group.key)||emptyAgg(null,group.key);return computeChartMetric(pieMetricKey,row,calcMetrics(row));});
   const pieTotal=pieValues.reduce((sum,value)=>sum+value,0);
   const signedMix=pieValues.some(value=>value<0);
@@ -1598,11 +1611,12 @@ function refreshPromoCharts(){
       type:signedMix?'bar':'doughnut',
       data:{labels:pieGroups.map(g=>g.label),datasets:[{metricKey:pieMetricKey,label:pieMetric.label,data:pieValues,backgroundColor:pieGroups.map(g=>g.color),borderWidth:0}]},
       plugins:[percentLabelPlugin],
-      options:{responsive:true,maintainAspectRatio:false,...(signedMix?{scales:{y:{beginAtZero:true,ticks:{callback:v=>formatChartTick(pieMetricKey,v)}}}}:{cutout:'62%'}),plugins:{legend:{display:!signedMix,position:'bottom',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:ctx=>{
+      options:{responsive:true,maintainAspectRatio:false,...(signedMix?{scales:{y:{beginAtZero:true,ticks:{callback:v=>formatChartTick(pieMetricKey,v)}}}}:{cutout:'62%'}),plugins:{legend:{display:!signedMix&&!pieGroups.some(g=>g.key==='wl-ghost'),position:'bottom',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:ctx=>{
         const pct=pieTotal?ctx.raw/pieTotal*100:0;
         return`${ctx.label}: ${formatChartVal(pieMetricKey,ctx.raw)} (${pct.toFixed(1)}%)`;
       }}}}}
     });
+    renderCreatorLegend(pieCanvas,pieGroups,charts['promo-pie'],true);
   }
 }
 
@@ -1852,9 +1866,12 @@ function setLeadgenTableMode(mode){
   document.getElementById('leadgen-mode-days')?.classList.toggle('active',mode==='days');
   renderLeadgenTable();
 }
-function promoGroupHtml(key){
+function creatorGhostInfoHtml(key){
+  return key==='wl-ghost'?'<button type="button" class="section-info-button" data-creator-ghost-info aria-label="About Ghost / unattributed creator" aria-controls="creator-ghost-info" aria-expanded="false" aria-haspopup="dialog"><span aria-hidden="true">i</span></button>':'';
+}
+function promoGroupHtml(key,withInfo=true,label=null){
   const g=promoGroup(key);
-  return`<span class="group-badge ${g.className}">${escapeHtml(g.label)}</span>`;
+  return`<span class="group-badge ${g.className}">${escapeHtml(label||g.label)}</span>${withInfo?creatorGhostInfoHtml(key):''}`;
 }
 function sumPromoRows(rows,date=null,group=null){
   const total=emptyAgg(date,group);
@@ -1892,7 +1909,7 @@ function promoNestedRow(rowClass,firstHtml,secondHtml,d,parentGroup=''){
 function promoGroupToggleHtml(key){
   const group=promoGroup(key);const expanded=promoExpandedGroups.has(key);const action=expanded?'Collapse':'Expand';
   const periods={day:'days',week:'weeks',month:'months'}[tabGrain['czsk-promo']];
-  return`<button type="button" class="promo-group-toggle" id="promo-group-toggle-${escapeHtml(key)}" aria-expanded="${expanded}" aria-label="${action} ${escapeHtml(group.label)} ${periods}" onclick="togglePromoGroup('${key}')"><span class="promo-group-chevron" aria-hidden="true">${expanded?'▾':'▸'}</span>${promoGroupHtml(key)}</button>`;
+  return`<button type="button" class="promo-group-toggle" id="promo-group-toggle-${escapeHtml(key)}" aria-expanded="${expanded}" aria-label="${action} ${escapeHtml(group.label)} ${periods}" onclick="togglePromoGroup('${key}')"><span class="promo-group-chevron" aria-hidden="true">${expanded?'▾':'▸'}</span>${promoGroupHtml(key,false)}</button>${creatorGhostInfoHtml(key)}`;
 }
 function togglePromoPeriod(key){
   if(promoCollapsedPeriods.has(key))promoCollapsedPeriods.delete(key);else promoCollapsedPeriods.add(key);
@@ -1935,9 +1952,9 @@ function renderPromoTable(){
     : [grain==='day'?'Date':'Period','Group','Spend','Revenue','ROAS','Purchases','CPA','AOV','LP→Checkout','Checkout→Purchase','Checkouts','Cost/Checkout','LP Views','Cost/LP','CTR','LP→Purchase','CPM'];
   let body='';
   if(promoTableMode==='groups'){
-    const groups=sortPromoParents(activePromoGroups().map(g=>sumPromoRows(rows.filter(r=>r.group===g.key),null,g.key)).filter(g=>g.group==='wl-ghost'?PromoFormat.hasFinancialContribution(g):g.spend>0||g.revenue>0||g.purchases>0||g.checkouts>0||g.lp>0));
+    const groups=sortPromoParents(activePromoGroups().map(g=>sumPromoRows(rows.filter(r=>r.group===g.key),null,g.key)).filter(g=>g.group==='wl-ghost'?hasCreatorResidual(g):g.spend>0||g.revenue>0||g.purchases>0||g.checkouts>0||g.lp>0));
     for(const groupTotal of groups){
-      const groupRows=sortPromoChildren(rows.filter(r=>r.group===groupTotal.group&&(r.group!=='wl-ghost'||PromoFormat.hasFinancialContribution(r))));
+      const groupRows=sortPromoChildren(rows.filter(r=>r.group===groupTotal.group&&(r.group!=='wl-ghost'||hasCreatorResidual(r))));
       if(!groupRows.length)continue;
       body+=promoNestedRow('subtotal-row',promoGroupToggleHtml(groupTotal.group),'Subtotal',groupTotal);
       if(promoExpandedGroups.has(groupTotal.group))body+=groupRows.map(r=>promoNestedRow('child-row','',`<span class="nested-child">${escapeHtml(grain==='day'?r.date:fmtChartDate(r.date,grain))}</span>`,r,groupTotal.group)).join('');
@@ -1952,7 +1969,7 @@ function renderPromoTable(){
           : promoSortComparator(a,b);
       });
       body+=promoNestedRow('subtotal-row',promoPeriodToggleHtml(dateTotal.date),'Subtotal',dateTotal);
-      if(!promoCollapsedPeriods.has(`${grain}:${dateTotal.date}`))body+=dateRows.filter(r=>r.group!=='wl-ghost'||PromoFormat.hasFinancialContribution(r)).map(r=>promoNestedRow('child-row','',`<span class="nested-child">${promoGroupHtml(r.group)}</span>`,r)).join('');
+      if(!promoCollapsedPeriods.has(`${grain}:${dateTotal.date}`))body+=dateRows.filter(r=>r.group!=='wl-ghost'||hasCreatorResidual(r)).map(r=>promoNestedRow('child-row','',`<span class="nested-child">${promoGroupHtml(r.group)}</span>`,r)).join('');
     }
   }
   container.innerHTML=`<div class="data-table-wrap"><table class="data-table daily-data-table"><thead><tr>${columns.map(label=>`<th title="${escapeHtml(label)}">${escapeHtml(label)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
@@ -2210,7 +2227,7 @@ function formatUtcTimestamp(date){
 const root=document.documentElement;const themeToggle=document.getElementById('theme-toggle');const mobileControlsToggle=document.getElementById('mobile-controls-toggle');const headerRight=document.querySelector('.header-right');function setTheme(theme){root.dataset.theme=theme;try{localStorage.setItem('glv-meta-ads-theme',theme);}catch(e){}const light=theme==='light';themeToggle.textContent=light?'☾':'☀';themeToggle.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');Chart.defaults.color=light?'#637589':'#9bacc0';Chart.defaults.borderColor=light?'rgba(99,117,137,.18)':'rgba(155,172,192,.16)';Object.values(charts).forEach(chart=>chart?.update('none'));}let preferred='dark';try{preferred=localStorage.getItem('glv-meta-ads-theme')||'dark';}catch(e){}setTheme(preferred==='light'?'light':'dark');if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');}themeToggle.addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));mobileControlsToggle.addEventListener('click',()=>{const collapsed=headerRight.classList.toggle('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded',String(!collapsed));mobileControlsToggle.textContent=collapsed?'Filters':'Done';});
 initTabFilters();initTriageCards();initSelects();initSortControls();updateDateLabel();loadData();
 </script>
-<script src="/glv-meta-ads/section-info.js?v=ai-concepts-20261105"></script>
-<script src="/glv-meta-ads/wl-report-ui.js?v=partnership-v3"></script>
+<script src="/glv-meta-ads/section-info.js?v=ad-creator-migration-1"></script>
+<script src="/glv-meta-ads/wl-report-ui.js?v=ad-creator-migration-1"></script>
 </body>
 </html>

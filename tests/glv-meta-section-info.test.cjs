@@ -11,10 +11,10 @@ for (const title of ['Promo Period Split', 'Promo Group Charts', 'Promo Group Ta
   test(`${title} explains WL classification and scoped zero without inventing a diagnosis`, () => {
     const text = context.copy[title];
     for (const phrase of [
-      'campaign-name phase precedence', '_Promo first', 'campaign name first',
-      'only when absent is the ad-set name used', 'Multiple matches', 'No ad-name or PAC guessing',
-      'Unresolved names stay in totals', 'reconciled ad-set facts', 'Unsplit views keep campaign reach',
-      'summed matching ad-set reach', 'selected dates and filters',
+      'campaign-name phase precedence', '_Promo first', 'creator_PAC_variant ad-name prefix takes precedence',
+      'legacy ads retain campaign-first then ad-set-name fallback', 'Multiple matches', 'No bare PAC inference',
+      'Unresolved names stay in totals', 'individual ad facts', 'Unsplit views keep campaign reach',
+      'creator-split reach and frequency are unavailable', 'selected dates and filters',
     ]) assert.ok(text.includes(phrase), `${title}: ${phrase}`);
     assert.doesNotMatch(text, /whitelist|ActionKate has no|ActionKate had no/i);
   });

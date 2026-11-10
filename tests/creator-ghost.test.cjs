@@ -9,7 +9,7 @@ test('Ghost keeps naming resolution available, signed totals and explicit unattr
 test('wire Ghost survives normalizers and cache validation without claiming a creator or reach',()=>{
  const result=attachCreatorFacts([parent],[child])[0];
  const live=require('../api/glv-meta-ads/fb-data.js')._test;
- assert.equal(live.cachedPayloadUsable('aggregate',{creator_version:2,creator_reconciliation_version:1,rows:[result]}),true);
+ assert.equal(live.cachedPayloadUsable('aggregate',{creator_version:2,creator_reconciliation_version:1,creator_ad_version:1,rows:[result]}),true);
  const html=fs.readFileSync(require('node:path').join(__dirname,'../public/glv-meta-ads/index.html'),'utf8');
  const ctx=ui();vm.runInContext(`const campaignGroupKey=()=> 'wl';${html.slice(html.indexOf('function processRow('),html.indexOf('function processAggregateRows('))};var wire=${JSON.stringify(result)};`,ctx);
  const actual=vm.runInContext("creatorMetadata(wire,'czsk','2026-11-01')",ctx);assert.equal(actual.creatorRows[1].isGhost,true);assert.equal(actual.creatorRows[1].reach,null);assert.equal(actual.creatorRows[0].reach,null);
@@ -19,11 +19,32 @@ test('duplicate and malformed real inputs remain explicit validation failures, n
  const row=attachCreatorFacts([parent],children)[0];assert.deepEqual(row.creator_rows,[]);assert.match(row.creator_issue,/invalid|missing/);assert.equal(row.amount_spent,'30');
  }
 });
-test('global reconciliation notice distinguishes Ghost from naming and hides financial zero only',()=>{
- const ctx=ui(); const result=vm.runInContext(`(()=>{const ghost={name:'GLV_035_US_WL',isGhost:true,spend:-1,revenue:0};return {real:getWlReconciliationIssues([ghost]),zero:getWlReconciliationIssues([{...ghost,spend:0,purchases:3}]),naming:getWlNamingIssues([ghost]),ambiguous:getWlNamingIssues([{...ghost,isGhost:false,adsetName:'Set_Kristyna_ActionKate'}])};})()`,ctx);assert.equal(result.real.length,1);assert.match(result.real[0],/Ghost/);assert.equal(result.zero.length,0);assert.equal(result.naming.length,0);assert.equal(result.ambiguous.length,1);
+test('global warnings keep actionable exact names but never reconciliation information',()=>{
+ const ctx=ui(),warning={hidden:false,innerHTML:''};
+ Object.assign(ctx,{document:{getElementById:()=>({querySelector:()=>warning})},adCreatives:[],escapeHtml:s=>s,filterTabRows:(_tab,rows)=>rows,getTabBaseRows:()=>[
+ {name:'TUC_035_CZSK_CBO_Sales_WL',adsetName:'AS13_Purchase_Videos_WL_KPI'},
+ {name:'TUC_035_CZSK_CBO_Sales_WL',isGhost:true,spend:-10,revenue:-10}
+ ]});
+ vm.runInContext("renderCreatorWarning('czsk')",ctx);
+ assert.equal(warning.hidden,false);assert.match(warning.innerHTML,/TUC_035_CZSK_CBO_Sales_WL \/ AS13_Purchase_Videos_WL_KPI/);
+ assert.match(warning.innerHTML,/check campaign name first, then ad-set name/);
+ assert.doesNotMatch(warning.innerHTML,/Ghost|Meta reconciliation pending/);
+ ctx.getTabBaseRows=()=>[{name:'TUC_035_CZSK_CBO_Sales_WL',isGhost:true,spend:-10,revenue:-10}];
+ vm.runInContext("renderCreatorWarning('czsk')",ctx);assert.equal(warning.hidden,true);assert.equal(warning.innerHTML,'');
 });
-test('reconciliation notice aggregates before financial visibility',()=>{
- const ctx=ui();assert.equal(vm.runInContext("getWlReconciliationIssues([{name:'X',isGhost:true,spend:.003,revenue:0},{name:'X',isGhost:true,spend:.003,revenue:0}]).length",ctx),1);assert.equal(vm.runInContext("getWlReconciliationIssues([{name:'X',isGhost:true,spend:10,revenue:0},{name:'X',isGhost:true,spend:-10,revenue:0}]).length",ctx),0);
+test('creator visibility includes non-financial residuals only in a valid requested split',()=>{
+ const ctx=ui();Object.assign(ctx,{document:{getElementById:()=>({})},escapeHtml:s=>s,getPromoDailyRows:()=>[],periodRows:rows=>rows,byDateGroup:()=>[]});
+ for(const metric of ['spend','revenue','purchases','impressions','linkClicks','lp','checkouts','leads']){
+  vm.runInContext(`var facts=[{...emptyAgg(),name:'TUC_035_CZSK_WL',segment:'czsk',group:'wl',creatorRows:[{...emptyAgg(),name:'TUC_035_CZSK_WL',segment:'czsk',group:'wl',adsetName:'Set_Kristyna'},{...emptyAgg(),name:'TUC_035_CZSK_WL',segment:'czsk',group:'wl',isGhost:true,${metric}:-.003}]}];getPromoKpiRows=()=>facts;validateWlBreakdown();`,ctx);
+  assert.equal(vm.runInContext('wlGhostVisible',ctx),true,metric);
+ }
+ vm.runInContext('wlInfluencerBreakdown=false;validateWlBreakdown()',ctx);assert.equal(vm.runInContext('wlGhostVisible',ctx),false);
+});
+test('Ghost is not a naming issue and all-zero residuals stay hidden',()=>{
+ const ctx=ui();assert.equal(vm.runInContext("getWlNamingIssues([{name:'TUC_035_US_WL',isGhost:true}]).length",ctx),0);
+ assert.equal(vm.runInContext('hasCreatorResidual(emptyAgg())',ctx),false);
+ assert.equal(vm.runInContext('hasCreatorResidual({...emptyAgg(),spend:1e-12})',ctx),false);
+ assert.equal(vm.runInContext("getWlNamingIssues([{name:'TUC_035_US_WL',adsetName:'Set_Kristyna_ActionKate'}]).length",ctx),1);
 });
 test('unavailable creator reach cannot become a zero frequency proxy',()=>{const ctx=ui();assert.equal(vm.runInContext('calcMetrics({...emptyAgg(),reach:null,impressions:10}).frequency',ctx),null);assert.equal(vm.runInContext('aggregate([{...emptyAgg(),reach:null}]).reach',ctx),null);});
 test('fractional signed creator actions survive wire normalization',()=>{
@@ -36,7 +57,7 @@ test('old discarded-child cache is rejected rather than invented attribution',()
  assert.equal(live.cachedPayloadUsable('daily',{creator_version:2,rows:[{...parent,creator_rows:[],creator_issue:'Ad-set facts do not reconcile with campaign totals; refresh and check source naming.'}]}),false);
 });
 const parent={id:'35',name:'GLV_035_CZSK_WL',date_start:'2026-11-01',date_stop:'2026-11-01',amount_spent:'30',impressions:'300',reach:'150','action_values:omni_purchase':'90'};
-const child={...parent,adset_id:'k',adset_name:'Set_Kristyna',amount_spent:'40',impressions:'400',reach:'180','action_values:omni_purchase':'100'};
+const child={...parent,ad_id:'ad-k',ad_name:'Kristyna_PAC419_V1',adset_id:'k',adset_name:'Set_Kristyna',amount_spent:'40',impressions:'400',reach:'180','action_values:omni_purchase':'100'};
 test('signed creator residual retains real source facts and authoritative campaign totals',()=>{
  const result=attachCreatorFacts([parent],[child])[0];
  assert.equal(result.creator_rows.length,2);

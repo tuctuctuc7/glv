@@ -11,8 +11,13 @@
   const v=s.slice(p.index+p[0].length).match(/(?:^|[^a-z0-9])V[ _-]*(\d+)(?=$|[^a-z0-9])/i);
   return {pac:p[1],label:`PAC ${p[1]}${v?' V'+v[1]:''}`};
  }
- // One creator policy for every MAD consumer. Never inspect ad names/PACs.
- function resolveCreator(campaign,adset){
+ // Migration: a supported explicit ad prefix wins; legacy parents remain fallback.
+ // PAC numbers identify assets, never creators. Conflicting explicit ad labels fail closed.
+ function resolveCreator(campaign,adset,ad){
+  const adText=text(ad),adMatches=creators.filter(c=>token(adText,text(c)));
+  if(adMatches.length>1)return {creator:null,source:'ad',status:'ambiguous'};
+  const prefix=adText.match(/^(kristyna|actionkate|befit_over40)_pac[0-9]+_(\S.*)$/);
+  if(prefix)return {creator:creators.find(c=>text(c)===prefix[1]),source:'ad',status:'resolved'};
   const campaignMatches=creators.filter(c=>token(text(campaign),text(c)));
   const matches=campaignMatches.length?campaignMatches:creators.filter(c=>token(text(adset),text(c)));
   return {creator:matches.length===1?matches[0]:null,source:campaignMatches.length?'campaign':'adset',status:matches.length===1?'resolved':matches.length?'ambiguous':'missing'};
@@ -35,10 +40,10 @@
  }
  function normalize(raw){
   return raw.filter(r=>validPartnership(r.partnership)&&r.partnership.status==='verified_positive').map(r=>{
-   const name=String(r.campaign_name||''),resolution=resolveCreator(name,r.adset_name),a=asset(r.name);
+   const name=String(r.campaign_name||''),resolution=resolveCreator(name,r.adset_name,r.name),a=asset(r.name);
    const us=token(text(name),'us'),cz=token(text(name),'cz')||token(text(name),'czsk');
    const market=us&&cz?null:us?'US':cz?'CZSK':/^wl_befit_over40(?:_|$)/i.test(name)?'CZSK':null;
-   return {id:r.id,campaignId:r.campaign_id,campaign:name,creator:resolution.creator,adset:String(r.adset_name||''),creatorStatus:resolution.status,
+   return {id:r.id,campaignId:r.campaign_id,campaign:name,creator:resolution.creator,adset:String(r.adset_name||''),adName:String(r.name||''),creatorStatus:resolution.status,
     market,
     label:a.label,pac:a.pac,actual:number(r.amount_spent),revenue:number(r['action_values:omni_purchase']),purchases:number(r['actions:omni_purchase'])};
   });
@@ -61,7 +66,7 @@
   const markets=group(r=>JSON.stringify([identity(r),r.market])).sort((a,b)=>creators.indexOf(a.creator)-creators.indexOf(b.creator)||String(a.market).localeCompare(String(b.market)));
   const creativeRows=group(r=>JSON.stringify([identity(r),r.market,r.label]));
   const creatives=Object.fromEntries([...creators,null].map(c=>[c,creativeRows.filter(r=>r.creator===c).sort((a,b)=>(b.actual??-Infinity)-(a.actual??-Infinity)||a.label.localeCompare(b.label))]));
-  return {rows,overview,unresolvedOverview,markets,creatives,total:sum(rows),issues:[...new Set(rows.filter(r=>!r.creator||!r.market).map(r=>`${r.campaign}${r.adset?' / '+r.adset:''}`))]};
+  return {rows,overview,unresolvedOverview,markets,creatives,total:sum(rows),issues:[...new Set(rows.filter(r=>!r.creator||!r.market).map(r=>`${r.campaign}${r.adset?' / '+r.adset:''}${!r.creator?' / '+r.adName+' — '+r.creatorStatus:''}`))]};
  }
  function lastMonth(now=new Date()){
   const parts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'Europe/Prague',year:'numeric',month:'numeric'}).formatToParts(now).map(p=>[p.type,p.value]));

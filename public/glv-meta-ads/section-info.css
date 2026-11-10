@@ -1,3 +1,14 @@
+/* Contextual creator information stays beside labels, outside disclosure buttons. */
+#kpi-czsk-promo .kpi-label { display:flex; align-items:center; gap:3px; }
+#kpi-czsk-promo .kpi-label .group-badge { min-width:0; overflow-wrap:anywhere; white-space:normal; }
+#promo-table .section-info-button { vertical-align:middle; }
+.creator-chart-legend { display:flex; flex-wrap:wrap; justify-content:center; gap:4px 12px; margin-top:8px; }
+.creator-legend-item { display:inline-flex; align-items:center; max-width:100%; }
+.creator-legend-item > button[data-index] { display:inline-flex; align-items:center; gap:5px; background:none; border:0; color:var(--muted); font:inherit; font-size:11px; padding:4px 0; cursor:pointer; text-align:left; }
+.creator-legend-item > button[data-index]::before { content:''; width:12px; height:12px; flex:0 0 12px; background:var(--legend-color); }
+.creator-legend-item > button[aria-pressed="false"] { text-decoration:line-through; opacity:.6; }
+.creator-legend-item > button:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+@media(max-width:600px) { .creator-legend-item > button[data-index] { min-height:44px; } }
 .section-info-title { display: flex; align-items: center; gap: 3px; max-width: 100%; }
 .section-info-title + .panel-subtitle { display: block; }
 .section-info-title > .section-title { display: inline; min-width: 0; }
