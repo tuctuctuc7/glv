@@ -35,6 +35,33 @@ test('partial recovery reuses verified current-day pieces and retries only missi
  pulls=0;const recovered=await cache.refreshV2({...options,build:async opts=>{pulls++;return snapshot(opts);}});
  assert.equal(recovered.verified,true);assert.equal(pulls,1);assert.equal(recovered.summaries.filter(s=>s.reused).length,17);
 });
+test('widest campaign budgets grow, clamp to remaining time and leave ads continuation time',async()=>{
+ const originalNow=Date.now;let tick=+now;Date.now=()=>tick;
+ try{
+  for(const remaining of [230000,40001.75]){
+   const store=redisStore(),options=params(store);await cache.refreshV2(options);
+   for(const type of cache.TYPES)store.data.delete(cache.presetKey(type,'last_90d'));
+   const deadline=tick+remaining,calls=[];
+   const result=await cache.refreshV2({...options,deadline,build:async opts=>{
+    const budget=opts.deadline-tick;calls.push({type:opts.type,budget,started:tick,deadline:opts.deadline});
+    if(opts.type!=='ads'){tick=opts.deadline;throw Error('budget');}
+    return snapshot(opts);
+   }});
+   assert.deepEqual(calls.map(c=>c.type),['daily','aggregate','ads']);
+   for(const call of calls){
+    assert.ok(Number.isInteger(call.budget));assert.ok(call.budget>0);
+    assert.ok(call.deadline<=deadline-10000,'keep global publication reserve');
+    if(call.type!=='ads')assert.equal(call.budget,Math.floor(Math.min(90000,(deadline-call.started-10000)/2)));
+   }
+   if(remaining===230000)assert.ok(calls.slice(0,2).every(c=>c.budget>25000));
+   assert.equal(result.summaries.filter(s=>s.reused).length,15);
+   assert.equal(result.failures.filter(f=>f.reason==='budget').length,2);
+   const retried=[];
+   const recovered=await cache.refreshV2({...options,build:async opts=>{retried.push(opts.type);return snapshot(opts);}});
+   assert.equal(recovered.verified,true);assert.deepEqual(retried,['daily','aggregate']);
+  }
+ }finally{Date.now=originalNow;}
+});
 test('force failure before ads durably invalidates old pieces and normal recovery resumes once',async()=>{
  const store=redisStore(),options=params(store);await cache.refreshV2(options);
  const storage=require('../lib/glv-mad-v2-storage.cjs'),source=require('../lib/glv-mad-v2-source.cjs');
