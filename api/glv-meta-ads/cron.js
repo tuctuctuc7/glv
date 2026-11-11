@@ -3,7 +3,7 @@
 
 const { fetchPromoFormats, formatRange, sliceCachedFormats, refreshWindow, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
 const { validPayload } = require('../../public/glv-meta-ads/promo-format.js');
-const { campaignFacts } = require('../../lib/glv-wl-creators.cjs');
+const { campaignFacts,refillCreatorFacts,creatorFactsComplete,recoverCreatorFacts,creatorAttributionDiagnostics } = require('../../lib/glv-wl-creators.cjs');
 const {fetchAdMetadata} = require('../../lib/glv-partnership.cjs');
 const {scheduledRefresh,hash} = require('../../lib/glv-refresh-owner.cjs');
 const AD_ACCOUNT = '359758259164738';
@@ -197,7 +197,7 @@ async function fetchAndCache(token, preset, includeToday, fetcher, {fullHistory=
   const auth = `access_token=${token}`;
   const errors = [];
   const stats = { preset, since, until };
-  const history=require('../../lib/glv-history-v1.cjs'),pieces={};
+  const history=require('../../lib/glv-history-v1.cjs'),pieces={},pending={};
   try{if(!retained)await history.retain((...args)=>redisCommand(fetcher,...args),(key,value)=>writeVerifiedCache(fetcher,key,value),preset);}
   catch{return {errors:[`retention/${preset}: last-good retention unavailable`],stats};}
   async function publish(type,rows,extra={}){
@@ -208,7 +208,7 @@ async function fetchAndCache(token, preset, includeToday, fetcher, {fullHistory=
     pieces[type]=payload;
     const partnership=type==='ads'?require('../../public/glv-meta-ads/wl-report.js').verification(rows):null;
     if(partnership)delete partnership.naming;
-    stats[type]={cache_sha256,...(partnership?{wl_version:3,partnership,eligible_ad_ids:rows.filter(r=>r.partnership.status==='verified_positive').map(r=>r.id),unverified_ad_ids:rows.filter(r=>r.partnership.status!=='verified_positive').map(r=>r.id)}:{}),...summarizeRows(rows),creator_version:2,creatorIssues:creatorIssues(rows),range:{since,until},generated_at,readback_verified:true};
+    stats[type]={cache_sha256,...(partnership?{wl_version:3,partnership,eligible_ad_ids:rows.filter(r=>r.partnership.status==='verified_positive').map(r=>r.id),unverified_ad_ids:rows.filter(r=>r.partnership.status!=='verified_positive').map(r=>r.id)}:{}),...summarizeRows(rows),creator_version:2,creatorIssues:creatorIssues(rows),range:{since,until},generated_at,readback_verified:true,creator_complete:type==='ads'||creatorFactsComplete(rows),...(type!=='ads'?{creator_attribution:creatorAttributionDiagnostics(rows)}:{})};
   }
 
   // aggregate
@@ -216,7 +216,7 @@ async function fetchAndCache(token, preset, includeToday, fetcher, {fullHistory=
     const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&limit=500&${auth}`;
     const rows = await campaignFacts(url,u=>paginate(u,fetcher),r=>normalizeCampaign(require('../../lib/glv-mad-v2-source.cjs').validateCampaign(r,{since,until},true)));
-    await publish('aggregate',rows);
+    pending.aggregate={rows};
   } catch (e) {
     errors.push(`aggregate/${preset}: ${e.message}`);
   }
@@ -232,9 +232,18 @@ async function fetchAndCache(token, preset, includeToday, fetcher, {fullHistory=
     }
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&time_range=${encodeURIComponent(JSON.stringify(window))}&time_increment=1&limit=500&${auth}`;
     const fresh = await campaignFacts(url,u=>paginate(u,fetcher),r=>normalizeCampaign(require('../../lib/glv-mad-v2-source.cjs').validateCampaign(r,window)));
-    const rows=[...(window.since===since?[]:prior.rows.filter(r=>r.date_start>=since&&r.date_stop<window.since)),...fresh];
+    let retainedRows=window.since===since?[]:prior.rows.filter(r=>r.date_start>=since&&r.date_stop<window.since);
+    const missing=retainedRows.filter(r=>!creatorFactsComplete([r]));
+    if(missing.length){
+      const dates=missing.map(r=>r.date_start).sort(),repairRange={since:dates[0],until:dates[dates.length-1]};
+      const repairUrl=new URL(url);repairUrl.searchParams.set('time_range',JSON.stringify(repairRange));
+      const repaired=await refillCreatorFacts(missing,repairUrl.toString(),u=>paginate(u,fetcher),r=>normalizeCampaign(require('../../lib/glv-mad-v2-source.cjs').validateCampaign(r,repairRange)));
+      const byKey=new Map(repaired.map(r=>[`${r.id}:${r.date_start}`,creatorFactsComplete([r])?{...r,creator_source_generated_at:new Date().toISOString()}:r]));
+      retainedRows=retainedRows.map(r=>byKey.get(`${r.id}:${r.date_start}`)||r);
+    }
+    const rows=[...retainedRows,...fresh];
     const source_extractions=[...(window.since===since?[]:prior.source_extractions||[{range:prior.range,generated_at:prior.generated_at}]),{range:window,generated_at:new Date().toISOString()}];
-    await publish('daily',rows,{source_extractions,refresh_window:window});
+    pending.daily={rows,extra:{source_extractions,refresh_window:window}};
   } catch (e) {
     errors.push(`daily/${preset}: ${e.message}`);
   }
@@ -253,6 +262,17 @@ async function fetchAndCache(token, preset, includeToday, fetcher, {fullHistory=
     errors.push(`ads/${preset}: ${e.message}`);
   }
 
+  for(const type of ['aggregate','daily'])if(pending[type]){
+    try{
+      const rows=recoverCreatorFacts(pending[type].rows,pieces.ads,{since,until},type);
+      const complete=creatorFactsComplete(rows);
+      let prior;try{prior=JSON.parse((await redisCommand(fetcher,'GET',`glv:${type}:${preset}`)).result);}catch{}
+      // Keep an intact prior split at its real timestamp, never stamp old
+      // attribution as today's extraction or erase it after a transient failure.
+      if(!complete&&history.valid(type,prior)&&(creatorFactsComplete(prior.rows)||prior.rows.some(r=>r.creator_rows?.some(c=>!c.is_ghost))))throw Error('creator attribution incomplete; last-good retained');
+      await publish(type,rows,{...pending[type].extra,creator_complete:complete});
+    }catch(e){errors.push(`${type}/${preset}: ${e.message}`);}
+  }
   if(!errors.length){
     try{
       const manifest=await history.savePublished((key,value)=>writeVerifiedCache(fetcher,key,value),preset,pieces,async key=>JSON.parse((await redisCommand(fetcher,'GET',key)).result),(...args)=>redisCommand(fetcher,...args));
@@ -261,6 +281,7 @@ async function fetchAndCache(token, preset, includeToday, fetcher, {fullHistory=
       stats.publication_sha256=hash(bytes);stats.bundle_readback_verified=true;
     }catch{errors.push(`bundle/${preset}: publication failed; last-good retained`);}
   }
+  for(const type of ['aggregate','daily'])if(pieces[type]&&!creatorFactsComplete(pieces[type].rows))errors.push(`${type}/${preset}: creator attribution incomplete; scheduled recovery pending`);
   return { errors, stats };
 }
 
@@ -361,7 +382,7 @@ function verifyTabFreshness(summaries,includeToday=false,now=new Date()){
   // Historical selections stop at their own end, not an invented yesterday row.
   const byPreset=new Map(summaries.filter(s=>s.preset).map(s=>[s.preset,s]));
   const fresh=stamp=>{const age=now-Date.parse(stamp);return Number.isFinite(age)&&age>=-60000&&age<=90000000;};
-  const presetOK=(preset,types)=>byPreset.get(preset)?.bundle_readback_verified===true&&types.every(type=>{const source=byPreset.get(preset)?.[type],expected=monthRange(preset,includeToday,now);return source?.readback_verified===true&&source.range?.since===expected.since&&source.range?.until===expected.until&&fresh(source.generated_at);});
+  const presetOK=(preset,types)=>byPreset.get(preset)?.bundle_readback_verified===true&&types.every(type=>{const source=byPreset.get(preset)?.[type],expected=monthRange(preset,includeToday,now);return source?.readback_verified===true&&source.creator_complete!==false&&source.range?.since===expected.since&&source.range?.until===expected.until&&fresh(source.generated_at);});
   const tabs={};
   for(const tab of ['czsk','czsk-triage','czsk-promo','czsk-leadgen','us']){
     const types=['aggregate','daily',...(['czsk','us'].includes(tab)?['ads']:[])];

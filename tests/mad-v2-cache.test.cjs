@@ -13,6 +13,18 @@ function redisStore(){const data=new Map();return {data,redis:async(cmd,key,valu
 }};}
 function snapshot({type,range}){return {schema_version:1,complete:true,type,range,generated_at:now.toISOString(),fx,accounts:v2.ACCOUNTS.map(a=>({...a,rows:[],reach:[]}))};}
 function params(store){return {token:'synthetic',redis:store.redis,now,clock:()=>Number(now),loadFx:async()=>fx,build:async opts=>snapshot(opts),promoPayload:async()=>({schema_version:1,classification_version:2,funnel_version:1,reconciled:true,generated_at:now.toISOString(),range:{since:'2026-03-01',until:'2026-11-08'},rows:[]})};}
+test('V2 recovers same-day historical attribution from exact account daily ads in both currencies',async()=>{
+ const store=redisStore(),options=params(store),source=require('../lib/glv-mad-v2-source.cjs'),storage=require('../lib/glv-mad-v2-storage.cjs');let failAds=true;
+ const build=async opts=>{const s=snapshot(opts);s.creator_ad_version=1;s.fx=Object.fromEntries(Array.from({length:100},(_,i)=>{const date=v2.shift(v2.commonCutoff(now),-i);return [date,{date,czk_per_usd:25}];}));
+  for(const a of s.accounts){const base={date_start:opts.range.since,date_stop:opts.range.since,amount_spent:'30','action_values:omni_purchase':'90',impressions:'300',reach:'150'};
+   if(opts.type==='ads')a.rows=failAds?[]:['Kristyna_PAC419_V1','ActionKate_PAC462_V2'].map((name,i)=>({...base,id:String(i+1),name,campaign_id:'35',campaign_name:'TUC_035_CZSK_WL',adset_id:'13',adset_name:'Mixed',amount_spent:'15',impressions:'150'}));
+   else {a.rows=[{...base,id:'35',name:'TUC_035_CZSK_WL',creator_rows:[],creator_issue:'Ad-level creator facts unavailable; refresh to resolve creator attribution.'}];if(opts.type==='aggregate')a.reach=[[`${a.id}:35`,150]];}
+  }return s;};
+ const first=await cache.refreshV2({...options,build});assert.equal(first.verified,false,'available campaign data is not complete attribution');
+ failAds=false;for(const p of cache.PRESETS)store.data.delete(cache.presetKey('ads',p));
+ const recovered=await cache.refreshV2({...options,build});assert.equal(recovered.verified,true,JSON.stringify(recovered.errors));
+ for(const p of cache.PRESETS)for(const type of ['daily','aggregate']){const s=storage.decode(store.data.get(cache.presetKey(type,p)));for(const currency of ['USD','CZK']){const rendered=source.renderSnapshot(s,currency);assert.ok(rendered.rows.every(r=>r.creator_rows.filter(c=>!c.is_ghost).length===2&&!r.creator_issue));}}
+});
 test('V2 publishes every isolated durable preset and Promo with exact readback and repeated replacement',async()=>{
  const store=redisStore(),options=params(store);
  const first=await cache.refreshV2(options),bytes=[...store.data];

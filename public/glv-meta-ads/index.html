@@ -871,7 +871,7 @@ function renderCreatorWarning(tab){
   const unresolved=getWlNamingIssues([...rows,...ads]);
   const issues=[...unresolved,...getWlCreatorConflicts([...rows,...ads])];
   warning.hidden=!issues.length;
-  warning.innerHTML=issues.length?`<strong>${unresolved.length?'Unresolved WL creator — check explicit creator_PAC_variant ad name first; for legacy ads check campaign name first, then ad-set name. No creator assumed for unresolved rows; performance remains in totals.':'WL creator naming conflict — valid ad-name attribution retained. Check and correct conflicting parent labels.'}</strong><ul>${issues.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul>`:'';
+  warning.innerHTML=issues.length?`<strong>${rows.some(r=>r.creatorIssue)?'WL creator source unavailable — scheduled recovery pending. Campaign metrics remain available; missing source facts do not imply incorrect ad names.':unresolved.length?'Unresolved WL creator — check explicit creator_PAC_variant ad name first; for legacy ads check campaign name first, then ad-set name. No creator assumed for unresolved rows; performance remains in totals.':'WL creator naming conflict — valid ad-name attribution retained. Check and correct conflicting parent labels.'}</strong><ul>${issues.map(n=>`<li>${escapeHtml(n)}</li>`).join('')}</ul>`:'';
 }
 function validateWlBreakdown(){
   // Validate the selected KPI + daily scope once before rendering any Promo surface.
@@ -885,7 +885,7 @@ function validateWlBreakdown(){
   const warning=document.getElementById('wl-naming-warning');
   const conflicts=getWlCreatorConflicts(creatorScope);
   warning.hidden=wlNamingIssues.length===0&&conflicts.length===0;
-  warning.innerHTML=warning.hidden?'':`<strong>${wlNamingIssues.length?'WL naming validation: breakdown unavailable until each ad has an explicit creator_PAC_variant name or its legacy campaign/ad-set fallback identifies exactly one recognized creator (Kristyna, ActionKate or befit_over40). Combined WL totals shown.':'WL creator naming conflict — valid ad-name attribution retained. Check and correct conflicting parent labels.'}</strong><ul>${[...wlNamingIssues,...conflicts].map(name=>`<li>${escapeHtml(name)}</li>`).join('')}</ul>`;
+  warning.innerHTML=warning.hidden?'':`<strong>${creatorScope.some(r=>r.creatorIssue)?'WL creator source unavailable — scheduled recovery pending. Combined WL totals shown; missing source facts do not imply incorrect ad names.':wlNamingIssues.length?'WL naming validation: breakdown unavailable until each ad has an explicit creator_PAC_variant name or its legacy campaign/ad-set fallback identifies exactly one recognized creator (Kristyna, ActionKate or befit_over40). Combined WL totals shown.':'WL creator naming conflict — valid ad-name attribution retained. Check and correct conflicting parent labels.'}</strong><ul>${[...wlNamingIssues,...conflicts].map(name=>`<li>${escapeHtml(name)}</li>`).join('')}</ul>`;
 }
 function promoPresentationKey(row){
   const phase=row.group||promoGroupKey(row.name);

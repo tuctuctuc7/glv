@@ -13,6 +13,11 @@ test('same owner retries failed day, then skips only exact verified cache and re
  assert.equal((await run()).skipped,'already_verified');assert.equal(h.pulls,2);
  h.store.delete('cache');await run();assert.equal(h.pulls,3);
 });
+test('old success receipt cannot skip attribution-completeness migration',async()=>{
+ const h=harness();h.heal();const args={redis:h.redis,refresh:h.refresh,keys:['cache'],through:'2026-11-03'};
+ await scheduledRefresh(args);const old=JSON.parse(h.store.get(STATE_KEY));delete old.creator_completeness_version;h.store.set(STATE_KEY,JSON.stringify(old));
+ await scheduledRefresh(args);assert.equal(h.pulls,2);assert.equal((await scheduledRefresh(args)).skipped,'already_verified');
+});
 test('overlapping invocations cannot pull twice; old owner never removes successor lease',async()=>{
  const h=harness();let finish;const first=scheduledRefresh({redis:h.redis,keys:['cache'],through:'2026-11-03',refresh:()=>new Promise(resolve=>{finish=resolve})});
  await new Promise(resolve=>setImmediate(resolve));

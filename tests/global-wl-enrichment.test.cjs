@@ -33,7 +33,7 @@ test('live and cron preserve campaign totals when optional adset pagination fail
   global.fetch=fetcher;
   for(const type of ['aggregate','daily']){const result=await run(type);assert.equal(result.status,200);check(result.body);}
   const refreshed=await cron._test.fetchAndCache('synthetic','last_month',false,fetcher);
-  assert.deepEqual(refreshed.errors,[]);
+  assert.ok(refreshed.errors.some(e=>e.includes('creator attribution incomplete')));
   for(const type of ['aggregate','daily']){check(JSON.parse(cache.get(`glv:${type}:last_month`)));assert.equal(refreshed.stats[type].readback_verified,true);assert.match(refreshed.stats[type].creatorIssues.join(' '),/GLV_035_CZ_WL.*unavailable/i);}
   primaryFailure=true;
   assert.equal((await run('aggregate')).status,500,'primary source failure must not be hidden');
