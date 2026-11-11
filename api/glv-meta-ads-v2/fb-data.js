@@ -23,15 +23,20 @@ async function handler(req,res){
  }catch{return res.status(400).json({error:'Invalid V2 scope; select completed dates, USD/CZK and All/TUC/TGLV'});}
  try{
   if(!require('../../lib/glv-mad-v2.cjs').rolloutEnabled())return res.status(503).json({complete:false,error:'V2 rollout is disabled'});
+  const names=require('../../lib/glv-campaign-metadata.cjs');
+  let bundleHasFacts=false;
+  const readNames=async snapshot=>(bundleHasFacts||snapshot?.accounts?.some(a=>a.rows?.length)||snapshot?.payload?.rows?.length)?names.read(readCache):null;
   let cached;
   if(!promo&&!time_range){
    const {readPublished,readLegacy}=require('../../lib/glv-mad-v2-cache.cjs');
    const bundle=await readPublished(readCache,date_preset)||await readLegacy(readCache,date_preset);
    cached=bundle?.[type];
+   bundleHasFacts=Object.values(bundle||{}).some(s=>s.accounts?.some(a=>a.rows?.length));
   }else cached=await readCache(promo?PROMO_KEY:cacheKey(type,range));
   if(cached){
    try{
-    const result=promo?renderPromo(cached,currency,account):renderSnapshot(cached,currency,account);
+    const campaignMetadata=await readNames(cached);
+    const result=promo?renderPromo(cached,currency,account,new Date(),campaignMetadata):renderSnapshot(cached,currency,account,campaignMetadata);
     const state=cacheState(cached,{type:promo?null:type,range,promoPayload:promo});
     res.setHeader('X-Cache',state.stale?'STALE':'HIT');
     return res.json({...result,...state,...(state.stale?{warning:'Last-good snapshot; shared refresh has not verified requested coverage.'}:{})});
@@ -42,7 +47,8 @@ async function handler(req,res){
   const token=process.env.GLV_MAD_V2_FB_ACCESS_TOKEN||process.env.GLV_META_FB_ACCESS_TOKEN||process.env.AGENTHIC_META_ACCESS_TOKEN||process.env.FB_ACCESS_TOKEN;
   if(!token)return res.status(503).json({error:'V2 Meta source is not configured'});
   const snapshot=await buildSnapshot({range,type,token});
-  res.setHeader('X-Cache','MISS');return res.json(renderSnapshot(snapshot,currency,account));
+  const campaignMetadata=await readNames(snapshot);
+  res.setHeader('X-Cache','MISS');return res.json(renderSnapshot(snapshot,currency,account,campaignMetadata));
  }catch{return res.status(502).json({complete:false,error:'Both account sources and official daily FX must be available. No partial account totals are shown.'});}
 }
 module.exports=handler;

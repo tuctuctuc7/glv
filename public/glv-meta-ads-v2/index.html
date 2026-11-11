@@ -4,7 +4,7 @@
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('glv-mad-v2-theme')==='light'?'light':'dark';}catch{}</script>
 <script src="/glv-meta-ads-v2/dates.js"></script>
 <script src="/glv-meta-ads-v2/freshness.js?v=history-continuity-20261111"></script>
-<script src="/glv-meta-ads-v2/config.js"></script>
+<script src="/glv-meta-ads-v2/config.js?v=parity-controls-20261111"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>GLV Meta Ads Pulse</title>
@@ -2292,9 +2292,9 @@ function formatUtcTimestamp(date){
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth()+1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())} UTC`;
 }
 const root=document.documentElement;const themeToggle=document.getElementById('theme-toggle');const mobileControlsToggle=document.getElementById('mobile-controls-toggle');const headerRight=document.querySelector('.header-right');function setTheme(theme){root.dataset.theme=theme;try{localStorage.setItem('glv-mad-v2-theme',theme);}catch(e){}const light=theme==='light';themeToggle.textContent=light?'☾':'☀';themeToggle.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');Chart.defaults.color=light?'#646674':'#b2b5c4';Chart.defaults.borderColor=light?'rgba(100,102,116,.18)':'rgba(178,181,196,.16)';Object.values(charts).forEach(chart=>chart?.update('none'));}let preferred='dark';try{preferred=localStorage.getItem('glv-mad-v2-theme')||'dark';}catch(e){}setTheme(preferred==='light'?'light':'dark');if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');}themeToggle.addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));mobileControlsToggle.addEventListener('click',()=>{const collapsed=headerRight.classList.toggle('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded',String(!collapsed));mobileControlsToggle.textContent=collapsed?'Filters':'Done';});
-initV2Controls();initTabFilters();initTriageCards();initSelects();initSortControls();updateDateLabel();loadData();
+initV2Controls();initTabFilters();initTriageCards();initSelects();initSortControls();restoreV2ControlElements();updateDateLabel();loadData();
 </script>
 <script src="/glv-meta-ads/section-info.js?v=ad-creator-migration-1"></script>
-<script src="/glv-meta-ads-v2/wl-report-ui.js?v=history-continuity-20261111"></script>
+<script src="/glv-meta-ads-v2/wl-report-ui.js?v=parity-controls-20261111"></script>
 </body>
 </html>
