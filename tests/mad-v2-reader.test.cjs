@@ -6,12 +6,12 @@ test('preset/history misses make zero Meta pulls; stale coverage is explicit; fu
  process.env.GLV_MAD_V2_ENABLED='1';process.env.GLV_META_BETA_AUTH_TOKEN='synthetic-auth';process.env.KV_REST_API_URL='https://redis.test';process.env.KV_REST_API_TOKEN='synthetic';
  delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
  let payload=null,calls=0;
- global.fetch=async url=>{assert.ok(String(url).startsWith('https://redis.test/'));calls++;return {ok:true,json:async()=>({result:payload&&JSON.stringify(payload)})};};
+ global.fetch=async url=>{assert.ok(String(url).startsWith('https://redis.test/'));calls++;const type=decodeURIComponent(String(url)).match(/:preset:(daily|aggregate|ads):/)?.[1];return {ok:true,json:async()=>({result:type&&payload?JSON.stringify({...payload,type}):null})};};
  const read=async type=>{const res=response();await handler({method:'GET',headers:{cookie:'glv_meta_beta=synthetic-auth'},query:{type}},res);return res;};
  try{
   for(const type of ['daily','aggregate','ads','promo_formats','promo_concepts'])assert.equal((await read(type)).code,503);
-  assert.equal(calls,5);
-  payload={schema_version:1,complete:true,type:'daily',generated_at:new Date(Date.now()-100000000).toISOString(),range:{since:'2026-01-01',until:'2026-01-02'},fx:{},accounts:v2.ACCOUNTS.map(a=>({...a,rows:[]}))};
+  assert.equal(calls,17);
+  payload={schema_version:1,complete:true,type:'daily',generation_id:'synthetic-coherent-generation',generated_at:new Date(Date.now()-100000000).toISOString(),range:{since:'2026-01-01',until:'2026-01-02'},fx:{},accounts:v2.ACCOUNTS.map(a=>({...a,rows:[]}))};
   const res=await read('daily');assert.equal(res.code,200);assert.equal(res.body.stale,true);assert.equal(res.body.coverage_complete,false);assert.equal(res.headers['X-Cache'],'STALE');
   payload.generated_at='2099-01-01T00:00:00Z';assert.equal((await read('daily')).code,503);
  }finally{global.fetch=originalFetch;for(const key of Object.keys(process.env))if(!(key in saved))delete process.env[key];Object.assign(process.env,saved);}

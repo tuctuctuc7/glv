@@ -11,7 +11,7 @@ function harness(){
  node('wl-date').value='last_month';
  class Clock extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}}
  const window={GlvWlReport:model,addEventListener:(name,fn)=>events[name]=fn};
- vm.runInNewContext(fs.readFileSync(require.resolve('../public/glv-meta-ads/wl-report-ui.js'),'utf8'),{
+ vm.runInNewContext(fs.readFileSync(require.resolve('../public/glv-meta-ads-v2/freshness.js'),'utf8')+'\n'+fs.readFileSync(require.resolve('../public/glv-meta-ads/wl-report-ui.js'),'utf8'),{
   window,document:{getElementById:node,visibilityState:'visible',addEventListener:(name,fn)=>events[name]=fn},
   Date:Clock,Intl,AbortController,URLSearchParams,setTimeout,clearTimeout,setInterval:fn=>events.interval=fn,
   fetch:async()=>{calls++;return {ok:true,json:async()=>({wl_version:3,rows:[],range:model.lastMonth(new Date(now)),generated_at:generated})};}
@@ -26,8 +26,14 @@ test('same Prague day reuse expires by source age, not browser load time',async(
  assert.equal(h.calls,2,'focus must refetch a source older than 25h on the same Prague day');
  await h.load();assert.equal(h.calls,2);
 });
-test('expired, future and invalid response timestamps never render results',async()=>{
- for(const stamp of ['2026-11-01T06:59:59Z','2026-11-02T08:00:01Z','invalid',null]){
+test('expired valid history renders with its source and explicit stale disclosure',async()=>{
+ const h=harness();h.stamp('2026-11-01T06:59:59Z');await h.load();
+ assert.match(h.node('wl-status').textContent,/Source refreshed/);
+ assert.match(h.node('wl-status').textContent,/Stale last-good.*actual range 2026-10-01 → 2026-10-31.*2026-11-01T06:59:59Z/);
+ await h.load();assert.equal(h.calls,2,'stale available history does not suppress recovery');
+});
+test('future and invalid response timestamps never render results',async()=>{
+ for(const stamp of ['2026-11-02T08:00:01Z','invalid',null]){
   const h=harness();h.stamp(stamp);await h.load();
   assert.match(h.node('wl-status').innerHTML,/WL data unavailable/,String(stamp));
   assert.equal(h.node('wl-results').innerHTML,'');

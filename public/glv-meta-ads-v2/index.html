@@ -3,7 +3,7 @@
 <head>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('glv-mad-v2-theme')==='light'?'light':'dark';}catch{}</script>
 <script src="/glv-meta-ads-v2/dates.js"></script>
-<script src="/glv-meta-ads-v2/freshness.js?v=scope-integrity-1"></script>
+<script src="/glv-meta-ads-v2/freshness.js?v=history-continuity-20261111"></script>
 <script src="/glv-meta-ads-v2/config.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -2116,7 +2116,7 @@ function apiUrl(type,scope=requestScope()){
 }
 async function apiFetch(type,scope=requestScope()){
   const url=apiUrl(type,scope),history=type==='promo_formats'||type==='promo_concepts';
-  const expected={range:history?{since:'2026-03-01',until:MadV2Dates.commonCutoff()}:scope.expectedRange||scope.customRange||MadV2Dates.rangeFor(scope.datePreset),currency:reportCurrency,account:reportAccount,history};
+  const expected={range:history?{since:'2026-03-01',until:MadV2Dates.commonCutoff()}:scope.expectedRange||scope.customRange||MadV2Dates.rangeFor(scope.datePreset),currency:reportCurrency,account:reportAccount,history,available:!scope.customRange&&scope.datePreset!=='last_month'};
   const result=await responseCache.get(url,async()=>{
     const r=await fetch(url,{cache:'no-store'});const json=await r.json();
     if(!r.ok)throw new Error(json.error||`HTTP ${r.status}`);
@@ -2140,7 +2140,16 @@ function mainSourceLabel(results){
   return (stale?'Stale last-good · ':'Source ')+oldest+' · actual range '+ranges;
 }
 function setStatus(msg){const el=document.getElementById('loading-msg');if(el)el.textContent=msg;}
-let loadSequence=0,renderedScope='',sourceErrors={},requestedDay='',lastGoodLabel='';
+let loadSequence=0,renderedScope='',sourceErrors={},requestedDay='',lastGoodLabel='',lastGoodSources=null,lastGoodSelection='';
+function historyExpected(scope){return {range:scope.expectedRange||scope.customRange||MadV2Dates.rangeFor(scope.datePreset),currency:reportCurrency,account:reportAccount,available:!scope.customRange&&scope.datePreset!=='last_month',custom:Boolean(scope.customRange)};}
+function historySelection(scope){return JSON.stringify([reportAccount,reportCurrency,scope.customRange||scope.datePreset]);}
+function showAvailableRange(range,requested){
+  updateDateLabel();
+  if(!MadV2Freshness.same(range,requested)){
+    document.getElementById('date-btn-range').textContent='Available '+range.since+' – '+range.until;
+    document.getElementById('date-btn').title='Requested '+MadV2Freshness.full(requested)+'; showing whole available range '+MadV2Freshness.full(range);
+  }else document.getElementById('date-btn').title='';
+}
 function scopeIdentity(scope){return JSON.stringify([reportAccount,reportCurrency,scope.expectedRange||scope.customRange||MadV2Dates.rangeFor(scope.datePreset)]);}
 function syncLoadingPanels(scopeKey){
   document.querySelectorAll('.panel').forEach(panel=>{
@@ -2155,6 +2164,16 @@ async function loadData({force=false}={}){
   const scope=requestScope(),scopeKey=scopeIdentity(scope);
   requestedDay=MadV2Dates.commonCutoff();
   loadEl.style.display='block';errEl.style.display='none';
+  // A calendar rollover is not a new user/account selection. Keep compatible
+  // history visible throughout the request, not only after a failed response.
+  if(lastGoodSources&&lastGoodSelection===historySelection(scope)){
+    try{
+      const expected=historyExpected(scope),sources=lastGoodSources.filter(Boolean).map(s=>({...s,requested_range:undefined}));
+      const state=MadV2Freshness.bundle(sources,expected);
+      renderedScope=scopeKey;showAvailableRange(state.range,expected.range);
+      if(state.warning){errEl.style.display='block';errEl.textContent=state.warning;}
+    }catch(incompatible){/* A different/disjoint scope must remain hidden. */}
+  }
   syncLoadingPanels(scopeKey);
   document.getElementById('updated-at').textContent=renderedScope===scopeKey?lastGoodLabel:'Loading selected range…';
   setStatus(renderedScope===scopeKey?'Refreshing current view…':'Loading selected dates…');
@@ -2162,21 +2181,50 @@ async function loadData({force=false}={}){
     // History owns its own generation guard; neither it nor optional FX gates tabs.
     void loadPromoFormats();
     void loadPromoConcepts();
-    const [aggregate,daily,ads]=await Promise.allSettled([
-      apiFetch('aggregate',scope),apiFetch('daily',scope),apiFetch('ads',scope)
-    ]);
-    if(sequence!==loadSequence)return;
-    const results=[aggregate,daily,ads];
-    const rejected=results.filter(r=>r.status==='rejected');
-    if(rejected.length)throw new Error(rejected.map(r=>r.reason.message).join(' | '));
-    const freshness=MadV2Freshness.bundle(results.map(r=>r.value),{range:scope.expectedRange||scope.customRange||MadV2Dates.rangeFor(scope.datePreset),currency:reportCurrency,account:reportAccount,custom:Boolean(scope.customRange)});
-    sourceErrors={};
-    // Publish only after every successful response passed the bundle contract.
+    const expected=historyExpected(scope);
+    let results;
+    for(let attempt=0;attempt<2;attempt++){
+      results=await Promise.allSettled([
+        apiFetch('aggregate',scope),apiFetch('daily',scope),apiFetch('ads',scope)
+      ]);
+      if(sequence!==loadSequence)return;
+      // Independent reads may straddle an atomic publication switch. Discard
+      // the entire cached triplet, never splice generations or change scope.
+      const sources=results.filter(r=>r.status==='fulfilled').map(r=>r.value);
+      try{
+        if(sources.length>1)MadV2Freshness.bundle(sources,expected);
+        break;
+      }catch(error){
+        if(attempt!==0||!/^Mixed source (generations|ranges);/.test(error.message))throw error;
+        responseCache.clear();
+      }
+    }
+    const [aggregate,daily,ads]=results;
+    if(aggregate.status!=='fulfilled'||daily.status!=='fulfilled')throw new Error(results.filter(r=>r.status==='rejected').map(r=>r.reason.message).join(' | '));
+    const campaignSources=[aggregate.value,daily.value];
+    const freshness=MadV2Freshness.bundle(campaignSources,expected);
+    sourceErrors={};let usableAds=null;
+    try{
+      if(ads.status!=='fulfilled')throw ads.reason;
+      MadV2Freshness.bundle([...campaignSources,ads.value],expected);usableAds=ads.value;
+    }catch(error){
+      sourceErrors.ads='Creative source unavailable: '+error.message;
+      const prior=lastGoodSelection===historySelection(scope)&&lastGoodSources?.[2];
+      if(prior){try{
+        // Reuse only a provably identical publication, not merely overlapping dates.
+        const candidate={...prior,requested_range:undefined};
+        MadV2Freshness.bundle([...campaignSources,candidate],{...expected,custom:false});
+        usableAds=candidate;delete sourceErrors.ads;
+        freshness.warning+=' Creative refresh unavailable; compatible last-good creatives retained.';
+      }catch(incompatible){/* Do not join facts across generations. */}}
+    }
+    // Publish campaign facts independently, but never mix creative scopes/generations.
     campaignMeta={};
     aggregateCampaigns=processAggregateRows(aggregate.value.rows);
     dailyCampaigns=processDaily(daily.value.rows);
-    adCreatives=processCreatives(ads.value.rows);
-    const naming=[...new Set([aggregate,daily,ads].filter(r=>r.status==='fulfilled').flatMap(r=>r.value.warnings||[]))];
+    adCreatives=usableAds?processCreatives(usableAds.rows):[];
+    lastGoodSources=[...campaignSources,usableAds];lastGoodSelection=historySelection(scope);
+    const naming=[...new Set(results.filter(r=>r.status==='fulfilled').flatMap(r=>r.value.warnings||[]))];
     const warning=document.getElementById('v2-naming-warnings');warning.hidden=!naming.length;warning.textContent=naming.join(' · ');
     buildAllFilters();buildTriageFilters();
     ['czsk','us'].forEach(seg=>{renderKPIs(seg);refreshChart(seg);renderDailyTable(seg);renderCreatives(seg);});
@@ -2184,16 +2232,26 @@ async function loadData({force=false}={}){
     renderPromoKPIs();refreshPromoCharts();renderPromoTable();
     renderLeadgenKPIs();refreshLeadgenCharts();renderLeadgenTable();
     renderedScope=scopeKey;syncLoadingPanels(scopeKey);
-    lastGoodLabel=mainSourceLabel(results);
+    showAvailableRange(freshness.range,expected.range);
+    lastGoodLabel=(freshness.stale?'Stale last-good · ':'Source ')+campaignSources.map(s=>s.generated_at).sort()[0]+' · actual range '+MadV2Freshness.full(freshness.range);
     document.getElementById('updated-at').textContent=lastGoodLabel;
-    if(freshness.warning){errEl.style.display='block';errEl.textContent=freshness.warning;}
+    const notices=[freshness.warning,sourceErrors.ads].filter(Boolean);
+    errEl.style.display=notices.length?'block':'none';errEl.textContent=notices.join(' ');
   }catch(err){
     if(sequence!==loadSequence)return;
-    const sameScope=renderedScope===scopeKey;
+    let retained=false,notice='';
+    if(lastGoodSources&&lastGoodSelection===historySelection(scope)){
+      try{
+        const expected=historyExpected(scope);
+        const sources=lastGoodSources.filter(Boolean).map(s=>({...s,requested_range:undefined}));
+        const state=MadV2Freshness.bundle(sources,expected);
+        renderedScope=scopeKey;retained=true;showAvailableRange(state.range,expected.range);notice=state.warning;
+      }catch(incompatible){/* Prior account/currency/range remains hidden, never relabelled. */}
+    }
     syncLoadingPanels(scopeKey);
-    const status=sameScope?'Stale last-good retained for this scope · '+lastGoodLabel:'No results shown for the selected range. Prior scope retained but hidden.';
-    document.getElementById('updated-at').textContent=sameScope?status:'Selected range unavailable';
-    errEl.style.display='block';errEl.textContent=status+' Refresh unavailable: '+(err?.message||err);
+    const status=retained?'Stale last-good retained · '+lastGoodLabel:'No results shown for the selected range. Prior scope retained but hidden.';
+    document.getElementById('updated-at').textContent=retained?status:'Selected range unavailable';
+    errEl.style.display='block';errEl.textContent=[status,notice,'Refresh unavailable: '+(err?.message||err)].filter(Boolean).join(' ');
   }finally{
     if(sequence!==loadSequence)return;
     loadEl.style.display='none';
@@ -2237,6 +2295,6 @@ const root=document.documentElement;const themeToggle=document.getElementById('t
 initV2Controls();initTabFilters();initTriageCards();initSelects();initSortControls();updateDateLabel();loadData();
 </script>
 <script src="/glv-meta-ads/section-info.js?v=ad-creator-migration-1"></script>
-<script src="/glv-meta-ads-v2/wl-report-ui.js?v=ad-creator-migration-1"></script>
+<script src="/glv-meta-ads-v2/wl-report-ui.js?v=history-continuity-20261111"></script>
 </body>
 </html>

@@ -173,7 +173,7 @@ module.exports = async (req, res) => {
 
   const token = process.env.GLV_META_FB_ACCESS_TOKEN || process.env.FB_ACCESS_TOKEN;
   const redis = resolveRedisConfig();
-  if (!token || !redis) {
+  if (!redis) {
     return res.status(500).json({
       error: 'GLV Meta Ads API is not configured. Add FB_ACCESS_TOKEN plus KV_REST_API_URL and KV_REST_API_TOKEN to agenthic-lab.',
     });
@@ -226,14 +226,19 @@ module.exports = async (req, res) => {
 
   // Serve from cache for standard presets (no time_range = custom date)
   if (!time_range && CACHED_PRESETS.has(preset)) {
-    const cached = await redisGet(`glv:${type}:${preset}`);
-    if (cachedPayloadUsable(type, cached) && cacheFreshForRange(cached, range) && (!wl || wlCacheUsable(cached, wlRange))) {
-      res.setHeader('X-Cache', 'HIT');
-      return res.json(cached);
+    const history=require('../../lib/glv-history-v1.cjs');
+    let bundle;
+    try{bundle=await history.readPublished(redisGet,preset)||await history.readLegacy(redisGet,preset);}catch{return res.status(503).json({error:'Published cache unavailable; awaiting shared refresh.'});}
+    const cached=bundle?.[type];
+    if (history.valid(type,cached)) {
+      const state=history.state(cached,range);
+      res.setHeader('X-Cache',state.stale?'STALE':'HIT');
+      return res.json({...cached,...state,...(state.stale?{warning:'Last-good snapshot; shared refresh has not verified requested coverage.'}:{})});
     }
   }
 
   // Cache miss or custom range — hit Meta API live
+  if(!token)return res.status(503).json({error:'Meta source is not configured; no valid cached snapshot available.'});
   res.setHeader('X-Cache', 'MISS');
   const dateParam = range ? `time_range=${encodeURIComponent(JSON.stringify(range))}` : time_range
     ? `time_range=${encodeURIComponent(time_range)}`

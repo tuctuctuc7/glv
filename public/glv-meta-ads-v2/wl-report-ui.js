@@ -37,7 +37,8 @@
   const requested=scope(),key=JSON.stringify(requested);
   if(!force&&key===loadedKey&&loadedDay===today()&&fresh(stamp))return;
   const generation=++sequence;controller?.abort();controller=new AbortController();
-  loadedKey='';rows=[];el('results').innerHTML='';el('warning').hidden=true;
+  const retained=loadedKey===key;
+  if(!retained){loadedKey='';rows=[];el('results').innerHTML='';el('warning').hidden=true;}
   const valid=d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&Number.isFinite(Date.parse(d))&&new Date(d).toISOString().slice(0,10)===d;
   if(!valid(requested.since)||!valid(requested.until)||requested.since>requested.until){el('status').textContent='Choose a valid inclusive date range.';return;}
   el('status').textContent=`Loading WL · ${requested.since} – ${requested.until}…`;
@@ -48,17 +49,17 @@
    const response=await fetch('/api/glv-meta-ads-v2/fb-data?'+query,{cache:'no-store',signal:controller.signal});
    if(!response.ok)throw new Error('unavailable');const data=await response.json();
    if(generation!==sequence)return;
-   const freshness=MadV2Freshness.validate(data,{range:requested,currency:reportCurrency,account:reportAccount});
-   if(freshness.stale)throw new Error('stale');
-   if(data.wl_version!==3||!Array.isArray(data.rows)||data.range?.since!==requested.since||data.range?.until!==requested.until||!fresh(data.generated_at)||data.rows.some(r=>typeof r.campaign_name!=='string'||!r.campaign_name||!model.validPartnership(r.partnership)))throw new Error('incomplete');
+   const freshness=MadV2Freshness.validate(data,{range:requested,currency:reportCurrency,account:reportAccount,available:true});
+   if(data.wl_version!==3||!Array.isArray(data.rows)||data.range?.since!==requested.since||data.range?.until!==requested.until||data.rows.some(r=>typeof r.campaign_name!=='string'||!r.campaign_name||!model.validPartnership(r.partnership)))throw new Error('incomplete');
    verification=model.verification(data.rows);rows=model.normalize(data.rows);range=requested;stamp=data.generated_at;loadedKey=key;loadedDay=today();
    const previous=el('campaign').value;const options=new Map(rows.map(r=>[r.campaignId,r.campaign]));
    el('campaign').innerHTML='<option value="__all">All campaigns</option><option value="__none">None</option>'+[...options].map(([id,name])=>`<option value="${escape(id)}">${escape(name)}</option>`).join('');
    // A disappeared selection remains None, never silently expands to All.
    el('campaign').value=previous==='__all'||previous==='__none'||options.has(previous)?previous:'__none';
    el('status').textContent=`${range.since} – ${range.until} · Account-local dates · ${reportCurrency} · Source refreshed ${new Date(stamp).toLocaleString('en-GB',{timeZone:'Europe/Prague'})} Prague`;
+   if(freshness.warning)el('status').textContent+=' · '+freshness.warning;
    render();
-  }catch(error){if(generation!==sequence)return;el('status').innerHTML='WL data unavailable. No results are shown for this range. <button type="button" id="wl-retry">Retry</button>';el('retry').addEventListener('click',()=>load(true));}
+  }catch(error){if(generation!==sequence)return;el('status').innerHTML=(retained?'Stale last-good retained · actual range '+escape(range.since)+' → '+escape(range.until)+' · source '+escape(stamp)+'. Refresh unavailable. ':'WL data unavailable. No results are shown for this range. ')+'<button type="button" id="wl-retry">Retry</button>';el('retry').addEventListener('click',()=>load(true));}
   finally{clearTimeout(timer);}
  }
  ['campaign','market','creator'].forEach(k=>el(k).addEventListener('change',()=>{if(loadedKey)render();}));

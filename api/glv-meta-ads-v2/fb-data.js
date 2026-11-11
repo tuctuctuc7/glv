@@ -23,7 +23,12 @@ async function handler(req,res){
  }catch{return res.status(400).json({error:'Invalid V2 scope; select completed dates, USD/CZK and All/TUC/TGLV'});}
  try{
   if(!require('../../lib/glv-mad-v2.cjs').rolloutEnabled())return res.status(503).json({complete:false,error:'V2 rollout is disabled'});
-  const cached=await readCache(promo?PROMO_KEY:time_range?cacheKey(type,range):presetKey(type,date_preset));
+  let cached;
+  if(!promo&&!time_range){
+   const {readPublished,readLegacy}=require('../../lib/glv-mad-v2-cache.cjs');
+   const bundle=await readPublished(readCache,date_preset)||await readLegacy(readCache,date_preset);
+   cached=bundle?.[type];
+  }else cached=await readCache(promo?PROMO_KEY:cacheKey(type,range));
   if(cached){
    try{
     const result=promo?renderPromo(cached,currency,account):renderSnapshot(cached,currency,account);

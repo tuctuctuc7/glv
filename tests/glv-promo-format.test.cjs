@@ -154,7 +154,7 @@ test('cron shares one deadline across history, legacy pagination/status, and Red
   delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
   try {
     for(const stuck of ['history','legacy','pagination','status','redis','redis-body']){
-      let calls=0, aborts=0;
+      let calls=0, aborts=0;const store=new Map();
       global.fetch=async(url,options={})=>{
         calls++;
         const redis=String(url).startsWith('https://redis.test');
@@ -166,7 +166,8 @@ test('cron shares one deadline across history, legacy pagination/status, and Red
           if(stuck==='redis-body')return {ok:true,json:()=>new Promise(()=>{})};
           return new Promise(()=>{}); // Even a transport ignoring abort must not hold the job open.
         }
-        const data=redis?{result:'OK'}:!history&&stuck==='pagination'?{data:[],paging:{next:'https://graph.facebook.com/v21.0/insights?after=next'}}:!history&&stuck==='status'&&u.searchParams.get('level')==='ad'?{data:[{ad_id:'a'}]}:{data:[]};
+        if(redis){const [cmd,key,value]=JSON.parse(options.body);if(cmd==='SET')store.set(key,value);return {ok:true,json:async()=>({result:cmd==='GET'?store.get(key)||null:cmd==='TTL'?(store.has(key)?-1:-2):cmd==='PERSIST'?0:'OK'})};}
+        const data=!history&&stuck==='pagination'?{data:[],paging:{next:'https://graph.facebook.com/v21.0/insights?after=next'}}:!history&&stuck==='status'&&u.searchParams.get('level')==='ad'?{data:[{ad_id:'a',ad_name:'Ad',campaign_id:'c',campaign_name:'BAU',spend:'0',impressions:'0'}]}:{data:[]};
         return {ok:true,json:async()=>data};
       };
       const result=await Promise.race([runRefresh('test',false,{timeoutMs:30}),new Promise((_,reject)=>{const timer=setTimeout(()=>reject(Error('unbounded cron')),500);timer.unref();})]);
@@ -190,9 +191,11 @@ test('cron starts its bounded history refresh before the sequential presets', as
   global.fetch=async(url,options={})=>{
     if(String(url).startsWith('https://redis.test')){
       const command=JSON.parse(options.body);
-      if(command[0]==='GET') {historyStarted=true;return {ok:true,json:async()=>({result:stored.get(command[1])})};}
+      if(command[0]==='GET') {if(command[1]==='glv:promo_formats:history:v1')historyStarted=true;return {ok:true,json:async()=>({result:stored.get(command[1])||null})};}
+      if(command[0]==='TTL')return {ok:true,json:async()=>({result:stored.has(command[1])?-1:-2})};
+      if(command[0]==='PERSIST')return {ok:true,json:async()=>({result:0})};
       if(command[0]==='SET')stored.set(command[1],command[2]);
-      if(command[1]==='glv:promo_formats:history:v1') {historyWritten=true;storedHistory=command[2];}
+      if(command[0]==='SET'&&command[1]==='glv:promo_formats:history:v1') {historyWritten=true;storedHistory=command[2];}
       return {ok:true,json:async()=>({result:'OK'})};
     }
     if(options.headers?.Authorization==='Bearer private-test-token')historyStarted=true;

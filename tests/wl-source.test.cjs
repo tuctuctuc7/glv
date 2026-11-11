@@ -3,12 +3,12 @@ const api=require('../api/glv-meta-ads/fb-data.js');const cron=require('../api/g
 test('live and cron paginate every ad, retain zero spend and reject malformed upstream responses',async()=>{
  const oldFetch=global.fetch,oldEnv={...process.env};
  Object.assign(process.env,{GLV_META_FB_ACCESS_TOKEN:'synthetic',KV_REST_API_URL:'https://redis.test',KV_REST_API_TOKEN:'synthetic'});delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
- const raw=i=>({ad_id:String(i),ad_name:'PAC462 V1',campaign_id:'c',campaign_name:'X_US_WL_ActionKate',spend:'0',actions:[{action_type:'omni_purchase',value:'1'}]});
+ const raw=i=>({ad_id:String(i),ad_name:'PAC462 V1',campaign_id:'c',campaign_name:'X_US_WL_ActionKate',spend:'0',impressions:'0',actions:[{action_type:'omni_purchase',value:'1'}]});
  let stored,mode='valid';const requests=[],cache=new Map();
  const fetcher=async(url,opts={})=>{
   const u=new URL(url);requests.push(u);
   if(u.hostname==='redis.test'){
-   if(opts.body){const args=JSON.parse(opts.body);if(args[0]==='SET'){cache.set(args[1],args[2]);if(args[1]==='glv:ads:last_month')stored=JSON.parse(args[2]);}return {ok:true,json:async()=>({result:args[0]==='GET'?cache.get(args[1]):'OK'})};}
+   if(opts.body){const args=JSON.parse(opts.body);if(args[0]==='SET'){cache.set(args[1],args[2]);if(args[1]==='glv:ads:last_month')stored=JSON.parse(args[2]);}return {ok:true,json:async()=>({result:args[0]==='GET'?cache.get(args[1]):args[0]==='TTL'?(cache.has(args[1])?-1:-2):args[0]==='PERSIST'?0:'OK'})};}
    return {ok:true,json:async()=>({result:null})};
   }
   if(u.searchParams.has('ids'))return {ok:true,json:async()=>Object.fromEntries(u.searchParams.get('ids').split(',').map(id=>[id,{creative:id==='0'?{id:'c',facebook_branded_content:{sponsor_page_id:'123'}}:{id:'other'}}]))};
@@ -20,7 +20,7 @@ test('live and cron paginate every ad, retain zero spend and reject malformed up
  try{
   global.fetch=fetcher;let result=await run();assert.equal(result.status,200);assert.equal(result.body.rows.length,125);assert.equal(result.body.wl_version,3);assert.equal(result.body.rows[0].partnership.status,'verified_positive');assert.equal(result.body.rows[1].partnership.reason,'no_positive_metadata');assert.ok(requests.find(u=>u.searchParams.get('fields')?.includes('campaign_name')));
   const cached=await cron._test.fetchAndCache('synthetic','last_month',false,fetcher);assert.deepEqual(cached.errors,[]);assert.equal(stored.rows.length,125);assert.equal(stored.wl_version,3);assert.deepEqual(stored.rows,result.body.rows);assert.equal(cached.stats.ads.partnership.verified,1);assert.equal(cached.stats.ads.partnership.noPositive,124);assert.equal(cached.stats.ads.wl_version,3);assert.ok(stored.generated_at);assert.equal(stored.range.since.endsWith('-01'),true);
-  mode='malformed';result=await run();assert.equal(result.status,500,'malformed upstream must not become success-shaped empty data');
+  mode='malformed';cache.clear();result=await run();assert.equal(result.status,500,'malformed upstream must not become success-shaped empty data');
  }finally{global.fetch=oldFetch;process.env=oldEnv;}
 });
 test('live and daily-cache producers retain campaign names, zero-spend outcomes and range provenance',async()=>{

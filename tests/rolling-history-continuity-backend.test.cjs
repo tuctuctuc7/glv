@@ -1,0 +1,30 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+const cache=require('../lib/glv-mad-v2-cache.cjs'),v2=require('../lib/glv-mad-v2.cjs'),storage=require('../lib/glv-mad-v2-storage.cjs');
+test('next-day campaign refresh replaces seven days, retains older history, requests exact unique reach, and recovers a two-day gap',async()=>{
+ const store=new Map(),requests=[];let spend=1;
+ const redis=async(cmd,key,value)=>{if(cmd==='SET'){store.set(key,value);return {result:'OK'};}return {result:cmd==='TTL'?-1:store.get(key)||null};};
+ const fetcher=async url=>{const u=new URL(url),a=v2.ACCOUNTS.find(a=>u.pathname.includes(a.id));let body;
+  if(!u.pathname.endsWith('/insights'))body={account_id:a.id,currency:a.currency,timezone_name:a.timezone,account_status:1};
+  else{const range=JSON.parse(u.searchParams.get('time_range')),daily=u.searchParams.has('time_increment'),ad=u.searchParams.get('level')==='ad';requests.push({range,daily,ad});const dates=[];for(let d=range.since;d<=range.until;d=v2.shift(d,1)){dates.push(d);if(!daily)break;}body={data:ad?[]:dates.map(date=>({campaign_id:'1',campaign_name:'TUC_001_US_Sales',date_start:date,date_stop:daily?date:range.until,spend:String(spend),impressions:'10',reach:daily?'3':'11'}))};}
+  return {ok:true,status:200,json:async()=>body};
+ };
+ const fx=Object.fromEntries(Array.from({length:120},(_,i)=>{const date=v2.shift('2026-11-13',-i);return [date,{date,czk_per_usd:25}];}));
+ const run=now=>cache.refreshV2({redis,fetcher,token:'synthetic',now,clock:()=>+now,loadFx:async()=>fx,promoPayload:async()=>({schema_version:1,classification_version:2,reconciled:true,generated_at:now.toISOString(),range:{since:'2026-03-01',until:v2.commonCutoff(now)},rows:[]})});
+ const old=new Date('2026-11-08T12:00:00Z');assert.equal((await run(old)).verified,true);
+ requests.length=0;spend=2;
+ const now=new Date('2026-11-11T12:00:00Z'),result=await run(now);
+ assert.equal(result.verified,true);
+ const dailyRequests=requests.filter(r=>r.daily&&!r.ad);
+ assert.ok(dailyRequests.length>0);
+ assert.ok(dailyRequests.every(r=>r.range.since>='2026-11-04'),'cold campaign history must not reload at every cutoff');
+ assert.ok(dailyRequests.some(r=>r.range.since==='2026-11-04'&&r.range.until==='2026-11-10'));
+ const daily=storage.decode(store.get(cache.presetKey('daily','last_90d')));
+ assert.equal(daily.accounts[0].rows.find(r=>r.date_start==='2026-11-03').amount_spent,'1');
+ assert.equal(daily.accounts[0].rows.find(r=>r.date_start==='2026-11-04').amount_spent,'2');
+ assert.equal(daily.accounts[0].rows.filter(r=>r.date_start==='2026-11-04').length,1);
+ assert.ok(daily.source_extractions.some(s=>s.generated_at===old.toISOString()));
+ assert.equal(daily.generated_at,now.toISOString());
+ const aggregate=storage.decode(store.get(cache.presetKey('aggregate','last_90d')));
+ assert.equal(require('../lib/glv-mad-v2-source.cjs').renderSnapshot(aggregate).rows[0].reach,11);
+ assert.equal(requests.filter(r=>!r.daily).length,12);
+});
