@@ -182,6 +182,9 @@ module.exports = async (req, res) => {
   const { type, date_preset, time_range } = req.query;
   const preset = date_preset || 'last_30d';
   const wl = req.query.wl === '1';
+  const campaignNames=require('../../lib/glv-campaign-metadata.cjs');
+  const campaignMetadata=await campaignNames.read(redisGet);
+  const named=payload=>campaignNames.applyPayload(payload,AD_ACCOUNT,type,campaignMetadata);
   let wlRange;
   if (wl) {
     res.setHeader('Cache-Control', 'private, no-store');
@@ -206,7 +209,7 @@ module.exports = async (req, res) => {
       if (!cached) return res.status(503).json({status:'unavailable',error:'Promo history cache unavailable. Awaiting the scheduled shared refresh; no live history rebuild was started.'});
       const payload = cached;
       if (!cachedPayloadUsable(type,payload)) throw new Error('Invalid Promo data');
-      return res.json(payload);
+      return res.json(named(payload));
     } catch (error) {
       // Never log token-bearing URLs or return a success-shaped empty split.
       return res.status(502).json({error:error.message});
@@ -233,7 +236,7 @@ module.exports = async (req, res) => {
     if (history.valid(type,cached)) {
       const state=history.state(cached,range);
       res.setHeader('X-Cache',state.stale?'STALE':'HIT');
-      return res.json({...cached,...state,...(state.stale?{warning:'Last-good snapshot; shared refresh has not verified requested coverage.'}:{})});
+      return res.json({...named(cached),...state,...(state.stale?{warning:'Last-good snapshot; shared refresh has not verified requested coverage.'}:{})});
     }
   }
 
@@ -249,14 +252,14 @@ module.exports = async (req, res) => {
     if (type === 'aggregate') {
       const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&limit=500&${auth}`;
-      const rows = await campaignFacts(url,paginate,normalizeCampaign);
-      res.json({ rows, creator_version:2, creator_reconciliation_version:1, creator_ad_version:1, ...provenance() });
+      const rows = await campaignFacts(url,paginate,r=>normalizeCampaign(require('../../lib/glv-mad-v2-source.cjs').validateCampaign(r,range||{since:r.date_start,until:r.date_stop},true)));
+      res.json(named({ rows, creator_version:2, creator_reconciliation_version:1, creator_ad_version:1, ...provenance() }));
 
     } else if (type === 'daily') {
       const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&time_increment=1&limit=500&${auth}`;
-      const rows = await campaignFacts(url,paginate,normalizeCampaign);
-      res.json({ rows, creator_version:2, creator_reconciliation_version:1, creator_ad_version:1, ...provenance() });
+      const rows = await campaignFacts(url,paginate,r=>normalizeCampaign(require('../../lib/glv-mad-v2-source.cjs').validateCampaign(r,range||{since:r.date_start,until:r.date_stop})));
+      res.json(named({ rows, creator_version:2, creator_reconciliation_version:1, creator_ad_version:1, ...provenance() }));
 
     } else if (type === 'ads') {
       const fields = 'ad_id,ad_name,campaign_id,campaign_name,adset_id,adset_name,spend,impressions,actions,action_values,video_p100_watched_actions,video_thruplay_watched_actions';
@@ -265,7 +268,7 @@ module.exports = async (req, res) => {
 
       const metadata = await fetchAdMetadata(raw.map(r=>r.ad_id||r.id),token,fetch);
       const statusMap = Object.fromEntries(Object.entries(metadata).map(([id,m])=>[id,m.status]));
-      res.json({ creator_version:2, rows: raw.map(r => ({...normalizeAd(r, statusMap),partnership:metadata[r.ad_id||r.id]?.partnership||{status:'unverified',reason:'metadata_unavailable',evidence:[]}})), ...provenance(), wl_version:3 });
+      res.json(named({ creator_version:2, rows: raw.map(r => ({...normalizeAd(r, statusMap),partnership:metadata[r.ad_id||r.id]?.partnership||{status:'unverified',reason:'metadata_unavailable',evidence:[]}})), ...provenance(), wl_version:3 }));
 
     } else {
       res.status(400).json({ error: 'Invalid type. Use: aggregate, daily, or ads.' });

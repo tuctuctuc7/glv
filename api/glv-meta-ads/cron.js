@@ -414,10 +414,46 @@ async function handler(req, res) {
   const fullHistory=['1','true'].includes(String(req.query?.full_history||'').toLowerCase());
   const deadline=Date.now()+270000;
   const redisFetcher=boundedFetcher(deadline);
+  // Metadata is a separately verified dimension. A same-cutoff performance
+  // receipt must not skip renamed campaigns or force expensive history pulls.
+  const names=require('../../lib/glv-campaign-metadata.cjs'),v2=require('../../lib/glv-mad-v2.cjs');
+  const namesOnly=['1','true'].includes(String(req.query?.names_only||'').toLowerCase());
+  const campaignId=req.query?.campaign_id;
+  if(campaignId!==undefined&&(typeof campaignId!=='string'||!/^\d+$/.test(campaignId)))return res.status(400).json({error:'Invalid campaign ID'});
+  const readNamesValue=async key=>{const bytes=(await redisCommand(redisFetcher,'GET',key)).result;return bytes?require('../../lib/glv-mad-v2-storage.cjs').decode(bytes):null;};
+  let campaign_metadata;
+  const refreshNames=async()=>{
+  if(v2.rolloutEnabled()||namesOnly)try{
+    const refreshed=await names.refresh({accounts:v2.rolloutEnabled()?v2.ACCOUNTS:[v2.ACCOUNTS[0]],tokenFor:a=>a.id===v2.ACCOUNTS[0].id?token:process.env.GLV_MAD_V2_FB_ACCESS_TOKEN||token,redis:(...args)=>redisCommand(redisFetcher,...args),fetcher:redisFetcher,deadline:Math.min(deadline-10000,Date.now()+30000)});
+    const {metadata,...diagnostics}=refreshed;
+    if(campaignId)diagnostics.requested_campaign=metadata.accounts.flatMap(a=>a.campaigns.filter(c=>c.id===campaignId));
+    campaign_metadata=diagnostics;
+  }catch{campaign_metadata={readback_verified:false,error:'Campaign metadata refresh failed; prior labels retained'};}
+  };
+  const metadataAudit=async()=>{
+    // Full consumer readback is an explicit operator audit, not another heavy
+    // pass over all publications on every scheduled refresh.
+    if(!namesOnly&&!campaignId)return [];
+    try{
+      const metadata=await names.read(readNamesValue);
+      return await names.auditPublished(readNamesValue,metadata,{v2Enabled:v2.rolloutEnabled(),campaignId,deadline:deadline-5000});
+    }catch{return [{status:'audit_unavailable',reason:'readback_failed'}];}
+  };
+  if(namesOnly){
+    try{
+      const result=await scheduledRefresh({redis:(...args)=>redisCommand(redisFetcher,...args),keys:[],through:'campaign_metadata',refresh:async()=>{
+        await refreshNames();return {allErrors:campaign_metadata.readback_verified?[]:[campaign_metadata.error],summaries:await metadataAudit(),freshness:{all_tabs_verified:false}};
+      }});
+      const busy=result.skipped==='refresh_in_progress';
+      const auditFailed=result.summaries?.some(s=>s.status==='audit_unavailable');
+      return res.status(busy?202:campaign_metadata.readback_verified&&!auditFailed?200:500).json({ok:!busy&&campaign_metadata.readback_verified&&!auditFailed,metadata_only:true,skipped:result.skipped,campaign_metadata,summaries:result.summaries});
+    }catch{return res.status(500).json({ok:false,metadata_only:true,error:'Campaign metadata coordination failed; prior facts retained'});}
+  }
   let result;
   try{
     result=await scheduledRefresh({
       redis:(...args)=>redisCommand(redisFetcher,...args),
+      beforeVerify:refreshNames,
       refresh:()=>runRefresh(token,includeToday,{fullHistory,timeoutMs:Math.max(0,deadline-Date.now()-10000)}),
       keys:[...PRESETS.flatMap(p=>[...['aggregate','daily','ads'].map(t=>`glv:${t}:${p}`),require('../../lib/glv-history-v1.cjs').key(p)]),CACHE_KEY,...(require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?require('../../lib/glv-mad-v2-cache.cjs').requiredKeys():[])],
       through:require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?`${cutoffDate(includeToday)}:v2:${require('../../lib/glv-mad-v2.cjs').commonCutoff()}`:cutoffDate(includeToday),force:includeToday||fullHistory
@@ -427,6 +463,13 @@ async function handler(req, res) {
     return res.status(500).json({ok:false,message:'Refresh coordination failed; next scheduled invocation can retry',freshness:{all_tabs_verified:false}});
   }
   const {allErrors,summaries,freshness,skipped}=result;
+  if(campaign_metadata){
+    if(!campaign_metadata.readback_verified)allErrors.push(campaign_metadata.error);
+    freshness.campaign_metadata=campaign_metadata;
+    const consumers=await metadataAudit();
+    if(consumers.some(s=>s.status==='audit_unavailable'))allErrors.push('Campaign metadata consumer audit unavailable');
+    summaries.push({type:'campaign_metadata',...campaign_metadata,consumers});
+  }
   const success = allErrors.length === 0;
   const through = cutoffDate(includeToday);
   const coverageNote = includeToday ? ' including partial current day' : '';
