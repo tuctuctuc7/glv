@@ -40,6 +40,7 @@
  function scope(){return el('date').value==='last_month'?MadV2Dates.rangeFor('last_month'):{since:el('from').value,until:el('to').value};}
  async function load(force=false){
   const requested=scope(),key=JSON.stringify(requested);
+  const dateError=MadDatePolicy.customError(requested,true);if(dateError){el('status').textContent=dateError;return;}
   if(!force&&key===loadedKey&&loadedDay===today()&&fresh(stamp))return;
   const generation=++sequence;controller?.abort();controller=new AbortController();
   const retained=loadedKey===key;

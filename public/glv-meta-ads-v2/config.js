@@ -58,6 +58,7 @@ function initV2Controls(){
  document.getElementById('v2-date-note').textContent=`Prague / Los Angeles local dates, combined without rebucketing. Common completed cutoff: ${MadV2Dates.commonCutoff()}. Daily CNB FX; prior fixing on holidays. Account identity overrides naming.`;
  document.getElementById('v2-report-label').textContent=`GELAVIS · ${reportCurrency} reporting`;
  document.getElementById('v2-scope-currency').textContent=reportCurrency;
+ document.getElementById('v2-scope-account').textContent=reportAccount==='All'?'All accounts':reportAccount;
  document.querySelectorAll('[data-report-currency]').forEach(el=>el.textContent=reportCurrency);
  for(const [id,key,value] of [['v2-currency','currency',reportCurrency],['v2-account','account',reportAccount]]){
   const select=document.getElementById(id);select.value=value;

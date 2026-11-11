@@ -11,7 +11,7 @@ function harness(){
  node('wl-date').value='last_month';
  class Clock extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}}
  const window={GlvWlReport:model,addEventListener:(name,fn)=>events[name]=fn};
- vm.runInNewContext(fs.readFileSync(require.resolve('../public/glv-meta-ads-v2/freshness.js'),'utf8')+'\n'+fs.readFileSync(require.resolve('../public/glv-meta-ads/wl-report-ui.js'),'utf8'),{
+ vm.runInNewContext(['../public/glv-meta-ads-v2/dates.js','../public/glv-meta-ads/date-policy.js','../public/glv-meta-ads-v2/freshness.js','../public/glv-meta-ads/wl-report-ui.js'].map(asset=>fs.readFileSync(require.resolve(asset),'utf8')).join('\n'),{
   window,document:{getElementById:node,visibilityState:'visible',addEventListener:(name,fn)=>events[name]=fn},
   Date:Clock,Intl,AbortController,URLSearchParams,setTimeout,clearTimeout,setInterval:fn=>events.interval=fn,
   fetch:async()=>{calls++;return {ok:true,json:async()=>({wl_version:3,rows:[],range:model.lastMonth(new Date(now)),generated_at:generated})};}

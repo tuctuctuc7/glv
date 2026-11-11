@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
+<script src="/glv-meta-ads-v2/dates.js?v=shared-cutoff-20261111"></script>
+<script src="/glv-meta-ads/date-policy.js?v=shared-cutoff-20261111"></script>
 <script src="/glv-meta-ads-v2/freshness.js?v=history-continuity-20261111"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -319,11 +321,13 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 <script src="/glv-meta-ads/promo-concepts.js?v=promo-spend-cohorts-20261110"></script>
 <script src="/glv-meta-ads/promo-concepts-ui.js?v=promo-spend-cohorts-20261110"></script>
 <link rel="stylesheet" href="/glv-meta-ads/promo-concepts.css?v=concept-total-color-20261014">
-<script src="/glv-meta-ads/promo-format-ui.js?v=promo-spend-cohorts-20261110"></script>
+<script src="/glv-meta-ads/promo-format-ui.js?v=shared-ui-20261111"></script>
+<script src="/glv-meta-ads/shared-ui.js?v=shared-ui-20261111"></script>
+<script src="/glv-meta-ads/presentation.js?v=shared-ui-20261111"></script>
 <script src="/glv-meta-ads/session-cache.js?v=ghost-reconciliation-20261103"></script>
 <link rel="stylesheet" href="/glv-meta-ads/section-info.css?v=creator-context-20261109">
 <link rel="stylesheet" href="/glv-meta-ads/wl-report.css?v=partnership-v3">
-<script src="/glv-meta-ads/wl-report.js?v=ad-creator-parity-2"></script>
+<script src="/glv-meta-ads/wl-report.js?v=shared-ui-20261111"></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to dashboard content</a>
@@ -389,6 +393,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 </header>
 
 <main class="page" id="main-content">
+<div id="v1-naming-warnings" class="wl-naming-warning" role="status" hidden></div>
   <section class="dashboard-intro" aria-labelledby="dashboard-title"><div><p class="dashboard-kicker">Executive media control room</p><h1 class="dashboard-title" id="dashboard-title">Performance, without the noise.</h1><p class="dashboard-sub">Campaign efficiency, promo contribution, creative health, and daily evidence across CZSK and US.</p></div><div class="scope-pill">META ADS · ACCOUNT CURRENCY CZK</div></section>
 <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button id="refresh-data" type="button" class="metric-select" style="min-height:44px" onclick="document.getElementById('tab-wl').classList.contains('active')?GlvWlUI.load(true):loadData({force:true})" title="Reload the active view">Refresh data</button></div>
 <div id="loading" class="loading" role="status"><div class="spinner"></div><span id="loading-msg">Loading campaigns…</span></div>
@@ -425,8 +430,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk', this.value)">
           <div class="filter-options-list" id="filter-options-czsk"></div>
           <div class="filter-actions">
+            <button class="filter-action-btn" onclick="clearAll('czsk')">None</button>
             <button class="filter-action-btn" onclick="selectAll('czsk')">Select all</button>
-            <button class="filter-action-btn" onclick="clearAll('czsk')">Clear</button>
           </div>
         </div>
       </div>
@@ -449,8 +454,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk-creative', this.value)">
           <div class="filter-options-list" id="filter-options-czsk-creative"></div>
           <div class="filter-actions">
+            <button class="filter-action-btn" onclick="clearAll('czsk-creative')">None</button>
             <button class="filter-action-btn" onclick="selectAll('czsk-creative')">Select all</button>
-            <button class="filter-action-btn" onclick="clearAll('czsk-creative')">Clear</button>
           </div>
         </div>
       </div>
@@ -498,7 +503,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
         <div class="filter-dropdown" id="filter-dropdown-triage-campaign">
           <input class="filter-search" placeholder="Search campaigns…" aria-label="Search Triage campaigns" oninput="filterSearch('triage-campaign', this.value)">
           <div class="filter-options-list" id="filter-options-triage-campaign"></div>
-          <div class="filter-actions"><button class="filter-action-btn" onclick="selectAll('triage-campaign')">Select all</button><button class="filter-action-btn" onclick="clearAll('triage-campaign')">Clear</button></div>
+          <div class="filter-actions"><button class="filter-action-btn" onclick="clearAll('triage-campaign')">None</button><button class="filter-action-btn" onclick="selectAll('triage-campaign')">Select all</button></div>
         </div>
       </div>
       <div class="filter-wrap" id="filter-wrap-triage-group" data-filter-label="Campaign group">
@@ -506,7 +511,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
         <button type="button" class="filter-toggle" id="filter-toggle-triage-group" aria-labelledby="triage-filter-label-group filter-label-triage-group" aria-expanded="false" aria-controls="filter-dropdown-triage-group" onclick="toggleFilter('triage-group')"><span id="filter-label-triage-group">All campaign groups</span><span style="color:var(--gray400)">▾</span></button>
         <div class="filter-dropdown" id="filter-dropdown-triage-group">
           <div class="filter-options-list" id="filter-options-triage-group"></div>
-          <div class="filter-actions"><button class="filter-action-btn" onclick="selectAll('triage-group')">Select all</button><button class="filter-action-btn" onclick="clearAll('triage-group')">Clear</button></div>
+          <div class="filter-actions"><button class="filter-action-btn" onclick="clearAll('triage-group')">None</button><button class="filter-action-btn" onclick="selectAll('triage-group')">Select all</button></div>
         </div>
       </div>
     </div>
@@ -554,8 +559,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk-promo', this.value)">
           <div class="filter-options-list" id="filter-options-czsk-promo"></div>
           <div class="filter-actions">
+            <button class="filter-action-btn" onclick="clearAll('czsk-promo')">None</button>
             <button class="filter-action-btn" onclick="selectAll('czsk-promo')">Select all</button>
-            <button class="filter-action-btn" onclick="clearAll('czsk-promo')">Clear</button>
           </div>
         </div>
       </div>
@@ -586,7 +591,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
       <div class="chart-card"><h3 class="chart-card-title">Spend share</h3><div class="promo-chart-scroll" tabindex="0" role="region" aria-label="Spend share chart, scroll horizontally"><div class="chart-wrap"><canvas id="chart-promo-format-spend" role="img" aria-label="Promo event Banner and Video spend share" aria-describedby="promo-format-table"></canvas></div></div></div>
       <div class="chart-card"><h3 class="chart-card-title">Purchase share</h3><div class="promo-chart-scroll" tabindex="0" role="region" aria-label="Purchase share chart, scroll horizontally"><div class="chart-wrap"><canvas id="chart-promo-format-purchases" role="img" aria-label="Promo event Banner and Video purchase share" aria-describedby="promo-format-table"></canvas></div></div></div>
     </div>
-    <div class="data-table-wrap promo-format-table-wrap" tabindex="0" role="region" aria-label="Promo format event metrics" hidden><table class="data-table" id="promo-format-table"><caption class="sr-only">Promo event format totals and shares, including Unknown; amounts in CZK</caption><thead><tr><th scope="col">Promo</th><th scope="col">Format</th><th scope="col">Assets</th><th scope="col">Spend</th><th scope="col">Spend share</th><th scope="col">Purchases</th><th scope="col">Purchase share</th><th scope="col">Revenue</th><th scope="col">ROAS</th><th scope="col">CPA</th></tr></thead><tbody></tbody></table></div>
+    <div class="data-table-wrap promo-format-table-wrap" tabindex="0" role="region" aria-label="Promo format event metrics" hidden><table class="data-table" id="promo-format-table"><caption class="sr-only">Promo event format totals and shares, including Unknown; amounts in <span data-report-currency>CZK</span></caption><thead><tr><th scope="col">Promo</th><th scope="col">Format</th><th scope="col">Assets</th><th scope="col">Spend</th><th scope="col">Spend share</th><th scope="col">Purchases</th><th scope="col">Purchase share</th><th scope="col">Revenue</th><th scope="col">ROAS</th><th scope="col">CPA</th></tr></thead><tbody></tbody></table></div>
     <details id="promo-format-unknown" hidden></details>
   </section>
   <section class="section" id="promo-concept-section" aria-labelledby="promo-concept-title">
@@ -595,7 +600,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
     <div class="promo-format-methodology"><p>Independent CZSK _Promo history, unaffected by global dates or other tab filters. Campaigns default to the most recently delivered Promo campaign (spend or impressions), not the newest name or ID. Selection persists for this browser tab, including None.</p><p>Exact CC/PAC tokens combine ads across ad sets within one campaign; identical codes in different campaigns stay separate. Missing or conflicting codes use the full ad name and remain in totals. These are ad-performance concepts, not counts of unique assets. Ghost adjustments display only when aggregated revenue AND purchases are both nonzero, or absolute aggregated spend exceeds 10 CZK (native-CZK equivalent in either currency). Exactly ±10 CZK without paired outcomes is hidden. Signed residuals always remain in totals and share denominators, so visible breakdowns can differ slightly from totals. The same visibility rule applies to charts, legends and tables. </p><p>All ratios use summed inputs. Spend and purchase shares divide by all selected eligible outcomes, including unmapped and zero-delivery carryover purchases. ROAS = revenue / spend; CTR = link clicks / impressions; Cost / LP = spend / landing-page views; LP → Checkout = checkouts / landing-page views; Checkout → Purchase = purchases / checkouts; CVR = purchases / landing-page views. Rates and shares are percentages. Zero denominators show —. Revenue/purchases use omni_purchase only; checkouts use initiate_checkout, without summing aliases. Meta default attribution; amounts in CZK.</p></div>
     <div id="promo-concept-campaigns" class="tab-filter-section"></div>
     <p class="promo-note" id="promo-concept-status" role="status">Loading concept facts…</p>
-    <div class="data-table-wrap concept-scroll" tabindex="0" role="region" aria-label="Creative concept metrics"><table class="data-table" id="promo-concept-table"><caption class="sr-only">Creative concept evaluation, selected CZSK Promo campaigns; amounts in CZK</caption><thead><tr></tr></thead><tbody></tbody></table></div>
+    <div class="data-table-wrap concept-scroll" tabindex="0" role="region" aria-label="Creative concept metrics"><table class="data-table" id="promo-concept-table"><caption class="sr-only">Creative concept evaluation, selected CZSK Promo campaigns; amounts in <span data-report-currency>CZK</span></caption><thead><tr></tr></thead><tbody></tbody></table></div>
   </section>
 </div>
 
@@ -639,7 +644,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
         <div class="filter-dropdown" id="filter-dropdown-czsk-leadgen">
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('czsk-leadgen', this.value)">
           <div class="filter-options-list" id="filter-options-czsk-leadgen"></div>
-          <div class="filter-actions"><button class="filter-action-btn" onclick="selectAll('czsk-leadgen')">Select all</button><button class="filter-action-btn" onclick="clearAll('czsk-leadgen')">Clear</button></div>
+          <div class="filter-actions"><button class="filter-action-btn" onclick="clearAll('czsk-leadgen')">None</button><button class="filter-action-btn" onclick="selectAll('czsk-leadgen')">Select all</button></div>
         </div>
       </div>
       <div class="toggle-row">
@@ -682,8 +687,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('us', this.value)">
           <div class="filter-options-list" id="filter-options-us"></div>
           <div class="filter-actions">
+            <button class="filter-action-btn" onclick="clearAll('us')">None</button>
             <button class="filter-action-btn" onclick="selectAll('us')">Select all</button>
-            <button class="filter-action-btn" onclick="clearAll('us')">Clear</button>
           </div>
         </div>
       </div>
@@ -706,8 +711,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
           <input class="filter-search" placeholder="Search campaigns…" oninput="filterSearch('us-creative', this.value)">
           <div class="filter-options-list" id="filter-options-us-creative"></div>
           <div class="filter-actions">
+            <button class="filter-action-btn" onclick="clearAll('us-creative')">None</button>
             <button class="filter-action-btn" onclick="selectAll('us-creative')">Select all</button>
-            <button class="filter-action-btn" onclick="clearAll('us-creative')">Clear</button>
           </div>
         </div>
       </div>
@@ -730,6 +735,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 </main>
 
 <script>
+const reportCurrency='CZK';
+const moneyLabel=text=>text;
 const METRIC_REGISTRY = [
   {key:'spend',label:'Spend (CZK)',color:'#4F8EF7'},
   {key:'revenue',label:'Revenue (CZK)',triageLabel:'Purchase Value (CZK)',color:'#14B8A6'},
@@ -786,7 +793,7 @@ const CREATIVE_COLUMNS = [
 
 let datePreset  = 'last_30d';
 let customRange = null;
-let usdRate     = 0.044;
+let usdRate     = null;
 let aggregateCampaigns = [];
 let dailyCampaigns     = [];
 let adCreatives        = [];
@@ -912,7 +919,7 @@ function fmtInt(n){return(!n||isNaN(n))?'—':Math.round(n).toLocaleString('en-U
 function fmtRoas(n){return(!n||n<=0)?'—':n.toFixed(2)+'x';}
 function fmtPct(n){return(!n||n<=0)?'—':n.toFixed(2)+'%';}
 function fmtOne(n){return(!n||n<=0)?'—':n.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});}
-function fmtUsd(n){return(!n||n<=0)?'—':'$'+(n*usdRate).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+function fmtUsd(n){return MadPresentation.usdEquivalent(n,usdRate);}
 function roasClass(v){return v>=1.7?'roas-good':v>=1?'roas-warn':'roas-bad';}
 
 function aggregate(rows){
@@ -1001,6 +1008,7 @@ function setChartGranularity(seg,grain){
   refreshChart(seg);
 }
 function initSortControls(){
+  MadPresentation.syncSortIndicators(sortState,document);
   ['czsk','us'].forEach(seg=>{
     populateSortSelect(`daily-sort-${seg}`,DAILY_COLUMNS,sortState.daily[seg].key);
     populateSortSelect(`creative-sort-${seg}`,CREATIVE_COLUMNS,sortState.creative[seg].key);
@@ -1008,10 +1016,7 @@ function initSortControls(){
   populateSortSelect('promo-sort-czsk',DAILY_COLUMNS,sortState.promo.czsk.key);
   populateSortSelect('leadgen-sort-czsk',[...DAILY_COLUMNS,...LEAD_DAILY_COLUMNS],sortState.leadgen.czsk.key);
 }
-function campaignCode(name){
-  const parts=String(name||'').split('_').filter(Boolean);
-  return parts[1]||'—';
-}
+function campaignCode(name){return MadPresentation.campaignCode(name,false);}
 
 const MONTH_SHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function isoToShort(iso){if(!iso)return'';const[,m,d]=iso.split('-');return`${MONTH_SHORT[parseInt(m)-1]} ${parseInt(d)}`;}
@@ -1035,6 +1040,7 @@ function shiftIsoDate(iso,offsetDays){
 }
 function presetLabel(p){return{last_7d:'Last 7 days',last_14d:'Last 14 days',last_30d:'Last 30 days',last_90d:'Last 90 days',this_month:'This month',last_month:'Last month'}[p]||p;}
 function presetBounds(p){
+  const sharedRange=MadDatePolicy.range(p);if(sharedRange)return sharedRange;
   const until=utcIsoDate(-1);
   if(p==='this_month')return{since:until.slice(0,7)+'-01',until};
   if(p==='last_month')return{since:utcMonthStart(-1),until:utcMonthEnd(-1)};
@@ -1079,6 +1085,7 @@ function selectPreset(p){datePreset=p;customRange=null;setDateMenuOpen(false,{re
 function applyCustomDate(){
   const since=document.getElementById('date-from').value;const until=document.getElementById('date-to').value;
   if(!since||!until){alert('Please select both dates.');return;}
+  const error=MadDatePolicy.customError({since,until},false);if(error){alert(error);return;}
   customRange={since,until};datePreset=null;setDateMenuOpen(false,{restoreFocus:true});updateDateLabel();loadData();
 }
 document.addEventListener('click',e=>{
@@ -1114,8 +1121,8 @@ function creatorMetadata(r,seg,date){
 function processAggregateRows(rawRows){
   const out=[];
   for(const r of rawRows){
-    if(!isValid(r.name))continue;
-    const seg=isUS(r.name)?'us':'czsk';
+    if(!MadPresentation.ownedTuc(r)&&!isValid(r.name))continue;
+    const seg=MadPresentation.ownedTuc(r)?MadPresentation.accountMarket(r):isUS(r.name)?'us':'czsk';
     campaignMeta[r.id]={name:r.name,segment:seg,color:getCampaignColor(r.name)};
     out.push({id:r.id,name:r.name,segment:seg,group:campaignGroupKey(r.name,seg),date:null,...processRow(r),...creatorMetadata(r,seg,null)});
   }
@@ -1124,8 +1131,8 @@ function processAggregateRows(rawRows){
 function processDaily(rawRows){
   const out=[];
   for(const r of rawRows){
-    if(!isValid(r.name))continue;
-    const seg=isUS(r.name)?'us':'czsk';
+    if(!MadPresentation.ownedTuc(r)&&!isValid(r.name))continue;
+    const seg=MadPresentation.ownedTuc(r)?MadPresentation.accountMarket(r):isUS(r.name)?'us':'czsk';
     const date=extractDate(r);if(!date)continue;
     campaignMeta[r.id]={name:r.name,segment:seg,color:getCampaignColor(r.name)};
     out.push({id:r.id,name:r.name,segment:seg,group:campaignGroupKey(r.name,seg),date,...processRow(r),...creatorMetadata(r,seg,date)});
@@ -1185,12 +1192,6 @@ function buildTabFilters(tab){
   const options=new Map(rows.map(row=>[String(row.id),{value:String(row.id),label:row.name}]));
   buildTriageFilterOptions(tabFilterKey(tab,'campaign'),[...options.values()]);
 }
-function renderTab(tab){
-  if(tab==='czsk-triage'){refreshTriageCharts();return;}
-  if(tab==='czsk-promo'){renderPromoKPIs();refreshPromoCharts();renderPromoTable();return;}
-  if(tab==='czsk-leadgen'){renderLeadgenKPIs();refreshLeadgenCharts();renderLeadgenTable();return;}
-  renderKPIs(tab);refreshChart(tab);renderDailyTable(tab);renderCreatives(tab);
-}
 function syncTabGrain(tab){
   if(tab==='czsk-triage'){syncTriageGrainControl();return;}
   const local=tab==='czsk-leadgen'?document.getElementById('chart-grain-leadgen').value:chartGranularity[tab];
@@ -1209,7 +1210,7 @@ function periodRows(rows,tab){
   return grain==='day'?rows:rows.map(row=>({...row,date:row.date?(grain==='week'?startOfWeek(row.date):monthKey(row.date)):null}));
 }
 function tabFilterMarkup(key,label){
-  return `<div class="filter-wrap" id="filter-wrap-${key}"><span class="triage-filter-label" id="label-${key}">${label}</span><button type="button" class="filter-toggle" id="filter-toggle-${key}" aria-labelledby="label-${key} filter-label-${key}" aria-expanded="false" aria-controls="filter-dropdown-${key}" onclick="toggleFilter('${key}')"><span id="filter-label-${key}">All</span><span aria-hidden="true">▾</span></button><div class="filter-dropdown" id="filter-dropdown-${key}"><input class="filter-search" aria-label="Search ${label}" placeholder="Search…" oninput="filterSearch('${key}',this.value)"><div class="filter-options-list" id="filter-options-${key}"></div><div class="filter-actions"><button class="filter-action-btn" onclick="selectAll('${key}')">Select all</button><button class="filter-action-btn" onclick="clearAll('${key}')">Clear</button></div></div></div>`;
+  return `<div class="filter-wrap" id="filter-wrap-${key}"><span class="triage-filter-label" id="label-${key}">${label}</span><button type="button" class="filter-toggle" id="filter-toggle-${key}" aria-labelledby="label-${key} filter-label-${key}" aria-expanded="false" aria-controls="filter-dropdown-${key}" onclick="toggleFilter('${key}')"><span id="filter-label-${key}">All</span><span aria-hidden="true">▾</span></button><div class="filter-dropdown" id="filter-dropdown-${key}"><input class="filter-search" aria-label="Search ${label}" placeholder="Search…" oninput="filterSearch('${key}',this.value)"><div class="filter-options-list" id="filter-options-${key}"></div><div class="filter-actions"><button class="filter-action-btn" onclick="clearAll('${key}')">None</button><button class="filter-action-btn" onclick="selectAll('${key}')">Select all</button></div></div></div>`;
 }
 function initTabFilters(){
   TAB_KEYS.forEach(tab=>{
@@ -1316,21 +1317,6 @@ function renderSourceEmpty(id,source){
   el.innerHTML='<div class="empty"></div>';
   el.firstChild.textContent=sourceErrors[source]?'Data unavailable — '+sourceErrors[source]:'No campaign activity for these dates.';
   return true;
-}
-function renderKPIs(seg){
-  renderCreatorWarning(seg);
-  if(renderSourceEmpty('kpi-'+seg,'aggregate'))return;
-  const rows=getMainSegmentRows(seg,'aggregate');const a=aggregate(rows);const m=calcMetrics(a);
-  document.getElementById('kpi-'+seg).innerHTML=`
-    <div class="kpi-card"><div class="kpi-label">Spend</div><div class="kpi-val">${fmtInt(a.spend)}</div><div class="kpi-sub">CZK</div><div class="kpi-sub2">${fmtUsd(a.spend)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Revenue</div><div class="kpi-val">${a.revenue>0?fmtInt(a.revenue):'—'}</div><div class="kpi-sub">CZK</div><div class="kpi-sub2">${fmtUsd(a.revenue)}</div></div>
-    <div class="kpi-card hl"><div class="kpi-label">ROAS</div><div class="kpi-val ${roasClass(m.roas)}">${fmtRoas(m.roas)}</div><div class="kpi-sub">Revenue / Spend</div></div>
-    <div class="kpi-card"><div class="kpi-label">Purchases</div><div class="kpi-val">${a.purchases>0?fmtInt(a.purchases):'—'}</div><div class="kpi-sub">${m.cpa>0?'CPA: '+fmtInt(m.cpa)+' CZK':'CPA: —'}</div></div>
-    <div class="kpi-card"><div class="kpi-label">LP → Purchase</div><div class="kpi-val">${fmtPct(m.lp2pur)}</div><div class="kpi-sub">${a.lp>0?fmtInt(a.lp)+' LP views':'No LP data'}</div></div>
-    <div class="kpi-card"><div class="kpi-label">LP → Checkout</div><div class="kpi-val">${fmtPct(m.lp2co)}</div><div class="kpi-sub">${a.checkouts>0?fmtInt(a.checkouts)+' checkouts':'No checkout data'}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Checkout → Purchase</div><div class="kpi-val">${fmtPct(m.co2pur)}</div><div class="kpi-sub">Checkout to purchase</div></div>
-    <div class="kpi-card"><div class="kpi-label">Cost / Checkout</div><div class="kpi-val">${m.costChk>0?fmtInt(m.costChk):'—'}</div><div class="kpi-sub">${m.costChk>0?'CZK':'No checkout data'}</div></div>
-  `;
 }
 const fmtCreatorGhostMoney=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 function renderPromoKPIs(){
@@ -1451,7 +1437,7 @@ function refreshTriageChart(presetId){
   charts[chartKey]=new Chart(ctx,{
     data:{labels,datasets:[dataset(primary,primaryValues,primaryType,'y',2),dataset(secondary,secondaryValues,secondaryType,'y1',1)]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(item.dataset.metricKey,item.raw)}`}}},
+      plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(item.dataset.metricKey,item.raw)}`}}},
       scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
         y:{position:'left',grid:{color:'rgba(148,163,184,.12)'},title:{display:true,text:primary.label},ticks:{precision:wholeNumberTickPrecision(state.primary),font:{size:10},callback:value=>formatChartTick(state.primary,value)}},
         y1:{position:'right',grid:{display:false},title:{display:true,text:secondary.label},ticks:{precision:wholeNumberTickPrecision(state.secondary),font:{size:10},callback:value=>formatChartTick(state.secondary,value)}}}}
@@ -1474,31 +1460,6 @@ function formatChartTick(key,v){
 }
 function wholeNumberTickPrecision(key){return['lp','purchases','checkouts','leads','impressions'].includes(key)?0:undefined;}
 function sortLegendByAxis(a,b,data){const rank=item=>data.datasets[item.datasetIndex]?.yAxisID==='y1'?1:0;return rank(a)-rank(b);}
-function refreshChart(seg){
-  const rows=getMainSegmentRows(seg,'daily');const grain=chartGranularity[seg]||'day';const daily=byPeriod(rows,null,grain);
-  const lKey=document.getElementById('chart-left-'+seg).value;const rKey=document.getElementById('chart-right-'+seg).value;
-  const labels=daily.map(d=>fmtChartDate(d.date,grain));
-  const leftVals=daily.map(d=>{const m=calcMetrics(d);return computeChartMetric(lKey,d,m);});
-  const rightVals=daily.map(d=>{const m=calcMetrics(d);return computeChartMetric(rKey,d,m);});
-  if(charts[seg]){charts[seg].destroy();delete charts[seg];}
-  const ctx=document.getElementById('chart-'+seg).getContext('2d');
-  const allMetrics=[...CHART_METRIC_OPTIONS,...LEAD_CHART_METRIC_OPTIONS];
-  const leftMetric=allMetrics.find(m=>m.key===lKey)||metricDefinition(lKey);
-  const rightMetric=allMetrics.find(m=>m.key===rKey)||metricDefinition(rKey);
-  const lLabel=leftMetric.label;const rLabel=rightMetric.label;
-  charts[seg]=new Chart(ctx,{
-    data:{labels,datasets:[
-      {type:'bar',label:lLabel,metricKey:lKey,data:leftVals,backgroundColor:hexToRgba(leftMetric.color,.25),borderColor:leftMetric.color,borderWidth:1.5,yAxisID:'y',order:2},
-      {type:'line',label:rLabel,metricKey:rKey,data:rightVals,borderColor:rightMetric.color,backgroundColor:hexToRgba(rightMetric.color,.1),borderWidth:2,pointRadius:3,fill:false,yAxisID:'y1',order:1,tension:.3},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
-        tooltip:{callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${formatChartVal(ctx.datasetIndex===0?lKey:rKey,ctx.raw)}`}}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
-        y:{position:'left',grid:{color:'rgba(0,0,0,.05)'},ticks:{precision:wholeNumberTickPrecision(lKey),font:{size:11},callback:v=>formatChartTick(lKey,v)}},
-        y1:{position:'right',grid:{display:false},ticks:{precision:wholeNumberTickPrecision(rKey),font:{size:11},callback:v=>formatChartTick(rKey,v)}}}}
-  });
-}
 function refreshTrendsChart(){
   const key=document.getElementById('chart-trends-metric').value;
   const czskD=byDate(getSegmentRows('czsk','daily'));const usD=byDate(getSegmentRows('us','daily'));
@@ -1515,7 +1476,7 @@ function refreshTrendsChart(){
       {label:'🇺🇸 US',data:usVals,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.08)',borderWidth:2,tension:.3,fill:true,pointRadius:3},
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
+      plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
         tooltip:{callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${formatChartVal(key,ctx.raw)}`}}},
       scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
         y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{precision:wholeNumberTickPrecision(key),font:{size:11},callback:v=>formatChartTick(key,v)}}}}
@@ -1565,7 +1526,7 @@ function refreshPromoCharts(){
       type:'line',
       data:{labels:dates.map(date=>fmtChartDate(date,grain)),datasets},
       options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-        plugins:{legend:{display:!activePromoGroups().some(g=>g.key==='wl-ghost'),position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
+        plugins:{legend:{display:!activePromoGroups().some(g=>g.key==='wl-ghost'),position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
           tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${formatChartVal(metricKey,ctx.raw)}`}}},
         scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
           y:{grid:{color:'rgba(0,0,0,.05)'},title:{display:true,text:metric.label},ticks:{precision:wholeNumberTickPrecision(metricKey),font:{size:11},callback:v=>formatChartTick(metricKey,v)}}}}
@@ -1617,7 +1578,7 @@ function refreshPromoCharts(){
       type:signedMix?'bar':'doughnut',
       data:{labels:pieGroups.map(g=>g.label),datasets:[{metricKey:pieMetricKey,label:pieMetric.label,data:pieValues,backgroundColor:pieGroups.map(g=>g.color),borderWidth:0}]},
       plugins:[percentLabelPlugin],
-      options:{responsive:true,maintainAspectRatio:false,...(signedMix?{scales:{y:{beginAtZero:true,ticks:{callback:v=>formatChartTick(pieMetricKey,v)}}}}:{cutout:'62%'}),plugins:{legend:{display:!signedMix&&!pieGroups.some(g=>g.key==='wl-ghost'),position:'bottom',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:ctx=>{
+      options:{responsive:true,maintainAspectRatio:false,...(signedMix?{scales:{y:{beginAtZero:true,ticks:{callback:v=>formatChartTick(pieMetricKey,v)}}}}:{cutout:'62%'}),plugins:{legend:{display:!signedMix&&!pieGroups.some(g=>g.key==='wl-ghost'),position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:ctx=>{
         const pct=pieTotal?ctx.raw/pieTotal*100:0;
         return`${ctx.label}: ${formatChartVal(pieMetricKey,ctx.raw)} (${pct.toFixed(1)}%)`;
       }}}}}
@@ -1684,18 +1645,18 @@ function refreshLeadgenCharts(){
     const leftLabel=leftMetric.label;const rightLabel=rightMetric.label;
     const rows=byPeriod(source,null,grain);const labels=rows.map(row=>fmtChartDate(row.date,grain));
     if(title)title.textContent=`${leftLabel} & ${rightLabel}`;canvas?.setAttribute('aria-label',`${leftLabel} bars and ${rightLabel} line, ${grain}`);
-    if(ctx)charts['leadgen-metric']=new Chart(ctx,{type:'bar',data:{labels,datasets:[{type:'bar',label:leftLabel,metricKey:leftKey,data:rows.map(row=>computeChartMetric(leftKey,row,calcMetrics(row))),yAxisID:'y',backgroundColor:hexToRgba(leftMetric.color,.8),borderColor:leftMetric.color,borderWidth:1,borderRadius:4},{type:'line',label:rightLabel,metricKey:rightKey,data:rows.map(row=>computeChartMetric(rightKey,row,calcMetrics(row))),yAxisID:'y1',borderColor:rightMetric.color,backgroundColor:hexToRgba(rightMetric.color,.13),borderWidth:2,tension:.3,pointRadius:3,fill:false}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(item.dataset.metricKey,item.raw)}`}}},scales:{x:{grid:{display:false}},y:{position:'left',title:{display:true,text:leftLabel},ticks:{precision:wholeNumberTickPrecision(leftKey),callback:v=>formatChartTick(leftKey,v)}},y1:{position:'right',title:{display:true,text:rightLabel},grid:{drawOnChartArea:false},ticks:{precision:wholeNumberTickPrecision(rightKey),callback:v=>formatChartTick(rightKey,v)}}}}});
+    if(ctx)charts['leadgen-metric']=new Chart(ctx,{type:'bar',data:{labels,datasets:[{type:'bar',label:leftLabel,metricKey:leftKey,data:rows.map(row=>computeChartMetric(leftKey,row,calcMetrics(row))),yAxisID:'y',backgroundColor:hexToRgba(leftMetric.color,.8),borderColor:leftMetric.color,borderWidth:1,borderRadius:4},{type:'line',label:rightLabel,metricKey:rightKey,data:rows.map(row=>computeChartMetric(rightKey,row,calcMetrics(row))),yAxisID:'y1',borderColor:rightMetric.color,backgroundColor:hexToRgba(rightMetric.color,.13),borderWidth:2,tension:.3,pointRadius:3,fill:false}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(item.dataset.metricKey,item.raw)}`}}},scales:{x:{grid:{display:false}},y:{position:'left',title:{display:true,text:leftLabel},ticks:{precision:wholeNumberTickPrecision(leftKey),callback:v=>formatChartTick(leftKey,v)}},y1:{position:'right',title:{display:true,text:rightLabel},grid:{drawOnChartArea:false},ticks:{precision:wholeNumberTickPrecision(rightKey),callback:v=>formatChartTick(rightKey,v)}}}}});
   }else{
     const periods=groups.map(g=>({group:g,rows:byPeriod(source.filter(r=>leadgenGroupKey(r.name)===g.key),null,grain)}));
     const dates=[...new Set(periods.flatMap(item=>item.rows.map(r=>r.date)))].sort();
     if(title)title.textContent=`${metricLabel} By Group`;canvas?.setAttribute('aria-label',`${metricLabel} by Lead-gen group, ${grain}`);
-    if(ctx)charts['leadgen-metric']=new Chart(ctx,{type:'line',data:{labels:dates.map(date=>fmtChartDate(date,grain)),datasets:periods.map(({group,rows})=>{const byDate=Object.fromEntries(rows.map(r=>[r.date,r]));return{label:group.label,data:dates.map(date=>{const row=byDate[date]||emptyAgg(date,group.key);return computeChartMetric(metricKey,row,calcMetrics(row));}),borderColor:group.color,backgroundColor:group.color+'22',borderWidth:2,tension:.3,pointRadius:3,fill:false};})},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(metricKey,item.raw)}`}}},scales:{x:{grid:{display:false}},y:{ticks:{precision:wholeNumberTickPrecision(metricKey),callback:v=>formatChartTick(metricKey,v)}}}}});
+    if(ctx)charts['leadgen-metric']=new Chart(ctx,{type:'line',data:{labels:dates.map(date=>fmtChartDate(date,grain)),datasets:periods.map(({group,rows})=>{const byDate=Object.fromEntries(rows.map(r=>[r.date,r]));return{label:group.label,data:dates.map(date=>{const row=byDate[date]||emptyAgg(date,group.key);return computeChartMetric(metricKey,row,calcMetrics(row));}),borderColor:group.color,backgroundColor:group.color+'22',borderWidth:2,tension:.3,pointRadius:3,fill:false};})},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:item=>`${item.dataset.label}: ${formatChartVal(metricKey,item.raw)}`}}},scales:{x:{grid:{display:false}},y:{ticks:{precision:wholeNumberTickPrecision(metricKey),callback:v=>formatChartTick(metricKey,v)}}}}});
   }
   const totals=byLeadgenGroup(getLeadgenRows('aggregate'));const totalSpend=totals.reduce((sum,row)=>sum+row.spend,0);
   if(charts['leadgen-pie'])charts['leadgen-pie'].destroy();
   if(leadgenOnly){delete charts['leadgen-pie'];return;}
   const pieCtx=document.getElementById('chart-leadgen-pie')?.getContext('2d');
-  if(pieCtx)charts['leadgen-pie']=new Chart(pieCtx,{type:'doughnut',data:{labels:groups.map(g=>g.label),datasets:[{data:totals.map(r=>r.spend),backgroundColor:groups.map(g=>g.color),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${formatChartVal('spend',ctx.raw)} (${(totalSpend?ctx.raw/totalSpend*100:0).toFixed(1)}%)`}}}}});
+  if(pieCtx)charts['leadgen-pie']=new Chart(pieCtx,{type:'doughnut',data:{labels:groups.map(g=>g.label),datasets:[{data:totals.map(r=>r.spend),backgroundColor:groups.map(g=>g.color),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${formatChartVal('spend',ctx.raw)} (${(totalSpend?ctx.raw/totalSpend*100:0).toFixed(1)}%)`}}}}});
 }
 
 function buildFilterOptions(filterKey,campaignIds){
@@ -1799,35 +1760,6 @@ function renderControlledTable(container,columns,rows,tableClass=''){
 function roasHtml(v){return`<span class="${roasClass(v)}">${escapeHtml(fmtRoas(v))}</span>`;}
 function badgeHtml(type){return`<span class="badge ${type==='Video'?'badge-v':'badge-s'}">${escapeHtml(type)}</span>`;}
 
-function renderDailyTable(seg){
-  if(renderSourceEmpty('daily-table-'+seg,'daily'))return;
-  const sel=filterState[seg];const rows=getMainSegmentRows(seg,'daily');const daily=byPeriod(rows,sel,tabGrain[seg]);
-  const container=document.getElementById('daily-table-'+seg);
-  container.innerHTML='';
-  if(!daily.length){container.innerHTML='<div class="empty">No data.</div>';return;}
-  if(grids['daily-'+seg]){try{grids['daily-'+seg].destroy();}catch(e){}}
-  const sorted=sortRows(daily,'daily',seg);
-  const tableRows=sorted.map(d=>({d,m:calcMetrics(d)}));
-  const columns=[
-    {label:tabGrain[seg]==='day'?'Date':'Period',text:r=>tabGrain[seg]==='day'?r.d.date:fmtChartDate(r.d.date,tabGrain[seg])},
-    {label:'Spend',text:r=>fmtInt(r.d.spend)},
-    {label:'Revenue',text:r=>r.d.revenue>0?fmtInt(r.d.revenue):'—'},
-    {label:'ROAS',text:r=>fmtRoas(r.m.roas),html:r=>roasHtml(r.m.roas)},
-    {label:'Purchases',text:r=>r.d.purchases||'—'},
-    {label:'CPA',text:r=>r.m.cpa>0?fmtInt(r.m.cpa):'—'},
-    {label:'AOV',text:r=>r.m.aov>0?fmtInt(r.m.aov):'—'},
-    {label:'LP→Checkout',text:r=>fmtPct(r.m.lp2co)},
-    {label:'Checkout→Purchase',text:r=>fmtPct(r.m.co2pur)},
-    {label:'Checkouts',text:r=>r.d.checkouts||'—'},
-    {label:'Cost/Checkout',text:r=>r.m.costChk>0?fmtInt(r.m.costChk):'—'},
-    {label:'LP Views',text:r=>fmtInt(r.d.lp)},
-    {label:'Cost/LP',text:r=>fmtOne(r.m.costLp)},
-    {label:'CTR',text:r=>fmtPct(r.m.ctr)},
-    {label:'LP→Purchase',text:r=>fmtPct(r.m.lp2pur)},
-    {label:'CPM',text:r=>r.m.cpm>0?fmtInt(r.m.cpm):'—'},
-  ];
-  renderControlledTable(container,columns,tableRows,'daily-data-table');
-}
 function setPromoTableMode(mode){
   promoTableMode=mode;
   document.getElementById('promo-mode-groups')?.classList.toggle('active',mode==='groups');
@@ -1998,26 +1930,6 @@ function leadgenSortComparator(a,b){
   const cmp=typeof av==='string'||typeof bv==='string'?String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:'base'}):av-bv;
   return state.dir==='asc'?cmp:-cmp;
 }
-function renderLeadgenTable(){
-  if(renderSourceEmpty('leadgen-table','daily'))return;
-  const container=document.getElementById('leadgen-table');if(!container)return;
-  const grain=tabGrain['czsk-leadgen'];const period=grain==='day'?'days':grain==='week'?'weeks':'months';
-  document.getElementById('leadgen-mode-groups').textContent=`Groups → ${period}`;document.getElementById('leadgen-mode-days').textContent=`${period[0].toUpperCase()+period.slice(1)} → groups`;
-  const rows=byDateLeadgenGroup(periodRows(getLeadgenRows('daily'),'czsk-leadgen'),filterState['czsk-leadgen']);
-  if(!rows.length){container.innerHTML='<div class="empty">No CZSK Lead-gen data for this range.</div>';return;}
-  const metricColumns=['Spend','Revenue','ROAS','Purchases','CPA','AOV','LP→Checkout','Checkout→Purchase','Checkouts','Cost/Checkout','LP Views','Cost/LP','CTR','LP→Purchase','CPM','Leads','CPL','LP→Lead'];
-  const columns=leadgenTableMode==='groups'?['Group',grain==='day'?'Date':'Period',...metricColumns]:[grain==='day'?'Date':'Period','Group',...metricColumns];
-  const state=sortState.leadgen.czsk;let body='';
-  if(leadgenTableMode==='groups'){
-    let groups=activeLeadgenGroups().map(g=>sumPromoRows(rows.filter(r=>r.group===g.key),null,g.key)).filter(g=>g.spend||g.revenue||g.purchases||g.checkouts||g.leads||g.lp);
-    groups=state.key==='date'?groups.sort((a,b)=>LEADGEN_GROUPS.findIndex(g=>g.key===a.group)-LEADGEN_GROUPS.findIndex(g=>g.key===b.group)):groups.sort(leadgenSortComparator);
-    for(const total of groups){const children=rows.filter(r=>r.group===total.group).sort(leadgenSortComparator);body+=leadgenNestedRow('subtotal-row',leadgenGroupHtml(total.group),'Subtotal',total);body+=children.map(r=>leadgenNestedRow('child-row','',`<span class="nested-child">${escapeHtml(grain==='day'?r.date:fmtChartDate(r.date,grain))}</span>`,r)).join('');}
-  }else{
-    const dates=[...new Set(rows.map(r=>r.date))].map(date=>sumPromoRows(rows.filter(r=>r.date===date),date,null)).sort(leadgenSortComparator);
-    for(const total of dates){let children=rows.filter(r=>r.date===total.date);children=state.key==='date'?children.sort((a,b)=>LEADGEN_GROUPS.findIndex(g=>g.key===a.group)-LEADGEN_GROUPS.findIndex(g=>g.key===b.group)):children.sort(leadgenSortComparator);body+=leadgenNestedRow('subtotal-row',escapeHtml(grain==='day'?total.date:fmtChartDate(total.date,grain)),'Subtotal',total);body+=children.map(r=>leadgenNestedRow('child-row','',`<span class="nested-child">${leadgenGroupHtml(r.group)}</span>`,r)).join('');}
-  }
-  container.innerHTML=`<div class="data-table-wrap"><table class="data-table daily-data-table"><thead><tr>${columns.map(label=>`<th title="${escapeHtml(label)}">${escapeHtml(label)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
-}
 
 function renderTrendsTable(){
   const czskMap=Object.fromEntries(byDate(getSegmentRows('czsk','daily')).map(d=>[d.date,d]));
@@ -2096,21 +2008,10 @@ function renderCreatives(seg){
 
 const responseCache=MetaSessionCache.createSessionCache();
 function requestScope(){return customRange?{customRange:{since:customRange.since,until:customRange.until}}:{datePreset};}
-async function fetchUsdRate(){
-  return responseCache.get('fx:CZK:USD',async()=>{
-    const ctrl=new AbortController();
-    const timer=setTimeout(()=>ctrl.abort(),1500);
-    try{
-      const r=await fetch('https://api.frankfurter.dev/v1/latest?from=CZK&to=USD',{signal:ctrl.signal,cache:'no-store'});
-      const d=await r.json();
-      if(!r.ok||!Number.isFinite(d.rates?.USD)||d.rates.USD<=0)throw new Error('Exchange rate unavailable');
-      return d.rates.USD;
-    }finally{clearTimeout(timer);}
-  });
-}
+function fetchUsdRate(){return MadPresentation.fetchUsdRate(responseCache);}
 function promoHistoryWarning(payload,error=''){
   const aged=Date.now()-Date.parse(payload.generated_at)>25*3600000;
-  const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  const yesterday=MadDatePolicy.isShared()?MadV2Dates.commonCutoff():new Date(Date.now()-86400000).toISOString().slice(0,10);
   if(!error&&!aged&&payload.range.until>=yesterday&&payload.freshness?.status!=='stale')return '';
   return `Last-good data · generated ${payload.generated_at} · coverage ${payload.range.since} → ${payload.range.until}. ${error?'Refresh failed: '+error:'Scheduled refresh pending.'}`;
 }
@@ -2129,10 +2030,10 @@ async function apiFetch(type,scope=requestScope()){
     if(!r.ok)throw new Error(json.error||`HTTP ${r.status}`);
     if(type==='promo_concepts'||type==='promo_formats'){if(!PromoFormat.validPayload(json))throw new Error('Refresh required: data schema unavailable');}
     else if(!Array.isArray(json.rows))throw new Error('Refresh required: data schema unavailable');
-    if(expected)MadV2Freshness.validate(json,expected);
+    if(expected){MadV2Freshness.validate(json,historyExpected(scope,json));MadDatePolicy.accept(json);}
     return json;
   });
-  if(expected)MadV2Freshness.validate(result,expected);
+  if(expected){MadV2Freshness.validate(result,historyExpected(scope,result));MadDatePolicy.accept(result);}
   if(type==='promo_concepts'&&!PromoFormat.validConceptPayload(result))throw new Error('Refresh required: concept schema unavailable');
   return result;
 }
@@ -2145,7 +2046,7 @@ function mainSourceLabel(results){
 }
 function setStatus(msg){const el=document.getElementById('loading-msg');if(el)el.textContent=msg;}
 let loadSequence=0,renderedScope='',sourceErrors={},requestedDay='',lastGoodLabel='',lastGoodSources=null,lastGoodSelection='';
-function historyExpected(scope){return {range:scope.customRange||presetBounds(scope.datePreset),currency:'CZK',account:'TUC',legacy:true,available:!scope.customRange&&scope.datePreset!=='last_month',custom:Boolean(scope.customRange)};}
+function historyExpected(scope,payload){return {range:scope.customRange||MadDatePolicy.range(scope.datePreset,payload)||presetBounds(scope.datePreset),currency:'CZK',account:'TUC',legacy:true,available:!scope.customRange&&scope.datePreset!=='last_month',custom:Boolean(scope.customRange)};}
 function historySelection(scope){return JSON.stringify(['TUC','CZK',scope.customRange||scope.datePreset]);}
 function showAvailableRange(range,requested){
   updateDateLabel();
@@ -2154,7 +2055,7 @@ function showAvailableRange(range,requested){
     document.getElementById('date-btn').title='Requested '+MadV2Freshness.full(requested)+'; showing whole available range '+MadV2Freshness.full(range);
   }else document.getElementById('date-btn').title='';
 }
-function scopeIdentity(scope){return new Date().toISOString().slice(0,10)+'|'+JSON.stringify(scope);}
+function scopeIdentity(scope){return MadDatePolicy.day()+'|'+JSON.stringify(scope);}
 function syncLoadingPanels(scopeKey){
   document.querySelectorAll('.panel').forEach(panel=>{
     // Independent history remains usable during another tab's date request.
@@ -2199,6 +2100,7 @@ async function loadData({force=false}={}){
       if(sequence!==loadSequence)return;
       // Independent reads may straddle an atomic publication switch. Discard
       // the entire cached triplet, never splice generations or change scope.
+      Object.assign(expected,historyExpected(scope));
       const sources=results.filter(r=>r.status==='fulfilled').map(r=>r.value);
       try{
         if(sources.length>1)MadV2Freshness.bundle(sources,expected);
@@ -2233,7 +2135,9 @@ async function loadData({force=false}={}){
     aggregateCampaigns=processAggregateRows(aggregate.value.rows);
     dailyCampaigns=processDaily(daily.value.rows);
     adCreatives=usableAds?processCreatives(usableAds.rows):[];
-    lastGoodSources=[...campaignSources,usableAds];lastGoodSelection=historySelection(scope);
+    lastGoodSources=[...campaignSources,usableAds];lastGoodSelection=historySelection(scope);requestedDay=MadDatePolicy.day();
+    const naming=MadPresentation.namingWarnings(results.filter(r=>r.status==='fulfilled').map(r=>r.value));
+    const warning=document.getElementById('v1-naming-warnings');warning.hidden=!naming.length;warning.textContent=naming.join(' · ');
     buildAllFilters();buildTriageFilters();
     ['czsk','us'].forEach(seg=>{renderKPIs(seg);refreshChart(seg);renderDailyTable(seg);renderCreatives(seg);});
     refreshTriageCharts();
@@ -2270,7 +2174,7 @@ async function loadData({force=false}={}){
   }
 }
 function resumeUtcDay(){
-  if(document.visibilityState==='hidden'||requestedDay===new Date().toISOString().slice(0,10))return;
+  if(document.visibilityState==='hidden'||requestedDay===MadDatePolicy.day())return;
   updateDateLabel();
   void loadData({force:true});
 }
@@ -2304,6 +2208,6 @@ const root=document.documentElement;const themeToggle=document.getElementById('t
 initTabFilters();initTriageCards();initSelects();initSortControls();updateDateLabel();loadData();
 </script>
 <script src="/glv-meta-ads/section-info.js?v=ad-creator-migration-1"></script>
-<script src="/glv-meta-ads/wl-report-ui.js?v=parity-controls-20261111"></script>
+<script src="/glv-meta-ads/wl-report-ui.js?v=shared-cutoff-20261111"></script>
 </body>
 </html>

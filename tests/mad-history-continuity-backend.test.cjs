@@ -78,6 +78,7 @@ test('published piece tampering fails closed instead of returning wrong totals',
 test('V2 API reads one immutable last-good generation, not partially replaced working keys',async()=>{
  const h=harness(),now=new Date(Date.now()-3*86400000);
  await h.run(now);
+ await require('./helpers/mad-shared-fixture.cjs').publishSyntheticShared(h.store,'last_30d');
  h.setFailure(k=>k===cache.presetKey('ads','last_30d'));
  await h.run(new Date());
  const saved={...process.env},original=global.fetch;

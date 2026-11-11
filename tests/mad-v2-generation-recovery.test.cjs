@@ -12,6 +12,7 @@ test('partial retry certifies a displayable generation without changing extracti
  assert.doesNotThrow(()=>ui.bundle(payloads,{range,currency:'USD',account:'All',now:+second}));
  assert.ok(payloads.every(p=>p.generation_id));
  assert.equal((await run(new Date(+second+30000))).verified,true);
+ await require('./helpers/mad-shared-fixture.cjs').publishSyntheticShared(store,'last_30d');
  const handler=require('../api/glv-meta-ads-v2/fb-data.js'),saved={...process.env},originalFetch=global.fetch;
  try{
   process.env.GLV_MAD_V2_ENABLED='1';process.env.GLV_META_BETA_AUTH_TOKEN='synthetic';process.env.KV_REST_API_URL='https://redis.test';process.env.KV_REST_API_TOKEN='synthetic';delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;

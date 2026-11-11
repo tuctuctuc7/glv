@@ -6,6 +6,11 @@ const path = require('node:path');
 
 const root = path.join(__dirname, '..');
 const read = (...parts) => fs.readFileSync(path.join(root, ...parts), 'utf8');
+// Assert the shipped entrypoint's actual shared renderer, not obsolete inline text.
+function presentationSource(html) {
+  assert.match(html, /<script src="\/glv-meta-ads\/shared-ui\.js\?[^\"]+"><\/script>/);
+  return html + '\n' + read('public/glv-meta-ads/shared-ui.js');
+}
 
 const APPROVED_ICON_HASH = '4ee12623258531a1210f18833815132cdbf2be8624d1a43f72f9685b527d8685';
 const requiredIds = [
@@ -65,7 +70,7 @@ test('the canonical Meta dashboard preserves the approved feature surface and sh
   assert.match(v2, /last_90d/);
   assert.match(v2, /this_month/);
   assert.match(v2, /last_month/);
-  assert.match(v2, /\$\{a\.purchases>0\?fmtInt\(a\.purchases\):'—'\}/);
+  assert.match(presentationSource(v2), /\$\{a\.purchases>0\?fmtInt\(a\.purchases\):'—'\}/);
 });
 
 test('the canonical Meta dashboard defines the Lead-gen inclusion and metric contract', () => {
@@ -105,7 +110,7 @@ test('Promo group charts have independent metric controls and LP to Purchase is 
     /\{key:'lp2pur',label:'LP→Purchase'\}/,
     /\{label:'LP→Purchase',text:r=>fmtPct\(r\.m\.lp2pur\)\}/,
     /'LP→Purchase'/,
-  ]) assert.match(dashboard, surface);
+  ]) assert.match(presentationSource(dashboard), surface);
 });
 
 test('shared Meta API exposes lead actions to the canonical dashboard', () => {

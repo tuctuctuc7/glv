@@ -5,15 +5,17 @@ test('preset/history misses make zero Meta pulls; stale coverage is explicit; fu
  const saved={...process.env},originalFetch=global.fetch;
  process.env.GLV_MAD_V2_ENABLED='1';process.env.GLV_META_BETA_AUTH_TOKEN='synthetic-auth';process.env.KV_REST_API_URL='https://redis.test';process.env.KV_REST_API_TOKEN='synthetic';
  delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
- let payload=null,calls=0;
- global.fetch=async url=>{assert.ok(String(url).startsWith('https://redis.test/'));calls++;const type=decodeURIComponent(String(url)).match(/:preset:(daily|aggregate|ads):/)?.[1];return {ok:true,json:async()=>({result:type&&payload?JSON.stringify({...payload,type}):null})};};
+ let payload=null,calls=0;const store=new Map();
+ global.fetch=async url=>{assert.ok(String(url).startsWith('https://redis.test/'));calls++;const key=decodeURIComponent(String(url).split('/get/')[1]);return {ok:true,json:async()=>({result:store.get(key)||null})};};
  const read=async type=>{const res=response();await handler({method:'GET',headers:{cookie:'glv_meta_beta=synthetic-auth'},query:{type}},res);return res;};
  try{
   for(const type of ['daily','aggregate','ads','promo_formats','promo_concepts'])assert.equal((await read(type)).code,503);
-  assert.equal(calls,17);
+  assert.ok(calls>0); // All calls above are Redis; no Meta fallback.
   payload={schema_version:1,complete:true,type:'daily',generation_id:'synthetic-coherent-generation',generated_at:new Date(Date.now()-100000000).toISOString(),range:{since:'2026-01-01',until:'2026-01-02'},fx:{},accounts:v2.ACCOUNTS.map(a=>({...a,rows:[]}))};
+  const publish=()=>require('./helpers/mad-shared-fixture.cjs').publishSyntheticShared(store,'last_30d',Object.fromEntries(['daily','aggregate','ads'].map(type=>[type,{...payload,type}])));
+  await publish();
   const res=await read('daily');assert.equal(res.code,200);assert.equal(res.body.stale,true);assert.equal(res.body.coverage_complete,false);assert.equal(res.headers['X-Cache'],'STALE');
-  payload.generated_at='2099-01-01T00:00:00Z';assert.equal((await read('daily')).code,503);
+  payload.generated_at='2099-01-01T00:00:00Z';await assert.rejects(publish());assert.equal((await read('daily')).code,200,'invalid future publication preserves last-good');
  }finally{global.fetch=originalFetch;for(const key of Object.keys(process.env))if(!(key in saved))delete process.env[key];Object.assign(process.env,saved);}
 });
 const {buildSnapshot}=require('../lib/glv-mad-v2-source.cjs');

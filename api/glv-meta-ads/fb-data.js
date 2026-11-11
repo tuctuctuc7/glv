@@ -111,6 +111,7 @@ function getVideoMetric(arr) {
 
 function normalizeCampaign(row) {
   return {
+    ...(row.account_id !== undefined ? {account_id:row.account_id} : {}),
     id:   row.campaign_id || '',
     name: row.campaign_name || '',
     amount_spent:                  row.spend || '0',
@@ -131,6 +132,7 @@ function normalizeCampaign(row) {
 function normalizeAd(row, statusMap) {
   const adId = row.ad_id || row.id || '';
   return {
+    ...(row.account_id !== undefined ? {account_id:row.account_id} : {}),
     id:   adId,
     name: row.ad_name || '',
     status: statusMap[adId] || 'UNKNOWN',
@@ -167,6 +169,7 @@ async function paginate(url) {
 }
 
 module.exports = async (req, res) => {
+  if(require('../../lib/glv-mad-v2.cjs').rolloutEnabled())return require('../../lib/glv-mad-shared-reader.cjs').handler(req,res,'v1');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }

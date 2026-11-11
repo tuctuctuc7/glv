@@ -191,8 +191,8 @@ function creatorIssues(rows) {
   const {resolveCreator}=require('../../public/glv-meta-ads/wl-report.js');
   return [...new Set(rows.flatMap(r=>r.creator_rows?.length?r.creator_rows:[r]).filter(r=>/(?:^|_)WL(?:_|$)/.test(r.campaign_name||r.name)&&!r.is_ghost&&(r.creator_issue||!resolveCreator(r.campaign_name||r.name,r.adset_name,r.ad_name||(r.campaign_name?r.name:undefined)).creator)).map(r=>`${r.campaign_name||r.name}${r.adset_name?' / '+r.adset_name:''}${r.ad_name?' / '+r.ad_name:''}${r.creator_issue?' — '+r.creator_issue:''}`))];
 }
-async function fetchAndCache(token, preset, includeToday, fetcher, {fullHistory=false,retained=false}={}) {
-  const { since, until } = monthRange(preset, includeToday);
+async function fetchAndCache(token, preset, includeToday, fetcher, {fullHistory=false,retained=false,rangeOverride}={}) {
+  const { since, until } = rangeOverride||(require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?require('../../lib/glv-mad-v2.cjs').rangeFor(preset):monthRange(preset, includeToday));
   const dateParam = `time_range=${encodeURIComponent(JSON.stringify({ since, until }))}`;
   const auth = `access_token=${token}`;
   const errors = [];
@@ -314,11 +314,15 @@ async function refreshPromoFormatCache(token, includeToday = false, fetcher = bo
     months:monthlyMix(payload.rows).map(m=>({month:m.month,images:m.formats.Banner.assets,videos:m.formats.Video.assets,total:m.total.assets,status:m.total.asset_status}))};
 }
 
-async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=false} = {}) {
+async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=false,correction} = {}) {
   const deadline=Date.now()+timeoutMs;
   const fetcher = require('../../lib/glv-meta-retry.cjs').metaRetryFetcher(boundedFetcher(deadline),deadline);
   const allErrors = [];
   const summaries = [];
+  if(require('../../lib/glv-mad-v2.cjs').rolloutEnabled()&&!correction){
+    try{correction=await require('../../lib/glv-mad-shared.cjs').ensureCorrection((...args)=>redisCommand(fetcher,...args),{force:fullHistory});}
+    catch{return {allErrors:['Shared correction intent unavailable'],summaries,hashes:{},freshness:{all_tabs_verified:false}};}
+  }
   // Remove legacy expiry on ALL valid preset histories before any Meta/FX work
   // can consume the shared budget, not just on the preset reached by the loop.
   try{for(const preset of PRESETS)await require('../../lib/glv-history-v1.cjs').retain((...args)=>redisCommand(fetcher,...args),(key,value)=>writeVerifiedCache(fetcher,key,value),preset);}
@@ -341,7 +345,7 @@ async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=f
   );
   const v2Enabled=require('../../lib/glv-mad-v2.cjs').rolloutEnabled();
   const v2Refresh=v2Enabled?require('../../lib/glv-mad-v2-cache.cjs').refreshV2({
-    token:process.env.GLV_MAD_V2_FB_ACCESS_TOKEN||token,force:fullHistory,deadline:deadline-10000,redis:(...args)=>redisCommand(fetcher,...args),
+    token:process.env.GLV_MAD_V2_FB_ACCESS_TOKEN||token,correctionId:correction?.id,force:fullHistory,deadline:deadline-10000,redis:(...args)=>redisCommand(fetcher,...args),
     promoPayload:async()=>{const outcome=await formatRefresh;if(outcome.error)throw new Error('Promo refresh failed');return JSON.parse((await redisCommand(fetcher,'GET',CACHE_KEY)).result);}
   }).then(result=>result,()=>({errors:['v2: refresh failed'],summaries:[],hashes:{},verified:false})):null;
   for (const preset of PRESETS) {
@@ -373,6 +377,20 @@ async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=f
     freshness.v2={through:require('../../lib/glv-mad-v2.cjs').commonCutoff(),all_tabs_verified:v2.verified,summaries:v2.summaries,failures:v2.failures||[]};
     freshness.all_tabs_verified=freshness.all_tabs_verified&&v2.verified;
   }
+  if(v2Refresh){
+    const shared=require('../../lib/glv-mad-shared.cjs'),redis=(...args)=>redisCommand(fetcher,...args);
+    freshness.shared={all_tabs_verified:false,correction_id:correction?.id};
+    try{
+      if(allErrors.length)throw Error('Source refresh incomplete');
+      const receipts=await shared.migrate(redis,PRESETS,correction);
+      const snapshot=require('../../lib/glv-mad-v2-storage.cjs').decode((await redis('GET',require('../../lib/glv-mad-v2-promo.cjs').CACHE_KEY)).result);
+      receipts.push(await require('../../lib/glv-mad-shared-promo.cjs').save(redis,snapshot));
+      for(const receipt of receipts)Object.assign(hashes,receipt.storage_hashes,{[receipt.key]:receipt.sha256});
+      hashes[shared.INTENT_KEY]=await shared.completeCorrection(redis,correction,receipts);
+      freshness.shared={all_tabs_verified:true,correction_id:correction.id,receipts};
+    }catch(error){allErrors.push('shared: publication incomplete; last-good retained');freshness.shared.reason=error.message;}
+    freshness.all_tabs_verified=freshness.all_tabs_verified&&freshness.shared.all_tabs_verified;
+  }
   return {allErrors, summaries, freshness, hashes};
 }
 
@@ -382,7 +400,7 @@ function verifyTabFreshness(summaries,includeToday=false,now=new Date()){
   // Historical selections stop at their own end, not an invented yesterday row.
   const byPreset=new Map(summaries.filter(s=>s.preset).map(s=>[s.preset,s]));
   const fresh=stamp=>{const age=now-Date.parse(stamp);return Number.isFinite(age)&&age>=-60000&&age<=90000000;};
-  const presetOK=(preset,types)=>byPreset.get(preset)?.bundle_readback_verified===true&&types.every(type=>{const source=byPreset.get(preset)?.[type],expected=monthRange(preset,includeToday,now);return source?.readback_verified===true&&source.creator_complete!==false&&source.range?.since===expected.since&&source.range?.until===expected.until&&fresh(source.generated_at);});
+  const presetOK=(preset,types)=>byPreset.get(preset)?.bundle_readback_verified===true&&types.every(type=>{const source=byPreset.get(preset)?.[type],expected=require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?require('../../lib/glv-mad-v2.cjs').rangeFor(preset,now):monthRange(preset,includeToday,now);return source?.readback_verified===true&&source.creator_complete!==false&&source.range?.since===expected.since&&source.range?.until===expected.until&&fresh(source.generated_at);});
   const tabs={};
   for(const tab of ['czsk','czsk-triage','czsk-promo','czsk-leadgen','us']){
     const types=['aggregate','daily',...(['czsk','us'].includes(tab)?['ads']:[])];
@@ -449,13 +467,13 @@ async function handler(req, res) {
       return res.status(busy?202:campaign_metadata.readback_verified&&!auditFailed?200:500).json({ok:!busy&&campaign_metadata.readback_verified&&!auditFailed,metadata_only:true,skipped:result.skipped,campaign_metadata,summaries:result.summaries});
     }catch{return res.status(500).json({ok:false,metadata_only:true,error:'Campaign metadata coordination failed; prior facts retained'});}
   }
-  let result;
+  let result,correction;
   try{
     result=await scheduledRefresh({
       redis:(...args)=>redisCommand(redisFetcher,...args),
-      beforeVerify:refreshNames,
-      refresh:()=>runRefresh(token,includeToday,{fullHistory,timeoutMs:Math.max(0,deadline-Date.now()-10000)}),
-      keys:[...PRESETS.flatMap(p=>[...['aggregate','daily','ads'].map(t=>`glv:${t}:${p}`),require('../../lib/glv-history-v1.cjs').key(p)]),CACHE_KEY,...(require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?require('../../lib/glv-mad-v2-cache.cjs').requiredKeys():[])],
+      beforeVerify:async()=>{if(v2.rolloutEnabled())correction=await require('../../lib/glv-mad-shared.cjs').ensureCorrection((...args)=>redisCommand(redisFetcher,...args),{force:includeToday||fullHistory});await refreshNames();},
+      refresh:()=>runRefresh(token,includeToday,{correction,fullHistory,timeoutMs:Math.max(0,deadline-Date.now()-10000)}),
+      keys:[...PRESETS.flatMap(p=>[...['aggregate','daily','ads'].map(t=>`glv:${t}:${p}`),require('../../lib/glv-history-v1.cjs').key(p)]),CACHE_KEY,...(require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?[...require('../../lib/glv-mad-v2-cache.cjs').requiredKeys(),...require('../../lib/glv-mad-shared.cjs').requiredKeys()]:[])],
       through:require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?`${cutoffDate(includeToday)}:v2:${require('../../lib/glv-mad-v2.cjs').commonCutoff()}`:cutoffDate(includeToday),force:includeToday||fullHistory
     });
   }catch(error){

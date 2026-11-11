@@ -64,7 +64,11 @@ test('V2 protected cached reader consumes the shared metadata overlay at the sam
  try{
   process.env.GLV_MAD_V2_ENABLED='1';process.env.GLV_META_BETA_AUTH_TOKEN='synthetic';process.env.KV_REST_API_URL='https://redis.test';process.env.KV_REST_API_TOKEN='synthetic';delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
   const range={since:'2026-11-09',until:'2026-11-09'};
-  global.fetch=async url=>{const key=decodeURIComponent(String(url).split('/get/')[1]);return {ok:true,json:async()=>({result:JSON.stringify(key===names.KEY?m:s)})};};
+  const store=new Map(),native=Object.fromEntries(['daily','aggregate','ads'].map(t=>[t,{...snapshot(t),generated_at:stamp}]));
+  Object.assign(native.ads.accounts[0].rows[0],{adset_id:'555',adset_name:'Set unchanged',partnership:{status:'unverified',reason:'metadata_unavailable',evidence:[]}});
+  await require('./helpers/mad-shared-fixture.cjs').publishSyntheticShared(store,require('../lib/glv-mad-shared-custom.cjs').slot(range),native);
+  store.set(names.KEY,JSON.stringify(m));
+  global.fetch=async(url,options={})=>{const key=options.body?JSON.parse(options.body)[1]:decodeURIComponent(String(url).split('/get/')[1]);return {ok:true,json:async()=>({result:store.get(key)||null})};};
   const res={code:200,setHeader(){},status(code){this.code=code;return this;},json(body){this.body=body;return this;}};
   await handler({method:'GET',headers:{cookie:'glv_meta_beta=synthetic'},query:{type:'daily',currency:'CZK',account:'TUC',time_range:JSON.stringify(range)}},res);
   assert.equal(res.code,200);assert.equal(res.body.rows[0].name,current);assert.equal(res.body.campaign_metadata.generated_at,stamp);
