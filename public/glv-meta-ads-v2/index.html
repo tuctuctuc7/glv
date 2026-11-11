@@ -4,7 +4,8 @@
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('glv-mad-v2-theme')==='light'?'light':'dark';}catch{}</script>
 <script src="/glv-meta-ads-v2/dates.js"></script>
 <script src="/glv-meta-ads-v2/freshness.js?v=history-continuity-20261111"></script>
-<script src="/glv-meta-ads-v2/config.js?v=parity-controls-20261111"></script>
+<script src="/glv-meta-ads/date-policy.js?v=shared-cutoff-20261111"></script>
+<script src="/glv-meta-ads-v2/config.js?v=shared-ui-20261111"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>GLV Meta Ads Pulse</title>
@@ -322,17 +323,25 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 <script src="/glv-meta-ads/promo-concepts.js?v=promo-spend-cohorts-20261110"></script>
 <script src="/glv-meta-ads-v2/promo-concepts-ui.js?v=promo-spend-cohorts-20261110"></script>
 <link rel="stylesheet" href="/glv-meta-ads/promo-concepts.css?v=concept-total-color-20261014">
-<script src="/glv-meta-ads-v2/promo-format-ui.js?v=promo-spend-cohorts-20261110"></script>
+<script src="/glv-meta-ads-v2/promo-format-ui.js?v=shared-ui-20261111"></script>
+<script src="/glv-meta-ads/shared-ui.js?v=shared-ui-20261111"></script>
+<script src="/glv-meta-ads/presentation.js?v=shared-ui-20261111"></script>
 <script src="/glv-meta-ads/session-cache.js?v=ghost-reconciliation-20261103"></script>
 <link rel="stylesheet" href="/glv-meta-ads/section-info.css?v=creator-context-20261109">
 <link rel="stylesheet" href="/glv-meta-ads/wl-report.css?v=partnership-v3">
 <script src="/glv-meta-ads-v2/wl-report.js?v=ad-creator-parity-2"></script>
 <style>
-.v2-global-controls{display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:10px}
+.v2-global-controls,.v2-scope-selects{display:flex;align-items:center;gap:6px;flex-shrink:0}.v2-global-controls{margin-left:10px}
 .v2-global-controls select{min-height:44px;max-width:80px}
-@media(max-width:720px){.header-brand .brand-copy{display:none}.header-brand{flex-shrink:0}.header-right.controls-collapsed{width:0;overflow:hidden}.v2-global-controls{margin-left:auto}.v2-global-controls .theme-toggle{min-height:44px}.header-right:not(.controls-collapsed){grid-template-columns:1fr}.header-top{gap:6px}}
+@media(max-width:720px){
+ body{padding-top:calc(116px + env(safe-area-inset-top))}
+ .header-top{height:calc(116px + env(safe-area-inset-top));padding-bottom:62px;gap:6px}
+ .header-right.controls-collapsed{width:0;overflow:hidden}
+ .v2-global-controls{margin-left:auto}
+ .v2-scope-selects{position:absolute;top:calc(64px + env(safe-area-inset-top));right:12px;left:12px;justify-content:flex-end}
+ .header-right:not(.controls-collapsed){top:calc(122px + env(safe-area-inset-top));grid-template-columns:1fr}
+}
 </style>
-<link rel="stylesheet" href="/glv-meta-ads-v2/quiet-precision.css?v=quiet-precision-2">
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to dashboard content</a>
@@ -382,7 +391,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
       </label>
       <span class="updated-at" id="updated-at"></span>
     </div><div class="v2-global-controls">
-      <label class="sr-only" for="v2-account">Account</label><select class="metric-select" id="v2-account" aria-label="Account"><option>All</option><option>TUC</option><option>TGLV</option></select><label class="sr-only" for="v2-currency">Reporting currency</label><select class="metric-select" id="v2-currency" aria-label="Reporting currency"><option>USD</option><option>CZK</option></select>
+      <div class="v2-scope-selects"><label class="sr-only" for="v2-account">Account</label><select class="metric-select" id="v2-account" aria-label="Account"><option>All</option><option>TUC</option><option>TGLV</option></select><label class="sr-only" for="v2-currency">Reporting currency</label><select class="metric-select" id="v2-currency" aria-label="Reporting currency"><option>USD</option><option>CZK</option></select></div>
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">☀</button>
       <button class="mobile-controls-toggle" id="mobile-controls-toggle" type="button" aria-expanded="true" aria-controls="date-wrap">Filters</button>
     </div>
@@ -401,7 +410,8 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 
 <main class="page" id="main-content">
   <p class="promo-note" id="v2-date-note">Local account dates (Prague / Los Angeles) are added by date label, not rebucketed. Daily CNB FX; previous published fixing on holidays. Account identity wins over campaign prefix.</p><div id="v2-naming-warnings" class="wl-naming-warning" role="status" hidden></div>
-  <section class="dashboard-intro" aria-labelledby="dashboard-title"><h1 class="dashboard-title" id="dashboard-title">Performance</h1><div class="dashboard-actions"><div class="scope-pill">META ADS · TWO ACCOUNTS · <span id="v2-scope-currency">USD</span></div><button id="refresh-data" type="button" class="metric-select" onclick="document.getElementById('tab-wl').classList.contains('active')?GlvWlUI.load(true):loadData({force:true})" title="Reload the active view">Refresh data</button></div></section>
+  <section class="dashboard-intro" aria-labelledby="dashboard-title"><div><p class="dashboard-kicker">Executive media control room</p><h1 class="dashboard-title" id="dashboard-title">Performance, without the noise.</h1><p class="dashboard-sub">Campaign efficiency, promo contribution, creative health, and daily evidence across CZSK and US.</p></div><div class="scope-pill">META ADS · <span id="v2-scope-account">All accounts</span> · <span id="v2-scope-currency">USD</span></div></section>
+<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button id="refresh-data" type="button" class="metric-select" style="min-height:44px" onclick="document.getElementById('tab-wl').classList.contains('active')?GlvWlUI.load(true):loadData({force:true})" title="Reload the active view">Refresh data</button></div>
 <div id="loading" class="loading" role="status"><div class="spinner"></div><span id="loading-msg">Loading campaigns…</span></div>
 <div id="error" class="err" role="status" style="display:none;"></div>
 
@@ -797,7 +807,7 @@ const CREATIVE_COLUMNS = [
 
 let datePreset  = 'last_30d';
 let customRange = null;
-let usdRate     = 0.044;
+let usdRate     = null;
 let aggregateCampaigns = [];
 let dailyCampaigns     = [];
 let adCreatives        = [];
@@ -923,7 +933,7 @@ function fmtInt(n){return(!n||isNaN(n))?'—':Math.round(n).toLocaleString('en-U
 function fmtRoas(n){return(!n||n<=0)?'—':n.toFixed(2)+'x';}
 function fmtPct(n){return(!n||n<=0)?'—':n.toFixed(2)+'%';}
 function fmtOne(n){return(!n||n<=0)?'—':n.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});}
-function fmtUsd(){return ''; }
+function fmtUsd(n){return MadPresentation.usdEquivalent(n,usdRate,reportCurrency);}
 function roasClass(v){return v>=1.7?'roas-good':v>=1?'roas-warn':'roas-bad';}
 
 function aggregate(rows){
@@ -1012,6 +1022,7 @@ function setChartGranularity(seg,grain){
   refreshChart(seg);
 }
 function initSortControls(){
+  MadPresentation.syncSortIndicators(sortState,document);
   ['czsk','us'].forEach(seg=>{
     populateSortSelect(`daily-sort-${seg}`,DAILY_COLUMNS,sortState.daily[seg].key);
     populateSortSelect(`creative-sort-${seg}`,CREATIVE_COLUMNS,sortState.creative[seg].key);
@@ -1019,10 +1030,7 @@ function initSortControls(){
   populateSortSelect('promo-sort-czsk',DAILY_COLUMNS,sortState.promo.czsk.key);
   populateSortSelect('leadgen-sort-czsk',[...DAILY_COLUMNS,...LEAD_DAILY_COLUMNS],sortState.leadgen.czsk.key);
 }
-function campaignCode(name){
-  const parts=String(name||'').split('_').filter(Boolean);
-  return /^(TUC|TGLV|GLV)$/.test(parts[0])?parts.slice(0,2).join('_'):String(name||'—');
-}
+function campaignCode(name,account){return MadPresentation.campaignCode(name,reportAccount==='All',account);}
 
 const MONTH_SHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function isoToShort(iso){if(!iso)return'';const[,m,d]=iso.split('-');return`${MONTH_SHORT[parseInt(m)-1]} ${parseInt(d)}`;}
@@ -1084,6 +1092,7 @@ function selectPreset(p){datePreset=p;customRange=null;setDateMenuOpen(false,{re
 function applyCustomDate(){
   const since=document.getElementById('date-from').value;const until=document.getElementById('date-to').value;
   if(!since||!until){alert('Please select both dates.');return;}
+  const error=MadDatePolicy.customError({since,until},true);if(error){alert(error);return;}
   customRange={since,until};datePreset=null;setDateMenuOpen(false,{restoreFocus:true});updateDateLabel();loadData();
 }
 document.addEventListener('click',e=>{
@@ -1148,7 +1157,7 @@ function processCreatives(rawRows){
     const campInfo=campaignMeta[r.campaign_id]||{};
     const isVideo=thruplay>0||v3sec>0;
     const campaignName=r.campaign_name||campInfo.name||'';
-    return{id:r.id,name:r.name,status:r.status,campaignId:r.campaign_id,campaignName,adName:r.name,adsetName:r.adset_name||'',creator:GlvWlReport.resolveCreator(campaignName,r.adset_name,r.name).creator,campaignCode:campaignCode(campaignName),type:isVideo?'Video':'Static',
+    return{id:r.id,name:r.name,status:r.status,campaignId:r.campaign_id,campaignName,adName:r.name,adsetName:r.adset_name||'',creator:GlvWlReport.resolveCreator(campaignName,r.adset_name,r.name).creator,campaignCode:campaignCode(campaignName,r.account_label),type:isVideo?'Video':'Static',
       segment:r.account_label==='TGLV'||r.market==='US'?'us':campInfo.segment||'czsk',spend,lp,purchases,checkouts,leads,linkClicks,revenue,impressions,isVideo,
       hookRate:impressions>0?v3sec/impressions*100:0,holdRate:impressions>0?thruplay/impressions*100:0};
   }).filter(c=>c.spend>0);
@@ -1189,12 +1198,6 @@ function buildTabFilters(tab){
   const rows=filterTabRows(tab,[...getTabBaseRows(tab,'aggregate'),...getTabBaseRows(tab,'daily')],true);
   const options=new Map(rows.map(row=>[String(row.id),{value:String(row.id),label:row.name}]));
   buildTriageFilterOptions(tabFilterKey(tab,'campaign'),[...options.values()]);
-}
-function renderTab(tab){
-  if(tab==='czsk-triage'){refreshTriageCharts();return;}
-  if(tab==='czsk-promo'){renderPromoKPIs();refreshPromoCharts();renderPromoTable();return;}
-  if(tab==='czsk-leadgen'){renderLeadgenKPIs();refreshLeadgenCharts();renderLeadgenTable();return;}
-  renderKPIs(tab);refreshChart(tab);renderDailyTable(tab);renderCreatives(tab);
 }
 function syncTabGrain(tab){
   if(tab==='czsk-triage'){syncTriageGrainControl();return;}
@@ -1321,21 +1324,6 @@ function renderSourceEmpty(id,source){
   el.innerHTML='<div class="empty"></div>';
   el.firstChild.textContent=sourceErrors[source]?'Data unavailable — '+sourceErrors[source]:'No campaign activity for these dates.';
   return true;
-}
-function renderKPIs(seg){
-  renderCreatorWarning(seg);
-  if(renderSourceEmpty('kpi-'+seg,'aggregate'))return;
-  const rows=getMainSegmentRows(seg,'aggregate');const a=aggregate(rows);const m=calcMetrics(a);
-  document.getElementById('kpi-'+seg).innerHTML=`
-    <div class="kpi-card"><div class="kpi-label">Spend</div><div class="kpi-val">${fmtInt(a.spend)}</div><div class="kpi-sub">${reportCurrency}</div><div class="kpi-sub2">${fmtUsd(a.spend)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Revenue</div><div class="kpi-val">${a.revenue>0?fmtInt(a.revenue):'—'}</div><div class="kpi-sub">${reportCurrency}</div><div class="kpi-sub2">${fmtUsd(a.revenue)}</div></div>
-    <div class="kpi-card hl"><div class="kpi-label">ROAS</div><div class="kpi-val ${roasClass(m.roas)}">${fmtRoas(m.roas)}</div><div class="kpi-sub">Revenue / Spend</div></div>
-    <div class="kpi-card"><div class="kpi-label">Purchases</div><div class="kpi-val">${a.purchases>0?fmtInt(a.purchases):'—'}</div><div class="kpi-sub">${m.cpa>0?'CPA: '+fmtInt(m.cpa)+moneyLabel(' CZK'):'CPA: —'}</div></div>
-    <div class="kpi-card"><div class="kpi-label">LP → Purchase</div><div class="kpi-val">${fmtPct(m.lp2pur)}</div><div class="kpi-sub">${a.lp>0?fmtInt(a.lp)+' LP views':'No LP data'}</div></div>
-    <div class="kpi-card"><div class="kpi-label">LP → Checkout</div><div class="kpi-val">${fmtPct(m.lp2co)}</div><div class="kpi-sub">${a.checkouts>0?fmtInt(a.checkouts)+' checkouts':'No checkout data'}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Checkout → Purchase</div><div class="kpi-val">${fmtPct(m.co2pur)}</div><div class="kpi-sub">Checkout to purchase</div></div>
-    <div class="kpi-card"><div class="kpi-label">Cost / Checkout</div><div class="kpi-val">${m.costChk>0?fmtInt(m.costChk):'—'}</div><div class="kpi-sub">${m.costChk>0?moneyLabel('CZK'):'No checkout data'}</div></div>
-  `;
 }
 const fmtCreatorGhostMoney=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 function renderPromoKPIs(){
@@ -1479,31 +1467,6 @@ function formatChartTick(key,v){
 }
 function wholeNumberTickPrecision(key){return['lp','purchases','checkouts','leads','impressions'].includes(key)?0:undefined;}
 function sortLegendByAxis(a,b,data){const rank=item=>data.datasets[item.datasetIndex]?.yAxisID==='y1'?1:0;return rank(a)-rank(b);}
-function refreshChart(seg){
-  const rows=getMainSegmentRows(seg,'daily');const grain=chartGranularity[seg]||'day';const daily=byPeriod(rows,null,grain);
-  const lKey=document.getElementById('chart-left-'+seg).value;const rKey=document.getElementById('chart-right-'+seg).value;
-  const labels=daily.map(d=>fmtChartDate(d.date,grain));
-  const leftVals=daily.map(d=>{const m=calcMetrics(d);return computeChartMetric(lKey,d,m);});
-  const rightVals=daily.map(d=>{const m=calcMetrics(d);return computeChartMetric(rKey,d,m);});
-  if(charts[seg]){charts[seg].destroy();delete charts[seg];}
-  const ctx=document.getElementById('chart-'+seg).getContext('2d');
-  const allMetrics=[...CHART_METRIC_OPTIONS,...LEAD_CHART_METRIC_OPTIONS];
-  const leftMetric=allMetrics.find(m=>m.key===lKey)||metricDefinition(lKey);
-  const rightMetric=allMetrics.find(m=>m.key===rKey)||metricDefinition(rKey);
-  const lLabel=leftMetric.label;const rLabel=rightMetric.label;
-  charts[seg]=new Chart(ctx,{
-    data:{labels,datasets:[
-      {type:'bar',label:lLabel,metricKey:lKey,data:leftVals,backgroundColor:hexToRgba(leftMetric.color,.25),borderColor:leftMetric.color,borderWidth:1.5,yAxisID:'y',order:2},
-      {type:'line',label:rLabel,metricKey:rKey,data:rightVals,borderColor:rightMetric.color,backgroundColor:hexToRgba(rightMetric.color,.1),borderWidth:2,pointRadius:3,fill:false,yAxisID:'y1',order:1,tension:.3},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'bottom',align:'start',labels:{boxWidth:12,font:{size:11},sort:sortLegendByAxis}},
-        tooltip:{callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${formatChartVal(ctx.datasetIndex===0?lKey:rKey,ctx.raw)}`}}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45}},
-        y:{position:'left',grid:{color:'rgba(0,0,0,.05)'},ticks:{precision:wholeNumberTickPrecision(lKey),font:{size:11},callback:v=>formatChartTick(lKey,v)}},
-        y1:{position:'right',grid:{display:false},ticks:{precision:wholeNumberTickPrecision(rKey),font:{size:11},callback:v=>formatChartTick(rKey,v)}}}}
-  });
-}
 function refreshTrendsChart(){
   const key=document.getElementById('chart-trends-metric').value;
   const czskD=byDate(getSegmentRows('czsk','daily'));const usD=byDate(getSegmentRows('us','daily'));
@@ -1804,35 +1767,6 @@ function renderControlledTable(container,columns,rows,tableClass=''){
 function roasHtml(v){return`<span class="${roasClass(v)}">${escapeHtml(fmtRoas(v))}</span>`;}
 function badgeHtml(type){return`<span class="badge ${type==='Video'?'badge-v':'badge-s'}">${escapeHtml(type)}</span>`;}
 
-function renderDailyTable(seg){
-  if(renderSourceEmpty('daily-table-'+seg,'daily'))return;
-  const sel=filterState[seg];const rows=getMainSegmentRows(seg,'daily');const daily=byPeriod(rows,sel,tabGrain[seg]);
-  const container=document.getElementById('daily-table-'+seg);
-  container.innerHTML='';
-  if(!daily.length){container.innerHTML='<div class="empty">No data.</div>';return;}
-  if(grids['daily-'+seg]){try{grids['daily-'+seg].destroy();}catch(e){}}
-  const sorted=sortRows(daily,'daily',seg);
-  const tableRows=sorted.map(d=>({d,m:calcMetrics(d)}));
-  const columns=[
-    {label:tabGrain[seg]==='day'?'Date':'Period',text:r=>tabGrain[seg]==='day'?r.d.date:fmtChartDate(r.d.date,tabGrain[seg])},
-    {label:'Spend',text:r=>fmtInt(r.d.spend)},
-    {label:'Revenue',text:r=>r.d.revenue>0?fmtInt(r.d.revenue):'—'},
-    {label:'ROAS',text:r=>fmtRoas(r.m.roas),html:r=>roasHtml(r.m.roas)},
-    {label:'Purchases',text:r=>r.d.purchases||'—'},
-    {label:'CPA',text:r=>r.m.cpa>0?fmtInt(r.m.cpa):'—'},
-    {label:'AOV',text:r=>r.m.aov>0?fmtInt(r.m.aov):'—'},
-    {label:'LP→Checkout',text:r=>fmtPct(r.m.lp2co)},
-    {label:'Checkout→Purchase',text:r=>fmtPct(r.m.co2pur)},
-    {label:'Checkouts',text:r=>r.d.checkouts||'—'},
-    {label:'Cost/Checkout',text:r=>r.m.costChk>0?fmtInt(r.m.costChk):'—'},
-    {label:'LP Views',text:r=>fmtInt(r.d.lp)},
-    {label:'Cost/LP',text:r=>fmtOne(r.m.costLp)},
-    {label:'CTR',text:r=>fmtPct(r.m.ctr)},
-    {label:'LP→Purchase',text:r=>fmtPct(r.m.lp2pur)},
-    {label:'CPM',text:r=>r.m.cpm>0?fmtInt(r.m.cpm):'—'},
-  ];
-  renderControlledTable(container,columns,tableRows,'daily-data-table');
-}
 function setPromoTableMode(mode){
   promoTableMode=mode;
   document.getElementById('promo-mode-groups')?.classList.toggle('active',mode==='groups');
@@ -2003,26 +1937,6 @@ function leadgenSortComparator(a,b){
   const cmp=typeof av==='string'||typeof bv==='string'?String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:'base'}):av-bv;
   return state.dir==='asc'?cmp:-cmp;
 }
-function renderLeadgenTable(){
-  if(renderSourceEmpty('leadgen-table','daily'))return;
-  const container=document.getElementById('leadgen-table');if(!container)return;
-  const grain=tabGrain['czsk-leadgen'];const period=grain==='day'?'days':grain==='week'?'weeks':'months';
-  document.getElementById('leadgen-mode-groups').textContent=`Groups → ${period}`;document.getElementById('leadgen-mode-days').textContent=`${period[0].toUpperCase()+period.slice(1)} → groups`;
-  const rows=byDateLeadgenGroup(periodRows(getLeadgenRows('daily'),'czsk-leadgen'),filterState['czsk-leadgen']);
-  if(!rows.length){container.innerHTML='<div class="empty">No CZSK Lead-gen data for this range.</div>';return;}
-  const metricColumns=['Spend','Revenue','ROAS','Purchases','CPA','AOV','LP→Checkout','Checkout→Purchase','Checkouts','Cost/Checkout','LP Views','Cost/LP','CTR','LP→Purchase','CPM','Leads','CPL','LP→Lead'];
-  const columns=leadgenTableMode==='groups'?['Group',grain==='day'?'Date':'Period',...metricColumns]:[grain==='day'?'Date':'Period','Group',...metricColumns];
-  const state=sortState.leadgen.czsk;let body='';
-  if(leadgenTableMode==='groups'){
-    let groups=activeLeadgenGroups().map(g=>sumPromoRows(rows.filter(r=>r.group===g.key),null,g.key)).filter(g=>g.spend||g.revenue||g.purchases||g.checkouts||g.leads||g.lp);
-    groups=state.key==='date'?groups.sort((a,b)=>LEADGEN_GROUPS.findIndex(g=>g.key===a.group)-LEADGEN_GROUPS.findIndex(g=>g.key===b.group)):groups.sort(leadgenSortComparator);
-    for(const total of groups){const children=rows.filter(r=>r.group===total.group).sort(leadgenSortComparator);body+=leadgenNestedRow('subtotal-row',leadgenGroupHtml(total.group),'Subtotal',total);body+=children.map(r=>leadgenNestedRow('child-row','',`<span class="nested-child">${escapeHtml(grain==='day'?r.date:fmtChartDate(r.date,grain))}</span>`,r)).join('');}
-  }else{
-    const dates=[...new Set(rows.map(r=>r.date))].map(date=>sumPromoRows(rows.filter(r=>r.date===date),date,null)).sort(leadgenSortComparator);
-    for(const total of dates){let children=rows.filter(r=>r.date===total.date);children=state.key==='date'?children.sort((a,b)=>LEADGEN_GROUPS.findIndex(g=>g.key===a.group)-LEADGEN_GROUPS.findIndex(g=>g.key===b.group)):children.sort(leadgenSortComparator);body+=leadgenNestedRow('subtotal-row',escapeHtml(grain==='day'?total.date:fmtChartDate(total.date,grain)),'Subtotal',total);body+=children.map(r=>leadgenNestedRow('child-row','',`<span class="nested-child">${leadgenGroupHtml(r.group)}</span>`,r)).join('');}
-  }
-  container.innerHTML=`<div class="data-table-wrap"><table class="data-table daily-data-table"><thead><tr>${columns.map(label=>`<th title="${escapeHtml(label)}">${escapeHtml(label)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
-}
 
 function renderTrendsTable(){
   const czskMap=Object.fromEntries(byDate(getSegmentRows('czsk','daily')).map(d=>[d.date,d]));
@@ -2101,6 +2015,7 @@ function renderCreatives(seg){
 
 const responseCache=MetaSessionCache.createSessionCache();
 function requestScope(){return customRange?{customRange:{since:customRange.since,until:customRange.until}}:{datePreset,expectedRange:MadV2Dates.rangeFor(datePreset)};}
+function fetchUsdRate(){return MadPresentation.fetchUsdRate(responseCache);}
 function promoHistoryWarning(payload,error=''){
   const state=MadV2Freshness.validate({...payload,requested_range:undefined},{range:{since:'2026-03-01',until:MadV2Dates.commonCutoff()},currency:reportCurrency,account:reportAccount,history:true});
   return [state.warning,error?`Stale last-good · actual range ${payload.range.since} → ${payload.range.until} · source ${payload.generated_at}. Refresh failed: ${error}`:''].filter(Boolean).join(' ');
@@ -2181,6 +2096,11 @@ async function loadData({force=false}={}){
     // History owns its own generation guard; neither it nor optional FX gates tabs.
     void loadPromoFormats();
     void loadPromoConcepts();
+    void fetchUsdRate().then(rate=>{
+      if(sequence!==loadSequence)return;
+      usdRate=rate;
+      if(renderedScope===scopeKey)['czsk','us'].forEach(renderKPIs);
+    }).catch(()=>{});
     const expected=historyExpected(scope);
     let results;
     for(let attempt=0;attempt<2;attempt++){
@@ -2224,7 +2144,7 @@ async function loadData({force=false}={}){
     dailyCampaigns=processDaily(daily.value.rows);
     adCreatives=usableAds?processCreatives(usableAds.rows):[];
     lastGoodSources=[...campaignSources,usableAds];lastGoodSelection=historySelection(scope);
-    const naming=[...new Set(results.filter(r=>r.status==='fulfilled').flatMap(r=>r.value.warnings||[]))];
+    const naming=MadPresentation.namingWarnings(results.filter(r=>r.status==='fulfilled').map(r=>r.value));
     const warning=document.getElementById('v2-naming-warnings');warning.hidden=!naming.length;warning.textContent=naming.join(' · ');
     buildAllFilters();buildTriageFilters();
     ['czsk','us'].forEach(seg=>{renderKPIs(seg);refreshChart(seg);renderDailyTable(seg);renderCreatives(seg);});
@@ -2291,10 +2211,10 @@ function formatUtcTimestamp(date){
   const pad=n=>String(n).padStart(2,'0');
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth()+1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())} UTC`;
 }
-const root=document.documentElement;const themeToggle=document.getElementById('theme-toggle');const mobileControlsToggle=document.getElementById('mobile-controls-toggle');const headerRight=document.querySelector('.header-right');function setTheme(theme){root.dataset.theme=theme;try{localStorage.setItem('glv-mad-v2-theme',theme);}catch(e){}const light=theme==='light';themeToggle.textContent=light?'☾':'☀';themeToggle.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');Chart.defaults.color=light?'#646674':'#b2b5c4';Chart.defaults.borderColor=light?'rgba(100,102,116,.18)':'rgba(178,181,196,.16)';Object.values(charts).forEach(chart=>chart?.update('none'));}let preferred='dark';try{preferred=localStorage.getItem('glv-mad-v2-theme')||'dark';}catch(e){}setTheme(preferred==='light'?'light':'dark');if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');}themeToggle.addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));mobileControlsToggle.addEventListener('click',()=>{const collapsed=headerRight.classList.toggle('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded',String(!collapsed));mobileControlsToggle.textContent=collapsed?'Filters':'Done';});
+const root=document.documentElement;const themeToggle=document.getElementById('theme-toggle');const mobileControlsToggle=document.getElementById('mobile-controls-toggle');const headerRight=document.querySelector('.header-right');function setTheme(theme){root.dataset.theme=theme;try{localStorage.setItem('glv-mad-v2-theme',theme);}catch(e){}const light=theme==='light';themeToggle.textContent=light?'☾':'☀';themeToggle.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');Chart.defaults.color=light?'#637589':'#9bacc0';Chart.defaults.borderColor=light?'rgba(99,117,137,.18)':'rgba(155,172,192,.16)';Object.values(charts).forEach(chart=>chart?.update('none'));}let preferred='dark';try{preferred=localStorage.getItem('glv-mad-v2-theme')||'dark';}catch(e){}setTheme(preferred==='light'?'light':'dark');if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');}themeToggle.addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));mobileControlsToggle.addEventListener('click',()=>{const collapsed=headerRight.classList.toggle('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded',String(!collapsed));mobileControlsToggle.textContent=collapsed?'Filters':'Done';});
 initV2Controls();initTabFilters();initTriageCards();initSelects();initSortControls();restoreV2ControlElements();updateDateLabel();loadData();
 </script>
 <script src="/glv-meta-ads/section-info.js?v=ad-creator-migration-1"></script>
-<script src="/glv-meta-ads-v2/wl-report-ui.js?v=parity-controls-20261111"></script>
+<script src="/glv-meta-ads-v2/wl-report-ui.js?v=shared-cutoff-20261111"></script>
 </body>
 </html>

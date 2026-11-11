@@ -36,6 +36,8 @@ test('shared cron composes real V2 source, CNB, Promo reuse and 19 durable exact
   process.env.GLV_MAD_V2_FB_ACCESS_TOKEN='synthetic-v2-only';
   const result=await runRefresh('synthetic',false,{timeoutMs:30000});
   assert.deepEqual(result.allErrors,[]);assert.equal(result.freshness.v2.all_tabs_verified,true);
+  assert.equal(result.freshness.shared.all_tabs_verified,true);
+  for(const key of require('../lib/glv-mad-shared.cjs').requiredKeys())assert.ok(result.hashes[key],key);
   for(const key of cache.requiredKeys()){assert.ok(result.hashes[key]);assert.ok(store.has(key));assert.equal(ttls.get(key),-1);}
   assert.equal(result.freshness.v2.summaries.length,19);
   assert.ok(Object.keys(result.hashes).some(key=>key==='glv:daily:last_30d'));

@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname,'../public/glv-meta-ads/index.html'),'utf8');
 function runtime() {
-  const context = vm.createContext({GlvWlReport:require('../public/glv-meta-ads/wl-report.js')});
+  const context = vm.createContext({GlvWlReport:require('../public/glv-meta-ads/wl-report.js'),MadPresentation:require('../public/glv-meta-ads/presentation.js')});
   const slice=(start,end)=>html.slice(html.indexOf(start),html.indexOf(end));
   vm.runInContext(`let campaignMeta={};const CAMPAIGN_COLORS=['#123456'];
     ${slice('const parseAmt','function getCampaignColor')}

@@ -15,7 +15,11 @@ function fixtures(){
  store.set(names.KEY,metadata);return store;
 }
 test('protected owner audit proves target name by ID in all 36 preset/type/version consumers without changing stored facts',async()=>{
- const store=fixtures(),before=JSON.stringify([...store]);
+ const store=fixtures();
+ const bytes=new Map([...store].map(([k,v])=>[k,JSON.stringify(v)])),shared=require('../lib/glv-mad-shared.cjs');
+ for(const preset of cache.PRESETS){const legacy=Object.fromEntries(cache.TYPES.map(t=>[t,store.get(`glv:${t}:${preset}`)])),native=Object.fromEntries(cache.TYPES.map(t=>[t,store.get(cache.presetKey(t,preset))]));await shared.save(require('./helpers/mad-shared-fixture.cjs').redisFor(bytes),preset,shared.compose({legacy,native}));}
+ for(const [k,v] of bytes)store.set(k,require('../lib/glv-mad-v2-storage.cjs').decode(v));
+ const before=JSON.stringify([...store]);
  const summaries=await names.auditPublished(async key=>store.get(key)||null,metadata,{v2Enabled:true,campaignId:id});
  const presets=summaries.filter(s=>s.preset);assert.equal(presets.length,36);
  for(const s of presets){assert.equal(s.requested_campaign.present,true);assert.deepEqual(s.requested_campaign.names,[name]);assert.equal(s.performance_generated_at,stamp);}

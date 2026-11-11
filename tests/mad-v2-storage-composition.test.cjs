@@ -9,7 +9,7 @@ test('real refresh, compressed work resume, mixed legacy generations and HTTP re
   else body={account_id:a.id,currency:a.currency,timezone_name:a.timezone,account_status:1};
   return {ok:true,status:200,json:async()=>body};
  };
- const options={token:'synthetic',now,clock:()=>+now,redis,fetcher,loadFx:async()=>({}),promoPayload:async()=>({schema_version:1,classification_version:2,reconciled:true,generated_at:now.toISOString(),range:{since:'2026-03-01',until:v2.commonCutoff(now)},rows:[]})};
+ const options={token:'synthetic',now,clock:()=>+now,redis,fetcher,loadFx:async()=>({}),promoPayload:async()=>({schema_version:1,classification_version:2,funnel_version:1,reconciled:true,generated_at:now.toISOString(),range:{since:'2026-03-01',until:v2.commonCutoff(now)},rows:[]})};
  const first=await cache.refreshV2(options);assert.equal(first.verified,true);assert.ok(adsPulls>0);
  const workKey=source.CACHE_PREFIX+'work:ads';assert.equal(JSON.parse(store.get(workKey)).encoding,'gzip+base64');assert.ok(Object.keys(storage.decode(store.get(workKey)).chunks).length>0);
  const ids=new Map();
@@ -24,6 +24,8 @@ test('real refresh, compressed work resume, mixed legacy generations and HTTP re
  for(const preset of cache.PRESETS){const key=cache.presetKey('daily',preset);store.set(key,JSON.stringify(storage.decode(store.get(key))));}
  const mixed=await cache.refreshV2({...options,build:async()=>{throw Error('must reuse');}});assert.equal(mixed.verified,true);
  for(const [key,id] of ids){assert.equal(storage.decode(store.get(key)).generation_id,id);assert.equal(mixed.hashes[key],hash(store.get(key)));}
+ await require('./helpers/mad-shared-fixture.cjs').publishSyntheticShared(store,'last_30d');
+ await require('../lib/glv-mad-shared-promo.cjs').save(redis,storage.decode(store.get(require('../lib/glv-mad-v2-promo.cjs').CACHE_KEY)));
  const saved={...process.env},original=global.fetch,handler=require('../api/glv-meta-ads-v2/fb-data.js');
  try{
   process.env.GLV_MAD_V2_ENABLED='1';process.env.GLV_META_BETA_AUTH_TOKEN='synthetic';process.env.KV_REST_API_URL='https://redis.test';process.env.KV_REST_API_TOKEN='synthetic';delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -34,16 +36,16 @@ test('real refresh, compressed work resume, mixed legacy generations and HTTP re
   // Corrupt staging cannot replace the independent validated last-good bundle.
   for(const corrupt of [JSON.stringify({...JSON.parse(bytes),sha256:'0'.repeat(64)}),storage.encode({schema_version:99})]){
    store.set(key,corrupt);const retained=await read('ads');assert.equal(retained.code,200);assert.deepEqual(retained.body,published);
-   const publicationKey=cache.bundleKey('last_30d'),manifestBytes=store.get(publicationKey),previous=store.get(publicationKey+':previous');
+   const publicationKey=require('../lib/glv-mad-shared.cjs').key('last_30d'),manifestBytes=store.get(publicationKey),previous=store.get(publicationKey+':previous');
    store.delete(publicationKey);store.delete(publicationKey+':previous');
    assert.equal((await read('ads')).code,503,'without a publication, malformed legacy staging still fails closed');
    store.set(publicationKey,manifestBytes);if(previous)store.set(publicationKey+':previous',previous);
   }
   store.set(key,bytes);
   // Corruption of the actual published piece still fails closed.
-  const manifest=storage.decode(store.get(cache.bundleKey('last_30d'))),pieceKey=manifest.refs.ads.key,piece=store.get(pieceKey);
+  const manifest=storage.decode(store.get(require('../lib/glv-mad-shared.cjs').key('last_30d'))),pieceKey=manifest.refs.ads.key,piece=store.get(pieceKey);
   for(const corrupt of [JSON.stringify({...JSON.parse(piece),sha256:'0'.repeat(64)}),storage.encode({schema_version:99})]){
-   store.set(pieceKey,corrupt);const failedRead=await read('ads');assert.equal(failedRead.code,502);assert.equal(failedRead.body.complete,false);assert.equal(failedRead.body.rows,undefined);
+   store.set(pieceKey,corrupt);const failedRead=await read('ads');assert.equal(failedRead.code,503);assert.equal(failedRead.body.complete,false);assert.equal(failedRead.body.rows,undefined);
   }
   store.set(pieceKey,piece);assert.equal((await read('ads')).code,200);
  }finally{global.fetch=original;for(const k of Object.keys(process.env))if(!(k in saved))delete process.env[k];Object.assign(process.env,saved);}

@@ -16,7 +16,7 @@
  </div><div class="wl-status-row"><p id="wl-status" role="status"></p><button type="button" id="wl-reload">Reload WL</button></div>
  <details class="wl-method"><summary>Report methodology · CZK</summary><p>Only ads with verified positive Facebook or Instagram partnership sponsor metadata are included, across CZSK and US regardless of campaign naming. Missing metadata is unverified and excluded, not confirmed disabled. Metadata describes current configuration at refresh time, not historical enablement. General all-ad metrics are unchanged. A supported explicit creator_PAC_variant ad-name prefix takes precedence. During migration, legacy ads retain campaign-first, then ad-set-name fallback. Multiple matches at the chosen level remain unresolved. Unknown or ambiguous attribution is disclosed and retained in totals, never inferred from a PAC. ActionKate PAC 462 spend is excluded only from reported spend. All revenue and purchases remain; creative rows and standard ROAS use actual spend. Ratios use summed inputs. Missing inputs or nonpositive denominators show —. Dates are inclusive, Europe/Prague; Meta account reporting timezone must remain Europe/Prague. Daily shared refresh at 00:00 UTC; custom ranges are fetched live. Attribution can change after the original report.</p></details>
  <div id="wl-warning" role="status" hidden></div><div id="wl-results"></div>`;
- const initial=model.lastMonth();el('from').value=initial.since;el('to').value=initial.until;
+ const initial=MadDatePolicy.range('last_month')||model.lastMonth();el('from').value=initial.since;el('to').value=initial.until;
  const headers={overview:['Creator','Actual spend CZK','Excluded CZK','Reported spend CZK','Meta-attributed revenue CZK','Purchases','Standard ROAS','Adjusted ROAS'],market:['Creator','Market','Actual CZK','Reported CZK','Meta-attributed revenue CZK','Purchases','Standard ROAS'],creative:['PAC / asset label','Market','Spend CZK','Meta-attributed revenue CZK','Purchases','ROAS']};
  const fmt=(n,ratio=false)=>n===null?'—':n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+(ratio?'×':'');
  const creator=r=>r.creator||`Unresolved: ${r.campaign}`;
@@ -34,9 +34,10 @@
   const unresolved=report.unresolvedOverview;
   el('results').innerHTML=(report.rows.length?'':'<p>No WL ads in this selection.</p>')+table('wl-overview','Creator overview','overview',[...report.overview,...unresolved,{creator:'Total',...report.total}])+table('wl-market-table','Performance by market','market',report.markets)+`<h2>Creative performance · Actual spend / standard ROAS</h2>`+['Kristyna','ActionKate','befit_over40'].map(c=>table('wl-creative-'+c,c,'creative',report.creatives[c])).join('')+(report.creatives.null.length?table('wl-unresolved','Unresolved creator · source assets','creative',report.creatives.null):'');
  }
- function scope(){return el('date').value==='last_month'?model.lastMonth():{since:el('from').value,until:el('to').value};}
+ function scope(){return el('date').value==='last_month'?(MadDatePolicy.range('last_month')||model.lastMonth()):{since:el('from').value,until:el('to').value};}
  async function load(force=false){
-  const requested=scope(),key=JSON.stringify(requested);
+  let requested=scope(),key=JSON.stringify(requested);
+  const dateError=MadDatePolicy.customError(requested);if(dateError){el('status').textContent=dateError;return;}
   if(!force&&key===loadedKey&&loadedDay===today()&&fresh(stamp))return;
   const generation=++sequence;controller?.abort();controller=new AbortController();
   const retained=loadedKey===key;
@@ -51,9 +52,10 @@
    const response=await fetch('/api/glv-meta-ads/fb-data?'+query,{cache:'no-store',signal:controller.signal});
    if(!response.ok)throw new Error('unavailable');const data=await response.json();
    if(generation!==sequence)return;
+   if(el('date').value==='last_month'){requested=MadDatePolicy.range('last_month',data)||requested;key=JSON.stringify(requested);}
    const freshness=MadV2Freshness.validate(data,{range:requested,currency:'CZK',account:'TUC',legacy:true,available:true});
    if(data.wl_version!==3||!Array.isArray(data.rows)||data.range?.since!==requested.since||data.range?.until!==requested.until||data.rows.some(r=>typeof r.campaign_name!=='string'||!r.campaign_name||!model.validPartnership(r.partnership)))throw new Error('incomplete');
-   verification=model.verification(data.rows);rows=model.normalize(data.rows);range=requested;stamp=data.generated_at;loadedKey=key;loadedDay=today();
+   MadDatePolicy.accept(data);verification=model.verification(data.rows);rows=model.normalize(data.rows);range=requested;stamp=data.generated_at;loadedKey=key;loadedDay=today();
    const previous=el('campaign').value;const options=new Map(rows.map(r=>[r.campaignId,r.campaign]));
    el('campaign').innerHTML='<option value="__all">All campaigns</option><option value="__none">None</option>'+[...options].map(([id,name])=>`<option value="${escape(id)}">${escape(name)}</option>`).join('');
    // A disappeared selection remains None, never silently expands to All.

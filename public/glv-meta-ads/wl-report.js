@@ -50,7 +50,7 @@
   return raw.filter(r=>validPartnership(r.partnership)&&r.partnership.status==='verified_positive').map(r=>{
    const name=String(r.campaign_name||''),resolution=resolveCreator(name,r.adset_name,r.name),a=asset(r.name);
    const us=token(text(name),'us'),cz=token(text(name),'cz')||token(text(name),'czsk');
-   const market=us&&cz?null:us?'US':cz?'CZSK':/^wl_befit_over40(?:_|$)/i.test(name)?'CZSK':null;
+   const market=r.account_id==='359758259164738'?(name.includes('_US_')?'US':'CZSK'):us&&cz?null:us?'US':cz?'CZSK':/^wl_befit_over40(?:_|$)/i.test(name)?'CZSK':null;
    return {id:r.id,campaignId:r.campaign_id,campaign:name,creator:resolution.creator,adset:String(r.adset_name||''),adName:String(r.name||''),creatorStatus:resolution.status,creatorNotice:creatorConflictNotice(name,r.adset_name,r.name,resolution),
     market,
     label:a.label,pac:a.pac,actual:number(r.amount_spent),revenue:number(r['action_values:omni_purchase']),purchases:number(r['actions:omni_purchase'])};
