@@ -233,7 +233,7 @@ Standard cached presets:
 - `this_month`
 - `last_month`
 
-Cron prewarms the standard presets into Upstash/Vercel KV. Custom ranges and cache misses can hit Meta live.
+Cron prewarms the standard presets into Upstash/Vercel KV. Custom ranges and cache misses can hit Meta live. Standard V1/V2 history is now durable and published as coherent bundles: refresh failure retains prior actual coverage with an explicit stale warning, rather than expiring it or relabeling its totals. See [MAD history continuity](docs/mad-history-continuity.md) for publication keys, migration, seven-day daily replacement, response contract, and release checks. This supersedes the older exact-range-only stale-cache behavior described in historical WL handoff notes above.
 
 The `CZSK Triage` tab provides seven independent daily chart presets for funnel diagnosis. Each chart has its own primary metric, secondary metric, and day/week/month grain controls. A single metric registry assigns one stable, unique color to every selectable metric across the chart controls. The aggregate and daily Meta insight producers include campaign-level `reach`; Triage labels impressions divided by summed campaign reach as `Frequency proxy`. Reach is non-additive, so this proxy is not Meta's deduplicated frequency for the selected period.
 

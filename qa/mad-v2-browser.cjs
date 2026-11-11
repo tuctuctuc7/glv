@@ -6,7 +6,7 @@ const dates=require('../public/glv-meta-ads-v2/dates.js');
 const {renderSnapshot}=require('../lib/glv-mad-v2-source.cjs');
 const evidence=process.env.GLV_V2_EVIDENCE||'/tmp/glv-mad-v2-browser';fs.mkdirSync(evidence,{recursive:true});
 const design=require('./mad-v2-design.cjs'),designChecks=[],designInteractions=[];
-const requests=[],checks=[],errors=[],freshnessChecks=[];let failure=false,scenario='fresh';
+const requests=[],checks=[],errors=[],freshnessChecks=[],expectedHttpFailures=[];let failure=false,scenario='fresh';
 const stamp=new Date().toISOString();
 const {cacheState,presetKey}=require('../lib/glv-mad-v2-cache.cjs');
 const {cacheKey}=require('../lib/glv-mad-v2-source.cjs');
@@ -46,13 +46,20 @@ const app=http.createServer(async(req,res)=>{
    const data=failure?{error:'SYNTHETIC source unavailable'}:payload(q);
    res.writeHead(200,{'content-type':'application/json'}).end(JSON.stringify(failure?data:freshnessFixture(data,type,data.range)));return;
   }
-  const original=payload(q,true),mutated=freshnessFixture(original,type,original.range);
-  const snapshot={...payload(q,true,mutated.range),generated_at:mutated.generated_at};
-  const key=q.has('time_range')?cacheKey(type,original.range):presetKey(type,q.get('date_preset'));
-  store.set(key,JSON.stringify(snapshot));
+  // A scheduled legacy cache is now accepted only as a complete coherent
+  // triplet. Seed all three synthetic pieces; mutations still exercise the
+  // actual reader's rejection of mixed scopes/generations.
+  for(const sourceType of ['aggregate','daily','ads']){
+   const sourceQuery=new URLSearchParams(q);sourceQuery.set('type',sourceType);
+   const original=payload(sourceQuery,true),mutated=freshnessFixture(original,sourceType,original.range);
+   const snapshot={...payload(sourceQuery,true,mutated.range),generated_at:mutated.generated_at,generation_id:'synthetic-'+mutated.generated_at};
+   const key=q.has('time_range')?cacheKey(sourceType,original.range):presetKey(sourceType,q.get('date_preset'));
+   store.set(key,JSON.stringify(snapshot));
+  }
   // Execute the actual API reader through its synthetic Redis GET boundary.
   await reader({method:'GET',headers:{cookie:'glv_meta_beta=synthetic-browser-auth'},query:Object.fromEntries(q)},{
    setHeader:(k,v)=>res.setHeader(k,v),status(n){res.statusCode=n;return this;},json(body){
+    if(res.statusCode===503){assert.ok(['mixed-range','mixed-generation'].includes(scenario),'only intentionally incoherent fixtures may be unavailable');expectedHttpFailures.push({scenario,type});}
     if(scenario==='mixed-account'&&type==='aggregate')body.account_filter='TUC';
     if(scenario==='flag-stale')body.stale=true;
     res.setHeader('content-type','application/json');res.end(JSON.stringify(body));
@@ -126,9 +133,11 @@ async function run(){
     assert.match(await page.locator('#error').innerText(),/No results.*selected range/);
     scenario='fresh';await page.evaluate(()=>loadData({force:true}));await ready();
     await page.locator('[data-tab="wl"]').click();
+    const wlGood=await page.locator('#wl-results').innerText();assert.ok(wlGood.length>0);
     for(const wlCase of ['rollover','age-stale','flag-stale']){
      scenario=wlCase;await page.evaluate(()=>GlvWlUI.load(true));
-     assert.match(await page.locator('#wl-status').innerText(),/unavailable/);assert.equal(await page.locator('#wl-results').innerText(),'');
+     assert.match(await page.locator('#wl-status').innerText(),wlCase==='rollover'?/Stale last-good retained.*Refresh unavailable/:/Stale last-good.*actual range/);
+     assert.equal(await page.locator('#wl-results').innerText(),wlGood,'failed or aged exact-range WL refresh preserves the known report');
      freshnessChecks.push({width,theme,currency,scenario:'wl-'+wlCase});
     }
     scenario='fresh';await page.evaluate(()=>GlvWlUI.load(true));assert.match(await page.locator('#wl-status').innerText(),/Source refreshed/);
@@ -168,7 +177,8 @@ async function run(){
   designInteractions.push(await design.interactions(page,width,evidence));
   await page.screenshot({path:path.join(evidence,`${width}-recovered.png`),fullPage:true});await context.close();
  }
- assert.deepEqual(errors,[]);fs.writeFileSync(path.join(evidence,'results.json'),JSON.stringify({fixture:'SYNTHETIC ONLY; no live Meta calls',checks,freshnessChecks,designChecks,designInteractions,errors,requests:requests.length},null,2));console.log(JSON.stringify({passed:true,states:checks.length,freshnessStates:freshnessChecks.length,errors,evidence}));
+ assert.deepEqual(errors,expectedHttpFailures.map(()=> 'Failed to load resource: the server responded with a status of 503 (Service Unavailable)'),'only the exact intentionally rejected reader responses may log network errors');
+ fs.writeFileSync(path.join(evidence,'results.json'),JSON.stringify({fixture:'SYNTHETIC ONLY; no live Meta calls',checks,freshnessChecks,designChecks,designInteractions,expectedHttpFailures,unexpectedErrors:[],requests:requests.length},null,2));console.log(JSON.stringify({passed:true,states:checks.length,freshnessStates:freshnessChecks.length,expectedHttpFailures:expectedHttpFailures.length,unexpectedErrors:[],evidence}));
  }finally{await browser.close();await new Promise(r=>app.close(r));}
 }
 run().catch(e=>{console.error(e);process.exitCode=1;});

@@ -21,7 +21,7 @@ test('runRefresh never publishes malformed HTTP200 as empty aggregate data',asyn
  const env={...process.env},oldFetch=global.fetch;Object.assign(process.env,{KV_REST_API_URL:'https://redis.test',KV_REST_API_TOKEN:'test'});delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
  const store=new Map([['glv:aggregate:last_7d','last-good']]);let attempts=0;
  global.fetch=async(url,options={})=>{
-  if(url==='https://redis.test'){const [cmd,key,value]=JSON.parse(options.body);if(cmd==='SET')store.set(key,value);return reply(200,{result:cmd==='GET'?store.get(key):'OK'});}
+  if(url==='https://redis.test'){const [cmd,key,value]=JSON.parse(options.body);if(cmd==='SET')store.set(key,value);return reply(200,{result:cmd==='GET'?store.get(key):cmd==='TTL'?(store.has(key)?-1:-2):cmd==='PERSIST'?0:'OK'});}
   const u=new URL(url);
   if(u.searchParams.get('level')==='campaign'&&!u.searchParams.has('time_increment')&&JSON.parse(u.searchParams.get('time_range')||'{}').since===require('../lib/glv-meta-dates.cjs').monthRange('last_7d',false).since){attempts++;return {ok:true,status:200,json:async()=>{throw new SyntaxError('invalid')}};}
   return reply(200,{data:[]});
@@ -48,15 +48,17 @@ test('retrying a later page never duplicates earlier rows and exhausted pages ne
  const env={...process.env};Object.assign(process.env,{KV_REST_API_URL:'https://redis.test',KV_REST_API_TOKEN:'test'});delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
  try{for(const exhaust of [false,true]){
   const store=new Map([['glv:aggregate:last_7d','last-good']]);let attempts=0;
+  const range=require('../lib/glv-meta-dates.cjs').monthRange('last_7d',false);
+  const fact=(id,spend)=>({campaign_id:id,campaign_name:'BAU',spend,impressions:'10',reach:'5',date_start:range.since,date_stop:range.until});
   const fetcher=metaRetryFetcher(async(url,options={})=>{
-   if(url==='https://redis.test'){const [cmd,key,value]=JSON.parse(options.body);if(cmd==='SET')store.set(key,value);return reply(200,{result:cmd==='GET'?store.get(key):'OK'});}
-   const u=new URL(url);if(u.pathname==='/page2'){attempts++;return exhaust||attempts<3?reply(400,{error:{code:2,error_subcode:1504044}}):reply(200,{data:[{campaign_id:'second',campaign_name:'BAU',spend:'2'}]});}
-   if(u.searchParams.get('level')==='campaign'&&!u.searchParams.has('time_increment'))return reply(200,{data:[{campaign_id:'first',campaign_name:'BAU',spend:'1'}],paging:{next:'https://graph.facebook.com/page2'}});
+   if(url==='https://redis.test'){const [cmd,key,value]=JSON.parse(options.body);if(cmd==='SET')store.set(key,value);return reply(200,{result:cmd==='GET'?store.get(key):cmd==='TTL'?(store.has(key)?-1:-2):cmd==='PERSIST'?0:'OK'});}
+   const u=new URL(url);if(u.pathname==='/page2'){attempts++;return exhaust||attempts<3?reply(400,{error:{code:2,error_subcode:1504044}}):reply(200,{data:[fact('2','2')]});}
+   if(u.searchParams.get('level')==='campaign'&&!u.searchParams.has('time_increment'))return reply(200,{data:[fact('1','1')],paging:{next:'https://graph.facebook.com/page2'}});
    return reply(200,{data:[]});
   },Date.now()+10000,{sleep:async()=>{}});
   const result=await fetchAndCache('test','last_7d',false,fetcher);assert.equal(attempts,3);
   if(exhaust){assert.equal(store.get('glv:aggregate:last_7d'),'last-good');assert.equal(result.errors.length,1);}
-  else{assert.deepEqual(JSON.parse(store.get('glv:aggregate:last_7d')).rows.map(r=>r.id),['first','second']);assert.equal(result.errors.length,0);}
+  else{assert.deepEqual(JSON.parse(store.get('glv:aggregate:last_7d')).rows.map(r=>r.id),['1','2']);assert.equal(result.errors.length,0);}
  }}finally{process.env=env;}
 });
 test('history and presets share a bounded body deadline even when provider never finishes',async()=>{

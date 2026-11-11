@@ -30,8 +30,22 @@ test('real refresh, compressed work resume, mixed legacy generations and HTTP re
   global.fetch=async url=>{assert.ok(String(url).startsWith('https://redis.test/get/'));return {ok:true,json:async()=>({result:store.get(decodeURIComponent(String(url).split('/get/')[1]))})};};
   const read=async type=>{const res={code:200,setHeader(){},status(c){this.code=c;return this;},json(b){this.body=b;}};await handler({method:'GET',headers:{cookie:'glv_meta_beta=synthetic'},query:{type,date_preset:'last_30d'}},res);return res;};
   for(const type of [...cache.TYPES,'promo_formats','promo_concepts']){const res=await read(type);assert.equal(res.code,200);assert.equal(res.body.complete,true);}
-  const key=cache.presetKey('ads','last_30d'),bytes=store.get(key);store.set(key,JSON.stringify({...JSON.parse(bytes),sha256:'0'.repeat(64)}));assert.equal((await read('ads')).code,503);store.set(key,bytes);
-  store.set(key,storage.encode({schema_version:99}));assert.equal((await read('ads')).code,503);store.set(key,bytes);
+  const key=cache.presetKey('ads','last_30d'),bytes=store.get(key),published=(await read('ads')).body;
+  // Corrupt staging cannot replace the independent validated last-good bundle.
+  for(const corrupt of [JSON.stringify({...JSON.parse(bytes),sha256:'0'.repeat(64)}),storage.encode({schema_version:99})]){
+   store.set(key,corrupt);const retained=await read('ads');assert.equal(retained.code,200);assert.deepEqual(retained.body,published);
+   const publicationKey=cache.bundleKey('last_30d'),manifestBytes=store.get(publicationKey),previous=store.get(publicationKey+':previous');
+   store.delete(publicationKey);store.delete(publicationKey+':previous');
+   assert.equal((await read('ads')).code,503,'without a publication, malformed legacy staging still fails closed');
+   store.set(publicationKey,manifestBytes);if(previous)store.set(publicationKey+':previous',previous);
+  }
+  store.set(key,bytes);
+  // Corruption of the actual published piece still fails closed.
+  const manifest=storage.decode(store.get(cache.bundleKey('last_30d'))),pieceKey=manifest.refs.ads.key,piece=store.get(pieceKey);
+  for(const corrupt of [JSON.stringify({...JSON.parse(piece),sha256:'0'.repeat(64)}),storage.encode({schema_version:99})]){
+   store.set(pieceKey,corrupt);const failedRead=await read('ads');assert.equal(failedRead.code,502);assert.equal(failedRead.body.complete,false);assert.equal(failedRead.body.rows,undefined);
+  }
+  store.set(pieceKey,piece);assert.equal((await read('ads')).code,200);
  }finally{global.fetch=original;for(const k of Object.keys(process.env))if(!(k in saved))delete process.env[k];Object.assign(process.env,saved);}
  // An acknowledged no-op SET cannot replace last-good or earn a new receipt.
  const before=[...store];ignoreWrites=true;

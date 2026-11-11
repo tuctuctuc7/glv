@@ -16,7 +16,7 @@ function params(store){return {token:'synthetic',redis:store.redis,now,clock:()=
 test('V2 publishes every isolated durable preset and Promo with exact readback and repeated replacement',async()=>{
  const store=redisStore(),options=params(store);
  const first=await cache.refreshV2(options),bytes=[...store.data];
- assert.equal(first.verified,true);assert.equal(Object.keys(first.hashes).length,19);assert.deepEqual(Object.keys(first.hashes).sort(),cache.requiredKeys().sort());
+ assert.equal(first.verified,true);assert.equal(Object.keys(first.hashes).length,25);assert.deepEqual(Object.keys(first.hashes).sort(),cache.requiredKeys().sort());
  assert.ok([...store.data.keys()].every(k=>k.startsWith('glv:mad:v2:')));
  assert.equal((await cache.refreshV2(options)).verified,true);assert.deepEqual([...store.data],bytes);
 });

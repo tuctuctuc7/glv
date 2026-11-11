@@ -10,7 +10,6 @@ const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
 
 const PRESETS = ['last_7d', 'last_14d', 'last_30d', 'last_90d', 'this_month', 'last_month'];
-const TTL = 90000; // 25 hours
 const {cutoffDate,sinceDate,monthRange} = require('../../lib/glv-meta-dates.cjs');
 
 function resolveRedisConfig(env = process.env) {
@@ -182,24 +181,31 @@ async function paginate(url, fetcher) {
 
 async function writeVerifiedCache(fetcher,key,payload) {
   const serialized=JSON.stringify(payload);
-  await redisCommand(fetcher,'SET',key,serialized,'EX',String(TTL));
+  await redisCommand(fetcher,'SET',key,serialized);
   const readback=await redisCommand(fetcher,'GET',key);
   if(readback?.result!==serialized)throw new Error('Preset cache readback mismatch');
+  if((await redisCommand(fetcher,'TTL',key)).result!==-1)throw new Error('Preset cache retention not verified');
   return hash(serialized);
 }
 function creatorIssues(rows) {
   const {resolveCreator}=require('../../public/glv-meta-ads/wl-report.js');
   return [...new Set(rows.flatMap(r=>r.creator_rows?.length?r.creator_rows:[r]).filter(r=>/(?:^|_)WL(?:_|$)/.test(r.campaign_name||r.name)&&!r.is_ghost&&(r.creator_issue||!resolveCreator(r.campaign_name||r.name,r.adset_name,r.ad_name||(r.campaign_name?r.name:undefined)).creator)).map(r=>`${r.campaign_name||r.name}${r.adset_name?' / '+r.adset_name:''}${r.ad_name?' / '+r.ad_name:''}${r.creator_issue?' — '+r.creator_issue:''}`))];
 }
-async function fetchAndCache(token, preset, includeToday, fetcher) {
+async function fetchAndCache(token, preset, includeToday, fetcher, {fullHistory=false,retained=false}={}) {
   const { since, until } = monthRange(preset, includeToday);
   const dateParam = `time_range=${encodeURIComponent(JSON.stringify({ since, until }))}`;
   const auth = `access_token=${token}`;
   const errors = [];
   const stats = { preset, since, until };
+  const history=require('../../lib/glv-history-v1.cjs'),pieces={};
+  try{if(!retained)await history.retain((...args)=>redisCommand(fetcher,...args),(key,value)=>writeVerifiedCache(fetcher,key,value),preset);}
+  catch{return {errors:[`retention/${preset}: last-good retention unavailable`],stats};}
   async function publish(type,rows,extra={}){
     const key=`glv:${type}:${preset}`,generated_at=new Date().toISOString();
-    const cache_sha256=await writeVerifiedCache(fetcher,key,{rows,creator_version:2,...(type==='aggregate'||type==='daily'?{creator_reconciliation_version:1,creator_ad_version:1}:{}),range:{since,until},generated_at,...extra});
+    const payload={rows,creator_version:2,...(type==='aggregate'||type==='daily'?{creator_reconciliation_version:1,creator_ad_version:1}:{}),range:{since,until},generated_at,...extra};
+    if(!history.valid(type,payload))throw Error('Invalid preset source');
+    const cache_sha256=await writeVerifiedCache(fetcher,key,payload);
+    pieces[type]=payload;
     const partnership=type==='ads'?require('../../public/glv-meta-ads/wl-report.js').verification(rows):null;
     if(partnership)delete partnership.naming;
     stats[type]={cache_sha256,...(partnership?{wl_version:3,partnership,eligible_ad_ids:rows.filter(r=>r.partnership.status==='verified_positive').map(r=>r.id),unverified_ad_ids:rows.filter(r=>r.partnership.status!=='verified_positive').map(r=>r.id)}:{}),...summarizeRows(rows),creator_version:2,creatorIssues:creatorIssues(rows),range:{since,until},generated_at,readback_verified:true};
@@ -209,7 +215,7 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
   try {
     const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&limit=500&${auth}`;
-    const rows = await campaignFacts(url,u=>paginate(u,fetcher),normalizeCampaign);
+    const rows = await campaignFacts(url,u=>paginate(u,fetcher),r=>normalizeCampaign(require('../../lib/glv-mad-v2-source.cjs').validateCampaign(r,{since,until},true)));
     await publish('aggregate',rows);
   } catch (e) {
     errors.push(`aggregate/${preset}: ${e.message}`);
@@ -218,9 +224,17 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
   // daily
   try {
     const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
-    const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&time_increment=1&limit=500&${auth}`;
-    const rows = await campaignFacts(url,u=>paginate(u,fetcher),normalizeCampaign);
-    await publish('daily',rows);
+    let prior;try{prior=JSON.parse((await redisCommand(fetcher,'GET',`glv:daily:${preset}`)).result);}catch{}
+    const {shift}=require('../../lib/glv-mad-v2.cjs');let window={since,until};
+    if(!fullHistory&&history.valid('daily',prior)&&prior.range.since<=since&&prior.range.until>=since&&prior.range.until<=until){
+      const correction=shift(until,-6),gap=shift(prior.range.until,1),start=correction<gap?correction:gap;
+      window={since:start<since?since:start,until};
+    }
+    const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&time_range=${encodeURIComponent(JSON.stringify(window))}&time_increment=1&limit=500&${auth}`;
+    const fresh = await campaignFacts(url,u=>paginate(u,fetcher),r=>normalizeCampaign(require('../../lib/glv-mad-v2-source.cjs').validateCampaign(r,window)));
+    const rows=[...(window.since===since?[]:prior.rows.filter(r=>r.date_start>=since&&r.date_stop<window.since)),...fresh];
+    const source_extractions=[...(window.since===since?[]:prior.source_extractions||[{range:prior.range,generated_at:prior.generated_at}]),{range:window,generated_at:new Date().toISOString()}];
+    await publish('daily',rows,{source_extractions,refresh_window:window});
   } catch (e) {
     errors.push(`daily/${preset}: ${e.message}`);
   }
@@ -229,7 +243,7 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
   try {
     const fields = 'ad_id,ad_name,campaign_id,campaign_name,adset_id,adset_name,spend,impressions,actions,action_values,video_p100_watched_actions,video_thruplay_watched_actions';
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=ad&fields=${fields}&${dateParam}&sort=spend_descending&limit=50&${auth}`;
-    const raw = await paginate(url, fetcher);
+    const raw = (await paginate(url, fetcher)).map(history.validateAd);
 
       const metadata = await fetchAdMetadata(raw.map(r=>r.ad_id||r.id),token,fetcher);
       const statusMap = Object.fromEntries(Object.entries(metadata).map(([id,m])=>[id,m.status]));
@@ -239,6 +253,14 @@ async function fetchAndCache(token, preset, includeToday, fetcher) {
     errors.push(`ads/${preset}: ${e.message}`);
   }
 
+  if(!errors.length){
+    try{
+      const manifest=await history.savePublished((key,value)=>writeVerifiedCache(fetcher,key,value),preset,pieces,async key=>JSON.parse((await redisCommand(fetcher,'GET',key)).result),(...args)=>redisCommand(fetcher,...args));
+      const bytes=JSON.stringify(manifest);
+      if((await redisCommand(fetcher,'GET',history.key(preset))).result!==bytes)throw Error('Published bundle readback mismatch');
+      stats.publication_sha256=hash(bytes);stats.bundle_readback_verified=true;
+    }catch{errors.push(`bundle/${preset}: publication failed; last-good retained`);}
+  }
   return { errors, stats };
 }
 
@@ -276,6 +298,20 @@ async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=f
   const fetcher = require('../../lib/glv-meta-retry.cjs').metaRetryFetcher(boundedFetcher(deadline),deadline);
   const allErrors = [];
   const summaries = [];
+  // Remove legacy expiry on ALL valid preset histories before any Meta/FX work
+  // can consume the shared budget, not just on the preset reached by the loop.
+  try{for(const preset of PRESETS)await require('../../lib/glv-history-v1.cjs').retain((...args)=>redisCommand(fetcher,...args),(key,value)=>writeVerifiedCache(fetcher,key,value),preset);}
+  catch{return {allErrors:['Last-good retention unavailable; extraction not started'],summaries,freshness:verifyTabFreshness([],includeToday),hashes:{}};}
+  let forceIntent;
+  try{
+    const bytes=(await redisCommand(fetcher,'GET','glv:history:force')).result;
+    if(bytes){forceIntent=JSON.parse(bytes);if(!['pending','complete'].includes(forceIntent.status))throw Error('Invalid force intent');}
+    if(fullHistory&&forceIntent?.status!=='pending'){
+      forceIntent={status:'pending',requested_at:new Date().toISOString()};
+      await writeVerifiedCache(fetcher,'glv:history:force',forceIntent);
+    }
+  }catch{return {allErrors:['Durable force intent unavailable'],summaries,freshness:verifyTabFreshness([],includeToday),hashes:{}};}
+  const forcePresets=fullHistory||forceIntent?.status==='pending';
   // Start the single bounded history pull alongside the old sequential preset
   // refreshes, so it does not add another full history budget at their end.
   // Attach both handlers immediately: failures must never become unhandled.
@@ -288,11 +324,15 @@ async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=f
     promoPayload:async()=>{const outcome=await formatRefresh;if(outcome.error)throw new Error('Promo refresh failed');return JSON.parse((await redisCommand(fetcher,'GET',CACHE_KEY)).result);}
   }).then(result=>result,()=>({errors:['v2: refresh failed'],summaries:[],hashes:{},verified:false})):null;
   for (const preset of PRESETS) {
-    const result = await fetchAndCache(token, preset, includeToday,fetcher);
+    const result = await fetchAndCache(token, preset, includeToday,fetcher,{fullHistory:forcePresets,retained:true});
     allErrors.push(...result.errors);
     summaries.push(result.stats);
   }
 
+  if(!allErrors.length&&forceIntent?.status==='pending'){
+    try{await writeVerifiedCache(fetcher,'glv:history:force',{...forceIntent,status:'complete'});}
+    catch{allErrors.push('Force completion readback failed');}
+  }
   // One history pull per existing daily job, not one ad-level pull per preset.
   // Replace the rolling window; explicit full_history rebuilds older facts too.
   const formatResult = await formatRefresh;
@@ -302,6 +342,7 @@ async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=f
   if(!freshness.all_tabs_verified)allErrors.push('All-tabs freshness verification incomplete');
   const hashes={};
   for(const summary of summaries){
+    if(summary.publication_sha256)hashes[require('../../lib/glv-history-v1.cjs').key(summary.preset)]=summary.publication_sha256;
     if(summary.type==='promo_formats')hashes[CACHE_KEY]=summary.cache_sha256;
     else for(const type of ['aggregate','daily','ads'])if(summary[type]?.cache_sha256)hashes[`glv:${type}:${summary.preset}`]=summary[type].cache_sha256;
   }
@@ -320,7 +361,7 @@ function verifyTabFreshness(summaries,includeToday=false,now=new Date()){
   // Historical selections stop at their own end, not an invented yesterday row.
   const byPreset=new Map(summaries.filter(s=>s.preset).map(s=>[s.preset,s]));
   const fresh=stamp=>{const age=now-Date.parse(stamp);return Number.isFinite(age)&&age>=-60000&&age<=90000000;};
-  const presetOK=(preset,types)=>types.every(type=>{const source=byPreset.get(preset)?.[type],expected=monthRange(preset,includeToday,now);return source?.readback_verified===true&&source.range?.since===expected.since&&source.range?.until===expected.until&&fresh(source.generated_at);});
+  const presetOK=(preset,types)=>byPreset.get(preset)?.bundle_readback_verified===true&&types.every(type=>{const source=byPreset.get(preset)?.[type],expected=monthRange(preset,includeToday,now);return source?.readback_verified===true&&source.range?.since===expected.since&&source.range?.until===expected.until&&fresh(source.generated_at);});
   const tabs={};
   for(const tab of ['czsk','czsk-triage','czsk-promo','czsk-leadgen','us']){
     const types=['aggregate','daily',...(['czsk','us'].includes(tab)?['ads']:[])];
@@ -357,7 +398,7 @@ async function handler(req, res) {
     result=await scheduledRefresh({
       redis:(...args)=>redisCommand(redisFetcher,...args),
       refresh:()=>runRefresh(token,includeToday,{fullHistory,timeoutMs:Math.max(0,deadline-Date.now()-10000)}),
-      keys:[...PRESETS.flatMap(p=>['aggregate','daily','ads'].map(t=>`glv:${t}:${p}`)),CACHE_KEY,...(require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?require('../../lib/glv-mad-v2-cache.cjs').requiredKeys():[])],
+      keys:[...PRESETS.flatMap(p=>[...['aggregate','daily','ads'].map(t=>`glv:${t}:${p}`),require('../../lib/glv-history-v1.cjs').key(p)]),CACHE_KEY,...(require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?require('../../lib/glv-mad-v2-cache.cjs').requiredKeys():[])],
       through:require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?`${cutoffDate(includeToday)}:v2:${require('../../lib/glv-mad-v2.cjs').commonCutoff()}`:cutoffDate(includeToday),force:includeToday||fullHistory
     });
   }catch(error){

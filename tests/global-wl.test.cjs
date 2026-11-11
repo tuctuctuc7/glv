@@ -35,7 +35,7 @@ test('preset refresh reads back every exact cache key and fails on mismatched re
  Object.assign(process.env,{KV_REST_API_URL:'https://redis.test',KV_REST_API_TOKEN:'synthetic'});delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
  const values=new Map();let mismatch=false;
  const fetcher=async(url,opts={})=>{
-  let result;if(opts.body){const [op,key,value]=JSON.parse(opts.body);if(op==='SET'){values.set(key,value);result='OK';}else if(op==='GET')result=mismatch?'{}':values.get(key);return {ok:true,json:async()=>({result})};}
+  let result;if(opts.body){const [op,key,value]=JSON.parse(opts.body);if(op==='SET'){values.set(key,value);result='OK';}else if(op==='GET')result=mismatch?'{}':values.get(key);else if(op==='TTL')result=values.has(key)?-1:-2;else if(op==='PERSIST')result=0;return {ok:true,json:async()=>({result})};}
   return {ok:true,json:async()=>({data:[]})};
  };
  try{const good=await cron.fetchAndCache('synthetic','last_month',false,fetcher);assert.deepEqual(good.errors,[]);for(const type of ['aggregate','daily','ads'])assert.equal(good.stats[type].readback_verified,true);mismatch=true;const bad=await cron.fetchAndCache('synthetic','last_month',false,fetcher);assert.equal(bad.errors.length,3);}finally{process.env=old;}

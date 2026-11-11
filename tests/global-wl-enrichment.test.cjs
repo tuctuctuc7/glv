@@ -13,12 +13,13 @@ test('live and cron preserve campaign totals when optional adset pagination fail
   if(u.hostname==='redis.test'){
    const [op,key,value]=opts.body?JSON.parse(opts.body):[];
    if(op==='SET')cache.set(key,value);
-   return {ok:true,json:async()=>({result:op==='SET'?'OK':cache.get(key)||null})};
+   return {ok:true,json:async()=>({result:op==='SET'?'OK':op==='TTL'?(cache.has(key)?-1:-2):op==='PERSIST'?0:cache.get(key)||null})};
   }
   const level=u.searchParams.get('level');
   if(level==='campaign'){
+   const range=JSON.parse(u.searchParams.get('time_range'));const dates={date_start:range.since,date_stop:u.searchParams.has('time_increment')?range.since:range.until};
    if(primaryFailure)throw new Error('primary source failed');
-   return {ok:true,json:async()=>({data:[{campaign_id:'35',campaign_name:'GLV_035_CZ_WL',spend:'30',reach:'150',impressions:'300'}]})};
+   return {ok:true,json:async()=>({data:[{...dates,campaign_id:'35',campaign_name:'GLV_035_CZ_WL',spend:'30',reach:'150',impressions:'300'}]})};
   }
   if(level==='ad'&&u.searchParams.has('filtering')){
    if(u.searchParams.has('after'))throw new Error('secret-bearing-upstream-detail');
