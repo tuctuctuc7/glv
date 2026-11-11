@@ -50,6 +50,7 @@ test('metadata-only refresh reads current objects, follows pages, verifies durab
  const fetcher=async url=>{calls.push(url);assert.ok(!url.includes('/insights'));const next=url.includes('after=two');return {ok:true,json:async()=>({data:next?[{id:'120250692949130687',account_id:account,name:'TUC_037_CZSK_Promo'}]:[{id,account_id:account,name:current}],...(next?{}:{paging:{next:`https://graph.facebook.com/v21.0/act_${account}/campaigns?after=two`}})})};};
  const result=await names.refresh({accounts:[v2.ACCOUNTS[0]],tokenFor:()=> 'synthetic',redis,fetcher,now:new Date(observed)});
  assert.equal(calls.length,2);assert.equal(result.readback_verified,true);
+ assert.deepEqual(JSON.parse(new URL(calls[0]).searchParams.get('effective_status')),['ACTIVE','PAUSED','ARCHIVED'],'Meta campaign listing rejects DELETED (100/1815001); archived history remains included');
  const saved=await names.read(async key=>JSON.parse(store.get(key)),new Date(observed));
  assert.equal(saved.accounts[0].campaigns.length,2);assert.equal(saved.accounts[0].campaigns[0].name,current);
  const before=store.get(names.KEY);
