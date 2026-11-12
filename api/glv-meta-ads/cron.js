@@ -314,6 +314,32 @@ async function refreshPromoFormatCache(token, includeToday = false, fetcher = bo
     months:monthlyMix(payload.rows).map(m=>({month:m.month,images:m.formats.Banner.assets,videos:m.formats.Video.assets,total:m.total.assets,status:m.total.asset_status}))};
 }
 
+// Shared publication runs after every source refresh in one ~260s budget.
+// Without a checkpoint, a run that verifies all sources but times out during
+// publication is followed by runs that re-extract everything and time out again.
+const SOURCE_CHECKPOINT_KEY='glv:mad:shared:1:sources';
+const sourceCheckpointTarget=includeToday=>`${cutoffDate(includeToday)}:v2:${require('../../lib/glv-mad-v2.cjs').commonCutoff()}`;
+const stripAdInventories=summaries=>JSON.parse(JSON.stringify(summaries,(key,value)=>['eligible_ad_ids','unverified_ad_ids'].includes(key)?undefined:value));
+async function readSourceCheckpoint(fetcher,{through,correctionId,includeToday}){
+  try{
+    const raw=(await redisCommand(fetcher,'GET',SOURCE_CHECKPOINT_KEY)).result;
+    if(typeof raw!=='string')return null;
+    const checkpoint=JSON.parse(raw);
+    if(checkpoint?.version!==1||checkpoint.through!==through||checkpoint.correction_id!==correctionId||!Array.isArray(checkpoint.summaries))return null;
+    if(!checkpoint.hashes||typeof checkpoint.hashes!=='object'||!Object.keys(checkpoint.hashes).length)return null;
+    if(checkpoint.v2?.all_tabs_verified!==true)return null;
+    // Every referenced source must still be byte-identical.
+    for(const [key,digest] of Object.entries(checkpoint.hashes)){
+      const {result}=await redisCommand(fetcher,'GET',key);
+      if(typeof result!=='string'||hash(result)!==digest)return null;
+    }
+    // Re-check ranges and extraction age against the current clock.
+    const freshness=verifyTabFreshness(checkpoint.summaries,includeToday);
+    if(!freshness.all_tabs_verified)return null;
+    return {summaries:checkpoint.summaries,hashes:checkpoint.hashes,written_at:checkpoint.written_at,freshness:{...freshness,v2:checkpoint.v2}};
+  }catch{return null;}
+}
+
 async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=false,correction} = {}) {
   const deadline=Date.now()+timeoutMs;
   const fetcher = require('../../lib/glv-meta-retry.cjs').metaRetryFetcher(boundedFetcher(deadline),deadline);
@@ -337,13 +363,26 @@ async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=f
     }
   }catch{return {allErrors:['Durable force intent unavailable'],summaries,freshness:verifyTabFreshness([],includeToday),hashes:{}};}
   const forcePresets=fullHistory||forceIntent?.status==='pending';
+  const v2Enabled=require('../../lib/glv-mad-v2.cjs').rolloutEnabled();
+  const checkpointTarget=sourceCheckpointTarget(includeToday);
+  // A prior invocation may have verified every source for this exact target
+  // and correction, then exhausted its budget during shared publication.
+  // Resume publication from those byte-identical sources instead of spending
+  // the whole budget re-extracting them (which would time out again).
+  const resumed=v2Enabled&&correction&&!includeToday&&!forcePresets
+    ?await readSourceCheckpoint(fetcher,{through:checkpointTarget,correctionId:correction.id,includeToday}):null;
+  let freshness,hashes;
+  if(resumed){
+    summaries.push(...resumed.summaries);
+    freshness=resumed.freshness;hashes={...resumed.hashes};
+    freshness.resumed_from_source_checkpoint=resumed.written_at;
+  }else{
   // Start the single bounded history pull alongside the old sequential preset
   // refreshes, so it does not add another full history budget at their end.
   // Attach both handlers immediately: failures must never become unhandled.
   const formatRefresh = refreshPromoFormatCache(token,includeToday,fetcher,{fullHistory}).then(
     stats=>({stats}), error=>({error:error.message})
   );
-  const v2Enabled=require('../../lib/glv-mad-v2.cjs').rolloutEnabled();
   const v2Refresh=v2Enabled?require('../../lib/glv-mad-v2-cache.cjs').refreshV2({
     token:process.env.GLV_MAD_V2_FB_ACCESS_TOKEN||token,correctionId:correction?.id,force:fullHistory,deadline:deadline-10000,redis:(...args)=>redisCommand(fetcher,...args),
     promoPayload:async()=>{const outcome=await formatRefresh;if(outcome.error)throw new Error('Promo refresh failed');return JSON.parse((await redisCommand(fetcher,'GET',CACHE_KEY)).result);}
@@ -363,9 +402,9 @@ async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=f
   const formatResult = await formatRefresh;
   if (formatResult.error) allErrors.push(`promo_formats: ${formatResult.error}`);
   else summaries.push(formatResult.stats);
-  const freshness=verifyTabFreshness(summaries,includeToday);
+  freshness=verifyTabFreshness(summaries,includeToday);
   if(!freshness.all_tabs_verified)allErrors.push('All-tabs freshness verification incomplete');
-  const hashes={};
+  hashes={};
   for(const summary of summaries){
     if(summary.publication_sha256)hashes[require('../../lib/glv-history-v1.cjs').key(summary.preset)]=summary.publication_sha256;
     if(summary.type==='promo_formats')hashes[CACHE_KEY]=summary.cache_sha256;
@@ -377,7 +416,15 @@ async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=f
     freshness.v2={through:require('../../lib/glv-mad-v2.cjs').commonCutoff(),all_tabs_verified:v2.verified,summaries:v2.summaries,failures:v2.failures||[]};
     freshness.all_tabs_verified=freshness.all_tabs_verified&&v2.verified;
   }
-  if(v2Refresh){
+  // Durable proof that every source for this target is complete. Written only
+  // on a clean, non-forced pass; bound to the target, correction and exact
+  // source bytes, so any later source change or cutoff rollover invalidates it.
+  if(v2Refresh&&correction&&!allErrors.length&&freshness.all_tabs_verified&&!includeToday&&!fullHistory){
+    try{await writeVerifiedCache(fetcher,SOURCE_CHECKPOINT_KEY,{version:1,through:checkpointTarget,correction_id:correction.id,hashes,summaries:stripAdInventories(summaries),v2:freshness.v2,written_at:new Date().toISOString()});}
+    catch{/* Optional optimisation: publication below still proceeds. */}
+  }
+  }
+  if(v2Enabled){
     const shared=require('../../lib/glv-mad-shared.cjs'),redis=(...args)=>redisCommand(fetcher,...args);
     freshness.shared={all_tabs_verified:false,correction_id:correction?.id};
     try{

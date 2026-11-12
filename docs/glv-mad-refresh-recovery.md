@@ -16,6 +16,12 @@ A successful completed-day run records a receipt only after all seven consumer c
 
 Provider failure preserves the prior source payload; Promo history retains its existing persistent last-good behavior, while preset snapshots retain their existing 25-hour TTL. Failures remain explicit, and a sustained provider outage can still defeat all daily attempts; this is bounded automatic recovery, not guaranteed provider availability. The next day starts a new target automatically. Do not add a public recovery route, second scheduler, or unbounded manual retry loop.
 
+## Shared publication source checkpoint
+
+Shared V1/V2 publication runs after every source refresh inside the same invocation budget. On 2026-11-12 the 00:00, 01:00 and 04:00 UTC runs verified every source and then failed publication with `Cron refresh/request time budget exceeded`; each retry re-extracted all sources and timed out again, leaving both dashboards on the prior cutoff.
+
+After a clean, non-forced source pass the owner now writes `glv:mad:shared:1:sources` (no expiry) with the exact target (`<V1 cutoff>:v2:<common cutoff>`), shared correction ID, every source key's SHA-256, and stripped summaries. A later normal invocation reuses it only when target and correction match, every listed key is byte-identical, and current-clock tab freshness (ranges, 25-hour extraction age, V2 verification) still passes; it then skips extraction and spends its full budget on publication. Any mismatch falls back to normal extraction. `include_today` and `full_history` runs never read it; forced runs never write it. Responses report `freshness.resumed_from_source_checkpoint`. Regression: `node --test tests/mad-shared-source-checkpoint.test.cjs`.
+
 ## Verification / operations
 
 - Run `npm test`, `npm run verify:glv-release`, and sequential `npm run qa:meta-ads` / `npm run qa:mad` browser regressions.
