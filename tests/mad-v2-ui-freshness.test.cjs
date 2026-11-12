@@ -8,16 +8,23 @@ test('ordinary reports validate successful cache scope before normalization and 
  const file='public/glv-meta-ads-v2/freshness.js';assert.ok(fs.existsSync(file),'frontend freshness contract is required');
  const f=require('../'+file);
  assert.equal(f.bundle([payload(),payload(),payload()],expected).warning,'');
+ // Actively wrong data (other request, account, currency, incomplete rows) is still rejected.
  for(const change of [
-  {range:{since:'2026-09-01',until:'2026-09-30'},cached_range:{since:'2026-09-01',until:'2026-09-30'},stale:true,coverage_complete:false},
   {requested_range:{since:'2026-09-01',until:'2026-09-30'}},
   {cached_range:{since:'2026-09-01',until:'2026-09-30'}},
-  {report_currency:'CZK'},{account_filter:'TUC'},{complete:false},{coverage_complete:false}
- ])assert.throws(()=>f.bundle([payload(),{...payload(),...change},payload()],expected),/scope|range|coverage|complete/i);
- assert.throws(()=>f.bundle([payload(),payload(),{...payload(),generated_at:'2026-11-01T23:00:00Z'}],expected),/generation/i);
- assert.match(f.bundle([payload(),payload(),{...payload(),generated_at:'2026-11-01T23:00:00Z'}],{...expected,custom:true}).warning,/Independent custom-range source generations/);
+  {report_currency:'CZK'},{account_filter:'TUC'},{complete:false}
+ ])assert.throws(()=>f.bundle([payload(),{...payload(),...change},payload()],expected),/scope|range|complete/i);
+ // Missed refreshes cost days, not the dashboard: shown with a short note.
+ const behind={...payload(),range:{since:'2026-09-01',until:'2026-09-30'},cached_range:{since:'2026-09-01',until:'2026-09-30'},stale:true,coverage_complete:false};
+ const late=f.bundle([behind,behind,behind],expected);assert.equal(late.stale,true);assert.match(late.warning,/not refreshed yet.*2026-09-01 → 2026-09-30/);
+ assert.match(f.bundle([{...payload(),coverage_complete:false}],expected).warning,/not refreshed yet/);
+ // Generation differences: one strict retry probe, otherwise displayed with a note.
+ const mixed=[payload(),payload(),{...payload(),generated_at:'2026-11-01T23:00:00Z'}];
+ assert.throws(()=>f.bundle(mixed,{...expected,strict:true}),/generation/i);
+ const shown=f.bundle(mixed,expected);assert.equal(shown.mixed,true);assert.match(shown.warning,/refreshed at different times/);
+ assert.match(f.bundle(mixed,{...expected,custom:true}).warning,/read independently/);
  const aged={...payload(),stale:true,generated_at:'2026-10-31T00:00:00Z',warning:'Shared refresh pending'};
- const state=f.bundle([aged,aged,aged],expected);assert.match(state.warning,/stale/i);assert.match(state.warning,/2026-10-01 → 2026-10-31/);assert.match(state.warning,/Shared refresh pending/);
+ const state=f.bundle([aged,aged,aged],expected);assert.equal(state.stale,true);assert.match(state.warning,/Last refreshed 2026-10-31 00:00 UTC; newer data pending/);assert.match(state.warning,/Shared refresh pending/);
  assert.equal(f.bundle([payload(),payload(),payload()],expected).warning,'','recovery clears stale status');
 });
 const html=fs.readFileSync('public/glv-meta-ads-v2/index.html','utf8');

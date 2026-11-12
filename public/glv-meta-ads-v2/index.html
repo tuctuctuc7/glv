@@ -3,7 +3,7 @@
 <head>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('glv-mad-v2-theme')==='light'?'light':'dark';}catch{}</script>
 <script src="/glv-meta-ads-v2/dates.js"></script>
-<script src="/glv-meta-ads-v2/freshness.js?v=history-continuity-20261111"></script>
+<script src="/glv-meta-ads-v2/freshness.js?v=graceful-availability-20261112"></script>
 <script src="/glv-meta-ads/date-policy.js?v=shared-cutoff-20261111"></script>
 <script src="/glv-meta-ads-v2/config.js?v=shared-ui-20261111"></script>
 <meta charset="UTF-8">
@@ -317,6 +317,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
   .tab-filter-section .filter-toggle,.tab-filter-section .metric-select{height:44px;font:inherit;font-size:13px}
   .local-filter-label{display:none}
 }
+.err.notice{color:var(--ink);background:color-mix(in srgb,#d4a017 12%,var(--surface));border:1px solid color-mix(in srgb,#d4a017 45%,var(--line));padding:10px 14px;text-align:left;font-size:12.5px;line-height:1.5}
 </style>
 <link rel="stylesheet" href="/glv-meta-ads/promo-format.css?v=ghost-reconciliation-20261103">
 <script src="/glv-meta-ads/promo-format.js?v=promo-spend-cohorts-20261110"></script>
@@ -2086,7 +2087,7 @@ async function loadData({force=false}={}){
       const expected=historyExpected(scope),sources=lastGoodSources.filter(Boolean).map(s=>({...s,requested_range:undefined}));
       const state=MadV2Freshness.bundle(sources,expected);
       renderedScope=scopeKey;showAvailableRange(state.range,expected.range);
-      if(state.warning){errEl.style.display='block';errEl.textContent=state.warning;}
+      if(state.warning){errEl.classList.add('notice');errEl.style.display='block';errEl.textContent=state.warning;}
     }catch(incompatible){/* A different/disjoint scope must remain hidden. */}
   }
   syncLoadingPanels(scopeKey);
@@ -2112,7 +2113,7 @@ async function loadData({force=false}={}){
       // the entire cached triplet, never splice generations or change scope.
       const sources=results.filter(r=>r.status==='fulfilled').map(r=>r.value);
       try{
-        if(sources.length>1)MadV2Freshness.bundle(sources,expected);
+        if(sources.length>1)MadV2Freshness.bundle(sources,{...expected,strict:attempt===0});
         break;
       }catch(error){
         if(attempt!==0||!/^Mixed source (generations|ranges);/.test(error.message))throw error;
@@ -2126,7 +2127,7 @@ async function loadData({force=false}={}){
     sourceErrors={};let usableAds=null;
     try{
       if(ads.status!=='fulfilled')throw ads.reason;
-      MadV2Freshness.bundle([...campaignSources,ads.value],expected);usableAds=ads.value;
+      const adsState=MadV2Freshness.bundle([...campaignSources,ads.value],expected);usableAds=ads.value;if(adsState.mixed&&!freshness.mixed)freshness.warning=[freshness.warning,'Creatives were refreshed at a different time than campaign totals.'].filter(Boolean).join(' ');
     }catch(error){
       sourceErrors.ads='Creative source unavailable: '+error.message;
       const prior=lastGoodSelection===historySelection(scope)&&lastGoodSources?.[2];
@@ -2156,7 +2157,7 @@ async function loadData({force=false}={}){
     lastGoodLabel=(freshness.stale?'Stale last-good · ':'Source ')+campaignSources.map(s=>s.generated_at).sort()[0]+' · actual range '+MadV2Freshness.full(freshness.range);
     document.getElementById('updated-at').textContent=lastGoodLabel;
     const notices=[freshness.warning,sourceErrors.ads].filter(Boolean);
-    errEl.style.display=notices.length?'block':'none';errEl.textContent=notices.join(' ');
+    errEl.style.display=notices.length?'block':'none';errEl.textContent=notices.join(' ');errEl.classList.toggle('notice',!sourceErrors.ads);
   }catch(err){
     if(sequence!==loadSequence)return;
     let retained=false,notice='';
@@ -2171,7 +2172,7 @@ async function loadData({force=false}={}){
     syncLoadingPanels(scopeKey);
     const status=retained?'Stale last-good retained · '+lastGoodLabel:'No results shown for the selected range. Prior scope retained but hidden.';
     document.getElementById('updated-at').textContent=retained?status:'Selected range unavailable';
-    errEl.style.display='block';errEl.textContent=[status,notice,'Refresh unavailable: '+(err?.message||err)].filter(Boolean).join(' ');
+    errEl.classList.toggle('notice',retained);errEl.style.display='block';errEl.textContent=[status,notice,'Refresh unavailable: '+(err?.message||err)].filter(Boolean).join(' ');
   }finally{
     if(sequence!==loadSequence)return;
     loadEl.style.display='none';
