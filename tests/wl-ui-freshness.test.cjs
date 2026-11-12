@@ -29,7 +29,7 @@ test('same Prague day reuse expires by source age, not browser load time',async(
 test('expired valid history renders with its source and explicit stale disclosure',async()=>{
  const h=harness();h.stamp('2026-11-01T06:59:59Z');await h.load();
  assert.match(h.node('wl-status').textContent,/Source refreshed/);
- assert.match(h.node('wl-status').textContent,/Stale last-good.*actual range 2026-10-01 → 2026-10-31.*2026-11-01T06:59:59Z/);
+ assert.match(h.node('wl-status').textContent,/2026-10-01 – 2026-10-31.*Last refreshed 2026-11-01 06:59 UTC; newer data pending/);
  await h.load();assert.equal(h.calls,2,'stale available history does not suppress recovery');
 });
 test('future and invalid response timestamps never render results',async()=>{

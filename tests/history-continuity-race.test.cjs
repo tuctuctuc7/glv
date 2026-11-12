@@ -4,10 +4,10 @@ const range={since:'2026-10-12',until:'2026-11-10'};
 function harness(version,source){
  const html=fs.readFileSync(require('node:path').join(__dirname,'../public',version,'index.html'),'utf8');
  const code=html.slice(html.indexOf('async function loadData('),html.indexOf('function resumeUtcDay('));
- const nodes=new Map(); const node=id=>{if(!nodes.has(id))nodes.set(id,{style:{},classList:{add(){}},dataset:{},textContent:''});return nodes.get(id);};
+ const nodes=new Map(); const node=id=>{if(!nodes.has(id))nodes.set(id,{style:{},classList:{add(){},remove(){},toggle(){}},dataset:{},textContent:''});return nodes.get(id);};
  const calls=[],cache=new Map();let clears=0;
  const c={loadSequence:0,renderedScope:'',sourceErrors:{},lastGoodSources:null,lastGoodSelection:'',lastGoodLabel:'',datePreset:'last_30d',requestedDay:'',aggregateCampaigns:[],dailyCampaigns:[],adCreatives:[],reportCurrency:'CZK',reportAccount:'TUC',
- document:{getElementById:node,querySelector:()=>null},responseCache:{clear(){clears++;cache.clear();}},requestScope(){return {datePreset:c.datePreset};},scopeIdentity:s=>s.datePreset,historySelection:s=>s.datePreset,historyExpected:()=>({range,currency:'CZK',account:'TUC',available:true,custom:false}),MadV2Freshness:freshness,MadV2Dates:{commonCutoff:()=>range.until},
+ document:{getElementById:node,querySelector:()=>null},responseCache:{clear(){clears++;cache.clear();}},requestScope(){return {datePreset:c.datePreset};},scopeIdentity:s=>s.datePreset,historySelection:s=>s.datePreset,historyExpected:()=>({range,currency:'CZK',account:'TUC',available:true,custom:false}),MadV2Freshness:freshness,MadV2Dates:{commonCutoff:()=>range.until},MadPresentation:{namingWarnings:()=>[]},MadDatePolicy:{day:()=>'2026-11-11',accept(){},range:()=>null},
  apiFetch(type,scope){const key=scope.datePreset+type;if(cache.has(key))return cache.get(key);calls.push({type,scope:{...scope}});const p=Promise.resolve().then(()=>source(type,scope,calls.length));cache.set(key,p);return p;},fetchUsdRate:async()=>.04,
  processAggregateRows:x=>x,processDaily:x=>x,processCreatives:x=>x};
  for(const k of ['showAvailableRange','syncLoadingPanels','setStatus','loadPromoFormats','loadPromoConcepts','buildAllFilters','buildTriageFilters','renderKPIs','refreshChart','renderDailyTable','renderCreatives','refreshTriageCharts','renderPromoKPIs','refreshPromoCharts','renderPromoTable','renderLeadgenKPIs','refreshLeadgenCharts','renderLeadgenTable','syncPromoFilterVisibility'])c[k]=()=>{};
@@ -15,14 +15,17 @@ function harness(version,source){
 }
 function payload(generation,extra={}){return {rows:[{generation}],range,generated_at:'2026-11-11T08:00:00Z',generation_id:generation,complete:true,report_currency:'CZK',account_filter:'TUC',...extra};}
 for(const version of ['glv-meta-ads','glv-meta-ads-v2']){
- test(version+' generationless scheduled retained facts must not bypass coherence',async()=>{
+ test(version+' offline refresh keeps retained facts visible with a note, even across generations',async()=>{
   const h=harness(version,()=>Promise.reject(new Error('offline')));
   h.c.lastGoodSources=[payload(undefined),payload(undefined,{generated_at:'2026-11-10T08:00:00Z'}),payload(undefined)];h.c.lastGoodSelection='last_30d';
-  await h.c.loadData();assert.equal(h.c.renderedScope,'');assert.equal(h.calls.length,3);
+  await h.c.loadData();assert.equal(h.c.renderedScope,'last_30d');assert.equal(h.calls.length,3);
+  assert.match(h.node('error').textContent,/Stale last-good retained/);assert.match(h.node('error').textContent,/different times/);
  });
- test(version+' persistent mismatch is bounded and fails closed including ads-only mismatch',async()=>{
+ test(version+' persistent mismatch retries once, then shows the data with a note instead of a blank dashboard',async()=>{
   const h=harness(version,type=>payload(type==='ads'?'old':'new'));
-  await h.c.loadData();assert.equal(h.calls.length,6);assert.equal(h.clears,1);assert.equal(h.c.aggregateCampaigns.length,0);assert.match(h.node('error').textContent,/Mixed source generations/);
+  await h.c.loadData();assert.equal(h.calls.length,6);assert.equal(h.clears,1);
+  assert.equal(h.c.aggregateCampaigns.length,1);assert.equal(h.c.adCreatives.length,1);assert.equal(h.c.renderedScope,'last_30d');
+  assert.match(h.node('error').textContent,/Creatives were refreshed at a different time/);assert.doesNotMatch(h.node('error').textContent,/Mixed source/);
  });
  test(version+' mixed source ranges recover without mixing snapshots',async()=>{
   const h=harness(version,(type,scope,n)=>payload('same',n<=3&&type==='daily'?{range:{since:'2026-10-11',until:'2026-11-09'}}:{}));
@@ -43,10 +46,10 @@ for(const version of ['glv-meta-ads','glv-meta-ads-v2']){
   h.c.datePreset='last_7d';await h.c.loadData();release();await first;
   assert.equal(h.c.aggregateCampaigns[0].generation,'latest');assert.equal(h.c.renderedScope,'last_7d');assert.equal(h.calls.length,9);
  });
- test(version+' persistent race preserves coherent visible prior facts',async()=>{
+ test(version+' persistent race shows the newest facts with a note rather than freezing on old ones',async()=>{
   const h=harness(version,type=>payload(type==='daily'?'old':'new'));
   h.c.lastGoodSources=[payload('prior'),payload('prior'),payload('prior')];h.c.lastGoodSelection='last_30d';h.c.aggregateCampaigns=[{generation:'prior'}];
-  await h.c.loadData();assert.equal(h.calls.length,6);assert.equal(h.c.aggregateCampaigns[0].generation,'prior');assert.equal(h.c.renderedScope,'last_30d');assert.match(h.node('error').textContent,/Stale last-good retained/);
+  await h.c.loadData();assert.equal(h.calls.length,6);assert.equal(h.c.aggregateCampaigns[0].generation,'new');assert.equal(h.c.renderedScope,'last_30d');assert.match(h.node('error').textContent,/refreshed at different times/);
  });
  test(version+' generationless co-temporal scheduled fixtures remain valid',async()=>{
   const h=harness(version,()=>payload(undefined));await h.c.loadData();assert.equal(h.calls.length,3);assert.equal(h.c.aggregateCampaigns.length,1);assert.equal(h.c.adCreatives.length,1);
