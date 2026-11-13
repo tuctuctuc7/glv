@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-13 01:10 UTC",
+  "updated_at": "2026-11-13 01:32 UTC",
   "source": {
     "tab": "Daily",
     "phase_calendar_sheet_id": "18oXDGQaE2p8E_G3PGHJwaYsl0CFM0eE9pVd-ju19edY",
@@ -222,6 +222,13 @@
       "phase": "Promo",
       "label": "promo bf",
       "source_row": 61
+    },
+    {
+      "start_date": "2026-11-12",
+      "end_date": "2026-11-16",
+      "phase": "Influ",
+      "label": "influ kristyna",
+      "source_row": 62
     }
   ],
   "promo_events": [
