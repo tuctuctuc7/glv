@@ -8,14 +8,14 @@ Route: `/glv-meta-ads-v2/`. Existing `/glv-meta-ads/` remains independent and un
 - TGLV: Meta account `1021777267558882`, native USD, America/Los_Angeles, US-only. Included in US and Triage US/All, never CZSK.
 - Immutable account IDs determine identity and account-qualified entity keys. Campaign prefixes are human-readable labels, not join keys. Prefix mismatches warn without discarding spend. Account-local campaign numbers may overlap.
 - Default display USD; USD/CZK switch beside theme. Daily CNB historical fixings, prior published fixing on nonbusiness days, native values/provenance retained. Convert monetary inputs before aggregation; ratios are derived from sums.
-- Daily reports combine account-local date labels without rebucketing. Default ranges end on the latest date completed in both timezones. This is not synchronized hourly reporting or deduplicated store revenue.
+- Daily reports combine account-local date labels without rebucketing. Default ranges end on TUC's completed Prague day; TGLV's last day is partial until LA midnight and is completed by the TGLV-only refresh (see refresh scopes in glv-mad-refresh-recovery.md). This is not synchronized hourly reporting or deduplicated store revenue.
 
 ## Runtime and refresh
 
 - Vercel project `tucmedia/agenthic-lab`. Tom approved replacing obsolete scope `agenthic` with `tucmedia` for all Vercel work; do not use personal scope.
 - `GLV_MAD_V2_ENABLED=1` enables V2. Absent/other values fail closed. Keep enabled in the production project environment for subsequent Git-triggered deployments.
 - `GLV_MAD_V2_FB_ACCESS_TOKEN` is a dedicated sensitive production credential; V2 uses it before legacy fallbacks. Original MAD credential is unchanged. Never put credential values in Git, documentation or logs.
-- One existing `/api/glv-meta-ads/cron` owner and shared lease, not a second scheduler. Current schedule is `0 0,1,2,4,8,12,16,20 * * *` UTC.
+- One shared lease across scoped crons (`cron-tuc`, `cron-v2`, `cron-tglv`); schedule in `tests/helpers/mad-cron-schedule.cjs` and glv-mad-refresh-recovery.md.
 - Nineteen isolated V2 report caches: six presets × daily/aggregate/ads, plus converted/reclassified Promo history. Direct custom-date reads remain read-only live queries.
 - Ads extraction checkpoints bounded chunks/pages and may require multiple invocations within the same completed-date cutoff. On cutoff rollover, retain validated completed historical chunks within the 90-day horizon, replace the latest seven completed days, and discard partial pages and cached metadata. Historical source extraction timestamps remain in `source_extractions`; the assembled rolling snapshot records its current refresh generation time. Cold bootstrap can still require continuation; monitor failed runs and preserve sufficient same-cutoff recovery opportunities.
 - Complete per-preset generation manifests bind compatible source facts while preserving actual extraction timestamps. UI rejects wrong-range or incompatible generations; same-scope stale data is explicitly labeled.

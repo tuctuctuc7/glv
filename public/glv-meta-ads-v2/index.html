@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('glv-mad-v2-theme')==='light'?'light':'dark';}catch{}</script>
-<script src="/glv-meta-ads-v2/dates.js"></script>
+<script src="/glv-meta-ads-v2/dates.js?v=tuc-cutoff-20261113"></script>
 <script src="/glv-meta-ads-v2/freshness.js?v=graceful-availability-20261112"></script>
 <script src="/glv-meta-ads/date-policy.js?v=shared-cutoff-20261111"></script>
 <script src="/glv-meta-ads-v2/config.js?v=shared-ui-20261111"></script>
@@ -2155,6 +2155,7 @@ async function loadData({force=false}={}){
     renderedScope=scopeKey;syncLoadingPanels(scopeKey);
     showAvailableRange(freshness.range,expected.range);
     lastGoodLabel=(freshness.stale?'Stale last-good · ':'Source ')+campaignSources.map(s=>s.generated_at).sort()[0]+' · actual range '+MadV2Freshness.full(freshness.range);
+    const refreshNote=campaignSources.map(s=>s.refresh_note).find(Boolean);if(refreshNote)lastGoodLabel+=' · '+refreshNote;
     document.getElementById('updated-at').textContent=lastGoodLabel;
     const notices=[freshness.warning,sourceErrors.ads].filter(Boolean);
     errEl.style.display=notices.length?'block':'none';errEl.textContent=notices.join(' ');errEl.classList.toggle('notice',!sourceErrors.ads);

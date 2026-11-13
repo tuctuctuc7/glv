@@ -453,10 +453,11 @@ test('the canonical Meta dashboard provides accessible light and dark theme UX',
   assert.match(v2, /<main/);
 });
 
-test('one existing Meta Ads cron feeds the canonical dashboard without a duplicate schedule', () => {
+test('scoped Meta Ads crons feed the canonical dashboards with no duplicate legacy schedule', () => {
   const vercel = JSON.parse(read('vercel.json'));
   const cronPaths = vercel.crons.map(({ path: cronPath }) => cronPath);
-  assert.deepEqual(cronPaths.filter(cronPath => cronPath.includes('glv-meta-ads')), ['/api/glv-meta-ads/cron']);
+  assert.deepEqual(vercel.crons.filter(job => job.path.includes('glv-meta-ads')), require('./helpers/mad-cron-schedule.cjs'));
+  assert.ok(!cronPaths.includes('/api/glv-meta-ads/cron'), 'combined legacy scope stays manual-only');
 
   const middleware = read('middleware.js');
   assert.match(middleware, /const LEGACY_META_PATH = '\/glv-meta-ads-2'/);
