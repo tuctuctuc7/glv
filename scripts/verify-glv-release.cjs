@@ -196,9 +196,12 @@ if (unexpectedKursaFiles.length > 0) {
 if ((config.crons || []).some(({ path: cronPath }) => /krs-meta-ads|kursa/i.test(cronPath))) {
   fail('Agenthic Labs must not own a KURSA cron');
 }
-const metaCronPaths = (config.crons || []).map(({ path: cronPath }) => cronPath).filter(cronPath => cronPath.includes('glv-meta-ads'));
-if (metaCronPaths.length !== 1 || metaCronPaths[0] !== '/api/glv-meta-ads/cron') {
-  fail('the canonical GLV Meta Ads dashboard must retain one cache-refresh cron');
+// Scoped refresh owner: TUC (Prague cutoff), V2 (+TGLV partial) and TGLV-only
+// completion. The combined legacy route stays manual-only (no schedule).
+const metaCronPaths = [...new Set((config.crons || []).map(({ path: cronPath }) => cronPath).filter(cronPath => cronPath.includes('glv-meta-ads')))].sort();
+const scopedCronPaths = ['/api/glv-meta-ads/cron-tglv', '/api/glv-meta-ads/cron-tuc', '/api/glv-meta-ads/cron-v2'];
+if (JSON.stringify(metaCronPaths) !== JSON.stringify(scopedCronPaths) || scopedCronPaths.some(route => !config.functions?.[`api${route.slice(4)}.js`]?.includeFiles)) {
+  fail('the canonical GLV Meta Ads dashboard must schedule exactly the TUC, V2 and TGLV refresh scopes');
 }
 
 console.log(JSON.stringify({

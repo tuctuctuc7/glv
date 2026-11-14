@@ -24,7 +24,7 @@ Run `node qa/creator-ghost.cjs` in addition to the gates below: synthetic fixtur
 
 Aggregate/daily/ad preset payloads retain `creator_version: 2`; aggregate/daily WL facts additionally require `creator_ad_version: 1` and real ad IDs/names. Old ad-set-only caches miss and must be re-extracted, never split by guessing. Live and cron campaign producers request `level=ad` for every WL campaign (even a creator-named campaign); all ad payloads now use `wl_version: 3` for verified-positive partnership eligibility (see README); creator attribution alone is not eligibility. Old schema payloads cannot satisfy the new contract. Nested campaign facts preserve the original campaign rows for unsplit tabs. Every preset cache write is followed by a GET of the exact key and serialized-value comparison; mismatches fail the refresh. Completion stats include `readback_verified` and unresolved `creatorIssues`.
 
-Retain the single registered `/api/glv-meta-ads/cron` schedule at `0 0,1,2,4,8,12,16,20 * * *` UTC (current main recovery opportunities). It refreshes all preset sources and shared creative history; do not create a WL-only schedule or alter the completed-day cutoff.
+Use the scoped refresh schedule (`cron-tuc`, `cron-v2`, `cron-tglv`; see glv-mad-refresh-recovery.md). It refreshes all preset sources and shared creative history; do not create a WL-only schedule or alter the completed-day cutoff.
 
 After approved merge and a Ready production deployment, verify its source SHA and that the registered cron host points to it:
 
