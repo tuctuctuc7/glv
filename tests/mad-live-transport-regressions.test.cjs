@@ -1,6 +1,13 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const publication=require('../lib/glv-history-publication.cjs'),source=require('../lib/glv-mad-v2-source.cjs'),v2=require('../lib/glv-mad-v2.cjs');
+test('resumed native bundles use the daily piece FX for all converted observations',async()=>{
+ const runtime=require('../lib/glv-mad-v2-isolated.cjs'),{memory,snapshot}=require('./fixtures/mad-v2-isolated.cjs'),store=memory(),now=new Date('2026-11-15T09:00:00Z');
+ const result=await runtime.refresh({redis:store.redis,token:'synthetic',now,presets:['last_7d'],includePromo:false,loadFx:async()=>({}),build:async options=>({...snapshot(options),fx:{'2026-11-13':{date:'2026-11-13',czk_per_usd:24,source:'synthetic',sha256:options.type==='daily'?'old-annual-response':'new-annual-response',provider:'Czech National Bank'}}})});
+ assert.equal(result.verified,true,JSON.stringify(result.errors));
+ const bundle=await runtime.readPreset(store.redis,'last_7d');
+ for(const account of v2.ACCOUNTS)for(const type of ['aggregate','ads'])assert.deepEqual(bundle[type].account_bundles[account.id].fx,bundle.daily.account_bundles[account.id].fx);
+});
 test('operator failure summaries never disclose multiline error messages or stack-like text',async()=>{
  const runtime=require('../lib/glv-mad-v2-isolated.cjs'),{memory}=require('./fixtures/mad-v2-isolated.cjs'),store=memory();
  const result=await runtime.refresh({redis:store.redis,token:'synthetic',presets:['last_7d'],includePromo:false,loadFx:async()=>({}),build:async()=>{throw Error('transport failed\nlib/SYNTHETIC_PRIVATE_MARKER:123:45');}});
