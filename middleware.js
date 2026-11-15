@@ -150,6 +150,13 @@ export default async function middleware(request) {
     return;
   }
 
+  // Scheduled V2 calls use the same bearer as V1, never a browser cookie.
+  // Keep this exception exact; the handler independently validates the bearer.
+  if (pathname === '/api/glv-meta-ads-v2/cron') {
+    const secret = process.env.CRON_SECRET || process.env.GLV_META_CRON_SECRET;
+    if (secret && request.headers.get('authorization') === `Bearer ${secret}`) return;
+  }
+
   if ((pathname.startsWith('/api/glv-meta-ads-v2/') || pathname === '/api/glv-meta-ads-v2' || pathname === DATA_PATH || pathname === MB_OS_DATA_PATH) && !hasGlvAccess(request)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
