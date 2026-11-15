@@ -97,7 +97,7 @@ test('format API rejects legacy caches, slices fresh history, and enforces compl
   assert.equal(sliceCachedFormats(cached,range,now),null);
 });
 
-test('authenticated shared data handler serves versioned format cache; cron adds one refresh without a new schedule', async () => {
+test('native V1 data handler serves versioned format cache through its independent cron', async () => {
   const handler=require('../api/glv-meta-ads/fb-data.js');
   const cron=require('../api/glv-meta-ads/cron.js');
   const oldFetch=global.fetch, oldEnv={...process.env};
@@ -123,7 +123,7 @@ test('authenticated shared data handler serves versioned format cache; cron adds
     assert.equal(body.generated_at,cached.generated_at,'shared facts keep original extraction freshness');
     assert.equal(typeof cron._test.refreshPromoFormatCache,'function');
     const config=JSON.parse(fs.readFileSync(require('node:path').join(__dirname,'../vercel.json'),'utf8'));
-    assert.deepEqual(config.crons,[{path:'/api/glv-meta-ads/cron',schedule:'0 0,1,2,4,8,12,16,20 * * *'}]);
+    assert.deepEqual(config.crons.filter(job=>job.path==='/api/glv-meta-ads/cron'),[{path:'/api/glv-meta-ads/cron',schedule:'0 0,1,2,4,8,12,16,20 * * *'}]);
   } finally { global.fetch=oldFetch;process.env=oldEnv; }
 });
 

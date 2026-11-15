@@ -75,22 +75,26 @@ test('published piece tampering fails closed instead of returning wrong totals',
  const piece=storage.decode(h.store.get(ref.key));piece.range.until='2026-11-08';h.store.set(ref.key,storage.encode(piece));
  await assert.rejects(cache.readPublished(async k=>storage.decode(h.store.get(k)),'last_30d'),/digest/);
 });
-test('V2 API reads one immutable last-good generation, not partially replaced working keys',async()=>{
- const h=harness(),now=new Date(Date.now()-3*86400000);
- await h.run(now);
- await require('./helpers/mad-shared-fixture.cjs').publishSyntheticShared(h.store,'last_30d');
- h.setFailure(k=>k===cache.presetKey('ads','last_30d'));
- await h.run(new Date());
- const saved={...process.env},original=global.fetch;
+test('actual V2 API retains isolated immutable last-good after interrupted next-day publication',async()=>{
+ const t=require('../qa/mad-shared-transport.cjs').create({clock:'2026-11-08T12:00:00Z'});
+ const runtime=require('../lib/glv-mad-v2-isolated.cjs');
+ const q=type=>new URLSearchParams({type,date_preset:'last_30d',account:'All',currency:'CZK'});
  try{
-  Object.assign(process.env,{GLV_MAD_V2_ENABLED:'1',GLV_META_BETA_AUTH_TOKEN:'test',KV_REST_API_URL:'https://redis.test',KV_REST_API_TOKEN:'test'});
-  delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
-  global.fetch=async url=>({ok:true,status:200,json:async()=>({result:h.store.get(decodeURIComponent(String(url).split('/get/')[1]))||null})});
-  const responses=[];
-  for(const type of cache.TYPES){const res={code:200,setHeader(){},status(n){this.code=n;return this;},json(body){this.body=body;}};await require('../api/glv-meta-ads-v2/fb-data.js')({method:'GET',headers:{cookie:'glv_meta_beta=test'},query:{type,date_preset:'last_30d'}},res);assert.equal(res.code,200);responses.push(res.body);}
-  assert.ok(responses.every(p=>p.range.until===v2.commonCutoff(now)&&p.stale));
+  const before=await t.payload(q('daily'),true),manifest=t.values.get(runtime.combinedKey('last_30d'));
+  assert.ok(before.rows.length>0);
+  t.setClock('2026-11-11T12:00:00Z');t.setFailure(true);
+  await assert.rejects(t.payload(q('daily'),true),/Synthetic isolated publication failed/);
+  assert.equal(t.values.get(runtime.combinedKey('last_30d')),manifest);
+  t.hold(true);
+  const responses=await Promise.all(cache.TYPES.map(type=>t.payload(q(type),true)));
+  assert.ok(responses.every(p=>p.range.until==='2026-11-07'&&p.stale&&p.requested_range.until==='2026-11-10'));
   assert.equal(new Set(responses.map(p=>p.generation_id)).size,1);
- }finally{global.fetch=original;for(const k of Object.keys(process.env))if(!(k in saved))delete process.env[k];Object.assign(process.env,saved);}
+  assert.deepEqual(responses[0].rows,before.rows);
+  t.hold(false);t.setFailure(false);
+  const recovered=await t.payload(q('daily'),true);
+  assert.equal(recovered.range.until,'2026-11-10');assert.equal(recovered.coverage_complete,true);
+  assert.notEqual(recovered.generation_id,before.generation_id);
+ }finally{t.close();}
 });
 test('existing V2 coherent last-good is archived before FX failure or pending force work',async()=>{
  const h=harness(),now=new Date('2026-11-08T12:00:00Z');await h.run(now);

@@ -197,8 +197,9 @@ if ((config.crons || []).some(({ path: cronPath }) => /krs-meta-ads|kursa/i.test
   fail('Agenthic Labs must not own a KURSA cron');
 }
 const metaCronPaths = (config.crons || []).map(({ path: cronPath }) => cronPath).filter(cronPath => cronPath.includes('glv-meta-ads'));
-if (metaCronPaths.length !== 1 || metaCronPaths[0] !== '/api/glv-meta-ads/cron') {
-  fail('the canonical GLV Meta Ads dashboard must retain one cache-refresh cron');
+const expectedMetaCrons = ['/api/glv-meta-ads/cron', '/api/glv-meta-ads-v2/cron?mode=morning', '/api/glv-meta-ads-v2/cron?mode=late'];
+if (JSON.stringify([...metaCronPaths].sort()) !== JSON.stringify(expectedMetaCrons.sort())) {
+  fail('MAD requires standalone V1 plus separate V2 morning and TGLV-only completion jobs');
 }
 
 console.log(JSON.stringify({

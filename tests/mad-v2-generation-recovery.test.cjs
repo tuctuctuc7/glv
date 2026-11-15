@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const cache=require('../lib/glv-mad-v2-cache.cjs'),source=require('../lib/glv-mad-v2-source.cjs'),v2=require('../lib/glv-mad-v2.cjs'),ui=require('../public/glv-meta-ads-v2/freshness.js');
-test('partial retry certifies a displayable generation without changing extraction timestamps',async()=>{
+test('legacy: partial retry certifies a displayable generation without changing extraction timestamps',async()=>{
  const store=new Map(),first=new Date(Date.now()-300000),second=new Date(Date.now()-60000);
  const redis=async(cmd,key,value)=>{if(cmd==='SET'){store.set(key,value);return {result:'OK'};}return {result:cmd==='TTL'?-1:store.get(key)||null};};
  const fetcher=async url=>{const u=new URL(url),a=v2.ACCOUNTS.find(a=>u.pathname.includes(a.id));return {ok:true,status:200,json:async()=>u.pathname.endsWith('/insights')?{data:[]}:{account_id:a.id,currency:a.currency,timezone_name:a.timezone,account_status:1}};};
@@ -13,7 +13,7 @@ test('partial retry certifies a displayable generation without changing extracti
  assert.ok(payloads.every(p=>p.generation_id));
  assert.equal((await run(new Date(+second+30000))).verified,true);
  await require('./helpers/mad-shared-fixture.cjs').publishSyntheticShared(store,'last_30d');
- const handler=require('../api/glv-meta-ads-v2/fb-data.js'),saved={...process.env},originalFetch=global.fetch;
+ const handler=require('./helpers/mad-legacy-reader.cjs').v2,saved={...process.env},originalFetch=global.fetch;
  try{
   process.env.GLV_MAD_V2_ENABLED='1';process.env.GLV_META_BETA_AUTH_TOKEN='synthetic';process.env.KV_REST_API_URL='https://redis.test';process.env.KV_REST_API_TOKEN='synthetic';delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
   global.fetch=async url=>{assert.ok(String(url).startsWith('https://redis.test/get/'));const key=decodeURIComponent(String(url).split('/get/')[1]);return {ok:true,json:async()=>({result:store.get(key)||null})};};

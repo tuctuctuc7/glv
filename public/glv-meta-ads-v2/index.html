@@ -2,10 +2,10 @@
 <html lang="en" data-theme="dark">
 <head>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('glv-mad-v2-theme')==='light'?'light':'dark';}catch{}</script>
-<script src="/glv-meta-ads-v2/dates.js"></script>
-<script src="/glv-meta-ads-v2/freshness.js?v=graceful-availability-20261112"></script>
+<script src="/glv-meta-ads-v2/dates.js?v=account-isolated-20261115"></script>
+<script src="/glv-meta-ads-v2/freshness.js?v=account-promo-isolated-20261115"></script>
 <script src="/glv-meta-ads/date-policy.js?v=shared-cutoff-20261111"></script>
-<script src="/glv-meta-ads-v2/config.js?v=shared-ui-20261111"></script>
+<script src="/glv-meta-ads-v2/config.js?v=account-coverage-20261115"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>GLV Meta Ads Pulse</title>
@@ -343,6 +343,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
  .header-right:not(.controls-collapsed){top:calc(122px + env(safe-area-inset-top));grid-template-columns:1fr}
 }
 </style>
+<link rel="stylesheet" href="/glv-meta-ads-v2/quiet-precision.css?v=quiet-precision-restored-20261115">
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to dashboard content</a>
@@ -411,8 +412,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 
 <main class="page" id="main-content">
   <p class="promo-note" id="v2-date-note">Local account dates (Prague / Los Angeles) are added by date label, not rebucketed. Daily CNB FX; previous published fixing on holidays. Account identity wins over campaign prefix.</p><div id="v2-naming-warnings" class="wl-naming-warning" role="status" hidden></div>
-  <section class="dashboard-intro" aria-labelledby="dashboard-title"><div><p class="dashboard-kicker">Executive media control room</p><h1 class="dashboard-title" id="dashboard-title">Performance, without the noise.</h1><p class="dashboard-sub">Campaign efficiency, promo contribution, creative health, and daily evidence across CZSK and US.</p></div><div class="scope-pill">META ADS · <span id="v2-scope-account">All accounts</span> · <span id="v2-scope-currency">USD</span></div></section>
-<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button id="refresh-data" type="button" class="metric-select" style="min-height:44px" onclick="document.getElementById('tab-wl').classList.contains('active')?GlvWlUI.load(true):loadData({force:true})" title="Reload the active view">Refresh data</button></div>
+  <section class="dashboard-intro" aria-labelledby="dashboard-title"><h1 class="dashboard-title" id="dashboard-title">Performance</h1><div class="dashboard-actions"><div class="scope-pill">META ADS · <span id="v2-scope-account">All accounts</span> · <span id="v2-scope-currency">USD</span></div><button id="refresh-data" type="button" class="metric-select" onclick="document.getElementById('tab-wl').classList.contains('active')?GlvWlUI.load(true):loadData({force:true})" title="Reload the active view">Refresh data</button></div></section>
 <div id="loading" class="loading" role="status"><div class="spinner"></div><span id="loading-msg">Loading campaigns…</span></div>
 <div id="error" class="err" role="status" style="display:none;"></div>
 
@@ -1474,8 +1474,8 @@ function refreshTrendsChart(){
   const allDates=[...new Set([...czskD.map(d=>d.date),...usD.map(d=>d.date)])].sort();
   const czskMap=Object.fromEntries(czskD.map(d=>[d.date,d]));const usMap=Object.fromEntries(usD.map(d=>[d.date,d]));
   const labels=allDates.map(d=>fmtDate(d));
-  const czskVals=allDates.map(d=>{const r=czskMap[d];if(!r)return 0;const m=calcMetrics(r);return computeChartMetric(key,r,m);});
-  const usVals=allDates.map(d=>{const r=usMap[d];if(!r)return 0;const m=calcMetrics(r);return computeChartMetric(key,r,m);});
+  const czskVals=allDates.map(d=>{const r=czskMap[d];if(!r)return null;const m=calcMetrics(r);return computeChartMetric(key,r,m);});
+  const usVals=allDates.map(d=>{const r=usMap[d];if(!r)return null;const m=calcMetrics(r);return computeChartMetric(key,r,m);});
   if(charts['trends']){charts['trends'].destroy();delete charts['trends'];}
   const ctx=document.getElementById('chart-trends').getContext('2d');
   charts['trends']=new Chart(ctx,{
@@ -2018,7 +2018,7 @@ const responseCache=MetaSessionCache.createSessionCache();
 function requestScope(){return customRange?{customRange:{since:customRange.since,until:customRange.until}}:{datePreset,expectedRange:MadV2Dates.rangeFor(datePreset)};}
 function fetchUsdRate(){return MadPresentation.fetchUsdRate(responseCache);}
 function promoHistoryWarning(payload,error=''){
-  const state=MadV2Freshness.validate({...payload,requested_range:undefined},{range:{since:'2026-03-01',until:MadV2Dates.commonCutoff()},currency:reportCurrency,account:reportAccount,history:true});
+  const state=MadV2Freshness.validate({...payload,requested_range:undefined},{range:{since:'2026-03-01',until:MadV2Dates.commonCutoff()},currency:reportCurrency,account:reportAccount,history:true,dataset:'tuc-promo'});
   return [state.warning,error?`Stale last-good · actual range ${payload.range.since} → ${payload.range.until} · source ${payload.generated_at}. Refresh failed: ${error}`:''].filter(Boolean).join(' ');
 }
 function apiUrl(type,scope=requestScope()){
@@ -2032,7 +2032,7 @@ function apiUrl(type,scope=requestScope()){
 }
 async function apiFetch(type,scope=requestScope()){
   const url=apiUrl(type,scope),history=type==='promo_formats'||type==='promo_concepts';
-  const expected={range:history?{since:'2026-03-01',until:MadV2Dates.commonCutoff()}:scope.expectedRange||scope.customRange||MadV2Dates.rangeFor(scope.datePreset),currency:reportCurrency,account:reportAccount,history,available:!scope.customRange&&scope.datePreset!=='last_month'};
+  const expected={range:history?{since:'2026-03-01',until:MadV2Dates.commonCutoff()}:scope.expectedRange||scope.customRange||MadV2Dates.rangeFor(scope.datePreset),currency:reportCurrency,account:reportAccount,history,dataset:history?'tuc-promo':'campaigns',available:!scope.customRange&&scope.datePreset!=='last_month'};
   const result=await responseCache.get(url,async()=>{
     const r=await fetch(url,{cache:'no-store'});const json=await r.json();
     if(!r.ok)throw new Error(json.error||`HTTP ${r.status}`);
@@ -2212,7 +2212,7 @@ function formatUtcTimestamp(date){
   const pad=n=>String(n).padStart(2,'0');
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth()+1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())} UTC`;
 }
-const root=document.documentElement;const themeToggle=document.getElementById('theme-toggle');const mobileControlsToggle=document.getElementById('mobile-controls-toggle');const headerRight=document.querySelector('.header-right');function setTheme(theme){root.dataset.theme=theme;try{localStorage.setItem('glv-mad-v2-theme',theme);}catch(e){}const light=theme==='light';themeToggle.textContent=light?'☾':'☀';themeToggle.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');Chart.defaults.color=light?'#637589':'#9bacc0';Chart.defaults.borderColor=light?'rgba(99,117,137,.18)':'rgba(155,172,192,.16)';Object.values(charts).forEach(chart=>chart?.update('none'));}let preferred='dark';try{preferred=localStorage.getItem('glv-mad-v2-theme')||'dark';}catch(e){}setTheme(preferred==='light'?'light':'dark');if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');}themeToggle.addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));mobileControlsToggle.addEventListener('click',()=>{const collapsed=headerRight.classList.toggle('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded',String(!collapsed));mobileControlsToggle.textContent=collapsed?'Filters':'Done';});
+const root=document.documentElement;const themeToggle=document.getElementById('theme-toggle');const mobileControlsToggle=document.getElementById('mobile-controls-toggle');const headerRight=document.querySelector('.header-right');function setTheme(theme){root.dataset.theme=theme;try{localStorage.setItem('glv-mad-v2-theme',theme);}catch(e){}const light=theme==='light';themeToggle.textContent=light?'☾':'☀';themeToggle.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');Chart.defaults.color=light?'#646674':'#b2b5c4';Chart.defaults.borderColor=light?'rgba(100,102,116,.18)':'rgba(178,181,196,.16)';Object.values(charts).forEach(chart=>chart?.update('none'));}let preferred='dark';try{preferred=localStorage.getItem('glv-mad-v2-theme')||'dark';}catch(e){}setTheme(preferred==='light'?'light':'dark');if(window.matchMedia('(max-width:720px)').matches){headerRight.classList.add('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded','false');}themeToggle.addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));mobileControlsToggle.addEventListener('click',()=>{const collapsed=headerRight.classList.toggle('controls-collapsed');mobileControlsToggle.setAttribute('aria-expanded',String(!collapsed));mobileControlsToggle.textContent=collapsed?'Filters':'Done';});
 initV2Controls();initTabFilters();initTriageCards();initSelects();initSortControls();restoreV2ControlElements();updateDateLabel();loadData();
 </script>
 <script src="/glv-meta-ads/section-info.js?v=ad-creator-migration-1"></script>

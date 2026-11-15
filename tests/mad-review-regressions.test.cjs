@@ -4,7 +4,7 @@ const shared=require('../lib/glv-mad-shared.cjs'),v2=require('../lib/glv-mad-v2.
 // Load the synthetic fixture without registering another file's tests.
 const text=fs.readFileSync(require.resolve('./mad-shared-publication.test.cjs'),'utf8');
 const fixture=vm.runInNewContext(text.slice(text.indexOf('const range='),text.indexOf("test('one"))+';fixture',{v2});
-test('native renderer and publication reject contradictory top-level and nested ownership before account filtering',()=>{
+test('legacy: native renderer and publication reject contradictory top-level and nested ownership before account filtering',()=>{
  const source=require('../lib/glv-mad-v2-source.cjs');
  for(const type of ['daily','aggregate','ads'])for(const ai of [0,1])for(const nested of [false,true]){
   const f=fixture(),s=f.native[type],a=s.accounts[ai];
@@ -22,7 +22,7 @@ test('native renderer and publication reject contradictory top-level and nested 
   assert.doesNotThrow(()=>source.renderSnapshot(s));
  }
 });
-test('current campaign classification matches CZK/USD including nested creators without changing money',()=>{
+test('legacy: current campaign classification matches CZK/USD including nested creators without changing money',()=>{
  const f=fixture();
  for(const payload of Object.values(f.legacy))for(const row of payload.rows)row.creator_rows=[{...row,id:'child',ad_id:'9',adset_id:'3',adset_name:'Banner',ad_name:'Creator',creator_rows:undefined}];
  for(const snapshot of Object.values(f.native)){
@@ -46,7 +46,8 @@ function instance(version){
  const modules=new Map();
  function load(file){if(modules.has(file))return modules.get(file).exports;const m={exports:{}};modules.set(file,m);const req=createRequire(file);const local=id=>{const p=req.resolve(id);return /glv-mad-shared-(reader|custom)\.cjs$/.test(p)?load(p):req(id);};
  vm.runInThisContext('(function(require,module,exports){'+fs.readFileSync(file,'utf8')+'\n})',{filename:file})(local,m,m.exports);return m.exports;}
- return load(require.resolve(version===1?'../api/glv-meta-ads/fb-data.js':'../api/glv-meta-ads-v2/fb-data.js'));
+ const reader=load(require.resolve('../lib/glv-mad-shared-reader.cjs'));
+ return (req,res)=>reader.handler(req,res,version===1?'v1':'v2');
 }
 async function request(handler,type='ads',r=range){const res={code:200,setHeader(){},status(c){this.code=c;return this;},json(b){this.body=b;return this;}};await handler({method:'GET',headers:{cookie:'glv_meta_beta=synthetic'},query:{type,time_range:JSON.stringify(r),currency:'CZK',account:'TUC'}},res);return res;}
 async function sandbox(run){
@@ -70,7 +71,7 @@ async function sandbox(run){
  };
  try{await run(state);}finally{global.fetch=fetcher;process.env=env;}
 }
-test('expired extraction budget preserves exact last-good in both actual APIs despite cleanup failure',async()=>{
+test('legacy: expired extraction budget preserves exact last-good in both legacy adapters despite cleanup failure',async()=>{
  for(const version of [1,2])for(const cleanupError of [false,true])await sandbox(async s=>{
   const b=shared.compose(fixture());await shared.save(s.redis,custom.slot(range),b);s.cleanupError=cleanupError;
   const cron=require('../api/glv-meta-ads/cron.js')._test,original=cron.fetchAndCache,now=Date.now;
@@ -79,13 +80,13 @@ test('expired extraction budget preserves exact last-good in both actual APIs de
   finally{cron.fetchAndCache=original;Date.now=now;}
  });
 });
-test('cleanup failure cannot replace the primary failure when no last-good exists',async()=>sandbox(async s=>{
+test('legacy: cleanup failure cannot replace the primary failure when no last-good exists',async()=>sandbox(async s=>{
  s.cleanupError=true;const cron=require('../api/glv-meta-ads/cron.js')._test,original=cron.fetchAndCache;
  cron.fetchAndCache=async()=>{throw Error('primary extraction failure');};
  try{await assert.rejects(custom.get({scope:{range,type:'ads',currency:'CZK',account:'TUC'},version:'v1'}),/primary extraction failure/);}
  finally{cron.fetchAndCache=original;}
 }));
-test('owner exclusivity and colliding custom slots never leak another range or pull',async()=>{
+test('legacy: owner exclusivity and colliding custom slots never leak another range or pull',async()=>{
  const owner=require('../lib/glv-refresh-owner.cjs');
  let collision;for(let d=1;d<60;d++){const r={since:v2.shift(range.since,-d),until:v2.shift(range.until,-d)};if(custom.slot(r)===custom.slot(range)){collision=r;break;}}
  assert.ok(collision);
@@ -97,21 +98,21 @@ test('owner exclusivity and colliding custom slots never leak another range or p
   assert.equal(s.pulls,0);assert.equal(s.wins,0);assert.equal(s.values.get(owner.LOCK_KEY),lock);
  });
 });
-test('parallel failed cold extraction returns unavailable without duplicate pulls then recovers',async()=>sandbox(async s=>{
+test('legacy: parallel failed cold extraction returns unavailable without duplicate pulls then recovers',async()=>sandbox(async s=>{
  const cron=require('../api/glv-meta-ads/cron.js')._test,original=cron.fetchAndCache;let attempts=0;
  cron.fetchAndCache=async()=>{attempts++;await new Promise(r=>setTimeout(r,20));throw Error('primary failure');};
  try{const replies=await Promise.all(['aggregate','daily','ads'].map((t,i)=>request(instance(i===1?2:1),t)));assert.deepEqual(replies.map(r=>r.code),[503,503,503]);assert.equal(attempts,1);assert.equal(s.wins,1);}
  finally{cron.fetchAndCache=original;}
  assert.equal((await request(instance(2))).code,200);assert.equal(s.wins,2);
 }));
-test('same-range wait is bounded and does not steal a stuck lease',async()=>sandbox(async s=>{
+test('legacy: same-range wait is bounded and does not steal a stuck lease',async()=>sandbox(async s=>{
  const owner=require('../lib/glv-refresh-owner.cjs'),lock=`custom:${range.since}:${range.until}:stuck`,now=Date.now,redis=s.redis;let reads=0;
  s.values.set(owner.LOCK_KEY,lock);
  s.redis=async(...args)=>{if(args[0]==='GET'&&args[1]===owner.LOCK_KEY){reads++;Date.now=()=>now()+46000;}return redis(...args);};
  try{assert.equal((await request(instance(1))).code,503);assert.equal(reads,1);assert.equal(s.wins,0);assert.equal(s.pulls,0);assert.equal(s.values.get(owner.LOCK_KEY),lock);}
  finally{Date.now=now;}
 }));
-test('cold actual APIs coalesce aggregate/daily/ads across isolated module instances',async()=>{
+test('legacy: cold legacy adapters coalesce aggregate/daily/ads across isolated module instances',async()=>{
  for(const versions of [[1,1,1],[2,2,2],[1,2,1]])await sandbox(async s=>{
   const replies=await Promise.all(['aggregate','daily','ads'].map((t,i)=>request(instance(versions[i]),t)));
   assert.deepEqual(replies.map(r=>r.code),[200,200,200]);assert.equal(new Set(replies.map(r=>r.body.shared_generation_id)).size,1);assert.equal(s.wins,1);assert.ok(s.pulls>0);

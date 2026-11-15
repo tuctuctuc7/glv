@@ -25,8 +25,10 @@ test('protected owner audit proves target name by ID in all 36 preset/type/versi
  for(const s of presets){assert.equal(s.requested_campaign.present,true);assert.deepEqual(s.requested_campaign.names,[name]);assert.equal(s.performance_generated_at,stamp);}
  assert.equal(JSON.stringify([...store]),before);
 });
-test('V1 cached API uses the identical account+ID metadata as V2 without a Meta query',async()=>{
+test('V1 cached API applies its independent account+ID metadata without a Meta query',async()=>{
  const handler=require('../api/glv-meta-ads/fb-data.js'),store=fixtures(),saved={...process.env},original=global.fetch;
+ store.set(require('../lib/glv-v1-campaign-metadata.cjs').KEY,metadata);
+ store.set(names.KEY,{...metadata,accounts:metadata.accounts.map(a=>({...a,campaigns:a.campaigns.map(c=>({...c,name:'Different V2 label'}))}))});
  try{
   process.env.KV_REST_API_URL='https://redis.test';process.env.KV_REST_API_TOKEN='synthetic';delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
   global.fetch=async url=>{assert.ok(String(url).startsWith('https://redis.test/get/'));const key=decodeURIComponent(String(url).split('/get/')[1]);return {ok:true,json:async()=>({result:store.has(key)?JSON.stringify(store.get(key)):null})};};

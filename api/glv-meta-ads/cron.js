@@ -1,7 +1,8 @@
+const {formatRange}=require('../../lib/glv-v1-source.cjs');
 // One daily refresh owner: midnight primary plus bounded recovery opportunities.
 // Scheduled runs end yesterday; authorized manual runs may include today's partial data.
 
-const { fetchPromoFormats, formatRange, sliceCachedFormats, refreshWindow, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
+const { fetchPromoFormats, sliceCachedFormats, refreshWindow, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
 const { validPayload } = require('../../public/glv-meta-ads/promo-format.js');
 const { campaignFacts,refillCreatorFacts,creatorFactsComplete,recoverCreatorFacts,creatorAttributionDiagnostics } = require('../../lib/glv-wl-creators.cjs');
 const {fetchAdMetadata} = require('../../lib/glv-partnership.cjs');
@@ -10,7 +11,7 @@ const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
 
 const PRESETS = ['last_7d', 'last_14d', 'last_30d', 'last_90d', 'this_month', 'last_month'];
-const {cutoffDate,sinceDate,monthRange} = require('../../lib/glv-meta-dates.cjs');
+const {cutoffDate,sinceDate,monthRange} = require('../../public/glv-meta-ads/v1-dates.js');
 
 function resolveRedisConfig(env = process.env) {
   const kvUrl = env.KV_REST_API_URL;
@@ -192,7 +193,7 @@ function creatorIssues(rows) {
   return [...new Set(rows.flatMap(r=>r.creator_rows?.length?r.creator_rows:[r]).filter(r=>/(?:^|_)WL(?:_|$)/.test(r.campaign_name||r.name)&&!r.is_ghost&&(r.creator_issue||!resolveCreator(r.campaign_name||r.name,r.adset_name,r.ad_name||(r.campaign_name?r.name:undefined)).creator)).map(r=>`${r.campaign_name||r.name}${r.adset_name?' / '+r.adset_name:''}${r.ad_name?' / '+r.ad_name:''}${r.creator_issue?' — '+r.creator_issue:''}`))];
 }
 async function fetchAndCache(token, preset, includeToday, fetcher, {fullHistory=false,retained=false,rangeOverride}={}) {
-  const { since, until } = rangeOverride||(require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?require('../../lib/glv-mad-v2.cjs').rangeFor(preset):monthRange(preset, includeToday));
+  const { since, until } = rangeOverride||monthRange(preset, includeToday);
   const dateParam = `time_range=${encodeURIComponent(JSON.stringify({ since, until }))}`;
   const auth = `access_token=${token}`;
   const errors = [];
@@ -215,7 +216,7 @@ async function fetchAndCache(token, preset, includeToday, fetcher, {fullHistory=
   try {
     const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&limit=500&${auth}`;
-    const rows = await campaignFacts(url,u=>paginate(u,fetcher),r=>normalizeCampaign(require('../../lib/glv-mad-v2-source.cjs').validateCampaign(r,{since,until},true)));
+    const rows = await campaignFacts(url,u=>paginate(u,fetcher),r=>normalizeCampaign(require('../../lib/glv-v1-source.cjs').validateCampaign(r,{since,until},true)));
     pending.aggregate={rows};
   } catch (e) {
     errors.push(`aggregate/${preset}: ${e.message}`);
@@ -225,19 +226,19 @@ async function fetchAndCache(token, preset, includeToday, fetcher, {fullHistory=
   try {
     const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
     let prior;try{prior=JSON.parse((await redisCommand(fetcher,'GET',`glv:daily:${preset}`)).result);}catch{}
-    const {shift}=require('../../lib/glv-mad-v2.cjs');let window={since,until};
+    const {shift}=require('../../lib/glv-v1-source.cjs');let window={since,until};
     if(!fullHistory&&history.valid('daily',prior)&&prior.range.since<=since&&prior.range.until>=since&&prior.range.until<=until){
       const correction=shift(until,-6),gap=shift(prior.range.until,1),start=correction<gap?correction:gap;
       window={since:start<since?since:start,until};
     }
     const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&time_range=${encodeURIComponent(JSON.stringify(window))}&time_increment=1&limit=500&${auth}`;
-    const fresh = await campaignFacts(url,u=>paginate(u,fetcher),r=>normalizeCampaign(require('../../lib/glv-mad-v2-source.cjs').validateCampaign(r,window)));
+    const fresh = await campaignFacts(url,u=>paginate(u,fetcher),r=>normalizeCampaign(require('../../lib/glv-v1-source.cjs').validateCampaign(r,window)));
     let retainedRows=window.since===since?[]:prior.rows.filter(r=>r.date_start>=since&&r.date_stop<window.since);
     const missing=retainedRows.filter(r=>!creatorFactsComplete([r]));
     if(missing.length){
       const dates=missing.map(r=>r.date_start).sort(),repairRange={since:dates[0],until:dates[dates.length-1]};
       const repairUrl=new URL(url);repairUrl.searchParams.set('time_range',JSON.stringify(repairRange));
-      const repaired=await refillCreatorFacts(missing,repairUrl.toString(),u=>paginate(u,fetcher),r=>normalizeCampaign(require('../../lib/glv-mad-v2-source.cjs').validateCampaign(r,repairRange)));
+      const repaired=await refillCreatorFacts(missing,repairUrl.toString(),u=>paginate(u,fetcher),r=>normalizeCampaign(require('../../lib/glv-v1-source.cjs').validateCampaign(r,repairRange)));
       const byKey=new Map(repaired.map(r=>[`${r.id}:${r.date_start}`,creatorFactsComplete([r])?{...r,creator_source_generated_at:new Date().toISOString()}:r]));
       retainedRows=retainedRows.map(r=>byKey.get(`${r.id}:${r.date_start}`)||r);
     }
@@ -278,6 +279,13 @@ async function fetchAndCache(token, preset, includeToday, fetcher, {fullHistory=
       const manifest=await history.savePublished((key,value)=>writeVerifiedCache(fetcher,key,value),preset,pieces,async key=>JSON.parse((await redisCommand(fetcher,'GET',key)).result),(...args)=>redisCommand(fetcher,...args));
       const bytes=JSON.stringify(manifest);
       if((await redisCommand(fetcher,'GET',history.key(preset))).result!==bytes)throw Error('Published bundle readback mismatch');
+      const publicationHashes={};
+      for(const ref of Object.values(manifest.refs)){
+        const pieceBytes=(await redisCommand(fetcher,'GET',ref.key)).result;
+        if(typeof pieceBytes!=='string'||hash(pieceBytes)!==ref.sha256)throw Error('Published piece readback mismatch');
+        publicationHashes[ref.key]=hash(pieceBytes);
+      }
+      stats.publication_hashes=publicationHashes;
       stats.publication_sha256=hash(bytes);stats.bundle_readback_verified=true;
     }catch{errors.push(`bundle/${preset}: publication failed; last-good retained`);}
   }
@@ -314,41 +322,11 @@ async function refreshPromoFormatCache(token, includeToday = false, fetcher = bo
     months:monthlyMix(payload.rows).map(m=>({month:m.month,images:m.formats.Banner.assets,videos:m.formats.Video.assets,total:m.total.assets,status:m.total.asset_status}))};
 }
 
-// Shared publication runs after every source refresh in one ~260s budget.
-// Without a checkpoint, a run that verifies all sources but times out during
-// publication is followed by runs that re-extract everything and time out again.
-const SOURCE_CHECKPOINT_KEY='glv:mad:shared:1:sources';
-const sourceCheckpointTarget=includeToday=>`${cutoffDate(includeToday)}:v2:${require('../../lib/glv-mad-v2.cjs').commonCutoff()}`;
-const stripAdInventories=summaries=>JSON.parse(JSON.stringify(summaries,(key,value)=>['eligible_ad_ids','unverified_ad_ids'].includes(key)?undefined:value));
-async function readSourceCheckpoint(fetcher,{through,correctionId,includeToday}){
-  try{
-    const raw=(await redisCommand(fetcher,'GET',SOURCE_CHECKPOINT_KEY)).result;
-    if(typeof raw!=='string')return null;
-    const checkpoint=JSON.parse(raw);
-    if(checkpoint?.version!==1||checkpoint.through!==through||checkpoint.correction_id!==correctionId||!Array.isArray(checkpoint.summaries))return null;
-    if(!checkpoint.hashes||typeof checkpoint.hashes!=='object'||!Object.keys(checkpoint.hashes).length)return null;
-    if(checkpoint.v2?.all_tabs_verified!==true)return null;
-    // Every referenced source must still be byte-identical.
-    for(const [key,digest] of Object.entries(checkpoint.hashes)){
-      const {result}=await redisCommand(fetcher,'GET',key);
-      if(typeof result!=='string'||hash(result)!==digest)return null;
-    }
-    // Re-check ranges and extraction age against the current clock.
-    const freshness=verifyTabFreshness(checkpoint.summaries,includeToday);
-    if(!freshness.all_tabs_verified)return null;
-    return {summaries:checkpoint.summaries,hashes:checkpoint.hashes,written_at:checkpoint.written_at,freshness:{...freshness,v2:checkpoint.v2}};
-  }catch{return null;}
-}
-
-async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=false,correction} = {}) {
+async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=false} = {}) {
   const deadline=Date.now()+timeoutMs;
   const fetcher = require('../../lib/glv-meta-retry.cjs').metaRetryFetcher(boundedFetcher(deadline),deadline);
   const allErrors = [];
   const summaries = [];
-  if(require('../../lib/glv-mad-v2.cjs').rolloutEnabled()&&!correction){
-    try{correction=await require('../../lib/glv-mad-shared.cjs').ensureCorrection((...args)=>redisCommand(fetcher,...args),{force:fullHistory});}
-    catch{return {allErrors:['Shared correction intent unavailable'],summaries,hashes:{},freshness:{all_tabs_verified:false}};}
-  }
   // Remove legacy expiry on ALL valid preset histories before any Meta/FX work
   // can consume the shared budget, not just on the preset reached by the loop.
   try{for(const preset of PRESETS)await require('../../lib/glv-history-v1.cjs').retain((...args)=>redisCommand(fetcher,...args),(key,value)=>writeVerifiedCache(fetcher,key,value),preset);}
@@ -363,30 +341,13 @@ async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=f
     }
   }catch{return {allErrors:['Durable force intent unavailable'],summaries,freshness:verifyTabFreshness([],includeToday),hashes:{}};}
   const forcePresets=fullHistory||forceIntent?.status==='pending';
-  const v2Enabled=require('../../lib/glv-mad-v2.cjs').rolloutEnabled();
-  const checkpointTarget=sourceCheckpointTarget(includeToday);
-  // A prior invocation may have verified every source for this exact target
-  // and correction, then exhausted its budget during shared publication.
-  // Resume publication from those byte-identical sources instead of spending
-  // the whole budget re-extracting them (which would time out again).
-  const resumed=v2Enabled&&correction&&!includeToday&&!forcePresets
-    ?await readSourceCheckpoint(fetcher,{through:checkpointTarget,correctionId:correction.id,includeToday}):null;
   let freshness,hashes;
-  if(resumed){
-    summaries.push(...resumed.summaries);
-    freshness=resumed.freshness;hashes={...resumed.hashes};
-    freshness.resumed_from_source_checkpoint=resumed.written_at;
-  }else{
   // Start the single bounded history pull alongside the old sequential preset
   // refreshes, so it does not add another full history budget at their end.
   // Attach both handlers immediately: failures must never become unhandled.
   const formatRefresh = refreshPromoFormatCache(token,includeToday,fetcher,{fullHistory}).then(
     stats=>({stats}), error=>({error:error.message})
   );
-  const v2Refresh=v2Enabled?require('../../lib/glv-mad-v2-cache.cjs').refreshV2({
-    token:process.env.GLV_MAD_V2_FB_ACCESS_TOKEN||token,correctionId:correction?.id,force:fullHistory,deadline:deadline-10000,redis:(...args)=>redisCommand(fetcher,...args),
-    promoPayload:async()=>{const outcome=await formatRefresh;if(outcome.error)throw new Error('Promo refresh failed');return JSON.parse((await redisCommand(fetcher,'GET',CACHE_KEY)).result);}
-  }).then(result=>result,()=>({errors:['v2: refresh failed'],summaries:[],hashes:{},verified:false})):null;
   for (const preset of PRESETS) {
     const result = await fetchAndCache(token, preset, includeToday,fetcher,{fullHistory:forcePresets,retained:true});
     allErrors.push(...result.errors);
@@ -406,37 +367,10 @@ async function runRefresh(token, includeToday, {timeoutMs = 270000,fullHistory=f
   if(!freshness.all_tabs_verified)allErrors.push('All-tabs freshness verification incomplete');
   hashes={};
   for(const summary of summaries){
+    Object.assign(hashes,summary.publication_hashes||{});
     if(summary.publication_sha256)hashes[require('../../lib/glv-history-v1.cjs').key(summary.preset)]=summary.publication_sha256;
     if(summary.type==='promo_formats')hashes[CACHE_KEY]=summary.cache_sha256;
     else for(const type of ['aggregate','daily','ads'])if(summary[type]?.cache_sha256)hashes[`glv:${type}:${summary.preset}`]=summary[type].cache_sha256;
-  }
-  if(v2Refresh){
-    const v2=await v2Refresh;
-    allErrors.push(...v2.errors);Object.assign(hashes,v2.hashes);
-    freshness.v2={through:require('../../lib/glv-mad-v2.cjs').commonCutoff(),all_tabs_verified:v2.verified,summaries:v2.summaries,failures:v2.failures||[]};
-    freshness.all_tabs_verified=freshness.all_tabs_verified&&v2.verified;
-  }
-  // Durable proof that every source for this target is complete. Written only
-  // on a clean, non-forced pass; bound to the target, correction and exact
-  // source bytes, so any later source change or cutoff rollover invalidates it.
-  if(v2Refresh&&correction&&!allErrors.length&&freshness.all_tabs_verified&&!includeToday&&!fullHistory){
-    try{await writeVerifiedCache(fetcher,SOURCE_CHECKPOINT_KEY,{version:1,through:checkpointTarget,correction_id:correction.id,hashes,summaries:stripAdInventories(summaries),v2:freshness.v2,written_at:new Date().toISOString()});}
-    catch{/* Optional optimisation: publication below still proceeds. */}
-  }
-  }
-  if(v2Enabled){
-    const shared=require('../../lib/glv-mad-shared.cjs'),redis=(...args)=>redisCommand(fetcher,...args);
-    freshness.shared={all_tabs_verified:false,correction_id:correction?.id};
-    try{
-      if(allErrors.length)throw Error('Source refresh incomplete');
-      const receipts=await shared.migrate(redis,PRESETS,correction);
-      const snapshot=require('../../lib/glv-mad-v2-storage.cjs').decode((await redis('GET',require('../../lib/glv-mad-v2-promo.cjs').CACHE_KEY)).result);
-      receipts.push(await require('../../lib/glv-mad-shared-promo.cjs').save(redis,snapshot));
-      for(const receipt of receipts)Object.assign(hashes,receipt.storage_hashes,{[receipt.key]:receipt.sha256});
-      hashes[shared.INTENT_KEY]=await shared.completeCorrection(redis,correction,receipts);
-      freshness.shared={all_tabs_verified:true,correction_id:correction.id,receipts};
-    }catch(error){allErrors.push('shared: publication incomplete; last-good retained');freshness.shared.reason=error.message;}
-    freshness.all_tabs_verified=freshness.all_tabs_verified&&freshness.shared.all_tabs_verified;
   }
   return {allErrors, summaries, freshness, hashes};
 }
@@ -447,7 +381,7 @@ function verifyTabFreshness(summaries,includeToday=false,now=new Date()){
   // Historical selections stop at their own end, not an invented yesterday row.
   const byPreset=new Map(summaries.filter(s=>s.preset).map(s=>[s.preset,s]));
   const fresh=stamp=>{const age=now-Date.parse(stamp);return Number.isFinite(age)&&age>=-60000&&age<=90000000;};
-  const presetOK=(preset,types)=>byPreset.get(preset)?.bundle_readback_verified===true&&types.every(type=>{const source=byPreset.get(preset)?.[type],expected=require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?require('../../lib/glv-mad-v2.cjs').rangeFor(preset,now):monthRange(preset,includeToday,now);return source?.readback_verified===true&&source.creator_complete!==false&&source.range?.since===expected.since&&source.range?.until===expected.until&&fresh(source.generated_at);});
+  const presetOK=(preset,types)=>byPreset.get(preset)?.bundle_readback_verified===true&&types.every(type=>{const source=byPreset.get(preset)?.[type],expected=monthRange(preset,includeToday,now);return source?.readback_verified===true&&source.creator_complete!==false&&source.range?.since===expected.since&&source.range?.until===expected.until&&fresh(source.generated_at);});
   const tabs={};
   for(const tab of ['czsk','czsk-triage','czsk-promo','czsk-leadgen','us']){
     const types=['aggregate','daily',...(['czsk','us'].includes(tab)?['ads']:[])];
@@ -457,6 +391,43 @@ function verifyTabFreshness(summaries,includeToday=false,now=new Date()){
   tabs['czsk-promo-creative']={verified:Boolean(history?.readback_verified&&history.since==='2026-03-01'&&history.until===cutoffDate(includeToday,now)&&history.funnel_version===1&&fresh(history.generated_at)),sources:['promo_formats','promo_concepts'],through:history?.until||null};
   tabs.wl={verified:presetOK('last_month',['ads']),sources:['ads'],presets:['last_month'],through:monthRange('last_month',includeToday,now).until,custom_ranges:'live; verified by WL reader, not scheduled history'};
   return {through:cutoffDate(includeToday,now),all_tabs_verified:Object.values(tabs).every(t=>t.verified),tabs};
+}
+
+function readbackCreators(rows,type){
+  if(type==='aggregate'||type==='daily')return creatorAttributionDiagnostics(rows);
+  if(type!=='ads')return null;
+  const counts={ad_name_facts:0,legacy_fallback_facts:0,unresolved_facts:0},creators=new Set();
+  const {resolveCreator}=require('../../public/glv-meta-ads/wl-report.js');
+  for(const row of rows.filter(r=>r.partnership?.status==='verified_positive')){
+    const result=resolveCreator(row.campaign_name,row.adset_name,row.name);
+    if(!result.creator)counts.unresolved_facts++;
+    else{counts[result.source==='ad'?'ad_name_facts':'legacy_fallback_facts']++;creators.add(result.creator);}
+  }
+  return {...counts,creators:[...creators].sort(),scope:'partnership-positive ads'};
+}
+
+// Bearer-authenticated diagnostics use the actual native consumer, cache-only.
+// No owner lease, receipts, metadata refresh, live Graph fallback or publication.
+async function readOnlyAudit({includePayload=false,scope,deadline=Date.now()+60000}={}){
+  const read=require('./fb-data.js').readOnly;
+  const scopes=[...PRESETS.flatMap(preset=>['aggregate','daily','ads'].map(type=>({preset,type}))),...['promo_formats','promo_concepts'].map(type=>({preset:'promo_history',type}))];
+  const datasets=[];
+  const selected=includePayload?[scope]:scopes;
+  for(const scope of selected){
+    if(Date.now()>=deadline){datasets.push({...scope,status:'unavailable',reason:'audit_budget_exhausted'});continue;}
+    const response={code:200,setHeader(){},status(code){this.code=code;return this;},json(payload){this.payload=payload;}};
+    try{
+      await read({method:'GET',query:{type:scope.type,date_preset:scope.preset}},response);
+      const payload=response.payload;
+      if(response.code!==200||!Array.isArray(payload?.rows))throw Error('Native publication unavailable');
+      const requested=payload.requested_range||payload.freshness?.requested_range||payload.range;
+      datasets.push({...scope,status:'readable',range:payload.range,requested_range:requested,
+        generation_id:payload.generation_id||null,generated_at:payload.generated_at,
+        stale:payload.stale===true||payload.freshness?.status==='stale',coverage_complete:payload.coverage_complete??(payload.range.since===requested.since&&payload.range.until===requested.until),
+        creator_attribution:readbackCreators(payload.rows,scope.type),sha256:hash(JSON.stringify(payload)),...(includePayload?{payload}:{})});
+    }catch{datasets.push({...scope,status:'unavailable',reason:'native_publication_unavailable'});}
+  }
+  return {ok:datasets.every(d=>d.status==='readable'),read_only:true,version:'v1',datasets};
 }
 
 async function handler(req, res) {
@@ -475,21 +446,31 @@ async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  if(['1','true'].includes(String(req.query?.read_only||'').toLowerCase())){
+    res.setHeader('Cache-Control','private, no-store');
+    const includePayload=['1','true'].includes(String(req.query?.include_payload||'').toLowerCase());
+    const scope={type:req.query?.type,preset:req.query?.date_preset};
+    const validScope=['aggregate','daily','ads'].includes(scope.type)?PRESETS.includes(scope.preset):['promo_formats','promo_concepts'].includes(scope.type)&&scope.preset==='promo_history';
+    if(includePayload&&!validScope)return res.status(400).json({error:'Payload readback requires one native type and date_preset (promo_history for Promo).'});
+    const result=await readOnlyAudit({includePayload,scope});
+    return res.status(result.ok?200:503).json(result);
+  }
+
   const includeToday = ['1', 'true'].includes(String(req.query?.include_today || '').toLowerCase());
   const fullHistory=['1','true'].includes(String(req.query?.full_history||'').toLowerCase());
   const deadline=Date.now()+270000;
   const redisFetcher=boundedFetcher(deadline);
   // Metadata is a separately verified dimension. A same-cutoff performance
   // receipt must not skip renamed campaigns or force expensive history pulls.
-  const names=require('../../lib/glv-campaign-metadata.cjs'),v2=require('../../lib/glv-mad-v2.cjs');
+  const names=require('../../lib/glv-v1-campaign-metadata.cjs');
   const namesOnly=['1','true'].includes(String(req.query?.names_only||'').toLowerCase());
   const campaignId=req.query?.campaign_id;
   if(campaignId!==undefined&&(typeof campaignId!=='string'||!/^\d+$/.test(campaignId)))return res.status(400).json({error:'Invalid campaign ID'});
-  const readNamesValue=async key=>{const bytes=(await redisCommand(redisFetcher,'GET',key)).result;return bytes?require('../../lib/glv-mad-v2-storage.cjs').decode(bytes):null;};
+  const readNamesValue=async key=>{const bytes=(await redisCommand(redisFetcher,'GET',key)).result;return bytes?JSON.parse(bytes):null;};
   let campaign_metadata;
   const refreshNames=async()=>{
-  if(v2.rolloutEnabled()||namesOnly)try{
-    const refreshed=await names.refresh({accounts:v2.rolloutEnabled()?v2.ACCOUNTS:[v2.ACCOUNTS[0]],tokenFor:a=>a.id===v2.ACCOUNTS[0].id?token:process.env.GLV_MAD_V2_FB_ACCESS_TOKEN||token,redis:(...args)=>redisCommand(redisFetcher,...args),fetcher:redisFetcher,deadline:Math.min(deadline-10000,Date.now()+30000)});
+  if(namesOnly)try{
+    const refreshed=await names.refresh({accounts:[{id:AD_ACCOUNT}],tokenFor:()=>token,redis:(...args)=>redisCommand(redisFetcher,...args),fetcher:redisFetcher,deadline:Math.min(deadline-10000,Date.now()+30000)});
     const {metadata,...diagnostics}=refreshed;
     if(campaignId)diagnostics.requested_campaign=metadata.accounts.flatMap(a=>a.campaigns.filter(c=>c.id===campaignId));
     campaign_metadata=diagnostics;
@@ -501,12 +482,12 @@ async function handler(req, res) {
     if(!namesOnly&&!campaignId)return [];
     try{
       const metadata=await names.read(readNamesValue);
-      return await names.auditPublished(readNamesValue,metadata,{v2Enabled:v2.rolloutEnabled(),campaignId,deadline:deadline-5000});
+      return await names.auditPublished(readNamesValue,metadata,{v2Enabled:false,campaignId,deadline:deadline-5000});
     }catch{return [{status:'audit_unavailable',reason:'readback_failed'}];}
   };
   if(namesOnly){
     try{
-      const result=await scheduledRefresh({redis:(...args)=>redisCommand(redisFetcher,...args),keys:[],through:'campaign_metadata',refresh:async()=>{
+      const result=await scheduledRefresh({redis:(...args)=>redisCommand(redisFetcher,...args),keys:[],through:'campaign_metadata',lockKey:'glv:v1:metadata:lease',stateKey:'glv:v1:metadata:complete',refresh:async()=>{
         await refreshNames();return {allErrors:campaign_metadata.readback_verified?[]:[campaign_metadata.error],summaries:await metadataAudit(),freshness:{all_tabs_verified:false}};
       }});
       const busy=result.skipped==='refresh_in_progress';
@@ -514,14 +495,14 @@ async function handler(req, res) {
       return res.status(busy?202:campaign_metadata.readback_verified&&!auditFailed?200:500).json({ok:!busy&&campaign_metadata.readback_verified&&!auditFailed,metadata_only:true,skipped:result.skipped,campaign_metadata,summaries:result.summaries});
     }catch{return res.status(500).json({ok:false,metadata_only:true,error:'Campaign metadata coordination failed; prior facts retained'});}
   }
-  let result,correction;
+  let result;
   try{
     result=await scheduledRefresh({
       redis:(...args)=>redisCommand(redisFetcher,...args),
-      beforeVerify:async()=>{if(v2.rolloutEnabled())correction=await require('../../lib/glv-mad-shared.cjs').ensureCorrection((...args)=>redisCommand(redisFetcher,...args),{force:includeToday||fullHistory});await refreshNames();},
-      refresh:()=>runRefresh(token,includeToday,{correction,fullHistory,timeoutMs:Math.max(0,deadline-Date.now()-10000)}),
-      keys:[...PRESETS.flatMap(p=>[...['aggregate','daily','ads'].map(t=>`glv:${t}:${p}`),require('../../lib/glv-history-v1.cjs').key(p)]),CACHE_KEY,...(require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?[...require('../../lib/glv-mad-v2-cache.cjs').requiredKeys(),...require('../../lib/glv-mad-shared.cjs').requiredKeys()]:[])],
-      through:require('../../lib/glv-mad-v2.cjs').rolloutEnabled()?`${cutoffDate(includeToday)}:v2:${require('../../lib/glv-mad-v2.cjs').commonCutoff()}`:cutoffDate(includeToday),force:includeToday||fullHistory
+      contract:'v1-native-published-v2',
+      refresh:()=>runRefresh(token,includeToday,{fullHistory,timeoutMs:Math.max(0,deadline-Date.now()-10000)}),
+      keys:[...PRESETS.flatMap(p=>[...['aggregate','daily','ads'].map(t=>`glv:${t}:${p}`),require('../../lib/glv-history-v1.cjs').key(p)]),CACHE_KEY],
+      through:cutoffDate(includeToday),force:includeToday||fullHistory
     });
   }catch(error){
     console.error(JSON.stringify({event:'glv-meta-ads-cron',message:'Refresh coordination failed',error:error.message}));

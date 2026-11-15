@@ -8,15 +8,19 @@
   "functions": {
     "api/glv-meta-ads/fb-data.js": {
       "maxDuration": 300,
-      "includeFiles": "{lib/glv-mad-shared*.cjs,lib/glv-history*.cjs,lib/glv-meta-dates.cjs,lib/glv-promo-format.cjs,lib/glv-promo-assets.cjs,public/glv-meta-ads/promo-format.js}"
+      "includeFiles": "{lib/glv-v1*.cjs,lib/glv-history*.cjs,lib/glv-meta-dates.cjs,lib/glv-promo-format.cjs,lib/glv-promo-assets.cjs,public/glv-meta-ads/promo-format.js}"
     },
     "api/glv-meta-ads/cron.js": {
       "maxDuration": 300,
-      "includeFiles": "{lib/glv-mad-shared*.cjs,lib/glv-history*.cjs,lib/glv-meta-dates.cjs,lib/glv-promo-format.cjs,lib/glv-promo-assets.cjs,public/glv-meta-ads/promo-format.js,lib/glv-mad-v2*.cjs,public/glv-meta-ads-v2/dates.js}"
+      "includeFiles": "{lib/glv-v1*.cjs,lib/glv-history*.cjs,lib/glv-meta-dates.cjs,lib/glv-promo-format.cjs,lib/glv-promo-assets.cjs,public/glv-meta-ads/promo-format.js}"
     },
     "api/glv-meta-ads-v2/fb-data.js": {
       "maxDuration": 300,
       "includeFiles": "{lib/glv-mad-shared*.cjs,lib/glv-history*.cjs,lib/glv-mad-v2*.cjs,public/glv-meta-ads-v2/dates.js,public/glv-meta-ads/promo-format.js}"
+    },
+    "api/glv-meta-ads-v2/cron.js": {
+      "maxDuration": 300,
+      "includeFiles": "{lib/glv-history*.cjs,lib/glv-mad-v2*.cjs,lib/glv-meta-dates.cjs,lib/glv-promo*.cjs,public/glv-meta-ads-v2/dates.js,public/glv-meta-ads/promo-format.js}"
     },
     "api/krs-meta-ads/fb-data.js": {
       "maxDuration": 60
@@ -77,6 +81,14 @@
     {
       "path": "/api/glv-meta-ads/cron",
       "schedule": "0 0,1,2,4,8,12,16,20 * * *"
+    },
+    {
+      "path": "/api/glv-meta-ads-v2/cron?mode=morning",
+      "schedule": "5 0,1,2,4 * * *"
+    },
+    {
+      "path": "/api/glv-meta-ads-v2/cron?mode=late",
+      "schedule": "5 9,12,16,20 * * *"
     }
   ]
 }

@@ -3,10 +3,11 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const root=path.join(__dirname,'../public');
 const html=v=>fs.readFileSync(path.join(root,v,'index.html'),'utf8');
 const a=html('glv-meta-ads'),b=html('glv-meta-ads-v2');
-test('V1 reference stylesheet and introduction are shared, no alternate skin',()=>{
- assert.ok(!b.includes('quiet-precision.css'));
- assert.equal(a.match(/<style>([\s\S]*?)<\/style>/)[1],b.match(/<style>([\s\S]*?)<\/style>/)[1]);
- for(const cls of ['dashboard-kicker','dashboard-title','dashboard-sub'])assert.equal(a.match(new RegExp('class="'+cls+'"[^>]*>([^<]+)'))[1],b.match(new RegExp('class="'+cls+'"[^>]*>([^<]+)'))[1]);
+test('V2 restores distinct Quiet Glass styling after the shared base',()=>{
+ const styles=[...b.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*>/g)].map(m=>m[0]);
+ assert.match(styles.at(-1),/quiet-precision\.css\?v=/);
+ assert.match(b,/<h1[^>]*id="dashboard-title"[^>]*>Performance<\/h1>/);
+ assert.ok(!a.includes('quiet-precision.css'),'V1 retains its own presentation');
 });
 test('both consumers use shared indicative FX and scope-aware campaign formatter',()=>{
  for(const s of [a,b]){assert.match(s,/MadPresentation\.usdEquivalent/);assert.match(s,/MadPresentation\.campaignCode/);assert.match(s,/MadPresentation\.fetchUsdRate/);assert.doesNotMatch(s,/usdRate\s*=\s*0\.044/);}

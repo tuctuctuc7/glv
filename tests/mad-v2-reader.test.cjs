@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict');
-const handler=require('../api/glv-meta-ads-v2/fb-data.js'),v2=require('../lib/glv-mad-v2.cjs');
+const handler=require('./helpers/mad-legacy-reader.cjs').v2,v2=require('../lib/glv-mad-v2.cjs');
 function response(){return {code:200,headers:{},setHeader(k,v){this.headers[k]=v;},status(n){this.code=n;return this;},json(body){this.body=body;}};}
-test('preset/history misses make zero Meta pulls; stale coverage is explicit; future data fails closed',async()=>{
+test('legacy: preset/history misses make zero Meta pulls; stale coverage is explicit; future data fails closed',async()=>{
  const saved={...process.env},originalFetch=global.fetch;
  process.env.GLV_MAD_V2_ENABLED='1';process.env.GLV_META_BETA_AUTH_TOKEN='synthetic-auth';process.env.KV_REST_API_URL='https://redis.test';process.env.KV_REST_API_TOKEN='synthetic';
  delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -21,7 +21,7 @@ test('preset/history misses make zero Meta pulls; stale coverage is explicit; fu
 const {buildSnapshot}=require('../lib/glv-mad-v2-source.cjs');
 const range={since:'2026-11-08',until:'2026-11-08'},fx={};
 const base=async url=>{const u=new URL(url),account=v2.ACCOUNTS.find(a=>u.pathname.includes(a.id));return {ok:true,json:async()=>u.pathname.endsWith('/insights')?{data:[]}:{account_id:account.id,currency:account.currency,timezone_name:account.timezone,account_status:1}};};
-test('non-JSON 503 retries; malformed 200 and auth errors fail closed without retry',async()=>{
+test('legacy: non-JSON 503 retries; malformed 200 and auth errors fail closed without retry',async()=>{
  for(const status of [503,200,403]){
   let calls=0;
   const fetcher=async url=>{calls++;if(calls===1)return {ok:status===200,status,json:async()=>{throw Error('not JSON');}};return base(url);};
@@ -29,7 +29,7 @@ test('non-JSON 503 retries; malformed 200 and auth errors fail closed without re
   else {await assert.rejects(buildSnapshot({range,type:'daily',token:'synthetic',fetcher,fx}));assert.equal(calls,1);}
  }
 });
-test('malformed ad facts never publish fabricated zero spend',async()=>{
+test('legacy: malformed ad facts never publish fabricated zero spend',async()=>{
  const fetcher=async url=>new URL(url).pathname.endsWith('/insights')?{ok:true,json:async()=>({data:[{}]})}:base(url);
  await assert.rejects(buildSnapshot({range,type:'ads',token:'synthetic',fetcher,fx}),/Invalid ad/);
 });
