@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const cache=require('../lib/glv-mad-v2-cache.cjs'),source=require('../lib/glv-mad-v2-source.cjs'),v2=require('../lib/glv-mad-v2.cjs'),storage=require('../lib/glv-mad-v2-storage.cjs');
 const {createHash}=require('node:crypto');const hash=b=>createHash('sha256').update(b).digest('hex');
-test('real refresh, compressed work resume, mixed legacy generations and HTTP readers compose',async()=>{
+test('legacy: real refresh, compressed work resume, mixed legacy generations and HTTP readers compose',async()=>{
  const now=new Date(Date.now()-60000),store=new Map();let adsPulls=0,ignoreWrites=false;
  const redis=async(cmd,key,value)=>{if(cmd==='SET'){if(!ignoreWrites)store.set(key,value);return {result:'OK'};}return {result:cmd==='TTL'?-1:store.get(key)||null};};
  const fetcher=async url=>{const u=new URL(url),a=v2.ACCOUNTS.find(a=>u.pathname.includes(a.id));let body;
@@ -26,7 +26,7 @@ test('real refresh, compressed work resume, mixed legacy generations and HTTP re
  for(const [key,id] of ids){assert.equal(storage.decode(store.get(key)).generation_id,id);assert.equal(mixed.hashes[key],hash(store.get(key)));}
  await require('./helpers/mad-shared-fixture.cjs').publishSyntheticShared(store,'last_30d');
  await require('../lib/glv-mad-shared-promo.cjs').save(redis,storage.decode(store.get(require('../lib/glv-mad-v2-promo.cjs').CACHE_KEY)));
- const saved={...process.env},original=global.fetch,handler=require('../api/glv-meta-ads-v2/fb-data.js');
+ const saved={...process.env},original=global.fetch,handler=require('./helpers/mad-legacy-reader.cjs').v2;
  try{
   process.env.GLV_MAD_V2_ENABLED='1';process.env.GLV_META_BETA_AUTH_TOKEN='synthetic';process.env.KV_REST_API_URL='https://redis.test';process.env.KV_REST_API_TOKEN='synthetic';delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
   global.fetch=async url=>{assert.ok(String(url).startsWith('https://redis.test/get/'));return {ok:true,json:async()=>({result:store.get(decodeURIComponent(String(url).split('/get/')[1]))})};};

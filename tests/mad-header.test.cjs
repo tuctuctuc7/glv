@@ -9,10 +9,10 @@ test('main source label reports oldest extraction and actual coverage; never lab
  assert.equal(context.mainSourceLabel([source('2026-11-03T00:00:00Z'),{status:'rejected'}]),'Partial sources · refresh unavailable');
  assert.equal(context.mainSourceLabel([{status:'fulfilled',value:{rows:[]}}]),'Source freshness unavailable');
 });
-test('this month on UTC first day matches shared completed-day producer, not a reversed range',()=>{
+test('this month on UTC first day matches native Prague completed-day producer, not a reversed range',()=>{
  const FakeDate=class extends Date{constructor(value){super(value===undefined?'2026-11-01T00:10:00Z':value)}};
  const c=vm.createContext({Date:FakeDate});
- for(const asset of ['../public/glv-meta-ads-v2/dates.js','../public/glv-meta-ads/date-policy.js'])vm.runInContext(fs.readFileSync(require.resolve(asset),'utf8'),c);
+ require('./helpers/mad-browser-runtime.cjs')(html,c);
  for(const name of ['utcIsoDate','utcMonthStart','utcMonthEnd','shiftIsoDate','presetLabel','presetBounds'])vm.runInContext(functionSource(name),c);
  assert.equal(JSON.stringify(c.presetBounds('this_month')),JSON.stringify({since:'2026-10-01',until:'2026-10-31'}));
 });

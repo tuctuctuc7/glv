@@ -55,7 +55,7 @@ function restoreV2ControlElements(wlOnly=false){
  if(wlOnly){const custom=document.getElementById('wl-custom');if(custom)custom.hidden=document.getElementById('wl-date').value!=='custom';}
 }
 function initV2Controls(){
- document.getElementById('v2-date-note').textContent=`Prague / Los Angeles local dates, combined without rebucketing. Common completed cutoff: ${MadV2Dates.commonCutoff()}. Daily CNB FX; prior fixing on holidays. Account identity overrides naming.`;
+ document.getElementById('v2-date-note').textContent=`Prague / Los Angeles local dates, combined without rebucketing. TUC reporting cutoff: ${MadV2Dates.commonCutoff()}; TGLV completes separately after its local day closes. See account coverage for partial data. Daily CNB FX; prior fixing on holidays. Account identity overrides naming.`;
  document.getElementById('v2-report-label').textContent=`GELAVIS · ${reportCurrency} reporting`;
  document.getElementById('v2-scope-currency').textContent=reportCurrency;
  document.getElementById('v2-scope-account').textContent=reportAccount==='All'?'All accounts':reportAccount;

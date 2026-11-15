@@ -2,10 +2,11 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const shared=require('../lib/glv-mad-shared.cjs'),storage=require('../lib/glv-mad-v2-storage.cjs');
 const {fixture}=require('./mad-shared-publication.test.cjs');
-const handlers=[require('../api/glv-meta-ads/fb-data.js'),require('../api/glv-meta-ads-v2/fb-data.js')];
+const legacy=require('./helpers/mad-legacy-reader.cjs');
+const handlers=[legacy.v1,legacy.v2];
 function memory(){const values=new Map();return {values,redis:async(c,k,v)=>{if(c==='GET')return {result:values.get(k)||null};if(c==='SET'){values.set(k,v);return {result:'OK'};}if(c==='TTL')return {result:values.has(k)?-1:-2};if(c==='EVAL')return {result:1};throw Error(c);}};}
 async function request(handler,query={},auth=true){const res={code:200,headers:{},setHeader(k,v){this.headers[k]=v;},status(s){this.code=s;return this;},json(p){this.body=p;return this;}};await handler({method:'GET',headers:{cookie:auth?'glv_meta_beta=test':''},query:{type:'ads',date_preset:'last_7d',currency:'CZK',account:'TUC',...query}},res);return res;}
-test('actual authenticated APIs read the shared immutable generation, not independent pieces',async()=>{
+test('legacy shared adapters read the immutable generation, not independent pieces',async()=>{
  const previous={...process.env},fetcher=global.fetch;const m=memory();
  try{
  Object.assign(process.env,{GLV_MAD_V2_ENABLED:'1',GLV_META_BETA_AUTH_TOKEN:'test',KV_REST_API_URL:'https://redis.invalid',KV_REST_API_TOKEN:'test'});
@@ -18,7 +19,7 @@ test('actual authenticated APIs read the shared immutable generation, not indepe
  for(const h of handlers)assert.equal((await request(h,{time_range:JSON.stringify({since:'2026-01-01',until:'2026-11-01'})})).code,400);
  }finally{global.fetch=fetcher;process.env=previous;}
 });
-test('custom range extracts once through the same bounded cache for both actual APIs',async()=>{
+test('legacy shared custom adapters coalesce through their retired bounded cache',async()=>{
  const previous={...process.env},fetcher=global.fetch;const m=memory();let pulls=0;
  try{
  Object.assign(process.env,{GLV_MAD_V2_ENABLED:'1',GLV_META_BETA_AUTH_TOKEN:'test',GLV_META_FB_ACCESS_TOKEN:'test',KV_REST_API_URL:'https://redis.invalid',KV_REST_API_TOKEN:'test'});
@@ -35,3 +36,39 @@ test('custom range extracts once through the same bounded cache for both actual 
  }finally{global.fetch=fetcher;process.env=previous;}
 });
 module.exports={memory,request};
+const independent=require('./helpers/mad-independent-fixture.cjs');
+test('active V1 and V2 APIs ignore shared generations and retain independent published facts after foreign corruption',()=>independent.environment(async h=>{
+ const native=require('../api/glv-meta-ads/fb-data.js'),isolatedApi=require('../api/glv-meta-ads-v2/fb-data.js');
+ const pipeline=require('../lib/glv-mad-v2-isolated.cjs');
+ await require('../api/glv-meta-ads/cron.js')._test.runRefresh('test',false,{timeoutMs:30000});
+ const result=await pipeline.refresh({redis:h.redis,token:'test',fetcher:h.fetcher,loadFx:async()=>({}),presets:['last_7d'],includePromo:false});
+ assert.equal(result.verified,true,JSON.stringify(result.errors));
+ const query={type:'ads',date_preset:'last_7d',currency:'CZK',account:'TUC'};
+ const read=api=>independent.request(api,query);
+ const a=await read(native),b=await read(isolatedApi);assert.equal(a.code,200);assert.equal(b.code,200);
+ assert.ok(a.body.generation_id);assert.ok(b.body.generation_id);assert.notEqual(a.body.generation_id,b.body.generation_id);
+ assert.equal(a.body.shared_generation_id,undefined);assert.equal(b.body.shared_generation_id,undefined);assert.equal(b.body.date_policy,'account-isolated');
+ // A valid but unrelated retired shared publication is never a fallback.
+ await shared.save(h.redis,'last_7d',shared.compose(fixture()));h.calls.length=0;
+ assert.deepEqual((await read(native)).body,a.body);assert.deepEqual((await read(isolatedApi)).body,b.body);
+ assert.ok(!h.calls.some(c=>String(c[1]).startsWith(shared.KEY)));
+ const v1Keys=[...h.store.keys()].filter(k=>!k.startsWith('glv:mad:'));
+ const v1Bytes=v1Keys.map(k=>[k,h.store.get(k)]);
+ for(const key of v1Keys)h.store.delete(key);
+ assert.deepEqual((await read(isolatedApi)).body,b.body);
+ for(const [key,value] of v1Bytes)h.store.set(key,value);
+ for(const key of [...h.store.keys()].filter(k=>k.startsWith(pipeline.PREFIX)))h.store.delete(key);
+ assert.equal((await read(isolatedApi)).code,503);assert.deepEqual((await read(native)).body,a.body);
+}));
+test('active custom APIs do not reuse each other’s extraction or lease',()=>independent.environment(async h=>{
+ const v1=require('../api/glv-meta-ads/fb-data.js'),v2Api=require('../api/glv-meta-ads-v2/fb-data.js');
+ const query={type:'ads',time_range:JSON.stringify({since:'2026-11-01',until:'2026-11-02'}),currency:'CZK',account:'TUC'};
+ h.store.set('glv:refresh:lease:v1','foreign-owner');
+ const first=await independent.request(v1,query);assert.equal(first.code,200);
+ const calls=h.calls.filter(c=>c[0]==='GRAPH').length;assert.ok(calls>0);
+ const second=await independent.request(v2Api,query);assert.equal(second.code,200,JSON.stringify(second.body));assert.ok(h.calls.filter(c=>c[0]==='GRAPH').length>calls);
+ assert.equal(first.body.shared_generation_id,undefined);assert.equal(second.body.shared_generation_id,undefined);
+ const after=h.calls.filter(c=>c[0]==='GRAPH').length;
+ assert.equal((await independent.request(v2Api,query)).code,200);assert.equal(h.calls.filter(c=>c[0]==='GRAPH').length,after);
+ assert.equal(h.store.get('glv:refresh:lease:v1'),'foreign-owner');
+}));

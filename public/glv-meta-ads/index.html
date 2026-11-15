@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-<script src="/glv-meta-ads-v2/dates.js?v=shared-cutoff-20261111"></script>
-<script src="/glv-meta-ads/date-policy.js?v=shared-cutoff-20261111"></script>
-<script src="/glv-meta-ads-v2/freshness.js?v=graceful-availability-20261112"></script>
+<script src="/glv-meta-ads/v1-dates.js?v=v1-isolation-20261115"></script>
+<script src="/glv-meta-ads/v1-freshness.js?v=v1-isolation-20261115"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>GLV Meta Ads Pulse</title>
@@ -1040,14 +1039,7 @@ function shiftIsoDate(iso,offsetDays){
   return d.toISOString().slice(0,10);
 }
 function presetLabel(p){return{last_7d:'Last 7 days',last_14d:'Last 14 days',last_30d:'Last 30 days',last_90d:'Last 90 days',this_month:'This month',last_month:'Last month'}[p]||p;}
-function presetBounds(p){
-  const sharedRange=MadDatePolicy.range(p);if(sharedRange)return sharedRange;
-  const until=utcIsoDate(-1);
-  if(p==='this_month')return{since:until.slice(0,7)+'-01',until};
-  if(p==='last_month')return{since:utcMonthStart(-1),until:utcMonthEnd(-1)};
-  const days={last_7d:7,last_14d:14,last_30d:30,last_90d:90}[p];
-  return days?{since:shiftIsoDate(until,1-days),until}:null;
-}
+function presetBounds(p){return MadV1Dates.range(p);}
 function presetRange(p){
   const range=presetBounds(p);return range?`${isoToShort(range.since)} – ${isoToShort(range.until)}`:'';
 }
@@ -1086,7 +1078,6 @@ function selectPreset(p){datePreset=p;customRange=null;setDateMenuOpen(false,{re
 function applyCustomDate(){
   const since=document.getElementById('date-from').value;const until=document.getElementById('date-to').value;
   if(!since||!until){alert('Please select both dates.');return;}
-  const error=MadDatePolicy.customError({since,until},false);if(error){alert(error);return;}
   customRange={since,until};datePreset=null;setDateMenuOpen(false,{restoreFocus:true});updateDateLabel();loadData();
 }
 document.addEventListener('click',e=>{
@@ -2012,7 +2003,7 @@ function requestScope(){return customRange?{customRange:{since:customRange.since
 function fetchUsdRate(){return MadPresentation.fetchUsdRate(responseCache);}
 function promoHistoryWarning(payload,error=''){
   const aged=Date.now()-Date.parse(payload.generated_at)>25*3600000;
-  const yesterday=MadDatePolicy.isShared()?MadV2Dates.commonCutoff():new Date(Date.now()-86400000).toISOString().slice(0,10);
+  const yesterday=MadV1Dates.cutoffDate();
   if(!error&&!aged&&payload.range.until>=yesterday&&payload.freshness?.status!=='stale')return '';
   return `Last-good data · generated ${payload.generated_at} · coverage ${payload.range.since} → ${payload.range.until}. ${error?'Refresh failed: '+error:'Scheduled refresh pending.'}`;
 }
@@ -2031,10 +2022,10 @@ async function apiFetch(type,scope=requestScope()){
     if(!r.ok)throw new Error(json.error||`HTTP ${r.status}`);
     if(type==='promo_concepts'||type==='promo_formats'){if(!PromoFormat.validPayload(json))throw new Error('Refresh required: data schema unavailable');}
     else if(!Array.isArray(json.rows))throw new Error('Refresh required: data schema unavailable');
-    if(expected){MadV2Freshness.validate(json,historyExpected(scope,json));MadDatePolicy.accept(json);}
+    if(expected){MadV1Freshness.validate(json,historyExpected(scope,json));}
     return json;
   });
-  if(expected){MadV2Freshness.validate(result,historyExpected(scope,result));MadDatePolicy.accept(result);}
+  if(expected){MadV1Freshness.validate(result,historyExpected(scope,result));}
   if(type==='promo_concepts'&&!PromoFormat.validConceptPayload(result))throw new Error('Refresh required: concept schema unavailable');
   return result;
 }
@@ -2047,16 +2038,16 @@ function mainSourceLabel(results){
 }
 function setStatus(msg){const el=document.getElementById('loading-msg');if(el)el.textContent=msg;}
 let loadSequence=0,renderedScope='',sourceErrors={},requestedDay='',lastGoodLabel='',lastGoodSources=null,lastGoodSelection='';
-function historyExpected(scope,payload){return {range:scope.customRange||MadDatePolicy.range(scope.datePreset,payload)||presetBounds(scope.datePreset),currency:'CZK',account:'TUC',legacy:true,available:!scope.customRange&&scope.datePreset!=='last_month',custom:Boolean(scope.customRange)};}
+function historyExpected(scope,payload){return {range:scope.customRange||presetBounds(scope.datePreset),currency:'CZK',account:'TUC',legacy:true,available:!scope.customRange&&scope.datePreset!=='last_month',custom:Boolean(scope.customRange)};}
 function historySelection(scope){return JSON.stringify(['TUC','CZK',scope.customRange||scope.datePreset]);}
 function showAvailableRange(range,requested){
   updateDateLabel();
-  if(!MadV2Freshness.same(range,requested)){
+  if(!MadV1Freshness.same(range,requested)){
     document.getElementById('date-btn-range').textContent='Available '+range.since+' – '+range.until;
-    document.getElementById('date-btn').title='Requested '+MadV2Freshness.full(requested)+'; showing whole available range '+MadV2Freshness.full(range);
+    document.getElementById('date-btn').title='Requested '+MadV1Freshness.full(requested)+'; showing whole available range '+MadV1Freshness.full(range);
   }else document.getElementById('date-btn').title='';
 }
-function scopeIdentity(scope){return MadDatePolicy.day()+'|'+JSON.stringify(scope);}
+function scopeIdentity(scope){return MadV1Dates.day()+'|'+JSON.stringify(scope);}
 function syncLoadingPanels(scopeKey){
   document.querySelectorAll('.panel').forEach(panel=>{
     // Independent history remains usable during another tab's date request.
@@ -2076,7 +2067,7 @@ async function loadData({force=false}={}){
     try{
       const expected=historyExpected(scope),sources=lastGoodSources.filter(Boolean).map(s=>({...s,requested_range:undefined}));
       expected.custom=Boolean(scope.customRange);
-      const state=MadV2Freshness.bundle(sources,expected);
+      const state=MadV1Freshness.bundle(sources,expected);
       renderedScope=scopeKey;showAvailableRange(state.range,expected.range);
       if(state.warning){errEl.classList.add('notice');errEl.style.display='block';errEl.textContent=state.warning;}
     }catch(incompatible){/* A different/disjoint scope must remain hidden. */}
@@ -2104,7 +2095,7 @@ async function loadData({force=false}={}){
       Object.assign(expected,historyExpected(scope));
       const sources=results.filter(r=>r.status==='fulfilled').map(r=>r.value);
       try{
-        if(sources.length>1)MadV2Freshness.bundle(sources,{...expected,strict:attempt===0});
+        if(sources.length>1)MadV1Freshness.bundle(sources,{...expected,strict:attempt===0});
         break;
       }catch(error){
         if(attempt!==0||!/^Mixed source (generations|ranges);/.test(error.message))throw error;
@@ -2115,18 +2106,18 @@ async function loadData({force=false}={}){
     if(aggregate.status!=='fulfilled'||daily.status!=='fulfilled')throw new Error(results.filter(r=>r.status==='rejected').map(r=>r.reason.message).join(' | '));
     const campaignSources=[aggregate.value,daily.value];
     expected.custom=Boolean(scope.customRange);
-    const freshness=MadV2Freshness.bundle(campaignSources,expected);
+    const freshness=MadV1Freshness.bundle(campaignSources,expected);
     sourceErrors={};let usableAds=null;
     try{
       if(ads.status!=='fulfilled')throw ads.reason;
-      const adsState=MadV2Freshness.bundle([...campaignSources,ads.value],expected);usableAds=ads.value;if(adsState.mixed&&!freshness.mixed)freshness.warning=[freshness.warning,'Creatives were refreshed at a different time than campaign totals.'].filter(Boolean).join(' ');
+      const adsState=MadV1Freshness.bundle([...campaignSources,ads.value],expected);usableAds=ads.value;if(adsState.mixed&&!freshness.mixed)freshness.warning=[freshness.warning,'Creatives were refreshed at a different time than campaign totals.'].filter(Boolean).join(' ');
     }catch(error){
       sourceErrors.ads='Creative source unavailable: '+error.message;
       const prior=lastGoodSelection===historySelection(scope)&&lastGoodSources?.[2];
       if(prior){try{
         // Reuse only a provably identical publication, not merely overlapping dates.
         const candidate={...prior,requested_range:undefined};
-        MadV2Freshness.bundle([...campaignSources,candidate],{...expected,custom:false});
+        MadV1Freshness.bundle([...campaignSources,candidate],{...expected,custom:false});
         usableAds=candidate;delete sourceErrors.ads;
         freshness.warning+=' Creative refresh unavailable; compatible last-good creatives retained.';
       }catch(incompatible){/* Do not join facts across generations. */}}
@@ -2136,7 +2127,7 @@ async function loadData({force=false}={}){
     aggregateCampaigns=processAggregateRows(aggregate.value.rows);
     dailyCampaigns=processDaily(daily.value.rows);
     adCreatives=usableAds?processCreatives(usableAds.rows):[];
-    lastGoodSources=[...campaignSources,usableAds];lastGoodSelection=historySelection(scope);requestedDay=MadDatePolicy.day();
+    lastGoodSources=[...campaignSources,usableAds];lastGoodSelection=historySelection(scope);requestedDay=MadV1Dates.day();
     const naming=MadPresentation.namingWarnings(results.filter(r=>r.status==='fulfilled').map(r=>r.value));
     const warning=document.getElementById('v1-naming-warnings');warning.hidden=!naming.length;warning.textContent=naming.join(' · ');
     buildAllFilters();buildTriageFilters();
@@ -2146,7 +2137,7 @@ async function loadData({force=false}={}){
     renderLeadgenKPIs();refreshLeadgenCharts();renderLeadgenTable();
     renderedScope=scopeKey;syncLoadingPanels(scopeKey);
     showAvailableRange(freshness.range,expected.range);
-    lastGoodLabel=(freshness.stale?'Stale last-good · ':'Source ')+campaignSources.map(s=>s.generated_at).sort()[0]+' · actual range '+MadV2Freshness.full(freshness.range);
+    lastGoodLabel=(freshness.stale?'Stale last-good · ':'Source ')+campaignSources.map(s=>s.generated_at).sort()[0]+' · actual range '+MadV1Freshness.full(freshness.range);
     document.getElementById('updated-at').textContent=lastGoodLabel;
     const notices=[freshness.warning,sourceErrors.ads].filter(Boolean);
     errEl.style.display=notices.length?'block':'none';errEl.textContent=notices.join(' ');errEl.classList.toggle('notice',!sourceErrors.ads);
@@ -2158,7 +2149,7 @@ async function loadData({force=false}={}){
         const expected=historyExpected(scope);
         const sources=lastGoodSources.filter(Boolean).map(s=>({...s,requested_range:undefined}));
         expected.custom=Boolean(scope.customRange);
-        const state=MadV2Freshness.bundle(sources,expected);
+        const state=MadV1Freshness.bundle(sources,expected);
         renderedScope=scopeKey;retained=true;showAvailableRange(state.range,expected.range);notice=state.warning;
       }catch(incompatible){/* Prior account/currency/range remains hidden, never relabelled. */}
     }
@@ -2175,7 +2166,7 @@ async function loadData({force=false}={}){
   }
 }
 function resumeUtcDay(){
-  if(document.visibilityState==='hidden'||requestedDay===MadDatePolicy.day())return;
+  if(document.visibilityState==='hidden'||requestedDay===MadV1Dates.day())return;
   updateDateLabel();
   void loadData({force:true});
 }
@@ -2209,6 +2200,6 @@ const root=document.documentElement;const themeToggle=document.getElementById('t
 initTabFilters();initTriageCards();initSelects();initSortControls();updateDateLabel();loadData();
 </script>
 <script src="/glv-meta-ads/section-info.js?v=ad-creator-migration-1"></script>
-<script src="/glv-meta-ads/wl-report-ui.js?v=shared-cutoff-20261111"></script>
+<script src="/glv-meta-ads/wl-report-ui.js?v=v1-isolation-20261115"></script>
 </body>
 </html>

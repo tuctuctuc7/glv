@@ -57,8 +57,8 @@ test('metadata-only refresh reads current objects, follows pages, verifies durab
  await assert.rejects(names.refresh({accounts:[v2.ACCOUNTS[0]],tokenFor:()=> 'synthetic',redis,fetcher:async()=>({ok:true,json:async()=>({data:[{id,account_id:'999',name:current}]})}),now:new Date(observed)}),/identity/);
  assert.equal(store.get(names.KEY),before,'bad metadata cannot replace valid current names');
 });
-test('V2 protected cached reader consumes the shared metadata overlay at the same cutoff',async()=>{
- const handler=require('../api/glv-meta-ads-v2/fb-data.js'),names=require('../lib/glv-campaign-metadata.cjs');
+test('legacy protected reader consumes shared metadata overlay at the same cutoff',async()=>{
+ const handler=require('./helpers/mad-legacy-reader.cjs').v2,names=require('../lib/glv-campaign-metadata.cjs');
  const now=new Date(),stamp=new Date(+now-1000).toISOString(),s=snapshot('daily'),m={...metadata(),generated_at:stamp};
  const saved={...process.env},original=global.fetch;
  try{

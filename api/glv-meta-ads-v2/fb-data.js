@@ -7,11 +7,11 @@ async function readCache(key){
  try{const response=await boundedTransport(fetch,Date.now()+5000)(`${config.url}/get/${encodeURIComponent(key)}`,{headers:{Authorization:`Bearer ${config.token}`},signal:AbortSignal.timeout(5000)});if(!response.ok)return null;const body=await response.json();return body.result?require('../../lib/glv-mad-v2-storage.cjs').decode(body.result):null;}catch{return null;}
 }
 async function handler(req,res){
- if(require('../../lib/glv-mad-v2.cjs').rolloutEnabled())return require('../../lib/glv-mad-shared-reader.cjs').handler(req,res,'v2');
+ if(require('../../lib/glv-mad-v2.cjs').rolloutEnabled())return require('../../lib/glv-mad-v2-isolated-reader.cjs').handler(req,res);
  res.setHeader('Cache-Control','private, no-store');
  if(!authorized(req))return res.status(401).json({error:'Unauthorized'});
  if(req.method!=='GET')return res.status(405).json({error:'Read-only API'});
- try{require('../../lib/glv-mad-shared-reader.cjs').scope(req.query||{});}catch{return res.status(400).json({error:'Invalid shared scope'});}
+ try{require('../../lib/glv-mad-v2-isolated-reader.cjs').scope(req.query||{});}catch{return res.status(400).json({error:'Invalid isolated V2 scope'});}
  return res.status(503).json({complete:false,error:'V2 rollout is disabled'});
 }
 module.exports=handler;

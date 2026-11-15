@@ -453,10 +453,10 @@ test('the canonical Meta dashboard provides accessible light and dark theme UX',
   assert.match(v2, /<main/);
 });
 
-test('one existing Meta Ads cron feeds the canonical dashboard without a duplicate schedule', () => {
+test('standalone V1 keeps its cron while V2 has separate morning and TGLV completion passes', () => {
   const vercel = JSON.parse(read('vercel.json'));
   const cronPaths = vercel.crons.map(({ path: cronPath }) => cronPath);
-  assert.deepEqual(cronPaths.filter(cronPath => cronPath.includes('glv-meta-ads')), ['/api/glv-meta-ads/cron']);
+  assert.deepEqual(cronPaths.filter(cronPath => cronPath.includes('glv-meta-ads')), ['/api/glv-meta-ads/cron','/api/glv-meta-ads-v2/cron?mode=morning','/api/glv-meta-ads-v2/cron?mode=late']);
 
   const middleware = read('middleware.js');
   assert.match(middleware, /const LEGACY_META_PATH = '\/glv-meta-ads-2'/);

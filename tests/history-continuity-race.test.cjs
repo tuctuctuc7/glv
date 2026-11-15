@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const freshness=require('../public/glv-meta-ads-v2/freshness.js');
+const loadDateRuntime=require('./helpers/mad-browser-runtime.cjs');
 const range={since:'2026-10-12',until:'2026-11-10'};
 function harness(version,source){
  const html=fs.readFileSync(require('node:path').join(__dirname,'../public',version,'index.html'),'utf8');
@@ -7,11 +7,11 @@ function harness(version,source){
  const nodes=new Map(); const node=id=>{if(!nodes.has(id))nodes.set(id,{style:{},classList:{add(){},remove(){},toggle(){}},dataset:{},textContent:''});return nodes.get(id);};
  const calls=[],cache=new Map();let clears=0;
  const c={loadSequence:0,renderedScope:'',sourceErrors:{},lastGoodSources:null,lastGoodSelection:'',lastGoodLabel:'',datePreset:'last_30d',requestedDay:'',aggregateCampaigns:[],dailyCampaigns:[],adCreatives:[],reportCurrency:'CZK',reportAccount:'TUC',
- document:{getElementById:node,querySelector:()=>null},responseCache:{clear(){clears++;cache.clear();}},requestScope(){return {datePreset:c.datePreset};},scopeIdentity:s=>s.datePreset,historySelection:s=>s.datePreset,historyExpected:()=>({range,currency:'CZK',account:'TUC',available:true,custom:false}),MadV2Freshness:freshness,MadV2Dates:{commonCutoff:()=>range.until},MadPresentation:{namingWarnings:()=>[]},MadDatePolicy:{day:()=>'2026-11-11',accept(){},range:()=>null},
+ document:{getElementById:node,querySelector:()=>null},responseCache:{clear(){clears++;cache.clear();}},requestScope(){return {datePreset:c.datePreset};},scopeIdentity:s=>s.datePreset,historySelection:s=>s.datePreset,historyExpected:()=>({range,currency:'CZK',account:'TUC',available:true,custom:false}),MadPresentation:{namingWarnings:()=>[]},
  apiFetch(type,scope){const key=scope.datePreset+type;if(cache.has(key))return cache.get(key);calls.push({type,scope:{...scope}});const p=Promise.resolve().then(()=>source(type,scope,calls.length));cache.set(key,p);return p;},fetchUsdRate:async()=>.04,
  processAggregateRows:x=>x,processDaily:x=>x,processCreatives:x=>x};
  for(const k of ['showAvailableRange','syncLoadingPanels','setStatus','loadPromoFormats','loadPromoConcepts','buildAllFilters','buildTriageFilters','renderKPIs','refreshChart','renderDailyTable','renderCreatives','refreshTriageCharts','renderPromoKPIs','refreshPromoCharts','renderPromoTable','renderLeadgenKPIs','refreshLeadgenCharts','renderLeadgenTable','syncPromoFilterVisibility'])c[k]=()=>{};
- vm.createContext(c);vm.runInContext(code,c);return {c,calls,node,get clears(){return clears;}};
+ vm.createContext(c);loadDateRuntime(html,c);vm.runInContext(code,c);return {c,calls,node,get clears(){return clears;}};
 }
 function payload(generation,extra={}){return {rows:[{generation}],range,generated_at:'2026-11-11T08:00:00Z',generation_id:generation,complete:true,report_currency:'CZK',account_filter:'TUC',...extra};}
 for(const version of ['glv-meta-ads','glv-meta-ads-v2']){

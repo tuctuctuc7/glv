@@ -6,7 +6,9 @@
  ]);
  const shift=(day,n)=>new Date(Date.parse(day+'T00:00:00Z')+n*86400000).toISOString().slice(0,10);
  const localDate=(now,timezone)=>new Intl.DateTimeFormat('en-CA',{timeZone:timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
- const commonCutoff=(now=new Date())=>ACCOUNTS.map(a=>shift(localDate(now,a.timezone),-1)).sort()[0];
+ // Reporting targets Prague yesterday; LA completeness is account metadata,
+ // not a reason to hide TUC's completed day. Keep the legacy export for callers.
+ const commonCutoff=(now=new Date())=>shift(localDate(now,'Europe/Prague'),-1);
  const validDate=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&Number.isFinite(Date.parse(d))&&new Date(d).toISOString().slice(0,10)===d;
  function rangeFor(preset,now=new Date()){
   const until=commonCutoff(now),today=shift(until,1),month=today.slice(0,7)+'-01';

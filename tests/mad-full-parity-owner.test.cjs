@@ -17,6 +17,6 @@ test('authenticated names_only refresh bypasses performance work and reads back 
   assert.equal(res.body.campaign_metadata.readback_verified,true);assert.equal(res.body.campaign_metadata.accounts[0].campaign_count,1);
   assert.equal(res.body.campaign_metadata.requested_campaign[0].name,'TUC_037_CZSK_CBO_GRAVEYARD');
   assert.equal(requests.filter(u=>u.includes('graph.facebook.com')).length,1);
-  assert.ok([...store.keys()].every(k=>k==='glv:campaign-metadata:1'),'no performance/force/checkpoint mutation');
+  assert.ok([...store.keys()].every(k=>k==='glv:v1:campaign-metadata:1'),'no performance/force/checkpoint mutation');
  }finally{global.fetch=original;for(const k of Object.keys(process.env))if(!(k in saved))delete process.env[k];Object.assign(process.env,saved);}
 });

@@ -1,7 +1,8 @@
+const {formatRange}=require('../../lib/glv-v1-source.cjs');
 // GLV Meta Ads Dashboard — FB Graph API proxy with Upstash Redis cache
 // Requires env vars: GLV_META_FB_ACCESS_TOKEN, KV_REST_API_URL, KV_REST_API_TOKEN
 
-const { formatRange, sliceCachedFormats, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
+const { sliceCachedFormats, CACHE_KEY } = require('../../lib/glv-promo-format.cjs');
 const { validPayload, validConceptPayload } = require('../../public/glv-meta-ads/promo-format.js');
 const { campaignFacts, needsAdsets, validCreatorGhost } = require('../../lib/glv-wl-creators.cjs');
 const {fetchAdMetadata} = require('../../lib/glv-partnership.cjs');
@@ -9,7 +10,7 @@ const AD_ACCOUNT = '359758259164738';
 const FB_API = 'https://graph.facebook.com/v21.0';
 // Presets the cron pre-warms; everything else hits Meta live
 const CACHED_PRESETS = new Set(['last_7d', 'last_14d', 'last_30d', 'last_90d', 'this_month', 'last_month']);
-const { monthRange } = require('../../lib/glv-meta-dates.cjs');
+const { monthRange } = require('../../public/glv-meta-ads/v1-dates.js');
 function cacheFreshForRange(payload, range, now = new Date()) {
   const age = now - Date.parse(payload?.generated_at);
   return Boolean(range && payload?.range?.since === range.since && payload?.range?.until === range.until && Number.isFinite(age) && age >= 0 && age <= 90000000);
@@ -168,8 +169,7 @@ async function paginate(url) {
   return rows;
 }
 
-module.exports = async (req, res) => {
-  if(require('../../lib/glv-mad-v2.cjs').rolloutEnabled())return require('../../lib/glv-mad-shared-reader.cjs').handler(req,res,'v1');
+module.exports = async (req, res, {cacheOnly=false}={}) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
@@ -185,7 +185,7 @@ module.exports = async (req, res) => {
   const { type, date_preset, time_range } = req.query;
   const preset = date_preset || 'last_30d';
   const wl = req.query.wl === '1';
-  const campaignNames=require('../../lib/glv-campaign-metadata.cjs');
+  const campaignNames=require('../../lib/glv-v1-campaign-metadata.cjs');
   const campaignMetadata=await campaignNames.read(redisGet);
   const named=payload=>campaignNames.applyPayload(payload,AD_ACCOUNT,type,campaignMetadata);
   let wlRange;
@@ -243,6 +243,10 @@ module.exports = async (req, res) => {
     }
   }
 
+  // Only the authenticated operator audit sets this internal option.
+  // A cold diagnostic must never extract, publish or turn missing data into zeros.
+  if(cacheOnly)return res.status(503).json({error:'Native publication unavailable'});
+
   // Cache miss or custom range — hit Meta API live
   if(!token)return res.status(503).json({error:'Meta source is not configured; no valid cached snapshot available.'});
   res.setHeader('X-Cache', 'MISS');
@@ -255,13 +259,13 @@ module.exports = async (req, res) => {
     if (type === 'aggregate') {
       const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&limit=500&${auth}`;
-      const rows = await campaignFacts(url,paginate,r=>normalizeCampaign(require('../../lib/glv-mad-v2-source.cjs').validateCampaign(r,range||{since:r.date_start,until:r.date_stop},true)));
+      const rows = await campaignFacts(url,paginate,r=>normalizeCampaign(require('../../lib/glv-v1-source.cjs').validateCampaign(r,range||{since:r.date_start,until:r.date_stop},true)));
       res.json(named({ rows, creator_version:2, creator_reconciliation_version:1, creator_ad_version:1, ...provenance() }));
 
     } else if (type === 'daily') {
       const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&time_increment=1&limit=500&${auth}`;
-      const rows = await campaignFacts(url,paginate,r=>normalizeCampaign(require('../../lib/glv-mad-v2-source.cjs').validateCampaign(r,range||{since:r.date_start,until:r.date_stop})));
+      const rows = await campaignFacts(url,paginate,r=>normalizeCampaign(require('../../lib/glv-v1-source.cjs').validateCampaign(r,range||{since:r.date_start,until:r.date_stop})));
       res.json(named({ rows, creator_version:2, creator_reconciliation_version:1, creator_ad_version:1, ...provenance() }));
 
     } else if (type === 'ads') {
@@ -282,4 +286,5 @@ module.exports = async (req, res) => {
     res.status(500).json({ error: 'Meta data unavailable. Please retry.' });
   }
 };
+module.exports.readOnly = (req,res)=>module.exports(req,res,{cacheOnly:true});
 module.exports._test = { normalizeAd, wlCacheUsable, normalizeCampaign, cachedPayloadUsable, resolveRedisConfig };

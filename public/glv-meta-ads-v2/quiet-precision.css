@@ -35,6 +35,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 @media(max-width:720px){
  body{padding-top:0;padding-bottom:16px}
  .header-top{display:grid;grid-template-columns:auto minmax(0,1fr);height:auto;padding:calc(10px + env(safe-area-inset-top)) 10px 10px;gap:4px}.header-brand{gap:0}.brand-logo{width:28px;height:28px}
+ /* Keep the newer scope wrapper without its legacy absolute second row. */
+ .v2-scope-selects{position:static;gap:5px}.header-brand .brand-copy{display:none}
  .v2-global-controls{grid-column:2;grid-row:1}.header-right.controls-collapsed{display:none}
  .v2-global-controls{gap:5px}.v2-global-controls select{padding-inline:7px}.mobile-controls-toggle{padding-inline:10px}
  .header-tabs{position:static;display:flex;height:52px;padding:4px 10px;gap:4px;overflow-x:auto;border:0;background:transparent;box-shadow:none;backdrop-filter:none}
