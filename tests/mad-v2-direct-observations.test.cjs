@@ -96,18 +96,53 @@ test('aggregate reuse prefers its exact daily piece over an older wider snapshot
  const aggregate=await source.buildSnapshot({account:TUC,range,type:'aggregate',token:'fixture',fetcher:g.fetcher,fx,now,reuse:{token:'fixture',accounts:new Map(),snapshots:[wide,daily],history:[]}});
  assert.deepEqual(aggregate.accounts[0].rows,daily.accounts[0].rows);
 });
-test('normal continuation repairs cached aggregate facts incompatible with its daily piece',async()=>{
+test('normal continuation repairs stale daily from validated aggregate without Graph or new provenance',async()=>{
  const runtime=require('../lib/glv-mad-v2-isolated.cjs'),storage=require('../lib/glv-mad-v2-storage.cjs');
  const store=require('./fixtures/mad-v2-isolated.cjs').memory(),g=graph();
  const opts={redis:store.redis,fetcher:g.fetcher,token:'fixture',presets:['last_7d'],ranges:{last_7d:range},includePromo:false,loadFx:async()=>fx,now};
  assert.equal((await runtime.refresh(opts)).verified,true);
- const key=`${runtime.PREFIX}work:${TUC.id}:morning:last_7d:aggregate`,cached=storage.decode(store.data.get(key));
- cached.accounts[0].rows[0].source_generation='older-extraction';store.data.set(key,JSON.stringify(cached));
- g.calls.length=0;
- const recovered=await runtime.refresh(opts);assert.equal(recovered.verified,true,JSON.stringify(recovered.errors));
- assert.ok(g.calls.some(u=>u.pathname.includes(TUC.id)&&u.searchParams.get('level')==='campaign'&&!u.searchParams.has('time_increment')));
- assert.ok(!g.calls.some(u=>u.searchParams.has('time_increment')),'reuse coherent daily facts, do not refetch daily history');
- const b=await runtime.readPreset(store.redis,'last_7d');assert.deepEqual(b.aggregate.account_bundles[TUC.id].accounts[0].rows,b.daily.account_bundles[TUC.id].accounts[0].rows);
+ const base=`${runtime.PREFIX}work:${TUC.id}:morning:last_7d:`,cached=storage.decode(store.data.get(base+'aggregate'));
+ const stale=storage.decode(store.data.get(base+'daily'));
+ for(const row of stale.accounts[0].rows)for(const child of row.creator_rows||[])if(!child.is_ghost){child.ad_id='999';child.id='999';}
+ stale.generated_at='2026-11-14T09:00:00.000Z';
+ for(const currency of ['USD','CZK'])source.renderSnapshot(stale,currency);
+ store.data.set(base+'daily',JSON.stringify(stale));g.calls.length=0;
+ const recovered=await runtime.refresh({...opts,now:new Date('2026-11-14T11:00:00Z')});assert.equal(recovered.verified,true,JSON.stringify(recovered.errors));
+ assert.equal(g.calls.length,0,'validated aggregate is authoritative; no Graph calls');
+ const saved=storage.decode(store.data.get(base+'daily'));
+ assert.equal(saved.type,'daily');assert.deepEqual(saved.accounts[0].rows,cached.accounts[0].rows);
+ assert.equal(saved.accounts[0].direct_observation,undefined);assert.equal(saved.accounts[0].reach,undefined);
+ for(const key of ['generated_at','source_extractions','fx','range','intent_id','complete_through','partial','isolated_account_id'])assert.deepEqual(saved[key],cached[key],key);
+ const b=await runtime.readPreset(store.redis,'last_7d');
+ for(const type of runtime.TYPES){assert.equal(b[type].generation_id,b.daily.generation_id);assert.deepEqual(b[type].account_coverage,b.daily.account_coverage);}
+ assert.ok(b.daily.account_coverage.every(c=>!c.missing));
+ assert.deepEqual(b.aggregate.account_bundles[TUC.id].accounts,cached.accounts);
+ assert.deepEqual(b.aggregate.account_bundles[TUC.id].accounts[0].rows,b.daily.account_bundles[TUC.id].accounts[0].rows);
+ for(const currency of ['USD','CZK'])assert.deepEqual(source.renderSnapshot(b.aggregate.account_bundles[TUC.id],currency).rows,source.renderSnapshot(cached,currency).rows);
+ assert.equal((await runtime.refresh(opts)).verified,true);assert.equal(g.calls.length,0,'repaired work is reusable');
+ // A later preset built in the same invocation must consume the repaired daily
+ // snapshot rather than the independently valid but incompatible stale one.
+ store.data.set(base+'daily',JSON.stringify(stale));g.calls.length=0;
+ const next=await runtime.refresh({...opts,presets:['last_7d','last_14d'],ranges:{last_7d:range,last_14d:range}});
+ assert.equal(next.verified,true,JSON.stringify(next.errors));
+ assert.ok(!g.calls.some(u=>u.searchParams.has('time_increment')),'subsequent preset reuses repaired daily facts');
+ const nextDaily=storage.decode(store.data.get(`${runtime.PREFIX}work:${TUC.id}:morning:last_14d:daily`));
+ assert.deepEqual(nextDaily.accounts[0].rows,cached.accounts[0].rows);
+});
+test('invalid cached aggregates cannot repair daily work or bypass source checks',async()=>{
+ const runtime=require('../lib/glv-mad-v2-isolated.cjs'),storage=require('../lib/glv-mad-v2-storage.cjs');
+ for(const mutate of [s=>s.accounts[0].direct_observation.rows[0].creator_rows[0].ad_id='999',s=>s.accounts[0].direct_observation.rows[0].reach=null,s=>delete s.fx[range.since],s=>s.accounts[0].rows.push(structuredClone(s.accounts[0].rows[0]))]){
+  const store=require('./fixtures/mad-v2-isolated.cjs').memory(),g=graph();
+  const opts={redis:store.redis,fetcher:g.fetcher,token:'fixture',presets:['last_7d'],ranges:{last_7d:range},includePromo:false,loadFx:async()=>fx,now};
+  assert.equal((await runtime.refresh(opts)).verified,true);
+  const base=`${runtime.PREFIX}work:${TUC.id}:morning:last_7d:`,bad=storage.decode(store.data.get(base+'aggregate'));
+  const daily=storage.decode(store.data.get(base+'daily'));mutate(bad);
+  assert.throws(()=>source.renderSnapshot(bad,'USD'));
+  store.data.set(base+'aggregate',JSON.stringify(bad));
+  const recovered=await runtime.refresh({...opts,fetcher:async()=>({ok:false,status:400,json:async()=>({error:{code:100}})})});
+  assert.equal(recovered.verified,false);assert.ok(recovered.errors.some(e=>e.account_id===TUC.id));
+  assert.deepEqual(storage.decode(store.data.get(base+'daily')),daily,'invalid aggregate never replaces daily');
+ }
 });
 test('late cannot certify retained legacy TUC observations and never repairs them',async()=>{
  const runtime=require('../lib/glv-mad-v2-isolated.cjs'),store=require('./fixtures/mad-v2-isolated.cjs').memory(),g=graph();
