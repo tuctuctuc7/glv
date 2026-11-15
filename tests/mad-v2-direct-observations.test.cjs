@@ -90,6 +90,25 @@ test('normal continuation cannot reuse pre-contract TUC work as direct observati
  assert.equal(Number(reader.render(p,{type:'aggregate',range,currency:'CZK',account:'TUC'}).rows[0].amount_spent),100.02);
  assert.ok(g.calls.some(u=>u.pathname.includes(TUC.id)&&u.searchParams.get('level')==='ad'&&!u.searchParams.has('time_increment')));
 });
+test('aggregate reuse prefers its exact daily piece over an older wider snapshot',async()=>{
+ const g=graph(),daily=await source.buildSnapshot({account:TUC,range,type:'daily',token:'fixture',fetcher:g.fetcher,fx,now});
+ const wide=structuredClone(daily);wide.range.since='2026-11-01';wide.accounts[0].rows[0].source_generation='older-wide';
+ const aggregate=await source.buildSnapshot({account:TUC,range,type:'aggregate',token:'fixture',fetcher:g.fetcher,fx,now,reuse:{token:'fixture',accounts:new Map(),snapshots:[wide,daily],history:[]}});
+ assert.deepEqual(aggregate.accounts[0].rows,daily.accounts[0].rows);
+});
+test('normal continuation repairs cached aggregate facts incompatible with its daily piece',async()=>{
+ const runtime=require('../lib/glv-mad-v2-isolated.cjs'),storage=require('../lib/glv-mad-v2-storage.cjs');
+ const store=require('./fixtures/mad-v2-isolated.cjs').memory(),g=graph();
+ const opts={redis:store.redis,fetcher:g.fetcher,token:'fixture',presets:['last_7d'],ranges:{last_7d:range},includePromo:false,loadFx:async()=>fx,now};
+ assert.equal((await runtime.refresh(opts)).verified,true);
+ const key=`${runtime.PREFIX}work:${TUC.id}:morning:last_7d:aggregate`,cached=storage.decode(store.data.get(key));
+ cached.accounts[0].rows[0].source_generation='older-extraction';store.data.set(key,JSON.stringify(cached));
+ g.calls.length=0;
+ const recovered=await runtime.refresh(opts);assert.equal(recovered.verified,true,JSON.stringify(recovered.errors));
+ assert.ok(g.calls.some(u=>u.pathname.includes(TUC.id)&&u.searchParams.get('level')==='campaign'&&!u.searchParams.has('time_increment')));
+ assert.ok(!g.calls.some(u=>u.searchParams.has('time_increment')),'reuse coherent daily facts, do not refetch daily history');
+ const b=await runtime.readPreset(store.redis,'last_7d');assert.deepEqual(b.aggregate.account_bundles[TUC.id].accounts[0].rows,b.daily.account_bundles[TUC.id].accounts[0].rows);
+});
 test('late cannot certify retained legacy TUC observations and never repairs them',async()=>{
  const runtime=require('../lib/glv-mad-v2-isolated.cjs'),store=require('./fixtures/mad-v2-isolated.cjs').memory(),g=graph();
  const opts={redis:store.redis,fetcher:g.fetcher,token:'fixture',presets:['last_7d'],ranges:{last_7d:range},includePromo:false,loadFx:async()=>fx,now};
