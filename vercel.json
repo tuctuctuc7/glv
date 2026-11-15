@@ -21,9 +21,20 @@
     "api/krs-meta-ads/fb-data.js": {
       "maxDuration": 60
     },
-
     "api/krs-meta-ads/cron.js": {
       "maxDuration": 10
+    },
+    "api/glv-meta-ads/cron-tuc.js": {
+      "maxDuration": 300,
+      "includeFiles": "{lib/glv-mad-shared*.cjs,lib/glv-history*.cjs,lib/glv-meta-dates.cjs,lib/glv-promo-format.cjs,lib/glv-promo-assets.cjs,public/glv-meta-ads/promo-format.js,lib/glv-mad-v2*.cjs,public/glv-meta-ads-v2/dates.js}"
+    },
+    "api/glv-meta-ads/cron-v2.js": {
+      "maxDuration": 300,
+      "includeFiles": "{lib/glv-mad-shared*.cjs,lib/glv-history*.cjs,lib/glv-meta-dates.cjs,lib/glv-promo-format.cjs,lib/glv-promo-assets.cjs,public/glv-meta-ads/promo-format.js,lib/glv-mad-v2*.cjs,public/glv-meta-ads-v2/dates.js}"
+    },
+    "api/glv-meta-ads/cron-tglv.js": {
+      "maxDuration": 300,
+      "includeFiles": "{lib/glv-mad-shared*.cjs,lib/glv-history*.cjs,lib/glv-meta-dates.cjs,lib/glv-promo-format.cjs,lib/glv-promo-assets.cjs,public/glv-meta-ads/promo-format.js,lib/glv-mad-v2*.cjs,public/glv-meta-ads-v2/dates.js}"
     }
   },
   "rewrites": [
@@ -75,8 +86,28 @@
   ],
   "crons": [
     {
-      "path": "/api/glv-meta-ads/cron",
-      "schedule": "0 0,1,2,4,8,12,16,20 * * *"
+      "path": "/api/glv-meta-ads/cron-tuc",
+      "schedule": "0,20,40 0 * * *"
+    },
+    {
+      "path": "/api/glv-meta-ads/cron-tuc",
+      "schedule": "0 3,6,12,18,21 * * *"
+    },
+    {
+      "path": "/api/glv-meta-ads/cron-v2",
+      "schedule": "10,30,50 0,1 * * *"
+    },
+    {
+      "path": "/api/glv-meta-ads/cron-v2",
+      "schedule": "10 3,6,12,18,21 * * *"
+    },
+    {
+      "path": "/api/glv-meta-ads/cron-tglv",
+      "schedule": "0,15,30,45 8,9 * * *"
+    },
+    {
+      "path": "/api/glv-meta-ads/cron-tglv",
+      "schedule": "0 11,14 * * *"
     }
   ]
 }

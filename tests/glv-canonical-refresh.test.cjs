@@ -23,6 +23,6 @@ test('shared refresh commits only canonical data from current origin/main and fa
   assert.doesNotMatch(deploy, /vercel --prod/);
   assert.match(deploy, /commits\/\$release_sha\/status/);
   assert.equal(vercel.buildCommand, 'npm run verify:glv-release');
-  assert.deepEqual(vercel.crons, [{ path: '/api/glv-meta-ads/cron', schedule: '0 0,1,2,4,8,12,16,20 * * *' }]);
+  assert.deepEqual(vercel.crons, require('./helpers/mad-cron-schedule.cjs'));
   assert.ok(vercel.headers.some(entry => entry.source === '/glv/:path*' && entry.headers.some(header => header.key === 'Cache-Control' && header.value === 'no-store')));
 });

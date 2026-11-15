@@ -1,5 +1,21 @@
 # GLV MAD refresh recovery
 
+## Refresh scopes and schedule (2026-11-13)
+
+Policy (Tom): TUC/CZSK is the core business and must arrive for **both** dashboards on the Prague cutoff before 08:00 GMT+7, with no dependency on Los Angeles or V2 work. TGLV may be partial for its last day until LA midnight.
+
+- **Reporting cutoff** = TUC's completed Prague day (`commonCutoff` in `public/glv-meta-ads-v2/dates.js`, used by V1, V2, cron and browser). TGLV's last day is partial until LA midnight (`refreshPhase`: `tglv-partial` → `final`).
+- **Scopes** (thin routes over `api/glv-meta-ads/cron.js`, each with its own completion receipt `glv:refresh:complete:v1:scope:<scope>`):
+  - `cron-tuc`: V1/TUC presets + Promo history only. Never touches V2/TGLV.
+  - `cron-v2`: V2 native (TUC complete + TGLV so far) + shared publication, reusing the published V1 facts.
+  - `cron-tglv`: TGLV-only completion. Skips until 01:00 Los Angeles; retains same-cutoff TUC facts verbatim (never re-pulls TUC), drops TGLV's 7-day ad chunk window once and re-pulls it, republishes shared. Never advances the cutoff.
+  - `/api/glv-meta-ads/cron` (no scope) = legacy combined run, manual only.
+- **Schedule (UTC)** — source of truth `tests/helpers/mad-cron-schedule.cjs`: TUC `0,20,40 0` (07:00–07:40 GMT+7) + `0 3,6,12,18,21`; V2 `10,30,50 0,1` (07:10–08:50 GMT+7) + `10 3,6,12,18,21`; TGLV `0,15,30,45 8,9` (first eligible 09:00 UTC = 16:00 GMT+7 in PST, 08:00 UTC = 15:00 GMT+7 in PDT) + `0 11,14`. No runs 22:00–23:59 UTC (Prague/UTC dates differ then).
+- **V1 independence:** the V1 reader serves V1's own verified publication whenever it is newer than the shared V1+V2 bundle (`v1_ahead_of_shared`), so V1 never waits on V2.
+- **Notes:** V2 responses carry `account_coverage`. With TGLV partial, `warning` states the LA pull time and the GMT+7 completion time; after completion, `refresh_note` "Both accounts have full data through <date>." is appended to the V2 header refresh info.
+
+## Legacy single schedule (superseded)
+
 The existing bearer-protected `/api/glv-meta-ads/cron` remains the **only** Meta cache refresh scheduler. Its Vercel UTC schedule is `0 0,1,2,4,8,12,16,20 * * *`: midnight is the daily primary; seven later invocations are bounded recovery opportunities, not separate jobs. Current-day partial data is still excluded by default.
 
 ## Provider retries
