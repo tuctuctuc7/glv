@@ -6,7 +6,7 @@ Before changing GLV code, read `README.md` in this directory. It contains the cu
 
 Critical rules:
 
-- Deploy with `vercel --prod --yes --scope agenthic`; do not use Tom's personal Vercel scope.
+- Deploy only under the `tucmedia` Vercel team scope (Tom approved replacing the obsolete `agenthic` scope). Prefer the Git-linked production deploy after a reviewed PR merges; for an explicitly authorized CLI deploy from a clean checkout use `npx --no-install vercel --prod --yes --scope tucmedia`. Never use Tom's personal Vercel scope.
 - Do not store, print, or repeat token/secret values.
 - Keep private Google Sheet/service-account access local unless Tom explicitly asks to move it into Vercel.
 - Business KPI dashboard data is USD from `public/glv/glv_dashboard.json`.

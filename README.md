@@ -798,7 +798,7 @@ For serverless API behavior, use Vercel local tooling if needed:
 
 ```bash
 cd /home/tom/.openclaw/workspace/dashboard/glv
-PATH=/home/tom/.local/node/bin:$PATH vercel dev --scope agenthic
+PATH=/home/tom/.local/node/bin:$PATH vercel dev --scope tucmedia
 ```
 
 Local release gates: `npm ci`, `npm test`, `npm run qa:browser`, `npm run verify:glv-release`, and `git diff --check`. The basic static server does not run middleware; browser QA loads the actual middleware for redirects and covers canonical slashless/trailing-slash URLs, default → All available data, failed-history recovery, retired URLs with filters/fragments, old asset-fetch compatibility, and 390/320 px mobile. Repeat redirects and unrelated auth boundaries live after deployment; local QA is not live deployment evidence.
