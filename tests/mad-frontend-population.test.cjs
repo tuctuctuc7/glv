@@ -38,8 +38,8 @@ test('actual handlers read distinct native publications and enforce authenticati
   const graphBefore=t.audit.filter(a=>a.syntheticGraph).length;
   const custom=await t.payload(new URLSearchParams({type:'ads',time_range:JSON.stringify(range)}),false);
   assert.ok(custom.rows.length>0);assert.equal(t.audit.filter(a=>a.syntheticGraph).length,graphBefore,'exact published custom range needs no Meta extraction');
-  const cold=await t.payload(new URLSearchParams({type:'ads',time_range:JSON.stringify({...range,since:'2026-11-05'})}),false);
-  assert.ok(cold.rows.length>0);assert.ok(t.audit.filter(a=>a.syntheticGraph).length>graphBefore,'uncached period must still use actual Graph normalization');
+  const cold=await t.request(new URLSearchParams({type:'ads',time_range:JSON.stringify({...range,since:'2026-11-05'})}),false);
+  assert.equal(cold.code,503);assert.equal(t.audit.filter(a=>a.syntheticGraph).length,graphBefore,'V1 period ads are honestly unavailable for a cached zoom; campaigns remain independent');
  }finally{t.close();}
 });
 for(const type of ['daily','aggregate','ads'])test(`${type}: currency preserves exact account/entity population and all non-money facts`,async()=>{
