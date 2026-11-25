@@ -243,6 +243,26 @@ module.exports = async (req, res, {cacheOnly=false}={}) => {
     }
   }
 
+  let customPrior;
+  const history=require('../../lib/glv-history-v1.cjs');
+  const sendCached=cached=>{
+    const state=history.state(cached,range);
+    res.setHeader('X-Cache',state.stale?'STALE':'HIT');
+    return res.json({...named(cached),...state});
+  };
+  if(time_range&&['aggregate','daily','ads'].includes(type)){
+    customPrior=await history.readCustom(redisGet,type,range,CACHED_PRESETS);
+    if(customPrior&&(!history.state(customPrior,range).stale||cacheOnly||!token))return sendCached(customPrior);
+  }
+  const sendLive=async payload=>{
+    if(time_range&&history.valid(type,payload))try{
+      const key=history.customKey(type,range);
+      const response=await fetch(redis.url,{method:'POST',headers:{Authorization:`Bearer ${redis.token}`,'Content-Type':'application/json'},body:JSON.stringify(['SET',key,JSON.stringify(payload)]),signal:AbortSignal.timeout(5000)});
+      if(!response.ok||JSON.stringify(await redisGet(key))!==JSON.stringify(payload))throw Error('Custom cache readback failed');
+    }catch{}
+    return res.json(named(payload));
+  };
+
   // Only the authenticated operator audit sets this internal option.
   // A cold diagnostic must never extract, publish or turn missing data into zeros.
   if(cacheOnly)return res.status(503).json({error:'Native publication unavailable'});
@@ -260,13 +280,13 @@ module.exports = async (req, res, {cacheOnly=false}={}) => {
       const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&limit=500&${auth}`;
       const rows = await campaignFacts(url,paginate,r=>normalizeCampaign(require('../../lib/glv-v1-source.cjs').validateCampaign(r,range||{since:r.date_start,until:r.date_stop},true)));
-      res.json(named({ rows, creator_version:2, creator_reconciliation_version:1, creator_ad_version:1, ...provenance() }));
+      return await sendLive({ rows, creator_version:2, creator_reconciliation_version:1, creator_ad_version:1, ...provenance() });
 
     } else if (type === 'daily') {
       const fields = 'campaign_id,campaign_name,spend,impressions,reach,actions,action_values';
       const url = `${FB_API}/act_${AD_ACCOUNT}/insights?level=campaign&fields=${fields}&${dateParam}&time_increment=1&limit=500&${auth}`;
       const rows = await campaignFacts(url,paginate,r=>normalizeCampaign(require('../../lib/glv-v1-source.cjs').validateCampaign(r,range||{since:r.date_start,until:r.date_stop})));
-      res.json(named({ rows, creator_version:2, creator_reconciliation_version:1, creator_ad_version:1, ...provenance() }));
+      return await sendLive({ rows, creator_version:2, creator_reconciliation_version:1, creator_ad_version:1, ...provenance() });
 
     } else if (type === 'ads') {
       const fields = 'ad_id,ad_name,campaign_id,campaign_name,adset_id,adset_name,spend,impressions,actions,action_values,video_p100_watched_actions,video_thruplay_watched_actions';
@@ -275,12 +295,13 @@ module.exports = async (req, res, {cacheOnly=false}={}) => {
 
       const metadata = await fetchAdMetadata(raw.map(r=>r.ad_id||r.id),token,fetch);
       const statusMap = Object.fromEntries(Object.entries(metadata).map(([id,m])=>[id,m.status]));
-      res.json(named({ creator_version:2, rows: raw.map(r => ({...normalizeAd(r, statusMap),partnership:metadata[r.ad_id||r.id]?.partnership||{status:'unverified',reason:'metadata_unavailable',evidence:[]}})), ...provenance(), wl_version:3 }));
+      return await sendLive({ creator_version:2, rows: raw.map(r => ({...normalizeAd(r, statusMap),partnership:metadata[r.ad_id||r.id]?.partnership||{status:'unverified',reason:'metadata_unavailable',evidence:[]}})), ...provenance(), wl_version:3 });
 
     } else {
       res.status(400).json({ error: 'Invalid type. Use: aggregate, daily, or ads.' });
     }
   } catch (err) {
+    if(customPrior)return sendCached(customPrior);
     // Do not expose upstream URLs, tokens or source text through diagnostics.
     console.error('fb-data request failed');
     res.status(500).json({ error: 'Meta data unavailable. Please retry.' });

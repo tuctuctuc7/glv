@@ -37,7 +37,9 @@ test('actual handlers read distinct native publications and enforce authenticati
   assert.ok(t.values.has(require('../lib/glv-mad-v2-isolated.cjs').combinedKey('last_7d')));
   const graphBefore=t.audit.filter(a=>a.syntheticGraph).length;
   const custom=await t.payload(new URLSearchParams({type:'ads',time_range:JSON.stringify(range)}),false);
-  assert.ok(custom.rows.length>0);assert.ok(t.audit.filter(a=>a.syntheticGraph).length>graphBefore,'V1 custom must use actual synthetic Graph normalization, not an adapter');
+  assert.ok(custom.rows.length>0);assert.equal(t.audit.filter(a=>a.syntheticGraph).length,graphBefore,'exact published custom range needs no Meta extraction');
+  const cold=await t.payload(new URLSearchParams({type:'ads',time_range:JSON.stringify({...range,since:'2026-11-05'})}),false);
+  assert.ok(cold.rows.length>0);assert.ok(t.audit.filter(a=>a.syntheticGraph).length>graphBefore,'uncached period must still use actual Graph normalization');
  }finally{t.close();}
 });
 for(const type of ['daily','aggregate','ads'])test(`${type}: currency preserves exact account/entity population and all non-money facts`,async()=>{
