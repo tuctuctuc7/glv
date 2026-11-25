@@ -41,11 +41,14 @@ async function run(){
     const page=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});page.on('pageerror',e=>errors.push(e.message));await page.clock.setFixedTime(now);
     await page.route('**/*',route=>{const u=new URL(route.request().url());if(u.origin===base)return route.continue();if(u.hostname==='cdn.jsdelivr.net'){const name=u.pathname.includes('chart.js')?'chart.js':u.pathname.endsWith('.css')?'grid.css':'grid.js';return route.fulfill({path:'/home/tom/glv-creator-ghost-evidence/vendor/'+name,contentType:name.endsWith('.css')?'text/css':'text/javascript'});}if(u.hostname==='api.frankfurter.dev')return route.abort();return route.abort();});
     await page.goto(base+'/'+version+'/?account=All&currency=CZK'+(mode==='transition'?'':'&qa_custom=1'));await page.waitForFunction(()=>document.querySelector('#loading').style.display==='none');
+    await page.waitForFunction(()=>lastGoodSources?.[2]||document.querySelector('#error').textContent.includes('Creative source unavailable'));
     if(mode==='reload'){await page.reload();await page.waitForFunction(()=>document.querySelector('#loading').style.display==='none');}
+    await page.waitForFunction(()=>lastGoodSources?.[2]||document.querySelector('#error').textContent.includes('Creative source unavailable'));
     await page.evaluate(()=>{Chart.defaults.animation=false;for(const c of Object.values(Chart.instances))c.stop();});
     await page.locator('[data-tab="czsk-leadgen"]').click();
     if(mode==='transition'){assert.equal(await page.locator('#date-btn-label').innerText(),'Last 30 days');await page.locator('#date-btn').click();await page.locator('#date-from').fill(range.since);await page.locator('#date-to').fill(range.until);await page.locator('.date-apply-btn').click();}
     await page.waitForFunction(()=>document.querySelector('#loading').style.display==='none'&&document.querySelector('#date-btn-range').textContent.includes('19'));
+    await page.waitForFunction(()=>lastGoodSources?.[2]||document.querySelector('#error').textContent.includes('Creative source unavailable'));
     assert.equal(await page.locator('#panel-czsk-leadgen').isVisible(),true);
     await page.evaluate(()=>document.fonts.ready);
     await page.waitForFunction(()=>{const canvases=[...document.querySelectorAll('#panel-czsk-leadgen canvas')].filter(c=>c.getBoundingClientRect().width>0);return canvases.length>0&&canvases.every(c=>c.width>0&&c.height>0);});
