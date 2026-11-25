@@ -136,6 +136,7 @@ test('native custom reader validates nonempty campaign facts without V2 runtime 
  };
  const req={method:'GET',query:{type:'aggregate',time_range:JSON.stringify(range)}};
  const good=response();await api(req,good);assert.equal(good.code,200);assert.equal(good.body.rows[0].amount_spent,'10');assert.equal(good.body.rows[0].reach,'50');
+ h.store.delete(require('../lib/glv-history-v1.cjs').customKey('aggregate',range));
  malformed=true;const bad=response();await api(req,bad);assert.equal(bad.code,500);assert.equal(bad.body.rows,undefined);
 }));
 test('audit separates old extraction age from exact Promo coverage',()=>isolated(async()=>{
