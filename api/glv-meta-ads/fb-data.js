@@ -252,7 +252,8 @@ module.exports = async (req, res, {cacheOnly=false}={}) => {
   };
   if(time_range&&['aggregate','daily','ads'].includes(type)){
     customPrior=await history.readCustom(redisGet,type,range,CACHED_PRESETS);
-    if(customPrior&&(!history.state(customPrior,range).stale||cacheOnly||!token))return sendCached(customPrior);
+    if(customPrior?.unavailable)return res.status(503).json({error:customPrior.warning});
+    if(customPrior)return sendCached(customPrior);
   }
   const sendLive=async payload=>{
     if(time_range&&history.valid(type,payload))try{

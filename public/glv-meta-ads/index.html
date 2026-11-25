@@ -1104,7 +1104,7 @@ function processRow(r){
     purchases:parseAmt(r['actions:omni_purchase']),checkouts:parseAmt(r['actions:initiate_checkout']),
     leads:parseAmt(r['actions:lead']),
     linkClicks:parseAmt(r['actions:link_click']),outboundClicks:parseAmt(r['actions:outbound_click']),revenue:parseAmt(r['action_values:omni_purchase']),
-    impressions:parseNum(r.impressions),reach:parseNum(r.reach),
+    impressions:parseNum(r.impressions),reach:r.reach==null?null:parseNum(r.reach),
   };
 }
 function creatorMetadata(r,seg,date){
@@ -1272,7 +1272,7 @@ function byDate(rows,selectedIds){
     if(!map[r.date])map[r.date]={date:r.date,spend:0,lp:0,purchases:0,checkouts:0,leads:0,linkClicks:0,outboundClicks:0,revenue:0,impressions:0,reach:0};
     const d=map[r.date];
     d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
-    d.linkClicks+=r.linkClicks;d.outboundClicks+=(r.outboundClicks||0);d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
+    d.linkClicks+=r.linkClicks;d.outboundClicks+=(r.outboundClicks||0);d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach=d.reach===null||r.reach===null?null:d.reach+(r.reach||0);
   }
   return Object.values(map).sort((a,b)=>a.date<b.date?-1:1);
 }
@@ -1292,7 +1292,7 @@ function byPeriod(rows,selectedIds,grain='day'){
     if(!map[key])map[key]={date:key,spend:0,lp:0,purchases:0,checkouts:0,leads:0,linkClicks:0,outboundClicks:0,revenue:0,impressions:0,reach:0};
     const d=map[key];
     d.spend+=r.spend;d.lp+=r.lp;d.purchases+=r.purchases;d.checkouts+=r.checkouts;d.leads+=r.leads;
-    d.linkClicks+=r.linkClicks;d.outboundClicks+=(r.outboundClicks||0);d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach+=r.reach||0;
+    d.linkClicks+=r.linkClicks;d.outboundClicks+=(r.outboundClicks||0);d.revenue+=r.revenue;d.impressions+=r.impressions;d.reach=d.reach===null||r.reach===null?null:d.reach+(r.reach||0);
   }
   return Object.values(map).sort((a,b)=>a.date<b.date?-1:1);
 }
@@ -1436,12 +1436,14 @@ function refreshTriageChart(presetId){
   });
 }
 function formatChartVal(key,v){
+  if(v==null)return '—';
   if(key==='roas'||key==='frequency')return v.toFixed(2)+'x';
   if(['lp2lead','lp2co','co2pur','lp2pur','ctr'].includes(key))return v.toFixed(2)+'%';
   if(['cpm','cpa','cpl','aov','spend','revenue'].includes(key))return Math.round(v).toLocaleString('en-US')+' CZK';
   return Math.round(v).toLocaleString('en-US');
 }
 function formatChartTick(key,v){
+  if(v==null)return '—';
   if(window.matchMedia('(max-width:720px)').matches){
     if(key==='roas'||key==='frequency')return Number(v).toFixed(2)+'x';
     if(['lp2lead','lp2co','co2pur','lp2pur','ctr'].includes(key))return Number(v).toFixed(1)+'%';

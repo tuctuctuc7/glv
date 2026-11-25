@@ -235,6 +235,14 @@ Standard cached presets:
 
 Cron prewarms the standard presets into Upstash/Vercel KV. Custom ranges and cache misses can hit Meta live. Standard V1/V2 history is now durable and published as coherent bundles: refresh failure retains prior actual coverage with an explicit stale warning, rather than expiring it or relabeling its totals. See [MAD history continuity](docs/mad-history-continuity.md) for publication keys, migration, seven-day daily replacement, response contract, and release checks. This supersedes the older exact-range-only stale-cache behavior described in historical WL handoff notes above.
 
+### Cached custom-range zoom
+
+Narrowing a scheduled range reads validated cached daily campaign facts in both MAD versions; it does not require a new Meta period observation or FX request. Exact-range cached period observations retain their original totals/reach. Otherwise the response declares `cached-daily-v1`, preserves original extraction timestamps/provenance and uses daily-derived additive totals, with unknown period unique reach/frequency null through browser parsing and formatting. Missing days remain absent, not zero-filled. Scheduled publication, account ownership and refresh contracts are unchanged.
+
+V2's read-only adapter validates original native bundles before projection, uses their stored daily FX, and assigns one deterministic source generation/coverage across aggregate/daily/ads requests. It can recover TUC from a wider scheduled publication even when an exact custom cache contains only TGLV. Native daily ad facts support narrowed creatives. V1 period-only ad totals cannot be sliced: the creative request reports unavailable while campaign charts/tables remain usable. An exact cached V1 creative period still works.
+
+Offline verification: `node --test tests/mad-custom-range.test.cjs tests/mad-cached-zoom.test.cjs tests/mad-zoom-ui.test.cjs` and `node qa/mad-custom-range.cjs`. The real-handler browser fixture blocks all Meta/FX after seeding scheduled publications and a TGLV-only partial custom cache; it checks Last30 → November 19–24, cold initialization and reload. Its `qa_custom` bootstrap exists only in the local test server, not the product. Evidence is under `.custom-range-browser/`.
+
 The `CZSK Triage` tab provides seven independent daily chart presets for funnel diagnosis. Each chart has its own primary metric, secondary metric, and day/week/month grain controls. A single metric registry assigns one stable, unique color to every selectable metric across the chart controls. The aggregate and daily Meta insight producers include campaign-level `reach`; Triage labels impressions divided by summed campaign reach as `Frequency proxy`. Reach is non-additive, so this proxy is not Meta's deduplicated frequency for the selected period.
 
 Meta Ads currency is CZK. Always label it as CZK in reports, Slack summaries, and paid-media decision logic.

@@ -219,7 +219,7 @@ test('Meta live and cached producers expose reach for the triage frequency metri
     assert.equal(producer._test.normalizeCampaign({ reach: '450' }).reach, '450');
   }
   const dashboard = read('public/glv-meta-ads/index.html');
-  assert.match(dashboard, /reach:parseNum\(r\.reach\)/);
+  assert.match(dashboard, /reach:r\.reach==null\?null:parseNum\(r\.reach\)/);
   assert.match(dashboard, /const frequency=a\.reach===null\?null:a\.reach>0\?a\.impressions\/a\.reach:0/);
   assert.match(dashboard, /linkClicks:parseAmt\(r\['actions:link_click'\]\)/);
   assert.match(dashboard, /const ctr=a\.impressions>0\?a\.linkClicks\/a\.impressions\*100:0/);

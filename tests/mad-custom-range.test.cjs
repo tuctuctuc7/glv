@@ -18,7 +18,9 @@ test('V1 actual handler slices published daily facts for Nov19–24 without live
  assert.equal(res.code,200,JSON.stringify(res.body));assert.equal(res.body.rows.length,6);assert.deepEqual(res.body.range,range);assert.equal(res.body.generated_at,stamp);
  assert.equal(res.body.rows[0].reach,'80');assert.equal(h.calls.filter(c=>c[0]==='GRAPH').length,0);
  const aggregate=await request(require('../api/glv-meta-ads/fb-data.js'),{type:'aggregate',time_range:JSON.stringify(range)});
- assert.notEqual(aggregate.code,200,'must not slice seven-day period reach into six days');
+ assert.equal(aggregate.code,200,'daily facts must support zoom without a new period observation');
+ assert.equal(aggregate.body.rows[0].reach,null);assert.equal(Number(aggregate.body.rows[0].amount_spent),60);
+ assert.equal(h.calls.filter(c=>c[0]==='GRAPH').length,0);
 }));
 test('V1 actual custom handlers reuse an EXACT published period across all three concurrent requests',()=>environment(async h=>{
  await seed(h,range);h.failSource=true;
@@ -39,12 +41,31 @@ test('V1 stale exact custom remains readable on failure with original timestamp 
  const old=pieces(range).aggregate;old.generated_at='2026-11-20T00:00:00.000Z';
  h.store.set(history.customKey('aggregate',range),JSON.stringify(old));h.failSource=true;
  const res=await request(require('../api/glv-meta-ads/fb-data.js'),{type:'aggregate',time_range:JSON.stringify(range)});
- assert.equal(res.code,200);assert.equal(res.body.stale,true);assert.equal(res.body.generated_at,old.generated_at);assert.equal(res.body.rows[0].reach,'123');
+ assert.equal(res.code,200);assert.equal(res.body.stale,true);assert.equal(res.body.generated_at,old.generated_at);assert.equal(res.body.rows[0].reach,'123');assert.equal(h.calls.filter(c=>c[0]==='GRAPH').length,0,'valid exact observations are read-only even when stale');
 }));
 test('V1 corrupted custom cache cannot conceal unavailable source facts',()=>environment(async h=>{
  const bad=pieces(range).aggregate;delete bad.rows[0].reach;
  h.store.set(history.customKey('aggregate',range),JSON.stringify(bad));h.failSource=true;
  const res=await request(require('../api/glv-meta-ads/fb-data.js'),{type:'aggregate',time_range:JSON.stringify(range)});
  assert.equal(res.code,500);assert.equal(res.body.rows,undefined);
+}));
+test('V1 cached zoom rejects foreign account/currency and malformed scopes before reuse',()=>environment(async h=>{
+ for(const mutate of [p=>p.daily.report_currency='USD',p=>p.daily.account_filter='TGLV',p=>p.daily.rows[0].account_id='1021777267558882',p=>p.daily.rows[0].creator_rows=[{account_id:'1021777267558882',adset_name:'test',adset_id:'1',ad_id:'2',ad_name:'test'}]]){
+  h.store.clear();const p=pieces();mutate(p);await history.savePublished(async(k,v)=>h.store.set(k,JSON.stringify(v)),'last_7d',p,async k=>JSON.parse(h.store.get(k)||'null'));
+  assert.equal(await history.readCustom(async k=>JSON.parse(h.store.get(k)||'null'),'aggregate',range,['last_7d']),null);
+ }
+ for(const bad of [null,[],{since:'2026-02-30',until:range.until},{since:range.until,until:range.since},{since:['2026-11-19'],until:range.until}])await assert.rejects(()=>history.readCustom(async()=>null,'aggregate',bad,['last_7d']));
+}));
+test('V1 native daily rollup preserves signed creator residuals, child identity and missing dates',()=>environment(async h=>{
+ const p=pieces();p.daily.rows=p.daily.rows.filter(r=>r.date_start!=='2026-11-21');
+ const {attachCreatorFacts}=require('../lib/glv-wl-creators.cjs');
+ p.daily.rows=p.daily.rows.map(r=>attachCreatorFacts([{...r,name:'TUC_001_CZSK_WL'}],[{...r,name:'TUC_001_CZSK_WL',adset_id:'11',adset_name:'WL',ad_id:'22',ad_name:'Kristyna_PAC001_V1',amount_spent:12}])[0]);
+ await history.savePublished(async(k,v)=>h.store.set(k,JSON.stringify(v)),'last_7d',p,async k=>JSON.parse(h.store.get(k)||'null'));
+ h.failSource=true;
+ const daily=await request(require('../api/glv-meta-ads/fb-data.js'),{type:'daily',time_range:JSON.stringify(range)});
+ const aggregate=await request(require('../api/glv-meta-ads/fb-data.js'),{type:'aggregate',time_range:JSON.stringify(range)});
+ assert.equal(daily.body.rows.length,5);assert.ok(daily.body.rows.every(r=>r.date_start!=='2026-11-21'));
+ const row=aggregate.body.rows[0];assert.equal(row.amount_spent,50);assert.equal(row.reach,null);assert.equal(row.creator_rows.find(r=>r.ad_id==='22').amount_spent,60);assert.equal(row.creator_rows.find(r=>r.is_ghost).amount_spent,-10);assert.equal(row.creator_rows.find(r=>r.is_ghost).reach,null);
+ assert.equal(aggregate.body.generated_at,stamp);assert.equal(h.calls.filter(c=>c[0]==='GRAPH').length,0);
 }));
 module.exports={range,wide,pieces,seed};
