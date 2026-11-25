@@ -15,7 +15,7 @@ test('Promo group campaign options cannot be expanded by independent Creative hi
 test('format API always requests rolling history independently of global dates',async()=>{
  const fn=html.slice(html.indexOf('function utcIsoDate('),html.indexOf('function presetRange('))+html.slice(html.indexOf('function historyExpected('),html.indexOf('function historySelection('))+html.slice(html.indexOf('const responseCache='),html.indexOf('function setStatus('));
  for(const customRange of [null,{since:'2026-09-01',until:'2026-09-10'}]){
-  let url;const ctx={URLSearchParams,customRange,datePreset:'last_30d',MetaSessionCache:require('../public/glv-meta-ads/session-cache.js'),PromoFormat:{validPayload:()=>true},fetch:async u=>{url=u;return{ok:true,json:async()=>({rows:[],range:customRange||ctx.presetBounds('last_30d'),generated_at:new Date().toISOString()})}}};vm.createContext(ctx);
+  let url;const ctx={MadBrowserExtract:require('../public/glv-meta-ads/browser-extract.js'),URLSearchParams,customRange,datePreset:'last_30d',MetaSessionCache:require('../public/glv-meta-ads/session-cache.js'),PromoFormat:{validPayload:()=>true},fetch:async u=>{url=u;return{ok:true,json:async()=>({rows:[],range:customRange||ctx.presetBounds('last_30d'),generated_at:new Date().toISOString()})}}};vm.createContext(ctx);
   require('./helpers/mad-browser-runtime.cjs')(html,ctx);
   vm.runInContext(fn,ctx);
   await ctx.apiFetch('promo_formats');assert.equal(new URL(url,'https://test').searchParams.get('date_preset'),'promo_history');assert.equal(new URL(url,'https://test').searchParams.has('time_range'),false);

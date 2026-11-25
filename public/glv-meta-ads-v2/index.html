@@ -328,6 +328,7 @@ body{background:radial-gradient(circle at 84% -10%,rgba(91,183,242,.14),transpar
 <script src="/glv-meta-ads/shared-ui.js?v=shared-ui-20261111"></script>
 <script src="/glv-meta-ads/presentation.js?v=shared-ui-20261111"></script>
 <script src="/glv-meta-ads/session-cache.js?v=ghost-reconciliation-20261103"></script>
+<script src="/glv-meta-ads/browser-extract.js?v=extract-20261125"></script>
 <link rel="stylesheet" href="/glv-meta-ads/section-info.css?v=creator-context-20261109">
 <link rel="stylesheet" href="/glv-meta-ads/wl-report.css?v=partnership-v3">
 <script src="/glv-meta-ads-v2/wl-report.js?v=ad-creator-parity-2"></script>
@@ -1599,7 +1600,7 @@ function refreshPromoCharts(){
 
 function addToAgg(target,row){
   target.spend+=row.spend;target.lp+=row.lp;target.purchases+=row.purchases;target.checkouts+=row.checkouts;target.leads+=row.leads;
-  target.linkClicks+=row.linkClicks;target.outboundClicks+=(row.outboundClicks||0);target.revenue+=row.revenue;target.impressions+=row.impressions;target.reach+=row.reach||0;
+  target.linkClicks+=row.linkClicks;target.outboundClicks+=(row.outboundClicks||0);target.revenue+=row.revenue;target.impressions+=row.impressions;target.reach=target.reach===null||row.reach==null?null:target.reach+row.reach;
 }
 function byLeadgenGroup(rows){
   const map={};
@@ -1742,13 +1743,16 @@ function updateFilterLabel(key){
   const labelId=(key==='czsk-creative'||key==='us-creative')?'creative-filter-label-'+key.replace('-creative',''):'filter-label-'+key;
   const el=document.getElementById(labelId);if(el)el.textContent=text;
 }
+function buildCreativeFilters(seg){
+  buildFilterOptions(seg+'-creative',[...new Set(filterTabRows(seg,adCreatives).filter(c=>c.segment===seg&&(seg!=='czsk'||includeLeadGen||!isLeadGen(c.campaignName))).map(c=>c.campaignId))]);
+  updateFilterLabel(seg+'-creative');
+}
 function buildAllFilters(){
   TAB_KEYS.forEach(buildTabFilters);
   ['czsk','us'].forEach(seg=>{
     buildFilterOptions(seg,[...new Set(getMainSegmentRows(seg,'daily').map(r=>r.id))]);
     updateFilterLabel(seg);
-    buildFilterOptions(seg+'-creative',[...new Set(filterTabRows(seg,adCreatives).filter(c=>c.segment===seg&&(seg!=='czsk'||includeLeadGen||!isLeadGen(c.campaignName))).map(c=>c.campaignId))]);
-    updateFilterLabel(seg+'-creative');
+    buildCreativeFilters(seg);
   });
   buildFilterOptions('czsk-promo',[...new Set(getPromoSegmentRows('daily').map(r=>r.id))]);
   updateFilterLabel('czsk-promo');
@@ -2017,6 +2021,9 @@ function renderCreatives(seg){
 }
 
 const responseCache=MetaSessionCache.createSessionCache();
+const browserExtract=MadBrowserExtract.create();
+let extractEpoch=0;
+const extractScope=()=>reportAccount+'/'+reportCurrency;
 function requestScope(){return customRange?{customRange:{since:customRange.since,until:customRange.until}}:{datePreset,expectedRange:MadV2Dates.rangeFor(datePreset)};}
 function fetchUsdRate(){return MadPresentation.fetchUsdRate(responseCache);}
 function promoHistoryWarning(payload,error=''){
@@ -2077,11 +2084,13 @@ function syncLoadingPanels(scopeKey){
 }
 async function loadData({force=false}={}){
   const sequence=++loadSequence;
-  if(force)responseCache.clear();
+  if(force){responseCache.clear();extractEpoch++;}
+  const epoch=extractEpoch,extractKey=extractScope();
   const loadEl=document.getElementById('loading'),errEl=document.getElementById('error');
   const scope=requestScope(),scopeKey=scopeIdentity(scope);
+  const local=!force?browserExtract.get(extractScope(),historyExpected(scope).range):null;
   requestedDay=MadV2Dates.commonCutoff();
-  loadEl.style.display='block';errEl.style.display='none';
+  loadEl.style.display=local||lastGoodSources?'none':'block';errEl.style.display='none';
   // A calendar rollover is not a new user/account selection. Keep compatible
   // history visible throughout the request, not only after a failed response.
   if(lastGoodSources&&lastGoodSelection===historySelection(scope)){
@@ -2097,6 +2106,7 @@ async function loadData({force=false}={}){
   setStatus(renderedScope===scopeKey?'Refreshing current view…':'Loading selected dates…');
   try{
     // History owns its own generation guard; neither it nor optional FX gates tabs.
+    if(!local){
     void loadPromoFormats();
     void loadPromoConcepts();
     void fetchUsdRate().then(rate=>{
@@ -2104,11 +2114,12 @@ async function loadData({force=false}={}){
       usdRate=rate;
       if(renderedScope===scopeKey)['czsk','us'].forEach(renderKPIs);
     }).catch(()=>{});
+    }
     const expected=historyExpected(scope);
     let results;
     for(let attempt=0;attempt<2;attempt++){
-      results=await Promise.allSettled([
-        apiFetch('aggregate',scope),apiFetch('daily',scope),apiFetch('ads',scope)
+      results=local?local.map(value=>value?{status:'fulfilled',value}:{status:'rejected',reason:new Error('Daily creative extract unavailable for this range')}):await Promise.allSettled([
+        apiFetch('aggregate',scope),apiFetch('daily',scope)
       ]);
       if(sequence!==loadSequence)return;
       // Independent reads may straddle an atomic publication switch. Discard
@@ -2122,7 +2133,7 @@ async function loadData({force=false}={}){
         responseCache.clear();
       }
     }
-    const [aggregate,daily,ads]=results;
+    const [aggregate,daily,ads={status:'rejected',reason:new Error('Creative detail loading independently')}]=results;
     if(aggregate.status!=='fulfilled'||daily.status!=='fulfilled')throw new Error(results.filter(r=>r.status==='rejected').map(r=>r.reason.message).join(' | '));
     const campaignSources=[aggregate.value,daily.value];
     const freshness=MadV2Freshness.bundle(campaignSources,expected);
@@ -2136,11 +2147,13 @@ async function loadData({force=false}={}){
       if(prior){try{
         // Reuse only a provably identical publication, not merely overlapping dates.
         const candidate={...prior,requested_range:undefined};
-        MadV2Freshness.bundle([...campaignSources,candidate],{...expected,custom:false});
+        if(!candidate.generation_id||campaignSources.some(s=>s.generation_id!==candidate.generation_id))throw Error('Creative generation mismatch');
+        MadV2Freshness.bundle([...campaignSources,candidate],{...expected,custom:false,strict:true});
         usableAds=candidate;delete sourceErrors.ads;
         freshness.warning+=' Creative refresh unavailable; compatible last-good creatives retained.';
       }catch(incompatible){/* Do not join facts across generations. */}}
     }
+    if(!local){try{browserExtract.put(extractScope(),[...campaignSources,usableAds],{replace:force});}catch(incoherent){/* Independent legacy pieces remain readable but are not an immutable extract. */}}
     // Publish campaign facts independently, but never mix creative scopes/generations.
     campaignMeta={};
     aggregateCampaigns=processAggregateRows(aggregate.value.rows);
@@ -2158,6 +2171,20 @@ async function loadData({force=false}={}){
     showAvailableRange(freshness.range,expected.range);
     lastGoodLabel=(freshness.stale?'Stale last-good · ':'Source ')+campaignSources.map(s=>s.generated_at).sort()[0]+' · actual range '+MadV2Freshness.full(freshness.range);
     document.getElementById('updated-at').textContent=lastGoodLabel;
+    if(!local){
+      // Creative detail never gates campaign publication. A superseded request
+      // cannot replace a newer range, refresh generation or account selection.
+      void apiFetch('ads',scope).then(payload=>{
+        if(epoch!==extractEpoch)return;
+        MadV2Freshness.bundle([...campaignSources,payload],{...expected,strict:true});
+        try{browserExtract.attach(extractKey,[...campaignSources,payload]);}catch(incoherent){/* Legacy independent reads are not session extracts. */}
+        if(sequence!==loadSequence)return;
+        lastGoodSources=[...campaignSources,payload];
+        adCreatives=processCreatives(payload.rows);delete sourceErrors.ads;
+        ['czsk','us'].forEach(seg=>{buildCreativeFilters(seg);renderCreatives(seg);});
+        const notices=[freshness.warning].filter(Boolean);errEl.textContent=notices.join(' ');errEl.style.display=notices.length?'block':'none';
+      }).catch(error=>{if(sequence!==loadSequence)return;sourceErrors.ads='Creative source unavailable: '+error.message;errEl.textContent=[freshness.warning,sourceErrors.ads].filter(Boolean).join(' ');errEl.style.display='block';});
+    }
     const notices=[freshness.warning,sourceErrors.ads].filter(Boolean);
     errEl.style.display=notices.length?'block':'none';errEl.textContent=notices.join(' ');errEl.classList.toggle('notice',!sourceErrors.ads);
   }catch(err){

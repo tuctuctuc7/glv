@@ -22,7 +22,8 @@ async function customEnvironment(fn){
    const dates=[];if(daily){for(let d=r.since;d<=r.until;d=v2.shift(d,1))dates.push(d);}else dates.push(r.since);
    for(const d of dates)rows.push({ad_id:'777',ad_name:'Observed creative',adset_id:'888',adset_name:'Observed ad set',campaign_id:account.label==='TUC'?'123':'456',campaign_name:account.label==='TUC'?'TUC_001_CZSK_Leadgen':'TGLV_001_US_Leadgen',spend:daily?'4':String((1+(Date.parse(r.until)-Date.parse(r.since))/86400000)*4),impressions:daily?'40':String((1+(Date.parse(r.until)-Date.parse(r.since))/86400000)*40),actions:[{action_type:'lead',value:daily?'1':String(1+(Date.parse(r.until)-Date.parse(r.since))/86400000)}],date_start:d,date_stop:daily?d:r.until});
   }
-  return {ok:true,status:200,json:async()=>({data:rows})};
+  const data=h.scale?rows.flatMap(row=>Array.from({length:h.scale},(_,i)=>({...row,campaign_id:row.campaign_id+String(i).padStart(4,'0'),...(row.ad_id?{ad_id:row.ad_id+String(i).padStart(4,'0'),adset_id:row.adset_id+String(i).padStart(4,'0')}:{})}))):rows;
+  return {ok:true,status:200,json:async()=>({data})};
  };
  global.fetch=h.fetcher;
  await fn(h);
