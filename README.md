@@ -146,6 +146,8 @@ Phases uses an unboxed compact utility strip for the fixed By month / By promo s
 
 Run `node qa/phase-controls.cjs` for fixed document/viewport toggle bounds, disabled state, selection restoration and label consumers at 1440/1024/768/390/320 in both themes, with toolbar height budgets, header containment and open-menu transitions. `--baseline` records pre-correction dimensions; `GLV_CONTROLS_BASE_URL` runs the same checks live. Evidence: `/tmp/glv-phase-controls-evidence`. `node qa/promo-events.cjs` additionally covers event metrics, selection, focus and legend containment (use `GLV_QA_WIDTH=320` for a focused probe).
 
+By promo display naming maps the verified `2026-11-25` launch with source label `promo bf` to **BFCM**, independent of its mutable end date. Browser event/cohort consumers and exporter display labels agree; date-based IDs, source provenance, financial values and By month November labels are unchanged. This is presentation-only: no source refresh or snapshot rewrite. Release regression `node qa/bfcm-label.cjs` covers top chart, table/filter, lower comparison, tooltips/accessibility and exact month-mode restoration at desktop/mobile in both themes.
+
 ### Mobile control layout QA
 
 `node qa/mobile-controls.cjs` (also included in `npm run qa:browser`) verifies Home/Phases header alignment, 44px mobile logo/tab/theme targets, section-local table controls and paired comparison controls at 320/390px, keyboard/touch menus and selection, and the sticky header in both themes. It also checks that the Phase table scroll viewport reaches both card inner edges at 320/390/1440px; the existing compact-table matrix protects pinned rows/columns, column order, and intrinsic dimension width. Evidence defaults to `/tmp/glv-mobile-controls-evidence`. CSS assets use `mobile-controls-20261012`; desktop control geometry is unchanged.
@@ -161,6 +163,7 @@ npm ci
 npm run export:glv
 PYTHONDONTWRITEBYTECODE=1 /home/tom/.config/fb-sync/.venv/bin/python -m unittest tests/test_glv_phases_export.py -v
 npm test
+node qa/bfcm-label.cjs
 npm run verify:glv-release
 GLV_QA_EVIDENCE_DIR=/tmp/glv-bi-qa-screenshots npm run qa:browser
 python3 -m http.server 4173 --directory public
