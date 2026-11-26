@@ -448,6 +448,10 @@ def build_promo_events(schedule):
         groups.setdefault(key, {"id": key, "start_date": start, "end_date": end,
                                 "label": label, "sources": []})["sources"].append(dict(entry))
     events = sorted(groups.values(), key=lambda e: e["start_date"])
+    # Match the browser's source-scoped launch identity, independent of end date.
+    for event in events:
+        if event["start_date"] == "2026-11-25" and any(s.get("label") == "promo bf" for s in event["sources"]):
+            event["label"] = "BFCM"
     for previous, current in zip(events, events[1:]):
         if current["start_date"] <= previous["end_date"]:
             raise ValueError("PROMO_EVENT_OVERLAP: ambiguous event ranges")

@@ -317,6 +317,8 @@
     const named = events.map(e => ({...e,
       label: e.start_date === '2026-10-07' && e.end_date === '2026-10-14' ? 'Menopause' :
         e.start_date === '2026-10-28' ? 'VB2' :
+        // Source-scoped 2026 launch; extensions must not rename the event.
+        e.start_date === '2026-11-25' && e.sources.some(s => s.label === 'promo bf') ? 'BFCM' :
         new Intl.DateTimeFormat('en-US', {month:'long', timeZone:'UTC'}).format(parseIsoDate(e.start_date)),
     }));
     return named.map(e => {

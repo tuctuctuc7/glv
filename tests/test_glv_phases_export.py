@@ -48,6 +48,25 @@ def daily(date="2026-09-10", region="CZ+SK", revenue="200", influ="80"):
 
 
 class ManualCalendarParserTest(unittest.TestCase):
+    def test_bfcm_display_identity_scoped_to_launch_and_source_not_end(self):
+        for start, end, label, expected in [
+            ('2026-11-25', '2026-11-30', 'promo bf', 'BFCM'),
+            ('2026-11-25', '2026-12-03', 'promo bf', 'BFCM'),
+            ('2026-11-10', '2026-11-12', 'promo bf', 'November'),
+            ('2027-11-25', '2027-11-30', 'promo bf', 'November'),
+            ('2026-11-25', '2026-11-30', 'promo unrelated', 'November'),
+        ]:
+            with self.subTest(start=start, end=end, label=label):
+                entry = dict(phase='Promo', start_date=start, end_date=end, label=label, source_row=61)
+                original = dict(entry)
+                event = EXPORTER.build_promo_events([entry])[0]
+                self.assertEqual(event['label'], expected)
+                self.assertEqual(event['id'], f'promo:{start}/{end}')
+                self.assertEqual(event['start_date'], start)
+                self.assertEqual(event['end_date'], end)
+                self.assertEqual(event['sources'], [original])
+                self.assertEqual(entry, original)
+
     def test_promo_event_export_survives_refresh_and_keeps_sources(self):
         rows = [["", "october"], ["", "promo gummies (28.10. - 4.11.)"],
                 ["", "november"], ["", "promo gummies (28.10. - 4.11.)"]]
