@@ -1,7 +1,7 @@
 const { timingSafeEqual } = require('crypto');
-const { fetchReport, today } = require('../../lib/glv-bfcm.cjs');
+const { fetchReport, reportWindow, SCHEMA_VERSION } = require('../../lib/glv-bfcm.cjs');
 let cached = null;
-let pending = null;
+const pending = new Map();
 function authorized(req) {
   // Reuse the existing GLV server credential for authorized report clients.
   const serverSecret = process.env.CRON_SECRET || process.env.GLV_META_CRON_SECRET;
@@ -25,11 +25,20 @@ module.exports = async (req,res) => {
   const token=process.env.GLV_META_FB_ACCESS_TOKEN || process.env.FB_ACCESS_TOKEN;
   if (!token) return res.status(503).json({error:'Meta connection is not configured'});
   try {
-    if (!cached || cached.date!==today() || Date.now()-Date.parse(cached.generated_at)>=60000) {
-      if (!pending) pending=fetchReport(token).then(result=>{cached=result;return result;}).finally(()=>{pending=null;});
-      await pending;
+    const now = new Date();
+    const {since,until} = reportWindow(now);
+    const key = `${SCHEMA_VERSION}:${since}:${until}`;
+    if (cached?.key===key && Date.now()-Date.parse(cached.result.generated_at)<60000) return res.status(200).json(cached.result);
+    if (!pending.has(key)) {
+      const request = fetchReport(token,undefined,now).then(result=>{
+        if (result.schema_version!==SCHEMA_VERSION || result.reporting_period!=='campaign-to-date' || result.since!==since || result.until!==until) throw new Error('Unexpected report window');
+        // A slower previous-day extraction must not replace the newer day's cache.
+        if (!cached || cached.result.until<=until) cached={key,result};
+        return result;
+      }).finally(()=>{pending.delete(key);});
+      pending.set(key,request);
     }
-    return res.status(200).json(cached);
+    return res.status(200).json(await pending.get(key));
   } catch {
     return res.status(502).json({error:'Live Meta refresh failed. Please retry; previous figures have not been replaced.'});
   }

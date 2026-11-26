@@ -124,6 +124,7 @@
       if (!response.ok) throw new Error(`Request failed (${response.status})`);
       const incoming = await response.json();
       if (!Array.isArray(incoming.rows) || !Array.isArray(incoming.campaigns) || !incoming.date || incoming.currency !== 'CZK') throw new Error('Unexpected source data');
+      if (incoming.schema_version !== 'glv-bfcm/v2' || incoming.reporting_period !== 'campaign-to-date' || incoming.since !== '2026-11-25' || !/^\d{4}-\d{2}-\d{2}$/.test(incoming.until) || incoming.until < incoming.since || incoming.date !== incoming.until || incoming.timezone !== 'Europe/Prague' || incoming.partial_day !== true) throw new Error('Unexpected campaign reporting window');
       const snapshot = new Date(incoming.generated_at);
       if (Number.isNaN(snapshot.getTime())) throw new Error('Invalid snapshot timestamp');
       const timestamp = new Intl.DateTimeFormat('en-GB', {timeZone: 'Europe/Prague', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'}).format(snapshot);
@@ -132,7 +133,8 @@
       data = {...incoming, campaigns, rows: incoming.rows.filter(row => ids.has(String(row.campaign_id)) && (!row.campaign_name || isBfcm(row.campaign_name)))};
       selectedCampaigns = selectionMode === 'all' ? new Set(ids) : new Set([...selectedCampaigns].filter(id => ids.has(id)));
       buildCampaignOptions();
-      $('context').textContent = `${data.date} · Partial day · Europe/Prague · CZK${data.account_name ? ' · ' + data.account_name : ''}`;
+      const start = new Intl.DateTimeFormat('en-GB', {timeZone: 'Europe/Prague', day: '2-digit', month: 'short', year: 'numeric'}).format(new Date(`${data.since}T12:00:00Z`));
+      $('context').textContent = `${start} – now · through ${data.until} · Current day partial · Europe/Prague · CZK${data.account_name ? ' · ' + data.account_name : ''}`;
       $('notice').textContent = `Snapshot ${timestamp} · Prague time`;
       $('provenance').textContent = `Meta Ads · ${data.campaigns.length} BFCM Promo campaigns`;
       render();

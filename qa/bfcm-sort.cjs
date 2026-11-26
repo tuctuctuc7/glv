@@ -10,7 +10,8 @@ const rows=[
  {campaign_id:'b',concept:'Animated banners',spend:200,purchases:2,revenue:100,impressions:500,clicks:40,lpv:100,ad_count:1},
  {campaign_id:'a',concept:'CC00',spend:0,purchases:0,revenue:0,impressions:0,clicks:0,lpv:0,ad_count:1},
 ].map(r=>({...r,campaign_name:campaigns.find(c=>c.id===r.campaign_id).name}));
-const fixture={date:'2026-11-25',currency:'CZK',generated_at:'2026-11-25T10:00:00Z',campaigns,rows};
+// These synthetic rows represent full-range ad aggregates, not today's facts.
+const fixture={schema_version:'glv-bfcm/v2',reporting_period:'campaign-to-date',since:'2026-11-25',until:'2026-11-26',date:'2026-11-26',timezone:'Europe/Prague',partial_day:true,currency:'CZK',generated_at:'2026-11-26T10:00:00Z',campaigns,rows};
 (async()=>{
  const libs='/home/tom/.cache/hermes-browser-libs/root';
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome',headless:true,args:['--no-sandbox'],env:{...process.env,LD_LIBRARY_PATH:`${libs}/usr/lib/x86_64-linux-gnu:${libs}/usr/lib`,FONTCONFIG_PATH:`${libs}/etc/fonts`}});
@@ -28,6 +29,9 @@ const fixture={date:'2026-11-25',currency:'CZK',generated_at:'2026-11-25T10:00:0
  for(const [width,theme] of [1440,390,320].flatMap(width=>['light','dark'].map(theme=>[width,theme]))){
   responseTime=fixture.generated_at;
   await page.setViewportSize({width,height:1000});await page.goto('http://bfcm-sort.test/glv-bfcm/');await page.waitForFunction(()=>document.getElementById('notice').textContent.startsWith('Snapshot'));
+  assert.match(await page.locator('#context').innerText(),/25 Nov 2026 – now/);
+  assert.match(await page.locator('#context').innerText(),/through 2026-11-26 · Current day partial/);
+  assert.match(await page.locator('#notice').innerText(),/26 Nov 2026, 11:00:00/);
   const toggle=page.locator('#theme-switch');
   const figma=page.locator('#figma-link');
   assert.equal(await figma.getAttribute('href'),'https://www.figma.com/design/iPeUCzn7FT6rC2tcuiWYEW/GELAVIS-%7C-Design?node-id=6967-361&t=cywGTLq0poFQh2c0-1');
@@ -66,6 +70,11 @@ const fixture={date:'2026-11-25',currency:'CZK',generated_at:'2026-11-25T10:00:0
   await page.locator('[data-sort="purchases"]').click();await check('purchases','asc');
   for(const view of ['concept','detail','campaign']){
    await page.locator(`[data-view="${view}"]`).click();
+   assert.equal(await page.locator('#kpis').innerText(),totals,'all views retain cumulative KPIs');
+   const spend=await page.locator('#rows tr td:nth-child(2)').allTextContents();
+   assert.equal(spend.reduce((sum,s)=>sum+Number(s.replace(/,/g,'')),0),340,'all views sum full-range spend');
+   const purchases=await page.locator('#rows tr td:nth-child(3)').allTextContents();
+   assert.equal(purchases.reduce((sum,s)=>sum+Number(s.replace(/,/g,'')),0),17,'all views sum full-range purchases');
    for(const key of keys){
     // Selecting a different metric resets its next click to descending.
     const other=key==='spend'?'roas':'spend';await page.locator(`[data-sort="${other}"]`).click();
@@ -78,8 +87,19 @@ const fixture={date:'2026-11-25',currency:'CZK',generated_at:'2026-11-25T10:00:0
   await page.locator('[data-view="concept"]').click();await check('cvr','asc');
   const button=page.locator('[data-sort="roas"]');await button.focus();await page.keyboard.press('Enter');await check('roas','desc');await page.keyboard.press('Space');await check('roas','asc');
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.locator('#campaign-trigger').click();await page.locator('#campaign-none').click();await page.keyboard.press('Escape');
+  await page.locator('#refresh').click();await page.waitForFunction(()=>!document.getElementById('refresh').disabled);
+  for(const view of ['concept','detail','campaign']){
+   await page.locator(`[data-view="${view}"]`).click();
+   assert.equal(await page.locator('#campaign-trigger').innerText(),'None selected');
+   assert.match(await page.locator('#rows').innerText(),/No results/);
+  }
   console.log(`PASS ${theme} theme: ${width}px, persisted icon toggle; seven metrics × both directions × three views, retention, keyboard`);
  }
+ fixture.schema_version='glv-bfcm/v1';
+ await page.reload();await page.waitForFunction(()=>document.getElementById('notice').className==='error');
+ assert.match(await page.locator('#notice').innerText(),/Unexpected campaign reporting window/);
+ assert.equal(await page.locator('#kpis .kpi').count(),0,'never label a legacy daily payload cumulative');
  assert.deepEqual(errors,[]);
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
