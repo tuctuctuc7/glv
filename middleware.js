@@ -32,7 +32,9 @@ function cookieValue(cookieHeader, name) {
 
 function isGlvDashboardPath(pathname) {
   return (
-    pathname === '/glv-meta-ads-v2'
+    pathname === '/glv-bfcm'
+    || pathname.startsWith('/glv-bfcm/')
+    || pathname === '/glv-meta-ads-v2'
     || pathname.startsWith('/glv-meta-ads-v2/')
     || pathname === '/glv-meta-ads'
     || pathname.startsWith('/glv-meta-ads/')
@@ -186,6 +188,8 @@ export default async function middleware(request) {
 
 export const config = {
   matcher: [
+    '/glv-bfcm',
+    '/glv-bfcm/:path*',
     '/glv-meta-ads-v2',
     '/glv-meta-ads-v2/:path*',
     '/api/glv-meta-ads-v2',

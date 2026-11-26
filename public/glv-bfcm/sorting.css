@@ -1,0 +1,6 @@
+thead th:has(.metric-sort){padding-top:4px;padding-bottom:4px}
+.metric-sort{display:flex;align-items:center;justify-content:flex-end;gap:6px;min-height:44px;width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-transform:inherit;letter-spacing:inherit;white-space:nowrap}
+.metric-sort:hover,.metric-sort:focus-visible,th[aria-sort="descending"] .metric-sort,th[aria-sort="ascending"] .metric-sort{color:var(--accent)}
+.sort-arrow{display:inline-block;width:1em;flex:0 0 1em;text-align:center}
+.sort-label small{display:block}
+.table-scroll{scroll-padding-inline-start:150px}
