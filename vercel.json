@@ -6,6 +6,10 @@
   "outputDirectory": "public",
   "cleanUrls": true,
   "functions": {
+    "api/glv-bfcm/data.js": {
+      "maxDuration": 300,
+      "includeFiles": "lib/glv-bfcm.cjs"
+    },
     "api/glv-meta-ads/fb-data.js": {
       "maxDuration": 300,
       "includeFiles": "{lib/glv-v1*.cjs,lib/glv-history*.cjs,lib/glv-meta-dates.cjs,lib/glv-promo-format.cjs,lib/glv-promo-assets.cjs,public/glv-meta-ads/promo-format.js}"
