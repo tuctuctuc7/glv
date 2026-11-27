@@ -18,12 +18,12 @@ function fixture(q){
  const page=await browser.newPage();await page.clock.install({time:new Date('2026-11-27T12:00:00Z')});const errors=[];page.on('pageerror',e=>errors.push(e.message));let requests=0,slow=false,fail=false;
  await page.route('http://bfcm-range.test/**',async route=>{const u=new URL(route.request().url());if(u.pathname==='/api/glv-bfcm/data'){requests++;const result=fixture(u.searchParams);if(slow&&u.searchParams.get('since')==='2026-11-25')await new Promise(r=>setTimeout(r,250));return route.fulfill(fail?{status:502,json:{error:'synthetic failure'}}:{json:result});}const file=path.join(root,u.pathname==='/glv-bfcm/'?'glv-bfcm/index.html':u.pathname);return route.fulfill({body:fs.readFileSync(file),contentType:u.pathname.endsWith('.js')?'application/javascript':u.pathname.endsWith('.css')?'text/css':'text/html'});});
  const ready=()=>page.waitForFunction(()=>document.getElementById('notice').textContent.startsWith('Snapshot'));
- async function apply(s,u){await page.locator('#range-from').fill(s);await page.locator('#range-to').fill(u);await page.locator('#range-apply').click();}
+ async function apply(s,u){await page.locator('#range-from').fill(s);await page.locator('#range-from').press('Tab');await page.locator('#range-to').fill(u);await page.locator('#range-to').press('Tab');}
  for(const width of [1440,390,320]){
   await page.setViewportSize({width,height:1000});await page.goto('http://bfcm-range.test/glv-bfcm/');await ready();
   assert.equal(await page.locator('#range-from').inputValue(),'2026-11-25');assert.equal(await page.locator('#range-to').inputValue(),'2026-11-27');assert.equal(await page.getByLabel('Daily breakdown',{exact:true}).isChecked(),false);
-  assert.notEqual(await page.locator('#range-form').evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)','date controls need a readable surface in both themes');
-  assert.equal(await page.locator('#daily-breakdown').evaluate(el=>getComputedStyle(el).minHeight),'20px');
+  assert.equal(await page.locator('#range-apply, #range-latest').count(),0);
+  assert.equal(await page.locator('#daily-breakdown').evaluate(el=>getComputedStyle(el).minHeight),'18px');
   const before=requests;await page.getByLabel('Daily breakdown',{exact:true}).check();await ready();assert.equal(requests,before+1);
   assert.equal(await page.locator('#rows .parent-row').count(),4);assert.equal(await page.locator('#rows .daily-row').count(),12);
   const rendered=await page.locator('#rows tr').evaluateAll(rows=>rows.map(r=>({daily:r.classList.contains('daily-row'),date:r.dataset.date,spend:Number(r.cells[1].textContent.replace(/,/g,'')),purchases:Number(r.cells[2].textContent.replace(/,/g,'')),roas:r.cells[3].textContent})));
@@ -38,6 +38,8 @@ function fixture(q){
   await apply('2026-11-26','2026-11-26');await ready();assert.equal(await page.locator('#rows .daily-row').count(),4);assert.match(await page.locator('#context').innerText(),/2026-11-26/);assert.doesNotMatch(await page.locator('#context').innerText(),/Current day partial/);
   assert.equal(await page.locator('[data-sort="cvr"]').locator('..').getAttribute('aria-sort'),'ascending');
   const count=requests;await apply('2026-11-27','2026-11-26');assert.equal(requests,count);assert.equal(await page.locator('#rows tr').count(),0,'invalid new controls must not retain old scope');
+  await page.locator('#range-to').focus();assert.equal(await page.locator('#range-to').evaluate(e=>document.activeElement===e),true,'validation does not steal focus');await page.locator('#range-to').fill('2026-11-27');await page.locator('#range-to').press('Tab');await ready();assert.equal(requests,count+1,'editing the OTHER date repairs ordering and auto-fetches once');
+  const validCount=requests;await page.locator('#range-from').fill('2026-11-28');await page.locator('#range-from').press('Enter');assert.equal(requests,validCount,'future dates and implicit submit never fetch');await page.locator('#range-from').fill('');await page.locator('#range-to').focus();assert.equal(requests,validCount,'incomplete date never fetches or blocks other control');
   await apply('2026-11-25','2026-11-27');await ready();
   await page.locator('#campaign-trigger').click();await page.locator('#campaign-none').click();await page.keyboard.press('Escape');
   await apply('2026-11-26','2026-11-26');await ready();assert.equal(await page.locator('#campaign-trigger').innerText(),'None selected');assert.match(await page.locator('#rows').innerText(),/No results/);
@@ -54,12 +56,12 @@ function fixture(q){
   await apply('2026-11-25','2026-11-26');await apply('2026-11-26','2026-11-26');await ready();await new Promise(r=>setTimeout(r,350));assert.doesNotMatch(await page.locator('#context').innerText(),/25 Nov/);slow=false;
   fail=true;await apply('2026-11-25','2026-11-25');await page.waitForFunction(()=>document.getElementById('notice').className==='error');assert.equal(await page.locator('#rows tr').count(),0);assert.equal(await page.locator('#kpis .kpi').count(),0);fail=false;
   await page.locator('#campaign-trigger').click();await page.locator('#campaign-none').click();assert.equal(await page.locator('#campaign-trigger').innerText(),'None selected');await page.locator('#campaign-options input').first().check();assert.equal(await page.locator('#campaign-trigger').innerText(),'1 selected');await page.locator('#campaign-all').click();await page.keyboard.press('Escape');
-  await page.locator('#refresh').click();await ready();await page.locator('#range-latest').click();await ready();assert.equal(await page.locator('#range-to').inputValue(),'2026-11-27');
+  await page.locator('#refresh').click();await ready();await page.reload();await ready();assert.equal(await page.locator('#range-to').inputValue(),'2026-11-27');
   for(const theme of ['light','dark']){if(await page.locator('html').getAttribute('data-theme')!==theme)await page.locator('#theme-switch').click();assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:`/home/tom/.hermes/cache/scratch/bfcm-range-${width}-${theme}.png`,fullPage:true});}
   console.log(`PASS range/daily/zero-day/sort/none/race/failure/themes ${width}px`);
  }
  assert.deepEqual(errors,[]);
- slow=true;await page.locator('#range-latest').click();await page.clock.setFixedTime(new Date('2026-11-28T00:00:00Z'));await ready();slow=false;
+ slow=true;await page.reload();await page.clock.setFixedTime(new Date('2026-11-28T00:00:00Z'));await ready();slow=false;
  assert.equal(await page.locator('#range-to').inputValue(),'2026-11-27','response remains bound to request-start account date');
  await page.locator('#refresh').click();await ready();assert.equal(await page.locator('#range-to').inputValue(),'2026-11-28');
  console.log('PASS advancing default after Prague midnight');
