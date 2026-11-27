@@ -1,5 +1,5 @@
 // Synthetic browser acceptance; real-source replay and production are separate.
-const {chromium}=require('playwright-core'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const {chromium,webkit}=require('playwright-core'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {derived}=require('../lib/glv-bfcm.cjs');
 const root=path.resolve(__dirname,'../public');
 const campaigns=[{id:'a',name:'TUC_Promo-BFCM_Banners'},{id:'b',name:'TUC_Promo-BFCM_AnimatedBanners'},{id:'z',name:'TUC_Promo-BFCM_Zero',status:'PAUSED'}];
@@ -12,7 +12,8 @@ function fixture(q){
 }
 (async()=>{
  const libs='/home/tom/.cache/hermes-browser-libs/root';
- const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome',headless:true,args:['--no-sandbox'],env:{...process.env,LD_LIBRARY_PATH:`${libs}/usr/lib/x86_64-linux-gnu:${libs}/usr/lib`,FONTCONFIG_PATH:`${libs}/etc/fonts`}});
+ const isWebkit=process.env.BFCM_ENGINE==='webkit';
+ const browser=await (isWebkit?webkit:chromium).launch({executablePath:isWebkit?'/home/tom/.cache/ms-playwright/webkit-2370/pw_run.sh':process.env.CHROME_PATH||'/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome',headless:true,args:isWebkit?[]:['--no-sandbox'],env:{...process.env,LD_LIBRARY_PATH:`${libs}/usr/lib/x86_64-linux-gnu:${libs}/usr/lib`,FONTCONFIG_PATH:`${libs}/etc/fonts`,__EGL_VENDOR_LIBRARY_FILENAMES:`${libs}/usr/share/glvnd/egl_vendor.d/50_mesa.json`,LIBGL_DRIVERS_PATH:`${libs}/usr/lib/x86_64-linux-gnu/dri`}});
  try{
  const page=await browser.newPage();await page.clock.install({time:new Date('2026-11-27T12:00:00Z')});const errors=[];page.on('pageerror',e=>errors.push(e.message));let requests=0,slow=false,fail=false;
  await page.route('http://bfcm-range.test/**',async route=>{const u=new URL(route.request().url());if(u.pathname==='/api/glv-bfcm/data'){requests++;const result=fixture(u.searchParams);if(slow&&u.searchParams.get('since')==='2026-11-25')await new Promise(r=>setTimeout(r,250));return route.fulfill(fail?{status:502,json:{error:'synthetic failure'}}:{json:result});}const file=path.join(root,u.pathname==='/glv-bfcm/'?'glv-bfcm/index.html':u.pathname);return route.fulfill({body:fs.readFileSync(file),contentType:u.pathname.endsWith('.js')?'application/javascript':u.pathname.endsWith('.css')?'text/css':'text/html'});});
