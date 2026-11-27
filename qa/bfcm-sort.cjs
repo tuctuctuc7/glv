@@ -11,7 +11,7 @@ const rows=[
  {campaign_id:'a',concept:'CC00',spend:0,purchases:0,revenue:0,impressions:0,clicks:0,lpv:0,ad_count:1},
 ].map(r=>({...r,campaign_name:campaigns.find(c=>c.id===r.campaign_id).name}));
 // These synthetic rows represent full-range ad aggregates, not today's facts.
-const fixture={schema_version:'glv-bfcm/v3',daily_breakdown:false,reporting_period:'campaign-to-date',since:'2026-11-25',until:'2026-11-26',date:'2026-11-26',timezone:'Europe/Prague',partial_day:true,currency:'CZK',generated_at:'2026-11-26T10:00:00Z',campaigns,rows};
+const fixture={schema_version:'glv-bfcm/v4',daily_breakdown:false,reporting_period:'campaign-to-date',since:'2026-11-25',until:'2026-11-26',date:'2026-11-26',timezone:'Europe/Prague',partial_day:true,currency:'CZK',generated_at:'2026-11-26T10:00:00Z',campaigns,rows};
 (async()=>{
  const libs='/home/tom/.cache/hermes-browser-libs/root';
  const isWebkit=process.env.BFCM_ENGINE==='webkit';

@@ -160,7 +160,7 @@
       if(!response.ok)throw new Error(`Request failed (${response.status})`);
       const incoming=await response.json();if(id!==requestId)return;
       if(!Array.isArray(incoming.rows)||!Array.isArray(incoming.campaigns)||incoming.currency!=='CZK')throw new Error('Unexpected source data');
-      if(incoming.schema_version!=='glv-bfcm/v3'||!['campaign-to-date','custom'].includes(incoming.reporting_period)||incoming.since!==since||incoming.until!==until||incoming.date!==until||incoming.timezone!=='Europe/Prague'||incoming.daily_breakdown!==daily||incoming.partial_day!==(until===requested.today)||(daily&&(!Array.isArray(incoming.daily_rows)||incoming.daily_rows.some(row=>!validDate(row.date)||row.date<since||row.date>until))))throw new Error('Unexpected campaign reporting window');
+      if(incoming.schema_version!=='glv-bfcm/v4'||!['campaign-to-date','custom'].includes(incoming.reporting_period)||incoming.since!==since||incoming.until!==until||incoming.date!==until||incoming.timezone!=='Europe/Prague'||incoming.daily_breakdown!==daily||incoming.partial_day!==(until===requested.today)||(daily&&(!Array.isArray(incoming.daily_rows)||incoming.daily_rows.some(row=>!validDate(row.date)||row.date<since||row.date>until))))throw new Error('Unexpected campaign reporting window');
       const snapshot=new Date(incoming.generated_at);if(Number.isNaN(snapshot.getTime()))throw new Error('Invalid snapshot timestamp');
       const timestamp=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Prague',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(snapshot);
       const campaigns=incoming.campaigns.filter(c=>isBfcm(c.name)),ids=new Set(campaigns.map(c=>String(c.id)));
