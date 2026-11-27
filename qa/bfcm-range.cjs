@@ -8,7 +8,7 @@ function fixture(q){
  const since=q.get('since')||'2026-11-25',until=q.get('until')||'2026-11-27',daily=q.get('daily')==='1';
  const daily_rows=['2026-11-25','2026-11-26'].filter(d=>d>=since&&d<=until).flatMap((date,i)=>['CC01','PAC02','AI EGC 01','Animated banners'].map((concept,j)=>derived({date,concept,campaign_id:j===3?'b':'a',campaign_name:campaigns[j===3?1:0].name,spend:(j+1)*10,purchases:i+j,revenue:(i+j)*100,impressions:100,clicks:10,lpv:5,ad_count:1})));
  const groups=new Map();for(const row of daily_rows){if(!groups.has(row.concept))groups.set(row.concept,{...row,...Object.fromEntries(absolute.map(k=>[k,0]))});for(const k of absolute)groups.get(row.concept)[k]+=row[k];}
- return {schema_version:'glv-bfcm/v3',reporting_period:since==='2026-11-25'&&until>='2026-11-27'?'campaign-to-date':'custom',since,until,date:until,timezone:'Europe/Prague',partial_day:until>='2026-11-27',currency:'CZK',generated_at:new Date().toISOString(),daily_breakdown:daily,campaigns,rows:[...groups.values()].map(derived),...(daily?{daily_rows}:{})};
+ return {schema_version:'glv-bfcm/v4',reporting_period:since==='2026-11-25'&&until>='2026-11-27'?'campaign-to-date':'custom',since,until,date:until,timezone:'Europe/Prague',partial_day:until>='2026-11-27',currency:'CZK',generated_at:new Date().toISOString(),daily_breakdown:daily,campaigns,rows:[...groups.values()].map(derived),...(daily?{daily_rows}:{})};
 }
 (async()=>{
  const libs='/home/tom/.cache/hermes-browser-libs/root';

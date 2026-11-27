@@ -10,7 +10,7 @@ function harness(start) {
  }};
  vm.runInNewContext(fs.readFileSync(require.resolve('../api/glv-bfcm/data.js'),'utf8'),context);
  async function get(query={}){let body,status;await context.module.exports({query,method:'GET',headers:{authorization:'Bearer synthetic'}},{setHeader(){},status(s){status=s;return this;},json(b){body=b;}});return {status,body};}
- function complete(index,overrides={}){const request=requests[index];const {since,until}=helper.reportWindow(request.now||new Clock(),request.options);request.resolve({schema_version:'glv-bfcm/v3',daily_breakdown:request.options?.daily===true,reporting_period:since==='2026-11-25'&&until===helper.today(request.now)?'campaign-to-date':'custom',since,until,date:until,generated_at:new Clock().toISOString(),...overrides});}
+ function complete(index,overrides={}){const request=requests[index];const {since,until}=helper.reportWindow(request.now||new Clock(),request.options);request.resolve({schema_version:'glv-bfcm/v4',daily_breakdown:request.options?.daily===true,reporting_period:since==='2026-11-25'&&until===helper.today(request.now)?'campaign-to-date':'custom',since,until,date:until,generated_at:new Clock().toISOString(),...overrides});}
  return {get,requests,complete,set:iso=>{clock=Date.parse(iso);}};
 }
 test('in-flight requests on opposite sides of Prague midnight cannot share or return the earlier window',async()=>{

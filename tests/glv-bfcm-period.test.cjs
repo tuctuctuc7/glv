@@ -27,7 +27,7 @@ test('campaign-to-date queries Nov 25 through Prague extraction day and sums his
  const calls=[];
  const report=await fetchReport('synthetic',source(calls),new Date('2026-11-26T04:00:00Z'));
  assert.deepEqual(calls,[{since:'2026-11-25',until:'2026-11-26'}]);
- assert.equal(report.schema_version,'glv-bfcm/v3');
+ assert.equal(report.schema_version,'glv-bfcm/v4');
  assert.equal(report.reporting_period,'campaign-to-date');
  assert.equal(report.since,'2026-11-25');assert.equal(report.until,'2026-11-26');
  assert.equal(report.date,report.until);assert.equal(report.partial_day,true);
