@@ -1,5 +1,5 @@
 // Synthetic UI regression: sorting, retention, keyboard and narrow-screen targets.
-const {chromium}=require('playwright-core');
+const {chromium,webkit}=require('playwright-core');
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'../public');
 const keys=['spend','purchases','roas','ctr','cpm','cost_lpv','cvr'];
@@ -14,7 +14,8 @@ const rows=[
 const fixture={schema_version:'glv-bfcm/v3',daily_breakdown:false,reporting_period:'campaign-to-date',since:'2026-11-25',until:'2026-11-26',date:'2026-11-26',timezone:'Europe/Prague',partial_day:true,currency:'CZK',generated_at:'2026-11-26T10:00:00Z',campaigns,rows};
 (async()=>{
  const libs='/home/tom/.cache/hermes-browser-libs/root';
- const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome',headless:true,args:['--no-sandbox'],env:{...process.env,LD_LIBRARY_PATH:`${libs}/usr/lib/x86_64-linux-gnu:${libs}/usr/lib`,FONTCONFIG_PATH:`${libs}/etc/fonts`}});
+ const isWebkit=process.env.BFCM_ENGINE==='webkit';
+ const browser=await (isWebkit?webkit:chromium).launch({executablePath:isWebkit?'/home/tom/.cache/ms-playwright/webkit-2370/pw_run.sh':process.env.CHROME_PATH||'/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome',headless:true,args:isWebkit?[]:['--no-sandbox'],env:{...process.env,LD_LIBRARY_PATH:`${libs}/usr/lib/x86_64-linux-gnu:${libs}/usr/lib`,FONTCONFIG_PATH:`${libs}/etc/fonts`,__EGL_VENDOR_LIBRARY_FILENAMES:`${libs}/usr/share/glvnd/egl_vendor.d/50_mesa.json`,LIBGL_DRIVERS_PATH:`${libs}/usr/lib/x86_64-linux-gnu/dri`}});
  try{
  const page=await browser.newPage();await page.clock.install({time:new Date('2026-11-26T12:00:00Z')});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  let requests=0,responseTime=fixture.generated_at;

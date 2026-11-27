@@ -42,7 +42,7 @@
   .range-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto auto}
   .range-controls .daily-toggle{grid-column:1/-1;justify-self:start}
 }
-@media(min-width:651px) and (max-width:850px){
+@media(min-width:651px) and (max-width:1000px){
   .range-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 }
 @media(max-width:650px){
@@ -57,4 +57,22 @@
 @container(max-width:280px){
   .range-controls>label:not(.daily-toggle){grid-column:1/-1;display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center}
 }
-@media(forced-colors:active){.daily-toggle input{appearance:auto;-webkit-appearance:auto}.daily-toggle input::before{display:none}}
+.date-field{display:contents}
+.date-value{display:none}
+/* Mobile Safari's date chrome has intrinsic dimensions independent of the
+   input border box. Paint a sized label, not that chrome; the real native
+   date input still receives touches, keyboard focus and picker changes. */
+@media(max-width:1000px){
+  .range-controls .date-field{display:flex;position:relative;align-items:center;min-width:0;width:100%;height:44px;box-sizing:border-box;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--raised);color:var(--ink)}
+  .range-controls .date-value{display:block;min-width:0;font-size:16px;font-weight:500;line-height:1.25;letter-spacing:normal;text-transform:none;white-space:nowrap;pointer-events:none}
+  .range-controls .date-field input[type=date]{position:absolute;inset:0;width:100%;height:100%;min-height:0;min-width:0;max-width:100%;margin:0;padding:0;border:0;opacity:0;cursor:pointer;appearance:none;-webkit-appearance:none}
+  .range-controls .date-field input::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;cursor:pointer}
+  .range-controls .date-field input::-webkit-date-and-time-value{width:100%;min-width:0;height:100%;margin:0;padding:0;line-height:44px}
+  .range-controls .date-field:focus-within{outline:2px solid var(--accent);outline-offset:3px}
+  [data-theme="light"] .range-controls .date-field{background:#ffffffed;border-color:#ffffffa0;color:#23334f;box-shadow:inset 0 1px #fff}
+  [data-theme="light"] .range-controls .date-field:focus-within{outline-color:#fff}
+}
+@media(max-width:650px){
+  .range-controls>label:not(.daily-toggle){grid-column:1/-1;display:grid;grid-template-columns:40px minmax(0,1fr);align-items:center}
+}
+@media(forced-colors:active){.daily-toggle input{appearance:auto;-webkit-appearance:auto}.daily-toggle input::before{display:none}.range-controls .date-field{border-color:ButtonText}.range-controls .date-field:focus-within{outline-color:Highlight}}

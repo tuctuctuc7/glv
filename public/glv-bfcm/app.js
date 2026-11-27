@@ -7,11 +7,25 @@
   let latest = true, requestId = 0, activeController = null;
   const pragueToday = () => new Intl.DateTimeFormat('en-CA', {timeZone:'Europe/Prague',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const validDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value;
+  // Keep the native input as the sole value/validation/picker authority.
+  function syncDateLabels() {
+    for (const id of ['range-from','range-to']) {
+      const input=$(id);
+      input.previousElementSibling.textContent=validDate(input.value)
+        ? new Intl.DateTimeFormat('en-GB',{timeZone:'UTC',day:'2-digit',month:'short',year:'numeric'}).format(new Date(`${input.value}T12:00:00Z`))
+        : 'Choose date';
+    }
+  }
+  for (const id of ['range-from','range-to']) {
+    $(id).addEventListener('input',syncDateLabels);
+    $(id).addEventListener('change',syncDateLabels);
+  }
   function clearScope() { data=null; $('rows').replaceChildren(); $('kpis').replaceChildren(); $('context').textContent='Selected period awaiting source · Europe/Prague · CZK'; $('count').textContent='Waiting for source'; $('period-badge').textContent='Selected period'; }
   function range() {
     const today=pragueToday();
     $('range-from').max=today; $('range-to').max=today;
     if(latest) { $('range-from').value='2026-11-25'; $('range-to').value=today; }
+    syncDateLabels();
     const since=$('range-from').value, until=$('range-to').value;
     if(!validDate(since)||!validDate(until)||since<'2026-11-25'||since>until||until>today) throw new Error('Choose a valid inclusive range from 25 Nov 2026 through today');
     return {since,until,today,daily:$('daily-breakdown').checked};
