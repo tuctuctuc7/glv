@@ -11,12 +11,12 @@ const rows=[
  {campaign_id:'a',concept:'CC00',spend:0,purchases:0,revenue:0,impressions:0,clicks:0,lpv:0,ad_count:1},
 ].map(r=>({...r,campaign_name:campaigns.find(c=>c.id===r.campaign_id).name}));
 // These synthetic rows represent full-range ad aggregates, not today's facts.
-const fixture={schema_version:'glv-bfcm/v2',reporting_period:'campaign-to-date',since:'2026-11-25',until:'2026-11-26',date:'2026-11-26',timezone:'Europe/Prague',partial_day:true,currency:'CZK',generated_at:'2026-11-26T10:00:00Z',campaigns,rows};
+const fixture={schema_version:'glv-bfcm/v3',daily_breakdown:false,reporting_period:'campaign-to-date',since:'2026-11-25',until:'2026-11-26',date:'2026-11-26',timezone:'Europe/Prague',partial_day:true,currency:'CZK',generated_at:'2026-11-26T10:00:00Z',campaigns,rows};
 (async()=>{
  const libs='/home/tom/.cache/hermes-browser-libs/root';
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'/home/tom/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome',headless:true,args:['--no-sandbox'],env:{...process.env,LD_LIBRARY_PATH:`${libs}/usr/lib/x86_64-linux-gnu:${libs}/usr/lib`,FONTCONFIG_PATH:`${libs}/etc/fonts`}});
  try{
- const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await browser.newPage();await page.clock.install({time:new Date('2026-11-26T12:00:00Z')});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  let requests=0,responseTime=fixture.generated_at;
  await page.route('http://bfcm-sort.test/**',route=>{const p=new URL(route.request().url()).pathname;if(p==='/api/glv-bfcm/data'){requests++;return route.fulfill({json:{...fixture,generated_at:responseTime}});}const file=path.join(root,p==='/glv-bfcm/'?'/glv-bfcm/index.html':p);return route.fulfill({body:fs.readFileSync(file),contentType:p.endsWith('.js')?'application/javascript':p.endsWith('.css')?'text/css':'text/html'});});
  async function check(key,direction){
