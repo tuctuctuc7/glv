@@ -1,0 +1,60 @@
+/* Reporting controls share the header's surface, not the data-card surface. */
+.range-controls{
+  display:grid;container-type:inline-size;grid-template-columns:150px 150px auto auto minmax(172px,1fr);
+  align-items:end;gap:10px;margin:16px 0 12px;padding:12px;
+  background:var(--surface);border:1px solid var(--line);border-radius:18px;
+}
+.range-controls>label:not(.daily-toggle){min-width:0;width:auto;gap:6px;color:var(--muted);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.range-controls input[type=date]{
+  display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box;
+  height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;
+  background:var(--raised);color:var(--ink);font-size:16px;font-weight:500;letter-spacing:normal;text-transform:none;
+}
+/* Safari's native date editor must shrink with its grid track. Keep the picker. */
+.range-controls input[type=date]::-webkit-date-and-time-value{min-width:0;text-align:left}
+.range-controls input[type=date]::-webkit-datetime-edit{min-width:0;padding:0}
+.range-controls button{min-width:0;min-height:44px;padding:0 16px;border-radius:24px;white-space:nowrap}
+#range-apply{background:var(--accent);border-color:var(--accent);color:#20170b}
+.range-controls .daily-toggle{justify-self:end;display:flex;flex-direction:row;align-items:center;gap:10px;min-height:44px;margin:0;padding:0 4px;font-size:12px;font-weight:550;white-space:nowrap}
+/* A native keyboard-operable checkbox with a switch-shaped visual treatment. */
+.daily-toggle input{
+  appearance:none;-webkit-appearance:none;position:relative;flex:0 0 34px;
+  width:34px;height:20px;min-height:20px;min-width:34px;margin:0;padding:0;
+  border:1px solid var(--muted);border-radius:20px;background:var(--raised);cursor:pointer;
+}
+.daily-toggle input::before{content:"";position:absolute;left:3px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--muted)}
+.daily-toggle input:checked{background:var(--accent);border-color:var(--accent)}
+.daily-toggle input:checked::before{transform:translateX(14px);background:var(--bg)}
+[data-theme="light"] .range-controls{background:#ffffff12;border-color:#ffffff50;box-shadow:inset 0 1px #ffffff20;color:#fff}
+[data-theme="light"] .range-controls>label:not(.daily-toggle){color:#edf3ff}
+[data-theme="light"] .range-controls input[type=date]{background:#ffffffed;border-color:#ffffffa0;color:#23334f;box-shadow:inset 0 1px #fff}
+[data-theme="light"] .range-controls button{border-radius:24px}
+[data-theme="light"] #range-apply{color:#243c61;background:linear-gradient(#fff,#e8eef8);border-color:#ffffffd0;box-shadow:inset 0 1px #fff}
+[data-theme="light"] #range-latest{color:#fff;background:#ffffff19;border-color:#ffffff70;box-shadow:inset 0 1px #ffffff30}
+[data-theme="light"] #range-latest:hover{background:#ffffff30;border-color:#fff}
+[data-theme="light"] .daily-toggle input{background:#274c77;border-color:#ffffff90;box-shadow:none}
+[data-theme="light"] .daily-toggle input::before{background:#fff}
+[data-theme="light"] .daily-toggle input:checked{background:#eaf1fc;border-color:#fff}
+[data-theme="light"] .daily-toggle input:checked::before{background:#244f93}
+[data-theme="light"] .range-controls :focus-visible{outline-color:#fff}
+#notice{overflow-wrap:anywhere}
+@media(max-width:1100px){
+  .range-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto auto}
+  .range-controls .daily-toggle{grid-column:1/-1;justify-self:start}
+}
+@media(min-width:651px) and (max-width:850px){
+  .range-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+}
+@media(max-width:650px){
+  .range-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;padding:10px;margin:14px 0 10px}
+  .range-controls>label:not(.daily-toggle){width:auto}
+  .range-controls button{padding:4px 8px;font-size:11px;white-space:normal;overflow-wrap:anywhere}
+  header>div:first-child{min-width:0;overflow-wrap:anywhere}
+  .header-actions{flex-wrap:wrap;min-width:0}
+  .views button{min-width:0;overflow-wrap:anywhere}
+  .range-controls .daily-toggle{min-height:44px}
+}
+@container(max-width:280px){
+  .range-controls>label:not(.daily-toggle){grid-column:1/-1;display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center}
+}
+@media(forced-colors:active){.daily-toggle input{appearance:auto;-webkit-appearance:auto}.daily-toggle input::before{display:none}}
